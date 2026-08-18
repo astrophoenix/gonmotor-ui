@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build output
+public/
+_dist/
+dist/
+_gh_pages/
+.release/
+release/
+
+# Hugo
+.hugo_build.lock
+resources/_gen/
+.hugo_build/
+
+# Cache / temp
+.cache/
+.tmp/
+temp/
+*.tmp
+
+# Local generated assets
+static/*.js
+static/*.css
+static/*.map
+app.bundle.js.LICENSE.txt
+classNames.json
+
+# Editor / IDE
+.vscode/
+.idea/
