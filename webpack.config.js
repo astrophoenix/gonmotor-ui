@@ -1,6 +1,7 @@
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 const { SourceMapDevToolPlugin } = require("webpack");
+const { VueLoaderPlugin } = require('vue-loader');
 const path = require('path');
 
 module.exports = {
@@ -13,6 +14,10 @@ module.exports = {
   },
   module: {
     rules: [
+      {
+        test: /\.vue$/,
+        loader: 'vue-loader',
+      },
       {
         test: /\.css$/,
         use: [MiniCssExtractPlugin.loader, 'css-loader', 'postcss-loader'],
@@ -36,6 +41,7 @@ module.exports = {
     extensions: ['', '.js', '.jsx', '.css']
   },
   plugins: [
+    new VueLoaderPlugin(),
     new MiniCssExtractPlugin(),
     new SourceMapDevToolPlugin({
       filename: "[file].map"

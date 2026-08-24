@@ -1,18 +1,22 @@
-const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
-const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+function initializeDarkMode() {
+    const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+    const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+    const themeToggleBtn = document.getElementById('theme-toggle');
 
-// Change the icons inside the button based on previous settings
-if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-    themeToggleLightIcon.classList.remove('hidden');
-} else {
-    themeToggleDarkIcon.classList.remove('hidden');
-}
+    if (!themeToggleBtn || !themeToggleDarkIcon || !themeToggleLightIcon) {
+        return;
+    }
 
-const themeToggleBtn = document.getElementById('theme-toggle');
+    // Change the icons inside the button based on previous settings
+    if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        themeToggleLightIcon.classList.remove('hidden');
+    } else {
+        themeToggleDarkIcon.classList.remove('hidden');
+    }
 
-let event = new Event('dark-mode');
+    const event = new Event('dark-mode');
 
-themeToggleBtn.addEventListener('click', function() {
+    themeToggleBtn.addEventListener('click', function() {
 
     // toggle icons
     themeToggleDarkIcon.classList.toggle('hidden');
@@ -39,6 +43,8 @@ themeToggleBtn.addEventListener('click', function() {
         }
     }
 
-    document.dispatchEvent(event);
-    
-});
+        document.dispatchEvent(event);
+    });
+}
+
+initializeDarkMode();

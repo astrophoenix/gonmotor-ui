@@ -27,15 +27,25 @@
   "scripts": {
     "start": "npm run start:dev:hugo --silent & npm run start:dev:webpack --silent",
     "start:dev:hugo": "hugo server -D --watch --logLevel error",
-    "start:dev:webpack": "webpack --mode=development --watch --stats errors-only",
+    "start:dev:webpack": "webpack --mode=development --config ./webpack.config.js --watch --stats=errors-only",
     "build": "NODE_ENV=production && run-s build:webpack build:hugo",
     "build:hugo": "hugo --destination=./public",
     "build:webpack": "webpack --mode=production",
     "build:styles": "npx tailwindcss -i ./src/style.css -o ./dist/css/flowbite.css"
   },
   "devDependencies": {
+    "@babel/cli": "^8.0.4",
+    "@babel/core": "^8.0.1",
+    "@babel/generator": "^8.0.0",
+    "@babel/helper-plugin-utils": "^8.0.1",
+    "@babel/parser": "^8.0.4",
+    "@babel/preset-env": "^8.0.2",
+    "@babel/traverse": "^8.0.4",
+    "@babel/types": "^8.0.4",
+    "@vue/compiler-sfc": "^3.5.41",
     "archiver": "^5.3.0",
     "autoprefixer": "^10.3.7",
+    "babel-loader": "^10.1.1",
     "core-js": "^3.18.3",
     "css-loader": "^6.4.0",
     "css-minimizer-webpack-plugin": "^3.1.1",
@@ -56,6 +66,7 @@
     "pretty-bytes": "^5.6.0",
     "source-map-loader": "^3.0.0",
     "style-loader": "^3.3.0",
+    "vue-loader": "^17.4.2",
     "webpack": "^5.58.2",
     "webpack-cli": "^4.9.0",
     "webpack-dev-server": "^4.3.1",
@@ -66,6 +77,8 @@
     "@tailwindcss/postcss": "^4.0.0",
     "apexcharts": "^3.46.0",
     "flowbite": "^3.1.1",
-    "tailwindcss": "^4.0.0"
+    "pinia": "^4.0.3",
+    "tailwindcss": "^4.0.0",
+    "vue": "^3.5.41"
   }
 }

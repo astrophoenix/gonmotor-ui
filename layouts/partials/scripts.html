@@ -1,3 +1,55 @@
 <script async defer src="https://buttons.github.io/buttons.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.3"></script>
-<script src="{{ .Site.BaseURL }}/app.bundle.js"></script>
+<script src="/app.bundle.js"></script>
+<script>
+  (function () {
+    const publicPaths = [
+      '/authentication/sign-in/',
+      '/authentication/sign-up/',
+      '/authentication/forgot-password/',
+      '/authentication/reset-password/',
+      '/authentication/profile-lock/'
+    ];
+
+    const currentPath = window.location.pathname;
+    const isPublicPath = publicPaths.some((path) => currentPath === path || currentPath.endsWith(path));
+    const hasToken = Boolean(
+      localStorage.getItem('gonmotor_access_token') ||
+      sessionStorage.getItem('gonmotor_access_token')
+    );
+
+    if (currentPath === '/authentication/sign-in/' && hasToken) {
+      window.location.href = '/';
+      return;
+    }
+
+    if (!isPublicPath && !hasToken) {
+      window.location.href = '/authentication/sign-in/';
+    }
+
+    // Sign out functionality
+    function setupSignout() {
+      const signoutButtons = document.querySelectorAll('#signoutButton');
+      signoutButtons.forEach((button) => {
+        button.addEventListener('click', (e) => {
+          e.preventDefault();
+          [localStorage, sessionStorage].forEach((storage) => {
+            storage.removeItem('gonmotor_access_token');
+            storage.removeItem('gonmotor_refresh_token');
+            storage.removeItem('gonmotor_user');
+            storage.removeItem('gonmotor_logged_in');
+          });
+          console.log('Sesión cerrada, redirigiendo a login...');
+          window.location.href = '/authentication/sign-in/';
+        });
+      });
+    }
+
+    // Initialize signout when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', setupSignout);
+    } else {
+      setupSignout();
+    }
+  })();
+</script>

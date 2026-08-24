@@ -4,6 +4,7 @@ module.exports = {
     './content/**/*.md',
     './content/**/*.html',
     './src/*.js',
+    './src/**/*.vue',
     './node_modules/flowbite/**/*.js'
   ],
   safelist: [
