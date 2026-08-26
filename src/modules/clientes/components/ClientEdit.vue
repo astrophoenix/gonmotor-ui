@@ -1,8 +1,24 @@
 <script setup>
-import { onMounted, reactive, ref } from 'vue';
+import { onMounted, reactive, ref, watch } from 'vue';
 import { clientsService } from '../services/clientesService';
 import { request } from '../../../shared/services/httpClient';
 import Alert from '../../../shared/components/Alert.vue';
+import VehicleImageField from '../../../shared/components/VehicleImageField.vue';
+import {
+  sanitizeIdentificacion,
+  sanitizeNombre,
+  sanitizeEmail,
+  sanitizeTelefono,
+  formatPlaca,
+  sanitizeVin,
+  sanitizeText,
+  sanitizeColor,
+  sanitizeMotor,
+  sanitizeObservaciones,
+  getItemKey as getVehicleKey,
+  stripPlacaDash,
+  validatePlaca,
+} from '../../../shared/utils/sanitize';
 
 const clientId = new URLSearchParams(window.location.search).get('id');
 const isEditMode = Boolean(clientId);
@@ -12,9 +28,7 @@ const form = reactive({
   nombre: '',
   email: '',
   telefono: '',
-  direccion: '',
-  contifico_id: '',
-  is_active: true
+  direccion: ''
 });
 const isLoading = ref(true);
 const isSaving = ref(false);
@@ -25,10 +39,109 @@ let nextVehicleUid = 1;
 const tipos = ref([]);
 const paises = ref([]);
 const isLoadingChoices = ref(false);
-const localImagePreviews = ref({});
+const vehiculoErrors = ref({});
+const clientErrors = ref({});
 
 function showError(error) {
   errorMessage.value = error.message || 'No fue posible completar la operación.';
+}
+
+function validateVehiculo(vehiculo) {
+  const key = getVehicleKey(vehiculo);
+  const errors = {};
+  const currentYear = new Date().getFullYear() + 1;
+
+  const placaValue = (vehiculo.placa || '').replace(/-/g, '').trim();
+  if (!placaValue) {
+    errors.placa = 'La placa es obligatoria.';
+  } else {
+    const placaError = validatePlaca(vehiculo.placa);
+    if (placaError) {
+      errors.placa = placaError;
+    }
+  }
+
+  if (!vehiculo.marca || !vehiculo.marca.trim()) {
+    errors.marca = 'La marca es obligatoria.';
+  }
+
+  if (!vehiculo.modelo || !vehiculo.modelo.trim()) {
+    errors.modelo = 'El modelo es obligatorio.';
+  }
+
+  if (!vehiculo.vin || !vehiculo.vin.trim()) {
+    errors.vin = 'El VIN / Chasis es obligatorio.';
+  }
+
+  if (vehiculo.anio != null && vehiculo.anio !== '') {
+    const anioNum = Number(vehiculo.anio);
+    if (Number.isNaN(anioNum) || anioNum < 1900 || anioNum > currentYear) {
+      errors.anio = `El año debe estar entre 1900 y ${currentYear}.`;
+    }
+  }
+
+  const kmRaw = vehiculo.kilometraje_actual;
+  const kmStr = kmRaw == null ? '' : String(kmRaw).trim();
+  if (kmStr === '') {
+    errors.kilometraje_actual = 'El kilometraje es obligatorio y debe ser mayor a 0.';
+  } else {
+    const km = Number(kmStr);
+    if (Number.isNaN(km)) {
+      errors.kilometraje_actual = 'El kilometraje no es válido. Ingresa solo números enteros mayores a 0.';
+    } else if (km < 0) {
+      errors.kilometraje_actual = 'El kilometraje no puede ser negativo. Por favor ingresa un valor mayor a 0.';
+    } else if (km === 0) {
+      errors.kilometraje_actual = 'El kilometraje debe ser mayor a 0.';
+    } else if (!Number.isInteger(km)) {
+      errors.kilometraje_actual = 'El kilometraje debe ser un número entero mayor a 0.';
+    }
+  }
+
+  vehiculoErrors.value[key] = errors;
+  return Object.keys(errors).length === 0;
+}
+
+function validateVehiculos() {
+  vehiculoErrors.value = {};
+  let isValid = true;
+  vehiculos.value.forEach((vehiculo) => {
+    if (!validateVehiculo(vehiculo)) {
+      isValid = false;
+    }
+  });
+  return isValid;
+}
+
+function validateForm() {
+  clientErrors.value = {};
+  const errors = {};
+
+  if (!form.identificacion || !form.identificacion.trim()) {
+    errors.identificacion = 'La identificación es obligatoria.';
+  } else if (form.tipo_identificacion === 'C' && form.identificacion.length !== 10) {
+    errors.identificacion = 'La cédula debe tener exactamente 10 dígitos.';
+  } else if (form.tipo_identificacion === 'R' && form.identificacion.length !== 13) {
+    errors.identificacion = 'El RUC debe tener exactamente 13 dígitos.';
+  }
+
+  if (!form.nombre || !form.nombre.trim()) {
+    errors.nombre = 'El nombre o razón social es obligatorio.';
+  }
+
+  if (form.email && form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+    errors.email = 'Ingresa un correo electrónico válido.';
+  }
+
+  if (!form.telefono || !form.telefono.trim()) {
+    errors.telefono = 'El teléfono es obligatorio.';
+  }
+
+  if (!form.direccion || !form.direccion.trim()) {
+    errors.direccion = 'La dirección es obligatoria.';
+  }
+
+  clientErrors.value = errors;
+  return Object.keys(errors).length === 0;
 }
 
 function createEmptyVehiculo() {
@@ -47,7 +160,8 @@ function createEmptyVehiculo() {
     numero_motor: '',
     kilometraje_actual: 0,
     observaciones: '',
-    is_active: true
+    is_active: true,
+    _teniaImagen: false
   };
 }
 
@@ -59,11 +173,6 @@ function removeVehiculo(index) {
   const removed = vehiculos.value[index];
   if (removed) {
     const key = removed._uid || removed.id;
-    const preview = localImagePreviews.value[key];
-    if (preview) {
-      URL.revokeObjectURL(preview);
-      delete localImagePreviews.value[key];
-    }
   }
   vehiculos.value.splice(index, 1);
 }
@@ -74,9 +183,6 @@ async function loadClient(clearMessages = true) {
     successMessage.value = '';
   }
 
-  Object.values(localImagePreviews.value).forEach(url => URL.revokeObjectURL(url));
-  localImagePreviews.value = {};
-
   if (!isEditMode) {
     isLoading.value = false;
     return;
@@ -86,7 +192,7 @@ async function loadClient(clearMessages = true) {
     const data = await clientsService.getById(clientId);
     Object.assign(form, data);
     if (data.vehiculos && Array.isArray(data.vehiculos)) {
-      vehiculos.value = data.vehiculos.map(v => ({ ...v }));
+      vehiculos.value = data.vehiculos.map(v => ({ ...v, _teniaImagen: Boolean(v.imagen) }));
     }
   } catch (error) {
     showError(error);
@@ -99,8 +205,8 @@ async function loadChoices() {
   isLoadingChoices.value = true;
   try {
     const data = await request('/api/vehiculos/choices/');
-    tipos.value = Array.isArray(data?.tipo) ? data.tipo : [];
-    paises.value = Array.isArray(data?.paises) ? data.paises : [];
+    tipos.value = Array.isArray(data && data.tipo) ? data.tipo : [];
+    paises.value = Array.isArray(data && data.paises) ? data.paises : [];
   } catch (error) {
     console.error('No se pudieron cargar las opciones:', error);
   } finally {
@@ -108,48 +214,27 @@ async function loadChoices() {
   }
 }
 
-function getVehicleKey(vehiculo) {
-  return vehiculo._uid || vehiculo.id;
-}
-
-function getLocalPreview(vehiculo) {
-  return localImagePreviews.value[getVehicleKey(vehiculo)] || '';
-}
-
-function onImageChange(event, vehiculo) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const key = getVehicleKey(vehiculo);
-
-  const previousPreview = localImagePreviews.value[key];
-  if (previousPreview) {
-    URL.revokeObjectURL(previousPreview);
-  }
-
-  const previewUrl = URL.createObjectURL(file);
-  localImagePreviews.value[key] = previewUrl;
-  vehiculo.imagenFile = file;
-  vehiculo.imagenPreview = previewUrl;
-}
-
-function cancelImage(vehiculo) {
-  const key = getVehicleKey(vehiculo);
-  const preview = localImagePreviews.value[key];
-  if (preview) {
-    URL.revokeObjectURL(preview);
-    delete localImagePreviews.value[key];
-  }
-  vehiculo.imagenFile = null;
-  vehiculo.imagenPreview = '';
-  vehiculo.imagen = '';
-}
-
 async function submit() {
   errorMessage.value = '';
   successMessage.value = '';
+  vehiculoErrors.value = {};
+  clientErrors.value = {};
   isSaving.value = true;
 
   try {
+    const formValid = validateForm();
+    const vehiculosValid = validateVehiculos();
+
+    if (!formValid || !vehiculosValid) {
+      const parts = [];
+      if (!formValid) parts.push('Información General');
+      if (!vehiculosValid) parts.push('Vehículos');
+      errorMessage.value = 'Completa correctamente los campos de: ' + parts.join(' y ');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      isSaving.value = false;
+      return;
+    }
+
     const formData = new FormData();
 
     formData.append('tipo_identificacion', form.tipo_identificacion);
@@ -158,17 +243,19 @@ async function submit() {
     formData.append('email', form.email || '');
     formData.append('telefono', form.telefono || '');
     formData.append('direccion', form.direccion || '');
-    formData.append('contifico_id', form.contifico_id || '');
-    formData.append('is_active', String(form.is_active));
 
     const vehiculosPayload = vehiculos.value.map((v, index) => {
-      const { _uid, imagenFile, imagenPreview, imagen, ...rest } = v;
+      const { _uid, imagenFile, imagenPreview, imagen, _teniaImagen, ...rest } = v;
       const item = {
         ...rest,
-        placa: (v.placa || '').trim().toUpperCase()
+        placa: (v.placa || '').replace(/-/g, '').trim().toUpperCase(),
+        anio: v.anio ? Number(v.anio) : null,
+        kilometraje_actual: v.kilometraje_actual ? parseInt(v.kilometraje_actual, 10) : 0
       };
       if (imagenFile) {
         formData.append(`vehiculo_${index}_imagen`, imagenFile);
+      } else if (v._teniaImagen && !v.imagen) {
+        item.eliminar_imagen = true;
       }
       return item;
     });
@@ -181,14 +268,30 @@ async function submit() {
         body: formData,
       });
       successMessage.value = 'Cliente actualizado correctamente.';
+
+      const previousOrder = vehiculos.value.map(v => getVehicleKey(v));
       await loadClient(false);
+
+      const newVehiculos = [...vehiculos.value];
+      newVehiculos.sort((a, b) => {
+        const indexA = previousOrder.indexOf(getVehicleKey(a));
+        const indexB = previousOrder.indexOf(getVehicleKey(b));
+
+        if (indexA === -1 && indexB === -1) return 0;
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+
+        return indexA - indexB;
+      });
+      vehiculos.value = newVehiculos;
+
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       const response = await request('/api/clientes/', {
         method: 'POST',
         body: formData,
       });
-      const nuevoId = response?.id;
+      const nuevoId = response && response.id;
       if (nuevoId) {
         window.location.assign(`/crud/clientes/editar/?id=${encodeURIComponent(nuevoId)}`);
       } else {
@@ -203,6 +306,56 @@ async function submit() {
     isSaving.value = false;
   }
 }
+
+watch(() => form.tipo_identificacion, () => {
+  form.identificacion = sanitizeIdentificacion(form.identificacion, form.tipo_identificacion);
+});
+
+watch(() => form.identificacion, (val) => {
+  const clean = sanitizeIdentificacion(val, form.tipo_identificacion);
+  if (clean !== val) form.identificacion = clean;
+});
+
+watch(() => form.nombre, (val) => {
+  const clean = sanitizeNombre(val);
+  if (clean !== val) form.nombre = clean;
+});
+
+watch(() => form.email, (val) => {
+  const clean = sanitizeEmail(val);
+  if (clean !== val) form.email = clean;
+});
+
+watch(() => form.telefono, (val) => {
+  const clean = sanitizeTelefono(val);
+  if (clean !== val) form.telefono = clean;
+});
+
+watch(vehiculos, (list) => {
+  list.forEach((v) => {
+    if (v.placa !== undefined && formatPlaca(v.placa) !== v.placa) {
+      v.placa = formatPlaca(v.placa);
+    }
+    if (v.vin !== undefined && sanitizeVin(v.vin) !== v.vin) {
+      v.vin = sanitizeVin(v.vin);
+    }
+    if (v.marca !== undefined && sanitizeText(v.marca) !== v.marca) {
+      v.marca = sanitizeText(v.marca);
+    }
+    if (v.modelo !== undefined && sanitizeText(v.modelo) !== v.modelo) {
+      v.modelo = sanitizeText(v.modelo);
+    }
+    if (v.color !== undefined && sanitizeColor(v.color) !== v.color) {
+      v.color = sanitizeColor(v.color);
+    }
+    if (v.numero_motor !== undefined && sanitizeMotor(v.numero_motor) !== v.numero_motor) {
+      v.numero_motor = sanitizeMotor(v.numero_motor);
+    }
+    if (v.observaciones !== undefined && sanitizeObservaciones(v.observaciones) !== v.observaciones) {
+      v.observaciones = sanitizeObservaciones(v.observaciones);
+    }
+  });
+}, { deep: true });
 
 onMounted(() => {
   loadClient();
@@ -226,7 +379,14 @@ onMounted(() => {
     <div class="relative max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
       <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
       <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
-      <h4 class="mb-4 text-xl font-semibold dark:text-white">Información General</h4>
+      <h4 class="mb-4 text-xl font-semibold dark:text-white">
+        <span class="inline-flex items-center gap-2">
+          <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 3v4a1 1 0 0 1-1 1H5m4 8h6m-6-4h6m4-8v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1Z"/>
+          </svg>
+          Información General
+        </span>
+      </h4>
       <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando cliente...</div>
       <form v-else class="grid grid-cols-6 gap-6" novalidate @submit.prevent="submit">
         <div class="col-span-6 sm:col-span-3">
@@ -235,37 +395,36 @@ onMounted(() => {
         </div>
         <div class="col-span-6 sm:col-span-3">
           <label for="identificacion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Identificación</label>
-          <input id="identificacion" v-model="form.identificacion" required maxlength="13" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+          <input id="identificacion" v-model="form.identificacion" required maxlength="13" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.identificacion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+          <p v-if="clientErrors.identificacion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.identificacion }}</p>
         </div>
-        <div class="col-span-6">
+        <div class="col-span-6 sm:col-span-3">
           <label for="nombre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre o razón social</label>
-          <input id="nombre" v-model="form.nombre" required maxlength="200" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+          <input id="nombre" v-model="form.nombre" required maxlength="200" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.nombre ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+          <p v-if="clientErrors.nombre" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.nombre }}</p>
         </div>
         <div class="col-span-6 sm:col-span-3">
           <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Correo electrónico</label>
-          <input id="email" v-model="form.email" type="email" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+          <input id="email" v-model="form.email" type="email" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.email ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+          <p v-if="clientErrors.email" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.email }}</p>
         </div>
         <div class="col-span-6 sm:col-span-3">
           <label for="telefono" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Teléfono</label>
-          <input id="telefono" v-model="form.telefono" maxlength="20" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-        </div>
-        <div class="col-span-6">
-          <label for="direccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Dirección</label>
-          <textarea id="direccion" v-model="form.direccion" rows="3" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"></textarea>
+          <input id="telefono" v-model="form.telefono" maxlength="20" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.telefono ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+          <p v-if="clientErrors.telefono" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.telefono }}</p>
         </div>
         <div class="col-span-6 sm:col-span-3">
-          <label for="contifico_id" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">ID de Contífico</label>
-          <input id="contifico_id" v-model="form.contifico_id" maxlength="50" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+          <label for="direccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Dirección</label>
+          <textarea id="direccion" v-model="form.direccion" rows="1" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.direccion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
+          <p v-if="clientErrors.direccion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.direccion }}</p>
         </div>
-        <div class="flex items-center col-span-6"><input id="is_active" v-model="form.is_active" type="checkbox" class="w-4 h-4 text-primary-600 rounded"><label for="is_active" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Cliente activo</label></div>
 
         <div class="col-span-6">
-          <div class="flex items-center justify-between mb-4">
-            <h4 class="text-xl font-semibold dark:text-white">Vehículos del Cliente</h4>
-            <button type="button" @click="addVehiculo" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300">
-              <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"></path></svg>
-              Agregar Vehículo
-            </button>
+          <div class="mb-4">
+            <span class="inline-flex items-center gap-2">
+              <svg class="flex-shrink-0 w-6 h-6 text-gray-900 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3 8 2.722 2.268a1 1 0 0 0 .64.232h11.276a1 1 0 0 0 .64-.232L21 8M6.5 14h.01m10.99 0h.01M8.16 4.5h7.68a2 2 0 0 1 1.736 1.008l2.897 5.07A4 4 0 0 1 21 12.562V18.5a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H6v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5.938a4 4 0 0 1 .527-1.984l2.897-5.07A2 2 0 0 1 8.161 4.5M7 14a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m11 0a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0"/></svg>
+              <h4 class="text-xl font-semibold dark:text-white">Vehículos del Cliente</h4>
+            </span>
           </div>
 
           <div v-if="!vehiculos.length" class="p-4 text-sm text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600">
@@ -282,23 +441,29 @@ onMounted(() => {
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div class="col-span-1">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Placa</label>
-                <input v-model="vehiculo.placa" maxlength="10" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                <input v-model="vehiculo.placa" maxlength="10" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].placa) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].placa" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehiculoErrors[getVehicleKey(vehiculo)].placa }}</p>
               </div>
               <div class="col-span-1">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Marca</label>
-                <input v-model="vehiculo.marca" maxlength="50" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                <input v-model="vehiculo.marca" maxlength="50" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehiculoErrors[getVehicleKey(vehiculo)].marca }}</p>
               </div>
               <div class="col-span-1">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Modelo</label>
-                <input v-model="vehiculo.modelo" maxlength="50" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                <input v-model="vehiculo.modelo" maxlength="50" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehiculoErrors[getVehicleKey(vehiculo)].modelo }}</p>
               </div>
               <div class="col-span-1">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Año</label>
-                <input v-model="vehiculo.anio" type="number" min="1900" :max="new Date().getFullYear() + 1" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                <input v-model="vehiculo.anio" type="number" min="1900" :max="new Date().getFullYear() + 1" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].anio) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].anio" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehiculoErrors[getVehicleKey(vehiculo)].anio }}</p>
               </div>
               <div class="col-span-1">
-                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Color</label>
-                <input v-model="vehiculo.color" maxlength="30" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo</label>
+                <select v-model="vehiculo.tipo" :disabled="isLoadingChoices" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                  <option v-for="item in tipos" :key="item.value" :value="item.value">{{ item.label }}</option>
+                </select>
               </div>
               <div class="col-span-1">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Transmisión</label>
@@ -318,10 +483,17 @@ onMounted(() => {
                 </select>
               </div>
               <div class="col-span-1">
-                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo</label>
-                <select v-model="vehiculo.tipo" :disabled="isLoadingChoices" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-                  <option v-for="item in tipos" :key="item.value" :value="item.value">{{ item.label }}</option>
-                </select>
+                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Color</label>
+                <input v-model="vehiculo.color" maxlength="30" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+              </div>
+              <div class="col-span-1">
+                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">VIN / Chasis</label>
+                <input v-model="vehiculo.vin" maxlength="17" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].vin) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].vin" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehiculoErrors[getVehicleKey(vehiculo)].vin }}</p>
+              </div>
+              <div class="col-span-1">
+                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Motor</label>
+                <input v-model="vehiculo.numero_motor" maxlength="50" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
               </div>
               <div class="col-span-1">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">País de Origen</label>
@@ -330,47 +502,34 @@ onMounted(() => {
                 </select>
               </div>
               <div class="col-span-1">
-                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">VIN / Chasis</label>
-                <input v-model="vehiculo.vin" maxlength="17" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-              </div>
-              <div class="col-span-1">
-                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Motor</label>
-                <input v-model="vehiculo.numero_motor" maxlength="50" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-              </div>
-              <div class="col-span-1">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kilometraje</label>
-                <input v-model="vehiculo.kilometraje_actual" type="number" min="0" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                <input v-model="vehiculo.kilometraje_actual" type="number" min="0" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual }}</p>
               </div>
               <div class="col-span-1 md:col-span-2">
                 <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Imagen</p>
-                <div class="flex items-start space-x-6 p-4 border border-gray-200 rounded-lg dark:border-gray-700">
-                  <div class="w-40 h-40 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 overflow-hidden border border-gray-200 dark:border-gray-600">
-                    <img v-if="getLocalPreview(vehiculo) || vehiculo.imagen" :src="getLocalPreview(vehiculo) || vehiculo.imagen" class="w-full h-full object-cover" alt="Imagen del vehículo">
-                    <svg v-if="!getLocalPreview(vehiculo) && !vehiculo.imagen" class="w-16 h-16 text-gray-900 dark:text-gray-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                      <path d="M5 17h14M5 17a2 2 0 01-2-2V9a2 2 0 012-2h1l2-3h8l2 3h1a2 2 0 012 2v6a2 2 0 01-2 2M5 17a2 2 0 100 4 2 2 0 000-4zm14 0a2 2 0 100 4 2 2 0 000-4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                  </div>
-                  <div class="flex-1">
-                    <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">JPG, PNG. Máximo 2MB</p>
-                    <div class="flex items-center space-x-3">
-                      <label class="inline-flex items-center px-4 py-2 text-sm font-medium text-center text-white rounded-lg bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 cursor-pointer">
-                        <svg class="w-4 h-4 mr-2 -ml-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M5.5 13a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 13H11V9.413l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13H5.5z"></path><path d="M9 13h2v5a1 1 0 11-2 0v-5z"></path></svg>
-                        Subir foto
-                        <input type="file" class="hidden" accept="image/*" @change="(e) => onImageChange(e, vehiculo)">
-                      </label>
-                      <button type="button" :disabled="!vehiculo.imagen && !getLocalPreview(vehiculo)" @click="cancelImage(vehiculo)" class="py-2 px-3 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
-                        Cancelar
-                      </button>
-                    </div>
-                    <p v-if="!vehiculo.imagen" class="mt-3 text-sm text-gray-500 dark:text-gray-400">Sin imagen registrada</p>
-                  </div>
-                </div>
+                <VehicleImageField
+                  :image-url="vehiculo.imagen"
+                  :disabled="isLoadingChoices"
+                  :max-size="2 * 1024 * 1024"
+                  :allowed-types="['image/jpeg', 'image/jpg', 'image/png', 'image/webp']"
+                  @upload="(file) => { vehiculo.imagenFile = file; }"
+                  @remove="() => { vehiculo.imagenFile = null; vehiculo.imagenPreview = ''; vehiculo.imagen = ''; }"
+                />
               </div>
               <div class="col-span-1 md:col-span-2">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Observaciones</label>
-                <textarea v-model="vehiculo.observaciones" rows="2" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"></textarea>
+                <textarea v-model="vehiculo.observaciones" rows="8" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"></textarea>
               </div>
             </div>
+          </div>
+
+          <div class="mt-6"></div>
+          <div class="flex justify-end">
+            <button type="button" @click="addVehiculo" class="inline-flex items-center px-4 py-2 text-sm font-medium text-primary-700 border border-primary-700 rounded-lg hover:bg-primary-50 focus:ring-4 focus:ring-primary-300">
+              <svg class="w-4 h-4 mr-2 -ml-1" fill="currentColor" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="M24,16c-4.4,0-8,3.6-8,8s3.6,8,8,8s8-3.6,8-8S28.4,16,24,16z M27,25h-2v2c0,0.6-0.4,1-1,1s-1-0.4-1-1v-2h-2c-0.6,0-1-0.4-1-1s0.4-1,1-1h2v-2c0-0.6,0.4-1,1-1s1,0.4,1,1v2h2c0.6,0,1,0.4,1,1S27.6,25,27,25z"/><path d="M8.4,22l1.2-2.3c0.5-1,1.5-1.7,2.7-1.7h3.5c0.1,0,0.2,0,0.2,0c1.8-2.4,4.7-4,8-4c1.2,0,2.3,0.2,3.4,0.6C27,14,26.5,13.4,26,13h1c0.6,0,1-0.4,1-1s-0.4-1-1-1h-2.8L23,8c-0.8-1.8-2.6-3-4.6-3H9.6C7.6,5,5.8,6.2,5,8l-1.3,3H1c-0.6,0-1,0.4-1,1s0.4,1,1,1h1c-1.2,0.9-2,2.4-2,4v4c0,0.9,0.4,1.7,1,2.2V25c0,1.7,1.3,3,3,3h2c1.7,0,3-1.3,3-3v-1h5c0-0.7,0.1-1.4,0.2-2H8.4z M7,19H4c-0.6,0-1-0.4-1-1s0.4-1,1-1h3c0.6,0,1,0.4,1,1S7.6,19,7,19z M5.5,12l1.4-3.2C7.4,7.7,8.4,7,9.6,7h8.7c1.2,0,2.3,0.7,2.8,1.8l1.4,3.2H5.5z"/></svg>
+              Agregar Vehículo
+            </button>
           </div>
         </div>
 

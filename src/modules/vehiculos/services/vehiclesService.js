@@ -18,17 +18,23 @@ export const vehiclesService = {
     return request(buildUrl(id));
   },
 
-  create(payload) {
+  create(payload, formData) {
+    const body = formData || JSON.stringify(payload);
+    const headers = formData ? {} : { 'Content-Type': 'application/json' };
     return request(ENDPOINT, {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body,
+      headers,
     });
   },
 
-  update(id, payload) {
+  update(id, payload, formData) {
+    const body = formData || JSON.stringify(payload);
+    const headers = formData ? {} : { 'Content-Type': 'application/json' };
     return request(buildUrl(id), {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body,
+      headers,
     });
   },
 
