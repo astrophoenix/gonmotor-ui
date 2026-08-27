@@ -125,9 +125,9 @@ onMounted(() => loadVehicles());
       <div class="inline-block min-w-full align-middle">
         <div class="overflow-hidden shadow">
           <table class="min-w-full divide-y divide-gray-200 table-fixed dark:divide-gray-600">
-            <thead class="bg-gray-100 dark:bg-gray-700">
+            <thead class="bg-gray-200 dark:bg-gray-900">
               <tr>
-                <th v-for="heading in ['Placa', 'Marca', 'Modelo', 'Año', 'Dueño', 'Actions']" :key="heading" scope="col" class="p-4 text-xs font-medium text-left text-gray-500 uppercase dark:text-gray-400">{{ heading }}</th>
+                <th v-for="heading in ['Placa', 'Marca', 'Modelo', 'Año', 'Dueño', 'Acciones']" :key="heading" scope="col" class="p-4 text-sm font-medium text-left text-gray-900 uppercase dark:text-gray-900">{{ heading }}</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
@@ -135,11 +135,11 @@ onMounted(() => loadVehicles());
               <tr v-else-if="!vehicles.length"><td colspan="6" class="p-4 text-center text-gray-500 dark:text-gray-400">No se encontraron vehículos.</td></tr>
               <template v-else>
                 <tr v-for="vehicle in vehicles" :key="vehicle.id" class="hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <td class="p-4 font-semibold text-gray-900 whitespace-nowrap dark:text-white">{{ formatPlate(vehicle.placa) }}</td>
-                  <td class="p-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{{ vehicle.marca }}</td>
-                  <td class="p-4 text-gray-500 whitespace-nowrap dark:text-gray-400">{{ vehicle.modelo }}</td>
-                  <td class="p-4 text-gray-900 whitespace-nowrap dark:text-white">{{ vehicle.anio || '—' }}</td>
-                  <td class="p-4 text-gray-900 whitespace-nowrap dark:text-white">{{ vehicle.cliente_nombre || 'Sin dueño' }}</td>
+                  <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ formatPlate(vehicle.placa) }}</td>
+                  <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ vehicle.marca }}</td>
+                  <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ vehicle.modelo }}</td>
+                  <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ vehicle.anio || '—' }}</td>
+                  <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ vehicle.cliente_nombre || 'Sin dueño' }}</td>
                   <td class="p-4 whitespace-nowrap">
                     <button type="button" title="Editar vehículo" aria-label="Editar vehículo" class="inline-flex items-center p-2 text-primary-600 rounded-lg hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700" @click="editVehicle(vehicle.id)">
                       <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg>

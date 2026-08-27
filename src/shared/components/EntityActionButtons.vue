@@ -1,5 +1,8 @@
 <script setup>
+import { ref } from 'vue';
 import { API_BASE_URL } from '../config/env';
+import { useToast } from '../composables/useToast';
+import ToastContainer from './ToastContainer.vue';
 
 const props = defineProps({
   entity: {
@@ -20,20 +23,33 @@ const props = defineProps({
   }
 });
 
+const emit = defineEmits(['pdfExportError']);
+
+const { showSuccess } = useToast();
+
 function getAccessToken() {
   return localStorage.getItem('gonmotor_access_token')
     || sessionStorage.getItem('gonmotor_access_token');
+}
+
+function getEmpresaId() {
+  return localStorage.getItem('gonmotor_empresa_id')
+    || sessionStorage.getItem('gonmotor_empresa_id');
 }
 
 function goToAdd() {
   window.location.assign(`/crud/${props.entity}/agregar/`);
 }
 
+const isExportingPdf = ref(false);
+
 async function downloadFile(path, filename) {
   const token = getAccessToken();
+  const empresaId = getEmpresaId();
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(empresaId ? { 'X-Empresa-ID': empresaId } : {})
     }
   });
 
@@ -54,8 +70,43 @@ async function downloadFile(path, filename) {
   document.body.removeChild(a);
 }
 
-function exportPdf() {
-  downloadFile(`/api/${props.entity}/export_pdf/`, `${props.entity}_reporte.pdf`);
+async function exportPdf() {
+  isExportingPdf.value = true;
+  try {
+    const token = getAccessToken();
+    const empresaId = getEmpresaId();
+    const url = `${API_BASE_URL.replace(/\/$/, '')}/api/${props.entity}/exportar-pdf/`;
+
+    const response = await fetch(url, {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(empresaId ? { 'X-Empresa-ID': empresaId } : {})
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error en la descarga (status ${response.status}).`);
+    }
+
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = `listado_${props.entity}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+
+    showSuccess(`PDF generado: listado_${props.entity}.pdf`);
+
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(blobUrl);
+
+  } catch (error) {
+    emit('pdfExportError', error.message || 'Ocurrió un error al generar el PDF.');
+  } finally {
+    isExportingPdf.value = false;
+  }
 }
 
 function exportExcel() {
@@ -79,11 +130,16 @@ function exportExcel() {
     <button
       v-if="showExportPdf"
       type="button"
-      class="inline-flex items-center px-3 py-2 text-sm font-medium text-red-600 rounded-lg border border-red-600 hover:bg-red-50 dark:text-red-400 dark:border-red-400 dark:hover:bg-gray-800"
+      :disabled="isExportingPdf"
+      class="inline-flex items-center px-3 py-2 text-sm font-medium text-red-600 rounded-lg border border-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-400 dark:hover:bg-gray-800"
       @click="exportPdf"
     >
-      <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+      <svg v-if="!isExportingPdf" class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 17v-5h1.5a1.5 1.5 0 1 1 0 3H5m12 2v-5h2m-2 3h2M5 10V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1v6M5 19v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1M10 3v4a1 1 0 0 1-1 1H5m6 4v5h1.375A1.627 1.627 0 0 0 14 15.375v-1.75A1.627 1.627 0 0 0 12.375 12H11Z"/>
+      </svg>
+      <svg v-else class="w-5 h-5 animate-spin" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
       </svg>
     </button>
     <button
@@ -97,4 +153,6 @@ function exportExcel() {
       </svg>
     </button>
   </div>
+
+  <ToastContainer />
 </template>

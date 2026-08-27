@@ -148,7 +148,7 @@ onUnmounted(() => {
           </form>
         </div>
         <div class="flex items-center ml-auto space-x-2 sm:space-x-3">
-          <EntityActionButtons entity="clientes" />
+          <EntityActionButtons entity="clientes" @pdf-export-error="showAlert('error', '', $event)" />
         </div>
       </div>
     </div>
@@ -159,9 +159,9 @@ onUnmounted(() => {
       <div class="inline-block min-w-full align-middle">
         <div class="overflow-hidden shadow">
           <table class="min-w-full divide-y divide-gray-200 table-fixed dark:divide-gray-600">
-            <thead class="bg-gray-100 dark:bg-gray-700">
+            <thead class="bg-gray-200 dark:bg-gray-900">
               <tr>
-                <th v-for="heading in ['Identificación', 'Nombre / Razón Social', 'Contacto', 'Vehículos', 'Actions']" :key="heading" scope="col" class="p-4 text-xs font-medium text-left text-gray-500 uppercase dark:text-gray-400">{{ heading }}</th>
+                <th v-for="heading in ['Identificación', 'Nombre / Razón Social', 'Contacto', 'Vehículos', 'Acciones']" :key="heading" scope="col" class="p-4 text-sm font-medium text-left text-gray-900 uppercase dark:text-gray-900">{{ heading }}</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
@@ -169,32 +169,32 @@ onUnmounted(() => {
               <tr v-else-if="!clients.length"><td colspan="7" class="p-4 text-center text-gray-500 dark:text-gray-400">No se encontraron clientes.</td></tr>
               <template v-else>
                 <tr v-for="client in clients" :key="client.id" class="hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <td class="p-4 font-sm text-gray-900 whitespace-nowrap dark:text-white">{{ client.identificacion }}</td>
-                  <td class="p-4 font-sm text-gray-900 whitespace-nowrap dark:text-white">{{ client.nombre }}</td>
-                  <td class="p-4 text-gray-900 whitespace-nowrap dark:text-gray-400">
+                  <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ client.identificacion }}</td>
+                  <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ client.nombre }}</td>
+                  <td class="p-4 text-gray-800 whitespace-nowrap dark:text-gray-400">
                     <ul class="space-y-1">
                       <li class="flex items-center gap-2">
-                        <svg class="w-4 h-4 text-gray-900 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 15h12M6 6h12m-6 12h.01M7 21h10a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1Z"></path></svg>
+                        <svg class="w-4 h-4 text-gray-800 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 15h12M6 6h12m-6 12h.01M7 21h10a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1Z"></path></svg>
                         <span class="text-sm">{{ client.telefono || 'Sin teléfono' }}</span>
                       </li>
                       <li class="flex items-center gap-2">
-                        <svg class="w-4 h-4 text-gray-900 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3.5 5.5 7.893 6.036a1 1 0 0 0 1.214 0L20.5 5.5M4 19h16a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Z"/></svg>
+                        <svg class="w-4 h-4 text-gray-800 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3.5 5.5 7.893 6.036a1 1 0 0 0 1.214 0L20.5 5.5M4 19h16a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Z"/></svg>
                         <span class="text-sm">{{ client.email || 'Sin correo' }}</span>
                       </li>
                     </ul>
                   </td>
-                  <td class="p-4 text-gray-900 whitespace-nowrap dark:text-white">
+                  <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">
                     <div v-if="!client.vehiculos || !client.vehiculos.length" class="text-sm text-gray-500 dark:text-gray-400">
                       Sin vehículos
                     </div>
                     <div v-else-if="client.vehiculos.length === 1" class="flex items-center gap-2">
-                      <svg class="w-4 h-4 text-gray-900 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                      <svg class="w-4 h-4 text-gray-800 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3 8 2.722 2.268a1 1 0 0 0 .64.232h11.276a1 1 0 0 0 .64-.232L21 8M6.5 14h.01m10.99 0h.01M8.16 4.5h7.68a2 2 0 0 1 1.736 1.008l2.897 5.07A4 4 0 0 1 21 12.562V18.5a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H6v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5.938a4 4 0 0 1 .527-1.984l2.897-5.07A2 2 0 0 1 8.161 4.5M7 14a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m11 0a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0"/></svg>
                       <span class="text-sm">{{ formatPlate(client.vehiculos[0].placa) }} → {{ client.vehiculos[0].marca }} {{ client.vehiculos[0].color || '—' }}</span>
                     </div>
                     <div v-else-if="client.vehiculos.length === 2" class="space-y-1">
                       <div v-for="veh in client.vehiculos" :key="veh.id" class="flex items-center gap-2">
-                        <svg class="w-4 h-4 text-gray-900 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 text-gray-800 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                           <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3 8 2.722 2.268a1 1 0 0 0 .64.232h11.276a1 1 0 0 0 .64-.232L21 8M6.5 14h.01m10.99 0h.01M8.16 4.5h7.68a2 2 0 0 1 1.736 1.008l2.897 5.07A4 4 0 0 1 21 12.562V18.5a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H6v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5.938a4 4 0 0 1 .527-1.984l2.897-5.07A2 2 0 0 1 8.161 4.5M7 14a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m11 0a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0"/></svg>
                         <span class="text-sm">{{ formatPlate(veh.placa) }} → {{ veh.marca }} {{ veh.color || '—' }}</span>
                       </div>
@@ -205,8 +205,10 @@ onUnmounted(() => {
                         @click="togglePopover(client.id)"
                         class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary-700 rounded-lg border border-primary-700 hover:bg-primary-100 active:bg-primary-200 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800 dark:active:bg-gray-700"
                       >
-                        <svg class="w-4 h-4 text-gray-900 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3 8 2.722 2.268a1 1 0 0 0 .64.232h11.276a1 1 0 0 0 .64-.232L21 8M6.5 14h.01m10.99 0h.01M8.16 4.5h7.68a2 2 0 0 1 1.736 1.008l2.897 5.07A4 4 0 0 1 21 12.562V18.5a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H6v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5.938a4 4 0 0 1 .527-1.984l2.897-5.07A2 2 0 0 1 8.161 4.5M7 14a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m11 0a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0"/></svg>
+                        <svg class="w-4 h-4 text-gray-800 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3 8 2.722 2.268a1 1 0 0 0 .64.232h11.276a1 1 0 0 0 .64-.232L21 8M6.5 14h.01m10.99 0h.01M8.16 4.5h7.68a2 2 0 0 1 1.736 1.008l2.897 5.07A4 4 0 0 1 21 12.562V18.5a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H6v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5.938a4 4 0 0 1 .527-1.984l2.897-5.07A2 2 0 0 1 8.161 4.5M7 14a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m11 0a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0"/>
+                        </svg>
+                        mostrar +
                         <span class="inline-flex items-center justify-center w-4 h-4 text-xs font-semibold text-blue-800 bg-blue-200 rounded-full">
                           {{ client.vehiculos_count }}
                         </span>
@@ -216,12 +218,12 @@ onUnmounted(() => {
                         class="absolute z-20 mt-2 w-80 text-sm text-gray-500 bg-white border border-gray-200 rounded-lg shadow-lg dark:text-gray-400 dark:border-gray-600 dark:bg-gray-800"
                       >
                         <div class="px-3 py-2 bg-gray-100 border-b border-gray-200 rounded-t-lg dark:border-gray-600 dark:bg-gray-700">
-                          <h3 class="font-semibold text-gray-900 dark:text-white">Vehículos del cliente</h3>
+                          <h3 class="font-semibold text-gray-800 dark:text-white">Vehículos del cliente</h3>
                         </div>
                         <div class="px-3 py-2 max-h-60 overflow-y-auto">
                           <ul class="space-y-2">
                             <li v-for="veh in client.vehiculos" :key="veh.id" class="flex items-center gap-2">
-                              <svg class="w-4 h-4 text-gray-900 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                              <svg class="w-4 h-4 text-gray-800 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3 8 2.722 2.268a1 1 0 0 0 .64.232h11.276a1 1 0 0 0 .64-.232L21 8M6.5 14h.01m10.99 0h.01M8.16 4.5h7.68a2 2 0 0 1 1.736 1.008l2.897 5.07A4 4 0 0 1 21 12.562V18.5a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H6v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5.938a4 4 0 0 1 .527-1.984l2.897-5.07A2 2 0 0 1 8.161 4.5M7 14a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m11 0a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0"/></svg>
                               <span class="text-sm">{{ formatPlate(veh.placa) }} → {{ veh.marca }} {{ veh.color || '—' }}</span>
                             </li>
