@@ -7,6 +7,7 @@ import { mountLogin, mountRegister } from './modules/auth';
 import { mountClients, mountClientEdit } from './modules/clientes';
 import { mountVehicles, mountVehicleEdit } from './modules/vehiculos';
 import { mountRecepciones, mountRecepcionDetail, mountRecepcionEdit } from './modules/recepciones';
+import { mountDiagnosticoEdit } from './modules/diagnosticos';
 import { mountProfileEdit } from './modules/auth';
 import UserMenu from './shared/components/UserMenu.vue';
 import { createApp } from 'vue';
@@ -76,6 +77,12 @@ const recepcionEditApp = document.getElementById('recepcion-edit-app');
 
 if (recepcionEditApp) {
   mountRecepcionEdit(recepcionEditApp, pinia);
+}
+
+const diagnosticoEditApp = document.getElementById('diagnostico-edit-app');
+
+if (diagnosticoEditApp) {
+  mountDiagnosticoEdit(diagnosticoEditApp, pinia);
 }
 
 const userMenuApp = document.getElementById('user-menu-app');

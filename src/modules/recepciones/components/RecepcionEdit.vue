@@ -30,6 +30,8 @@ function toLocalDatetimeInput(value) {
 const form = reactive({
   cliente: null,
   vehiculo: null,
+  tipo_recepcion: 'DIAGNOSTICO',
+  motivo_ingreso: '',
   fecha_ingreso: defaultNow,
   fecha_salida: '',
   recibido_por: '',
@@ -147,6 +149,8 @@ async function loadRecepcion() {
         ...data,
         cliente: data.cliente || null,
         vehiculo: data.vehiculo || null,
+        tipo_recepcion: data.tipo_recepcion || 'DIAGNOSTICO',
+        motivo_ingreso: data.motivo_ingreso || '',
         fecha_ingreso: toLocalDatetimeInput(data.fecha_ingreso),
         fecha_salida: toLocalDatetimeInput(data.fecha_salida),
         recibido_por: data.recibido_por || '',
@@ -338,6 +342,14 @@ function validateRecepcion() {
     errors.fecha_ingreso = 'La fecha de ingreso es obligatoria.';
   }
 
+  if (!form.tipo_recepcion) {
+    errors.tipo_recepcion = 'El tipo de recepción es obligatorio.';
+  }
+
+  if (!form.motivo_ingreso || !form.motivo_ingreso.trim()) {
+    errors.motivo_ingreso = 'El motivo de ingreso es obligatorio.';
+  }
+
   if (form.ingreso_en_grua && !form.datos_grua) {
     errors.datos_grua = 'Ingresa los datos de la grúa o chófer.';
   }
@@ -376,6 +388,8 @@ async function submit() {
     const payload = {
       cliente: form.cliente?.id || null,
       vehiculo: form.vehiculo?.id || null,
+      tipo_recepcion: form.tipo_recepcion,
+      motivo_ingreso: form.motivo_ingreso?.trim() || '',
       fecha_ingreso: form.fecha_ingreso || defaultNow,
       fecha_salida: form.fecha_salida || null,
       kilometraje_ingreso: Number(form.kilometraje_ingreso),
@@ -636,6 +650,24 @@ onMounted(() => {
               type="datetime-local"
               class="block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white"
             />
+          </div>
+
+           <div class="col-span-1">
+            <label for="tipo_recepcion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de Recepción</label>
+            <select id="tipo_recepcion" v-model="form.tipo_recepcion" :class="['block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.tipo_recepcion ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']">
+              <option value="PREVENTIVO">Mantenimiento Preventivo</option>
+              <option value="CORRECTIVO">Reparación Correctiva</option>
+              <option value="DIAGNOSTICO">Solo Diagnóstico / Escaneo</option>
+              <option value="ESTETICA">Enderezada, Pintura o Detailing</option>
+              <option value="GARANTIA">Garantía / Retorno</option>
+            </select>
+            <p v-if="formErrors.tipo_recepcion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.tipo_recepcion }}</p>
+          </div>
+
+          <div class="col-span-1">
+            <label for="motivo_ingreso" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Motivo de Ingreso</label>
+            <textarea id="motivo_ingreso" v-model="form.motivo_ingreso" rows="2" placeholder="Describe la razón por la que el cliente trae el vehículo..." :class="['block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.motivo_ingreso ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']"></textarea>
+            <p v-if="formErrors.motivo_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.motivo_ingreso }}</p>
           </div>
 
           <div class="col-span-1">

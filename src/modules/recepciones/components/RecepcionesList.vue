@@ -51,6 +51,15 @@ function handleCrearDiagnostico(id) {
   window.location.assign(`/crud/diagnosticos/nuevo/?recepcion=${id}`);
 }
 
+function handleVerDiagnostico(recepcion) {
+  if (recepcion.inspecciones?.length > 0) {
+    const diagnosticoId = recepcion.inspecciones[0].id;
+    window.location.assign(`/crud/diagnosticos/editar/?id=${diagnosticoId}`);
+  } else {
+    handleCrearDiagnostico(recepcion.id);
+  }
+}
+
 function handleVerCotizacion(cotizacionId) {
   if (!cotizacionId) return;
   window.location.assign(`/crud/cotizaciones/ver/${cotizacionId}/`);
@@ -166,7 +175,7 @@ onMounted(async () => {
                       <button type="button" title="Editar" aria-label="Editar" class="inline-flex items-center p-2 text-yellow-600 rounded-lg hover:bg-yellow-100 dark:text-yellow-400 dark:hover:bg-gray-700" @click="handleEditar(item.id)">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg>
                       </button>
-                      <button v-if="!item.inspecciones?.length" type="button" title="Crear Diagnóstico" aria-label="Crear Diagnóstico" class="inline-flex items-center p-2 text-purple-600 rounded-lg hover:bg-purple-100 dark:text-purple-400 dark:hover:bg-gray-700" @click="handleCrearDiagnostico(item.id)">
+                      <button type="button" :title="item.inspecciones?.length > 0 ? 'Ver Diagnóstico' : 'Crear Diagnóstico'" :aria-label="item.inspecciones?.length > 0 ? 'Ver Diagnóstico' : 'Crear Diagnóstico'" class="inline-flex items-center p-2 text-purple-600 rounded-lg hover:bg-purple-100 dark:text-purple-400 dark:hover:bg-gray-700" @click="handleVerDiagnostico(item)">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M4 2a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V2zm2 0v12h8V2H6zm3 8h2v2H9v-2zm0-4h2v2H9V6z" clip-rule="evenodd"></path></svg>
                       </button>
                       <button v-if="item.cotizaciones_generadas?.length" type="button" title="Ver Cotización" aria-label="Ver Cotización" class="inline-flex items-center p-2 text-emerald-600 rounded-lg hover:bg-emerald-100 dark:text-emerald-400 dark:hover:bg-gray-700" @click="handleVerCotizacion(item.cotizaciones_generadas[0]?.id)">
