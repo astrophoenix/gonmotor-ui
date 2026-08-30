@@ -6,6 +6,7 @@ import './dark-mode';
 import { mountLogin, mountRegister } from './modules/auth';
 import { mountClients, mountClientEdit } from './modules/clientes';
 import { mountVehicles, mountVehicleEdit } from './modules/vehiculos';
+import { mountRecepciones, mountRecepcionDetail, mountRecepcionEdit } from './modules/recepciones';
 import { mountProfileEdit } from './modules/auth';
 import UserMenu from './shared/components/UserMenu.vue';
 import { createApp } from 'vue';
@@ -57,6 +58,24 @@ const vehicleEditApp = document.getElementById('vehicle-edit-app');
 
 if (vehicleEditApp) {
   mountVehicleEdit(vehicleEditApp, pinia);
+}
+
+const recepcionesApp = document.getElementById('recepciones-app');
+
+if (recepcionesApp) {
+  mountRecepciones(recepcionesApp, pinia);
+}
+
+const recepcionDetailApp = document.getElementById('recepcion-detail-app');
+
+if (recepcionDetailApp) {
+  mountRecepcionDetail(recepcionDetailApp, pinia);
+}
+
+const recepcionEditApp = document.getElementById('recepcion-edit-app');
+
+if (recepcionEditApp) {
+  mountRecepcionEdit(recepcionEditApp, pinia);
 }
 
 const userMenuApp = document.getElementById('user-menu-app');

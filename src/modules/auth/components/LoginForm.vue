@@ -67,9 +67,21 @@ async function confirmCompany() {
 
 <template>
   <div class="w-full p-6 space-y-8 sm:p-8 bg-white rounded-lg shadow dark:bg-gray-800 relative">
-    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+    <div class="flex justify-center mb-4">
+      <img src="/images/mechanic_logo_icon.svg" class="h-12 w-auto" alt="gonmotor Logo" />
+      <span class="self-center text-2xl font-semibold sm:text-3xl whitespace-nowrap ml-2"><span class="text-brand-500 dark:text-brand-300">gon</span><span class="text-accent-500 dark:text-accent-400">motor</span></span>
+    </div>
+    <h2 class="text-2xl font-bold text-gray-900 dark:text-white text-center">
       Iniciar sesión
     </h2>
+
+    <div
+      v-if="errorMessage"
+      role="alert"
+      class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"
+    >
+      {{ errorMessage }}
+    </div>
 
     <form autocomplete="on" class="mt-8 space-y-6" novalidate @submit.prevent="submit">
       <div>
@@ -78,7 +90,7 @@ async function confirmCompany() {
         </label>
         <div class="relative">
           <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-            <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3.5 5.5 7.893 6.036a1 1 0 0 0 1.214 0L20.5 5.5M4 19h16a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Z"/></svg>
+            <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3.5 5.5 7.893 6.036a1 1 0 0 0 1.214 0L20.5 5.5M4 19h16a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Z"/></svg>
           </div>
           <input
             id="login"
@@ -99,7 +111,7 @@ async function confirmCompany() {
         </label>
         <div class="relative">
           <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-            <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path></svg>
+            <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path></svg>
           </div>
           <input
             id="password"
@@ -111,15 +123,22 @@ async function confirmCompany() {
             class="block w-full p-2.5 ps-9 bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
             required
           >
-          <button
-            type="button"
-            @click="showPassword = !showPassword"
-            class="absolute inset-y-0 end-0 flex items-center pe-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-            :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
-          >
-            <svg v-if="showPassword" class="w-5 h-5 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
-            <svg v-else class="w-5 h-5 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4l16 16"/></svg>
-          </button>
+          <div class="absolute inset-y-0 end-0 flex items-center gap-1 pe-3">
+            <button
+              type="button"
+              @click="showPassword = !showPassword"
+              class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+              :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+            >
+              <svg v-if="showPassword" class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+              <svg v-else class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4l16 16"/></svg>
+            </button>
+            <button
+              type="button"
+              aria-label="Ingresar con contraseña"
+            >
+            </button>
+          </div>
         </div>
       </div>
 
@@ -139,20 +158,15 @@ async function confirmCompany() {
         <a href="#" class="ml-auto text-sm text-primary-700 hover:underline dark:text-primary-500">¿Olvidaste tu contraseña?</a>
       </div>
 
-      <div
-        v-if="errorMessage"
-        role="alert"
-        class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"
-      >
-        {{ errorMessage }}
-      </div>
-
       <button
         type="submit"
         :disabled="authStore.isLoading"
-        class="w-full px-5 py-3 text-base font-medium text-center text-white bg-primary-700 rounded-lg hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 sm:w-auto dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:cursor-not-allowed disabled:opacity-60"
+        class="inline-flex items-center justify-center gap-2 w-full px-5 py-3 text-base font-medium text-center text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300 sm:w-auto dark:bg-primary-blue-600 dark:hover:bg-primary-blue-700 dark:focus:ring-primary-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {{ authStore.isLoading ? 'Iniciando sesión...' : 'Iniciar sesión' }}
+        <svg class="w-6 h-6 text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14v3m4-6V7a3 3 0 1 1 6 0v4M5 11h10a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1Z"/>
+        </svg>
+        {{ authStore.isLoading ? ' Iniciando sesión...' : ' Iniciar sesión' }}
       </button>
     </form>
 

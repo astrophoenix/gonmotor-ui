@@ -4,6 +4,7 @@ import { vehiclesService } from '../services/vehiclesService';
 import { request } from '../../../shared/services/httpClient';
 import Alert from '../../../shared/components/Alert.vue';
 import VehicleImageField from '../../../shared/components/VehicleImageField.vue';
+import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import {
   formatPlaca,
   sanitizeVin,
@@ -238,6 +239,10 @@ watch(() => form.observaciones, (val) => {
   if (clean !== val) form.observaciones = clean;
 });
 
+function goToAdd() {
+  window.location.assign('/crud/vehiculos/agregar/');
+}
+
 onMounted(() => {
   loadVehicle();
   loadChoices();
@@ -253,7 +258,20 @@ onMounted(() => {
         <li class="text-gray-400">/ {{ isEditMode ? 'Editar' : 'Agregar' }}</li>
       </ol>
     </nav>
-    <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">{{ isEditMode ? 'Editar vehículo' : 'Nuevo vehículo' }}</h1>
+    <div class="flex items-center justify-between">
+      <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">{{ isEditMode ? 'Editar vehículo' : 'Nuevo vehículo' }}</h1>
+      <button
+        v-if="isEditMode"
+        type="button"
+        class="inline-flex items-center px-3 py-2 text-sm font-medium text-primary-700 rounded-lg border border-primary-700 hover:bg-primary-100 active:bg-primary-200 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800 dark:active:bg-gray-700"
+        @click="goToAdd"
+      >
+        <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 7.757v8.486M7.757 12h8.486M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+        </svg>
+        Agregar
+      </button>
+    </div>
   </div>
 
   <div class="p-4">
@@ -351,10 +369,14 @@ onMounted(() => {
             <label for="observaciones" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Observaciones</label>
             <textarea id="observaciones" v-model="form.observaciones" rows="8" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"></textarea>
           </div>
-         <div class="col-span-1 md:col-span-4 flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-           <a href="/crud/vehiculos/" class="px-5 py-2.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-300">Cancelar</a>
-           <button type="submit" :disabled="isSaving" class="px-5 py-2.5 text-sm font-medium text-white rounded-lg bg-primary-700 hover:bg-primary-800 disabled:opacity-50">{{ isSaving ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Guardar') }}</button>
-         </div>
+          <div class="col-span-1 md:col-span-4">
+            <FormSaveActions
+              :is-loading="isSaving"
+              :is-edit-mode="isEditMode"
+              cancel-href="/crud/vehiculos/"
+              :on-submit="submit"
+            />
+          </div>
       </form>
     </div>
   </div>

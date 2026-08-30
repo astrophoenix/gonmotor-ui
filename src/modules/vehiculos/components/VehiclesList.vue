@@ -73,6 +73,14 @@ async function confirmDelete() {
   }
 }
 
+function handlePdfError(message) {
+  showAlert('error', '', message || 'No se pudo generar el PDF.');
+}
+
+function handleExcelError(message) {
+  showAlert('error', '', message || 'No se pudo generar el Excel.');
+}
+
 function scheduleSearch() {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => loadVehicles(1), 300);
@@ -114,7 +122,10 @@ onMounted(() => loadVehicles());
           </form>
         </div>
         <div class="flex items-center ml-auto space-x-2 sm:space-x-3">
-          <EntityActionButtons entity="vehiculos" />
+          <EntityActionButtons 
+          entity="vehiculos" 
+          @pdfExportError="handlePdfError"
+          @excelExportError="handleExcelError" />
         </div>
       </div>
     </div>

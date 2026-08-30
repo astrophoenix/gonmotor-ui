@@ -23,7 +23,11 @@ module.exports = {
         use: [MiniCssExtractPlugin.loader, 'css-loader', 'postcss-loader'],
       },
       {
-        test: /\.(png|jpg|gif|svg)$/,
+        test: /\.svg$/,
+        type: 'asset/source',
+      },
+      {
+        test: /\.(png|jpg|gif)$/,
         loader: 'file-loader',
         options: {
           outputPath: 'static/images/'

@@ -4,6 +4,7 @@ import { clientsService } from '../services/clientesService';
 import { request } from '../../../shared/services/httpClient';
 import Alert from '../../../shared/components/Alert.vue';
 import VehicleImageField from '../../../shared/components/VehicleImageField.vue';
+import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import {
   sanitizeIdentificacion,
   sanitizeNombre,
@@ -357,6 +358,10 @@ watch(vehiculos, (list) => {
   });
 }, { deep: true });
 
+function goToAdd() {
+  window.location.assign('/crud/clientes/agregar/');
+}
+
 onMounted(() => {
   loadClient();
   loadChoices();
@@ -372,7 +377,20 @@ onMounted(() => {
         <li class="text-gray-400">/ {{ isEditMode ? 'Editar' : 'Agregar' }}</li>
       </ol>
     </nav>
-    <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">{{ isEditMode ? 'Editar cliente' : 'Nuevo cliente' }}</h1>
+    <div class="flex items-center justify-between">
+      <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">{{ isEditMode ? 'Editar cliente' : 'Nuevo cliente' }}</h1>
+      <button
+        v-if="isEditMode"
+        type="button"
+        class="inline-flex items-center px-3 py-2 text-sm font-medium text-primary-700 rounded-lg border border-primary-700 hover:bg-primary-100 active:bg-primary-200 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800 dark:active:bg-gray-700"
+        @click="goToAdd"
+      >
+        <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 7.757v8.486M7.757 12h8.486M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+        </svg>
+        Agregar
+      </button>
+    </div>
   </div>
 
   <div class="p-4">
@@ -526,16 +544,20 @@ onMounted(() => {
 
           <div class="mt-6"></div>
           <div class="flex justify-end">
-            <button type="button" @click="addVehiculo" class="inline-flex items-center px-4 py-2 text-sm font-medium text-primary-700 border border-primary-700 rounded-lg hover:bg-primary-50 focus:ring-4 focus:ring-primary-300">
+            <button type="button" @click="addVehiculo" class="inline-flex items-center px-4 py-2 text-sm font-medium text-primary-blue-700 border border-primary-blue-700 rounded-lg hover:bg-primary-blue-50 focus:ring-4 focus:ring-primary-blue-300">
               <svg class="w-4 h-4 mr-2 -ml-1" fill="currentColor" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="M24,16c-4.4,0-8,3.6-8,8s3.6,8,8,8s8-3.6,8-8S28.4,16,24,16z M27,25h-2v2c0,0.6-0.4,1-1,1s-1-0.4-1-1v-2h-2c-0.6,0-1-0.4-1-1s0.4-1,1-1h2v-2c0-0.6,0.4-1,1-1s1,0.4,1,1v2h2c0.6,0,1,0.4,1,1S27.6,25,27,25z"/><path d="M8.4,22l1.2-2.3c0.5-1,1.5-1.7,2.7-1.7h3.5c0.1,0,0.2,0,0.2,0c1.8-2.4,4.7-4,8-4c1.2,0,2.3,0.2,3.4,0.6C27,14,26.5,13.4,26,13h1c0.6,0,1-0.4,1-1s-0.4-1-1-1h-2.8L23,8c-0.8-1.8-2.6-3-4.6-3H9.6C7.6,5,5.8,6.2,5,8l-1.3,3H1c-0.6,0-1,0.4-1,1s0.4,1,1,1h1c-1.2,0.9-2,2.4-2,4v4c0,0.9,0.4,1.7,1,2.2V25c0,1.7,1.3,3,3,3h2c1.7,0,3-1.3,3-3v-1h5c0-0.7,0.1-1.4,0.2-2H8.4z M7,19H4c-0.6,0-1-0.4-1-1s0.4-1,1-1h3c0.6,0,1,0.4,1,1S7.6,19,7,19z M5.5,12l1.4-3.2C7.4,7.7,8.4,7,9.6,7h8.7c1.2,0,2.3,0.7,2.8,1.8l1.4,3.2H5.5z"/></svg>
               Agregar Vehículo
             </button>
           </div>
         </div>
 
-        <div class="flex items-center justify-end col-span-6 gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <a href="/crud/clientes/" class="px-5 py-2.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-300">Cancelar</a>
-          <button type="submit" :disabled="isSaving" class="px-5 py-2.5 text-sm font-medium text-white rounded-lg bg-primary-700 hover:bg-primary-800 disabled:opacity-50">{{ isSaving ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Guardar') }}</button>
+        <div class="col-span-6">
+          <FormSaveActions
+            :is-loading="isSaving"
+            :is-edit-mode="isEditMode"
+            cancel-href="/crud/clientes/"
+            :on-submit="submit"
+          />
         </div>
       </form>
     </div>

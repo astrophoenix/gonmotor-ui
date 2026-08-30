@@ -23,7 +23,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['pdfExportError']);
+const emit = defineEmits(['pdfExportError', 'excelExportError']);
 
 const { showSuccess } = useToast();
 
@@ -109,8 +109,13 @@ async function exportPdf() {
   }
 }
 
-function exportExcel() {
-  downloadFile(`/api/${props.entity}/export_excel/`, `${props.entity}_reporte.xlsx`);
+async function exportExcel() {
+  try {
+    await downloadFile(`/api/${props.entity}/export-excel/`, `${props.entity}_reporte.xlsx`);
+    showSuccess(`Excel generado: ${props.entity}_reporte.xlsx`);
+  } catch (error) {
+    emit('excelExportError', error.message || 'Ocurrió un error al generar el Excel.');
+  }
 }
 </script>
 

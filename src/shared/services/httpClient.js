@@ -69,6 +69,26 @@ function isNetworkError(error) {
 
 let isRefreshing = false;
 let refreshPromise = null;
+let refreshAttempts = 0;
+const MAX_REFRESH_ATTEMPTS = 2;
+
+function clearSession() {
+  [localStorage, sessionStorage].forEach((currentStorage) => {
+    [
+      'gonmotor_access_token',
+      'gonmotor_refresh_token',
+      'gonmotor_user',
+      'gonmotor_logged_in',
+      'gonmotor_empresa_id'
+    ].forEach((key) => {
+      currentStorage.removeItem(key);
+    });
+  });
+}
+
+async function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 /**
  * Solicita un nuevo access token al endpoint de refresh usando el refresh token almacenado.
@@ -81,6 +101,7 @@ async function refreshAccessToken() {
   const refreshToken = getRefreshToken();
 
   if (!refreshToken) {
+    clearSession();
     throw new Error('No refresh token available');
   }
 
@@ -94,6 +115,7 @@ async function refreshAccessToken() {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
+    clearSession();
     throw new Error(errorData.detail || 'Error al refrescar el token');
   }
 
@@ -146,7 +168,14 @@ export async function request(path, options = {}) {
     if (response.status === 401 && token) {
       if (!isRefreshing) {
         isRefreshing = true;
-        refreshPromise = refreshAccessToken();
+        refreshAttempts = 0;
+        refreshPromise = (async () => {
+          try {
+            return await refreshAccessToken();
+          } catch (error) {
+            throw error;
+          }
+        })();
       }
 
       try {
@@ -166,18 +195,7 @@ export async function request(path, options = {}) {
 
         return retryData;
       } catch (refreshError) {
-        [localStorage, sessionStorage].forEach((currentStorage) => {
-          [
-            'gonmotor_access_token',
-            'gonmotor_refresh_token',
-            'gonmotor_user',
-            'gonmotor_logged_in',
-            'gonmotor_empresa_id'
-          ].forEach((key) => {
-            currentStorage.removeItem(key);
-          });
-        });
-
+        clearSession();
         const sessionError = new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
         sessionError.isSessionExpired = true;
         throw sessionError;

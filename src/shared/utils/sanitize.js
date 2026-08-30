@@ -99,7 +99,9 @@ export function sanitizeMotor(value) {
   return (value == null ? '' : String(value)).toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
-/** Notas: letras, dígitos, espacios (incl. salto de línea), acentos, puntuación y símbolos comunes (@ / \ | # $ % _ - [ ] { } * = +). No recorta espacios ni saltos de línea para conservar el formato del usuario. */
+/** Notas: letras, dígitos, espacios (incl. salto de línea), acentos, puntuación y símbolos comunes (@ / \ | # $ % _ - [ ] { } * = +). 
+ * No recorta espacios ni saltos de línea para conservar el formato del usuario. 
+ * */
 export function sanitizeObservaciones(value) {
   return (value == null ? '' : String(value))
     .replace(/[^a-zA-ZÁÉÍÓÚÜáéíóúüÑñ0-9\s.,;:!?¿¡()\-_'"’‘““”…@/\\|#$%\[\]{}*+=]/g, '');

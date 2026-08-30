@@ -98,6 +98,14 @@ async function confirmDelete() {
   }
 }
 
+function handlePdfError(message) {
+  showAlert('error', '', message || 'No se pudo generar el PDF.');
+}
+
+function handleExcelError(message) {
+  showAlert('error', '', message || 'No se pudo generar el Excel.');
+}
+
 function scheduleSearch() {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => loadClients(1), 300);
@@ -148,7 +156,10 @@ onUnmounted(() => {
           </form>
         </div>
         <div class="flex items-center ml-auto space-x-2 sm:space-x-3">
-          <EntityActionButtons entity="clientes" @pdf-export-error="showAlert('error', '', $event)" />
+          <EntityActionButtons 
+            entity="clientes" 
+            @pdfExportError="handlePdfError"
+            @excelExportError="handleExcelError" />
         </div>
       </div>
     </div>
