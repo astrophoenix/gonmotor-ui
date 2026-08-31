@@ -8,6 +8,7 @@ import { mountClients, mountClientEdit } from './modules/clientes';
 import { mountVehicles, mountVehicleEdit } from './modules/vehiculos';
 import { mountRecepciones, mountRecepcionDetail, mountRecepcionEdit } from './modules/recepciones';
 import { mountDiagnosticoEdit } from './modules/diagnosticos';
+import { mountEmpleados, mountEmpleadoEdit } from './modules/empleados';
 import { mountProfileEdit } from './modules/auth';
 import UserMenu from './shared/components/UserMenu.vue';
 import { createApp } from 'vue';
@@ -95,4 +96,16 @@ const profileEditApp = document.getElementById('profile-edit-app');
 
 if (profileEditApp) {
     mountProfileEdit(profileEditApp, pinia);
+}
+
+const empleadosApp = document.getElementById('empleados-app');
+
+if (empleadosApp) {
+    mountEmpleados(empleadosApp, pinia);
+}
+
+const empleadoEditApp = document.getElementById('empleado-edit-app');
+
+if (empleadoEditApp) {
+    mountEmpleadoEdit(empleadoEditApp, pinia);
 }

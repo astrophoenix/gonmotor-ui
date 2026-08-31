@@ -1,10 +1,11 @@
 <script setup>
-import { onMounted, reactive, ref, watch } from 'vue';
+import { onMounted, reactive, ref, watch, nextTick } from 'vue';
 import { recepcionesService } from '../services/recepcionesService';
 import { request } from '../../../shared/services/httpClient';
 import { sanitizeObservaciones } from '../../../shared/utils/sanitize';
 import Alert from '../../../shared/components/Alert.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
+import TestigosTablero from '../../../shared/components/TestigosTablero.vue';
 
 const recepcionId = new URLSearchParams(window.location.search).get('id');
 const isEditMode = Boolean(recepcionId);
@@ -34,7 +35,7 @@ const form = reactive({
   motivo_ingreso: '',
   fecha_ingreso: defaultNow,
   fecha_salida: '',
-  recibido_por: '',
+  recibido_por: null,
   kilometraje_ingreso: null,
   nivel_combustible: '1/4',
   ingreso_en_grua: false,
@@ -67,13 +68,29 @@ const form = reactive({
   cliente_telefono: '',
   cliente_email: '',
   vehiculo_color: '',
+  firma_receptor: null,
+  firma_cliente: null,
+  fecha_firma_receptor: null,
+  fecha_firma_cliente: null,
+  aceptacion_condiciones: false,
+});
+
+const testigos = reactive({
+  testigo_check_engine: false,
+  testigo_abs: false,
+  testigo_airbag: false,
+  testigo_bateria: false,
+  testigo_aceite: false,
+  testigo_temperatura: false,
+  otros_testigos_observaciones: '',
 });
 
 const GRUPO_BLUEPRINT_MAP = {
   AUTO: 'liviano',
-  JEEP: 'liviano',
+  JEEP: 'suv',
   CAMN: 'camioneta',
-  FURG: 'camioneta',
+  FURG: 'furgoneta',
+  BUS: 'bus',
 };
 const MAX_DETALLES_CARROCERIA = 20;
 
@@ -90,11 +107,29 @@ const detallesSyncVersion = ref(0);
 const blueprintError = ref('');
 const detallesErrors = ref({});
 
+const empleados = ref([]);
+const recibidoPorSearch = ref('');
+const showEmpleadoDropdown = ref(false);
+const empleadoOptions = ref([]);
+
+const firmaReceptorData = ref(null);
+const firmaClienteData = ref(null);
+const firmaReceptorCanvas = ref(null);
+const firmaClienteCanvas = ref(null);
+const isDrawingReceptor = ref(false);
+const isDrawingCliente = ref(false);
+
 function formatPlaca(placa) {
   if (!placa) return '';
   const cleaned = String(placa).replace(/-/g, '').toUpperCase();
   if (cleaned.length <= 3) return cleaned;
   return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}`;
+}
+
+function formatFechaFirma(dateString) {
+  if (!dateString) return null;
+  const date = new Date(dateString);
+  return date.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 function syncDetallesCarroceria() {
@@ -136,6 +171,140 @@ function showError(error) {
   errorMessage.value = error.message || 'No fue posible completar la operación.';
 }
 
+function initCanvas(canvas) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+}
+
+function getCanvasCoords(canvas, event) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+  const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+  return {
+    x: (clientX - rect.left) * scaleX,
+    y: (clientY - rect.top) * scaleY,
+  };
+}
+
+function startDrawing(canvas, isDrawingRef, saveRef, event) {
+  isDrawingRef.value = true;
+  const ctx = canvas.getContext('2d');
+  const coords = getCanvasCoords(canvas, event);
+  ctx.beginPath();
+  ctx.moveTo(coords.x, coords.y);
+}
+
+function draw(canvas, isDrawingRef, event) {
+  if (!isDrawingRef.value) return;
+  const ctx = canvas.getContext('2d');
+  const coords = getCanvasCoords(canvas, event);
+  ctx.lineTo(coords.x, coords.y);
+  ctx.stroke();
+}
+
+function stopDrawing(canvas, isDrawingRef, saveRef) {
+  if (!isDrawingRef.value) return;
+  isDrawingRef.value = false;
+  saveRef.value = canvas.toDataURL('image/png');
+}
+
+function clearCanvas(canvas, saveRef) {
+  if (!canvas) return;
+  initCanvas(canvas);
+  saveRef.value = null;
+}
+
+function onReceptorPointerDown(event) {
+  const canvas = firmaReceptorCanvas.value;
+  if (!canvas) return;
+  startDrawing(canvas, isDrawingReceptor, firmaReceptorData, event);
+}
+
+function onReceptorPointerMove(event) {
+  const canvas = firmaReceptorCanvas.value;
+  if (!canvas) return;
+  draw(canvas, isDrawingReceptor, event);
+}
+
+function onReceptorPointerUp(event) {
+  const canvas = firmaReceptorCanvas.value;
+  if (!canvas) return;
+  stopDrawing(canvas, isDrawingReceptor, firmaReceptorData);
+}
+
+function onClientePointerDown(event) {
+  const canvas = firmaClienteCanvas.value;
+  if (!canvas) return;
+  startDrawing(canvas, isDrawingCliente, firmaClienteData, event);
+}
+
+function onClientePointerMove(event) {
+  const canvas = firmaClienteCanvas.value;
+  if (!canvas) return;
+  draw(canvas, isDrawingCliente, event);
+}
+
+function onClientePointerUp(event) {
+  const canvas = firmaClienteCanvas.value;
+  if (!canvas) return;
+  stopDrawing(canvas, isDrawingCliente, firmaClienteData);
+}
+
+function hasCanvasContent(canvas) {
+  if (!canvas) return false;
+  const ctx = canvas.getContext('2d');
+  const pixel = ctx.getImageData(1, 1, 1, 1).data;
+  return pixel[3] !== 255;
+}
+
+async function loadEmpleados() {
+  try {
+    const data = await request('/api/auth/empleados/?page=1&page_size=100');
+    empleados.value = Array.isArray(data?.results) ? data.results : [];
+    if (empleados.value.length > 0 && !form.recibido_por) {
+      form.recibido_por = empleados.value[0].user?.id || null;
+      recibidoPorSearch.value = `${empleados.value[0].user?.first_name || ''} ${empleados.value[0].user?.last_name || ''}`.trim() + ' - ' + (empleados.value[0].rol_display || empleados.value[0].rol);
+    }
+  } catch (error) {
+    console.error('No se pudieron cargar empleados:', error);
+  }
+}
+
+function selectEmpleado(empleado) {
+  form.recibido_por = empleado.user?.id || null;
+  recibidoPorSearch.value = `${empleado.user?.first_name || ''} ${empleado.user?.last_name || ''}`.trim() + ' - ' + (empleado.rol_display || empleado.rol);
+  showEmpleadoDropdown.value = false;
+}
+
+function clearEmpleado() {
+  form.recibido_por = null;
+  recibidoPorSearch.value = '';
+  empleadoOptions.value = [];
+}
+
+async function searchEmpleados() {
+  const term = recibidoPorSearch.value.trim();
+  if (!term) {
+    empleadoOptions.value = [];
+    return;
+  }
+  try {
+    const params = new URLSearchParams({ search: term, page: '1', page_size: '10' });
+    const data = await request(`/api/auth/empleados/?${params.toString()}`);
+    empleadoOptions.value = Array.isArray(data?.results) ? data.results : [];
+  } catch (error) {
+    console.error('No se pudieron buscar empleados:', error);
+  }
+}
+
 async function loadRecepcion() {
   if (!isEditMode) {
     isLoading.value = false;
@@ -153,7 +322,12 @@ async function loadRecepcion() {
         motivo_ingreso: data.motivo_ingreso || '',
         fecha_ingreso: toLocalDatetimeInput(data.fecha_ingreso),
         fecha_salida: toLocalDatetimeInput(data.fecha_salida),
-        recibido_por: data.recibido_por || '',
+        recibido_por: data.recibido_por || null,
+        firma_receptor: data.firma_receptor || null,
+        firma_cliente: data.firma_cliente || null,
+        fecha_firma_receptor: data.fecha_firma_receptor || null,
+        fecha_firma_cliente: data.fecha_firma_cliente || null,
+        aceptacion_condiciones: data.aceptacion_condiciones || false,
       });
       if (data.cliente) {
         form.cliente_identificacion = data.cliente.identificacion || '';
@@ -176,12 +350,49 @@ async function loadRecepcion() {
         vehiculoSearch.value = '';
         vehiculoSearchDisplay.value = '';
       }
+      Object.assign(testigos, {
+        testigo_check_engine: data.testigo_check_engine || false,
+        testigo_abs: data.testigo_abs || false,
+        testigo_airbag: data.testigo_airbag || false,
+        testigo_bateria: data.testigo_bateria || false,
+        testigo_aceite: data.testigo_aceite || false,
+        testigo_temperatura: data.testigo_temperatura || false,
+        otros_testigos_observaciones: data.otros_testigos_observaciones || '',
+      });
       const descripciones = parseDetallesCarroceria(data.detalles_carroceria);
       if (descripciones.length > 0) {
         marcas.value = marcas.value.map((punto, idx) => ({
           ...punto,
           descripcion: descripciones[idx] || ''
         }));
+      }
+      if (data.recibido_por) {
+        recibidoPorSearch.value = data.recibido_por_nombre || data.recibido_por.username || '';
+      }
+      firmaReceptorData.value = data.firma_receptor || null;
+      firmaClienteData.value = data.firma_cliente || null;
+      await nextTick();
+      if (data.firma_receptor) {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = firmaReceptorCanvas.value;
+          if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          }
+        };
+        img.src = data.firma_receptor;
+      }
+      if (data.firma_cliente) {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = firmaClienteCanvas.value;
+          if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          }
+        };
+        img.src = data.firma_cliente;
       }
     }
   } catch (error) {
@@ -199,7 +410,7 @@ async function cargarBlueprint(grupo) {
   }
   const candidates = [grupoFinal, 'liviano'];
   for (const candidate of candidates) {
-    const url = `/images/blueprint_${candidate}.jpeg`;
+    const url = `/images/blueprint_${candidate}.png`;
     try {
       const response = await fetch(url, { method: 'HEAD' });
       if (response.ok) {
@@ -321,6 +532,10 @@ function validateRecepcion() {
     errors.vehiculo = 'El vehículo es obligatorio.';
   }
 
+  if (!form.recibido_por) {
+    errors.recibido_por = 'El empleado que recibe es obligatorio.';
+  }
+
   const kmRaw = form.kilometraje_ingreso;
   const kmStr = kmRaw == null ? '' : String(kmRaw).trim();
   if (kmStr === '') {
@@ -392,6 +607,7 @@ async function submit() {
       motivo_ingreso: form.motivo_ingreso?.trim() || '',
       fecha_ingreso: form.fecha_ingreso || defaultNow,
       fecha_salida: form.fecha_salida || null,
+      recibido_por: form.recibido_por || null,
       kilometraje_ingreso: Number(form.kilometraje_ingreso),
       nivel_combustible: form.nivel_combustible,
       ingreso_en_grua: form.ingreso_en_grua,
@@ -418,8 +634,18 @@ async function submit() {
       tiene_botiquin: form.tiene_botiquin,
       tiene_copas_ruedas: form.tiene_copas_ruedas,
       tiene_llave_tuercas: form.tiene_llave_tuercas,
+      testigo_check_engine: testigos.testigo_check_engine,
+      testigo_abs: testigos.testigo_abs,
+      testigo_airbag: testigos.testigo_airbag,
+      testigo_bateria: testigos.testigo_bateria,
+      testigo_aceite: testigos.testigo_aceite,
+      testigo_temperatura: testigos.testigo_temperatura,
+      otros_testigos_observaciones: testigos.otros_testigos_observaciones || '',
       datos_danos_carroceria: marcas.value,
       detalles_carroceria: form.detalles_carroceria || '',
+      firma_receptor: firmaReceptorData.value,
+      firma_cliente: firmaClienteData.value,
+      aceptacion_condiciones: isEditMode ? undefined : !!form.aceptacion_condiciones,
     };
 
     if (isEditMode) {
@@ -451,6 +677,14 @@ watch(() => vehiculoSearch.value, () => {
   searchVehiculos();
 });
 
+watch(() => recibidoPorSearch.value, () => {
+  if (!recibidoPorSearch.value.trim()) {
+    clearEmpleado();
+    return;
+  }
+  searchEmpleados();
+});
+
 watch(() => form.vehiculo?.tipo, (tipo) => {
   const grupo = tipo ? GRUPO_BLUEPRINT_MAP[tipo] : null;
   if (grupo) {
@@ -464,8 +698,14 @@ watch(() => marcas.value, () => {
   syncDetallesCarroceria();
 }, { deep: true });
 
+watch(() => form.motivo_ingreso, (val) => {
+  const clean = sanitizeObservaciones(val);
+  if (clean !== val) form.motivo_ingreso = clean;
+});
+
 onMounted(() => {
   loadRecepcion();
+  loadEmpleados();
 });
 </script>
 
@@ -670,15 +910,29 @@ onMounted(() => {
             <p v-if="formErrors.motivo_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.motivo_ingreso }}</p>
           </div>
 
-          <div class="col-span-1">
+          <div class="relative col-span-1">
             <label for="recibido_por" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Recibido por</label>
             <input
               id="recibido_por"
-              v-model="form.recibido_por"
-              type="text"
-              placeholder="Nombre del recepcionista"
-              class="block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white"
+              v-model="recibidoPorSearch"
+              autocomplete="off"
+              placeholder="Buscar empleado..."
+              :class="['block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.recibido_por ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']"
+               @focus="showEmpleadoDropdown = true"
+               @blur="async () => { await wait(150); showEmpleadoDropdown = false; }"
             />
+            <p v-if="formErrors.recibido_por" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.recibido_por }}</p>
+            <div v-if="showEmpleadoDropdown && empleadoOptions.length" class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
+              <button
+                v-for="item in empleadoOptions"
+                :key="item.id"
+                type="button"
+                class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600"
+                @mousedown="selectEmpleado(item)"
+              >
+                {{ item.user?.first_name }} {{ item.user?.last_name }} - {{ item.rol_display || item.rol }}
+              </button>
+            </div>
           </div>
 
           <div class="col-span-1">
@@ -794,6 +1048,17 @@ onMounted(() => {
         <h4 class="mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
             <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+            </svg>
+            Luces Tablero
+          </span>
+        </h4>
+
+        <TestigosTablero v-model="testigos" />
+
+        <h4 class="mb-4 text-xl font-semibold dark:text-white">
+          <span class="inline-flex items-center gap-2">
+            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
               <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
               <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/>
             </svg>
@@ -865,6 +1130,90 @@ onMounted(() => {
               class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"
             ></textarea>
           </div>
+        </div>
+
+        <h4 class="mb-4 text-xl font-semibold dark:text-white">
+          <span class="inline-flex items-center gap-2">
+            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6a2.25 2.25 0 0 0-2.25-2.25H6A2.25 2.25 0 0 0 3.75 6v8.25A2.25 2.25 0 0 0 6 16.5h.75m3 3h.375a.375.375 0 0 0 .375-.375v-1.125a.375.375 0 0 0-.375-.375h-.375m0 0h3.75m-3.75 0v1.5m0 0h3.75m-3.75 0v1.5m0 0h3.75"/>
+            </svg>
+            Firma y Aceptación
+          </span>
+        </h4>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="col-span-1">
+            <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Firma del Receptor (Empleado)</p>
+            <div v-if="form.fecha_firma_receptor" class="mb-2 text-xs text-gray-500 dark:text-gray-400">
+              Firmado el {{ formatFechaFirma(form.fecha_firma_receptor) }}
+            </div>
+            <div class="relative bg-white border border-gray-300 rounded-lg dark:bg-white dark:border-gray-600 overflow-hidden">
+              <canvas
+                ref="firmaReceptorCanvas"
+                width="400"
+                height="150"
+                class="w-full h-auto bg-white touch-none"
+                @pointerdown="onReceptorPointerDown"
+                @pointermove="onReceptorPointerMove"
+                @pointerup="onReceptorPointerUp"
+                @pointerleave="onReceptorPointerUp"
+              ></canvas>
+            </div>
+            <div class="flex justify-between items-center mt-2">
+              <button type="button" class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-700 border border-red-400 rounded hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-900/20" @click="clearCanvas(firmaReceptorCanvas.value, firmaReceptorData)">
+                <svg class="w-5 h-5 text-red-700 dark:text-red-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                  <path fill-rule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm5.757-1a1 1 0 1 0 0 2h8.486a1 1 0 1 0 0-2H7.757Z" clip-rule="evenodd"/>
+                </svg>
+                Borrar firma receptor
+              </button>
+              <span class="text-xs text-gray-500 dark:text-gray-400">Firme del receptor</span>
+            </div>  
+          </div>
+
+          <div class="col-span-1">
+            <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Firma del Cliente</p>
+            <div v-if="form.fecha_firma_cliente" class="mb-2 text-xs text-gray-500 dark:text-gray-400">
+              Firmado el {{ formatFechaFirma(form.fecha_firma_cliente) }}
+            </div>
+            <div class="relative bg-white border border-gray-300 rounded-lg dark:bg-white dark:border-gray-600 overflow-hidden">
+              <canvas
+                ref="firmaClienteCanvas"
+                width="400"
+                height="150"
+                class="w-full h-auto bg-white touch-none"
+                @pointerdown="onClientePointerDown"
+                @pointermove="onClientePointerMove"
+                @pointerup="onClientePointerUp"
+                @pointerleave="onClientePointerUp"
+              ></canvas>
+            </div>
+            <div class="flex justify-between items-center mt-2">
+              <button type="button" class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-700 border border-red-400 rounded hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-900/20" @click="clearCanvas(firmaClienteCanvas.value, firmaClienteData)">
+                <svg class="w-5 h-5 text-red-700 dark:text-red-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                  <path fill-rule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm5.757-1a1 1 0 1 0 0 2h8.486a1 1 0 1 0 0-2H7.757Z" clip-rule="evenodd"/>
+                </svg>
+                Borrar firma cliente
+              </button>
+              <span class="text-xs text-gray-500 dark:text-gray-400">Firma del cliente</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <label class="flex items-center gap-2">
+            <input
+              v-model="form.aceptacion_condiciones"
+              type="checkbox"
+              :disabled="isEditMode"
+              class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+            />
+            <span class="text-sm font-medium text-gray-900 dark:text-white">
+              El cliente acepta las condiciones de recepción y el estado reportado del vehículo.
+            </span>
+          </label>
+          <p v-if="isEditMode" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Esta opción no se puede modificar una vez creada la recepción.
+          </p>
         </div>
 
         <div class="col-span-1 md:col-span-4">
