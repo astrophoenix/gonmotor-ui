@@ -1,14 +1,14 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue';
 import { request } from '../../../shared/services/httpClient';
-import { diagnosticosService } from '../services/diagnosticosService';
+import { inspeccionesService } from '../services/inspeccionesService';
 import Alert from '../../../shared/components/Alert.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 
 const urlParams = new URLSearchParams(window.location.search);
-const diagnosticoId = urlParams.get('id');
+const inspeccionId = urlParams.get('id');
 const recepcionId = urlParams.get('recepcion');
-const isEditMode = Boolean(diagnosticoId);
+const isEditMode = Boolean(inspeccionId);
 
 const isLoading = ref(true);
 const isSaving = ref(false);
@@ -64,6 +64,11 @@ async function loadRecepcion() {
     const data = await request(`/api/recepciones/${recepcionId}/`);
     recepcion.value = data;
     if (!isEditMode) {
+      const existente = data.inspecciones?.[0];
+      if (existente) {
+        window.location.assign(`/crud/inspecciones/editar/?id=${existente.id}`);
+        return;
+      }
       form.motivo_ingreso = data.motivo_ingreso || '';
       form.tipo_inspeccion = data.tipo_recepcion || 'DIAGNOSTICO';
     }
@@ -72,16 +77,17 @@ async function loadRecepcion() {
   }
 }
 
-async function loadDiagnostico() {
+async function loadInspeccion() {
   if (!isEditMode) {
     isLoading.value = false;
     return;
   }
 
   try {
-    const data = await diagnosticosService.getById(diagnosticoId);
+    const data = await inspeccionesService.getById(inspeccionId);
+    const recepcionIdVal = data.recepcion && typeof data.recepcion === 'object' ? data.recepcion.id : data.recepcion;
     Object.assign(form, {
-      recepcion: data.recepcion,
+      recepcion: recepcionIdVal,
       tipo_inspeccion: data.tipo_inspeccion || 'DIAGNOSTICO',
       motivo_ingreso: data.motivo_ingreso || '',
       codigos_dtc: data.codigos_dtc || '',
@@ -119,7 +125,7 @@ async function submit() {
     }
 
     const payload = {
-      recepcion: form.recepcion,
+      recepcion: form.recepcion && typeof form.recepcion === 'object' ? form.recepcion.id : form.recepcion,
       tipo_inspeccion: form.tipo_inspeccion,
       motivo_ingreso: form.motivo_ingreso?.trim() || '',
       codigos_dtc: form.codigos_dtc?.trim() || '',
@@ -134,16 +140,16 @@ async function submit() {
     };
 
     if (isEditMode) {
-      await diagnosticosService.update(diagnosticoId, payload);
-      successMessage.value = 'Diagnóstico actualizado correctamente.';
+      await inspeccionesService.update(inspeccionId, payload);
+      successMessage.value = 'Inspección actualizada correctamente.';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      const response = await diagnosticosService.create(payload);
+      const response = await inspeccionesService.create(payload);
       const nuevoId = response && response.id;
       if (nuevoId) {
-        window.location.assign(`/crud/diagnosticos/editar/?id=${encodeURIComponent(nuevoId)}`);
+        window.location.assign(`/crud/inspecciones/editar/?id=${encodeURIComponent(nuevoId)}`);
       } else {
-        successMessage.value = 'Diagnóstico creado correctamente.';
+        successMessage.value = 'Inspección creada correctamente.';
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
@@ -171,7 +177,7 @@ async function submit() {
 
 onMounted(() => {
   loadRecepcion();
-  loadDiagnostico();
+  loadInspeccion();
 });
 </script>
 
@@ -180,13 +186,13 @@ onMounted(() => {
     <nav class="flex mb-5" aria-label="Breadcrumb">
       <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
         <li><a href="/" class="text-gray-700 hover:text-primary-600 dark:text-gray-300">Inicio</a></li>
-        <li class="text-gray-400">/ <a href="/crud/recepciones/" class="hover:text-primary-600">Recepciones</a></li>
+        <li class="text-gray-400">/ <a href="/crud/inspecciones/" class="hover:text-primary-600">Inspecciones</a></li>
         <li v-if="recepcion" class="text-gray-400">/ <a :href="`/crud/recepciones/ver/?id=${recepcion.id}`" class="hover:text-primary-600">Recepción #{{ recepcion.id }}</a></li>
-        <li class="text-gray-400">/ {{ isEditMode ? 'Editar' : 'Nuevo' }} Diagnóstico</li>
+        <li class="text-gray-400">/ {{ isEditMode ? 'Editar' : 'Nueva' }} Inspección</li>
       </ol>
     </nav>
     <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-      {{ isEditMode ? 'Editar Diagnóstico' : 'Nuevo Diagnóstico' }}
+      {{ isEditMode ? 'Editar Inspección' : 'Nueva Inspección' }}
     </h1>
   </div>
 
@@ -195,12 +201,37 @@ onMounted(() => {
       <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
       <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
 
-      <div v-if="recepcion" class="p-4 mb-6 bg-gray-50 rounded-lg border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
-        <h4 class="mb-2 text-sm font-semibold text-gray-900 dark:text-white">Recepción asociada</h4>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 dark:text-gray-300">
-          <div><span class="font-medium">Vehículo:</span> {{ recepcion.vehiculo?.placa || '-' }} - {{ recepcion.vehiculo?.marca }} {{ recepcion.vehiculo?.modelo }}</div>
-          <div><span class="font-medium">Cliente:</span> {{ recepcion.cliente?.nombre || '-' }}</div>
-          <div><span class="font-medium">Fecha ingreso:</span> {{ new Date(recepcion.created_at).toLocaleDateString('es-EC') }}</div>
+      <div v-if="recepcion" class="p-5 mb-6 bg-gray-50 rounded-lg border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
+        <div class="flex items-center mb-4">
+          <svg class="w-5 h-5 mr-2 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16h1a1 1 0 0 0 1-1V9.5H5V15a1 1 0 0 0 1 1h1m10 0v.5A1.5 1.5 0 0 1 15.5 18h-1A1.5 1.5 0 0 1 13 16.5V16m4 0h-4m-6 0v.5A1.5 1.5 0 0 1 7.5 18h-1A1.5 1.5 0 0 1 5 16.5V16m0-6.5h14M8 4h8l2.5 5.5H11.5l-1-2H9l-1 2H5.5L8 4Z"/>
+          </svg>
+          <h4 class="text-base font-semibold text-gray-900 dark:text-white">Recepción asociada</h4>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+          <div>
+            <p class="mb-2 text-xs font-semibold text-gray-500 uppercase dark:text-gray-400">Vehículo</p>
+            <div class="p-3 bg-white rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-600">
+              <p class="font-semibold text-gray-900 dark:text-white">{{ recepcion.vehiculo?.placa || recepcion.placa || '-' }}</p>
+              <p class="mt-1 text-gray-600 dark:text-gray-300">{{ recepcion.vehiculo?.marca || recepcion.marca }} {{ recepcion.vehiculo?.modelo || recepcion.modelo }}</p>
+              <p v-if="recepcion.vehiculo?.color || recepcion.color" class="mt-1 text-gray-500 dark:text-gray-400">Color: {{ recepcion.vehiculo?.color || recepcion.color }}</p>
+            </div>
+          </div>
+          <div>
+            <p class="mb-2 text-xs font-semibold text-gray-500 uppercase dark:text-gray-400">Cliente</p>
+            <div class="p-3 bg-white rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-600">
+              <p class="font-semibold text-gray-900 dark:text-white">{{ recepcion.cliente?.nombre || recepcion.cliente_nombre || '-' }}</p>
+              <p class="mt-1 text-gray-600 dark:text-gray-300">{{ recepcion.cliente?.identificacion || '-' }}</p>
+              <p class="mt-1 text-gray-600 dark:text-gray-300">{{ recepcion.cliente?.telefono || '-' }}</p>
+            </div>
+          </div>
+          <div>
+            <p class="mb-2 text-xs font-semibold text-gray-500 uppercase dark:text-gray-400">Ingreso</p>
+            <div class="p-3 bg-white rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-600">
+              <p class="text-gray-900 dark:text-white">{{ new Date(recepcion.created_at).toLocaleString('es-EC') }}</p>
+              <p class="mt-1 text-gray-500 dark:text-gray-400">#{{ recepcion.id }}</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -209,11 +240,11 @@ onMounted(() => {
           <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 3v4a1 1 0 0 1-1 1H5m4 8h6m-6-4h6m4-8v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1Z"/>
           </svg>
-          Información del Diagnóstico
+          Información de la Inspección
         </span>
       </h4>
 
-      <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando diagnóstico...</div>
+      <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando inspección...</div>
 
       <form v-else class="grid grid-cols-1 gap-6" novalidate @submit.prevent="submit">
         <div class="col-span-1 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -286,7 +317,7 @@ onMounted(() => {
           <FormSaveActions
             :is-loading="isSaving"
             :is-edit-mode="isEditMode"
-            cancel-href="/crud/recepciones/"
+            cancel-href="/crud/inspecciones/"
             :on-submit="submit"
           />
         </div>

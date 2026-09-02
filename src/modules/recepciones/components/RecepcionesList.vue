@@ -48,13 +48,13 @@ function handleEditar(id) {
 }
 
 function handleCrearDiagnostico(id) {
-  window.location.assign(`/crud/diagnosticos/nuevo/?recepcion=${id}`);
+  window.location.assign(`/crud/inspecciones/nuevo/?recepcion=${id}`);
 }
 
 function handleVerDiagnostico(recepcion) {
   if (recepcion.inspecciones?.length > 0) {
     const diagnosticoId = recepcion.inspecciones[0].id;
-    window.location.assign(`/crud/diagnosticos/editar/?id=${diagnosticoId}`);
+    window.location.assign(`/crud/inspecciones/editar/?id=${diagnosticoId}`);
   } else {
     handleCrearDiagnostico(recepcion.id);
   }

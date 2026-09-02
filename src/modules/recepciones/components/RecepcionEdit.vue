@@ -550,6 +550,12 @@ function validateRecepcion() {
       errors.kilometraje_ingreso = 'El kilometraje debe ser mayor a 0.';
     } else if (!Number.isInteger(km)) {
       errors.kilometraje_ingreso = 'El kilometraje debe ser un número entero mayor a 0.';
+    } else if (form.vehiculo && form.vehiculo.kilometraje_actual != null) {
+      const kmVehiculo = Number(form.vehiculo.kilometraje_actual);
+      const conservarKmEnEdicion = isEditMode && km === kmVehiculo;
+      if (km < kmVehiculo || (km === kmVehiculo && !conservarKmEnEdicion)) {
+        errors.kilometraje_ingreso = `El kilometraje de ingreso debe ser mayor al kilometraje registrado del vehículo (${kmVehiculo} km).`;
+      }
     }
   }
 

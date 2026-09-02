@@ -1,12 +1,12 @@
 import { request } from '../../../shared/services/httpClient';
 
-const ENDPOINT = '/api/inspecciones/';
+const ENDPOINT = '/api/ordenes/inspecciones/';
 
 function buildUrl(id) {
   return `${ENDPOINT}${encodeURIComponent(id)}/`;
 }
 
-export const diagnosticosService = {
+export const inspeccionesService = {
   list({ page = 1, search = '', ordering = '-created_at' } = {}) {
     const params = new URLSearchParams({ page: String(page), ordering });
     if (search) params.set('search', search);

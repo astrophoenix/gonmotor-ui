@@ -40,6 +40,20 @@ function getAccesorioLabel(key, value) {
 function goTo(path) {
   window.location.assign(path);
 }
+
+const tieneInspeccion = () => (recepcion.value?.inspecciones?.length ?? 0) > 0;
+
+function irADiagnostico(recepcion) {
+  goTo(`/crud/inspecciones/nuevo/?recepcion=${recepcion.id}`);
+}
+
+function irAInspeccion(recepcion) {
+  const inspeccion = recepcion.inspecciones?.[0];
+  if (inspeccion) {
+    goTo(`/crud/inspecciones/editar/?id=${inspeccion.id}`);
+  }
+}
+
 </script>
 
 <template>
@@ -63,11 +77,28 @@ function goTo(path) {
         </h1>
         <div class="flex items-center gap-2">
           <button
+            v-if="!tieneInspeccion()"
             type="button"
-            class="inline-flex items-center px-3 py-2 text-sm font-medium text-purple-700 rounded-lg border border-purple-700 hover:bg-purple-50 dark:text-purple-400 dark:border-purple-400 dark:hover:bg-gray-800"
-            @click="goTo(`/crud/diagnosticos/nuevo/?recepcion=${recepcion.id}`)"
+            title="Crear Diagnóstico"
+            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-purple-700 rounded-lg border border-purple-700 hover:bg-purple-50 dark:text-purple-400 dark:border-purple-400 dark:hover:bg-gray-800"
+            @click="irADiagnostico(recepcion)"
           >
+            <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13.5h14M12 6.5v14"/>
+            </svg>
             Crear Diagnóstico
+          </button>
+          <button
+            v-else
+            type="button"
+            title="Ver / Editar Diagnóstico"
+            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-amber-700 rounded-lg border border-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:border-amber-400 dark:hover:bg-gray-800"
+            @click="irAInspeccion(recepcion)"
+          >
+            <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m14.3 4.8 2.9 2.9M7 17l-1 4 4-1 9.3-9.3a2 2 0 0 0-2.8-2.8L7 17Z"/>
+            </svg>
+            Ver / Editar Diagnóstico
           </button>
           <button
             v-if="recepcion.cotizaciones_generadas?.length"

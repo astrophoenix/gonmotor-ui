@@ -135,7 +135,7 @@ onUnmounted(() => {
           <table class="min-w-full divide-y divide-gray-200 table-fixed dark:divide-gray-600">
             <thead class="bg-gray-200 dark:bg-gray-900">
               <tr>
-                <th v-for="heading in ['Empleado', 'Correo', 'Rol', 'Talleres Asignados', 'Estado', 'Acciones']" :key="heading" scope="col" class="p-4 text-sm font-medium text-left text-gray-900 uppercase dark:text-gray-900">{{ heading }}</th>
+                <th v-for="heading in ['Empleado', 'Correo', 'Rol', 'Talleres', 'Estado', 'Acciones']" :key="heading" scope="col" class="p-4 text-sm font-medium text-left text-gray-900 uppercase dark:text-gray-900">{{ heading }}</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
@@ -150,23 +150,21 @@ onUnmounted(() => {
                     {{ empleado.user?.email || 'Sin correo' }}
                   </td>
                   <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">
-                    <span class="bg-primary-100 text-primary-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-primary-900 dark:text-primary-300">
-                      {{ empleado.get_rol_display }}
-                    </span>
+                      {{ empleado.rol_display || empleado.rol }}
                   </td>
                   <td class="p-4 text-gray-800 dark:text-gray-400">
-                    <div v-if="!empleado.talleres || !empleado.talleres.length" class="text-sm text-gray-500 dark:text-gray-400">
-                      Sin talleres asignados
+                    <div v-if="!empleado.talleres || !empleado.talleres.length" class=" text-gray-500 dark:text-gray-400">
+                      Sin talleres 
                     </div>
-                    <div v-else class="text-sm">
+                    <div v-else>
                       {{ empleado.talleres.map(t => t.nombre).join(', ') }}
                     </div>
                   </td>
                   <td class="p-4 whitespace-nowrap">
-                    <span v-if="empleado.is_active" class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300">
+                    <span v-if="empleado.is_active" class="bg-green-100 text-green-800 font-medium px-2.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300">
                       Activo
                     </span>
-                    <span v-else class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-red-900 dark:text-red-300">
+                    <span v-else class="bg-red-100 text-red-800 font-medium px-2.5 py-0.5 rounded dark:bg-red-900 dark:text-red-300">
                       Inactivo
                     </span>
                   </td>
