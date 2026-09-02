@@ -75,7 +75,7 @@ const form = reactive({
   aceptacion_condiciones: false,
 });
 
-const testigos = reactive({
+let testigos = reactive({
   testigo_check_engine: false,
   testigo_abs: false,
   testigo_airbag: false,
