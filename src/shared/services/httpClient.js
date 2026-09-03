@@ -40,7 +40,11 @@ function getStorage() {
 }
 
 function getErrorMessage(data) {
-  if (data?.detail) {
+  if (Array.isArray(data?.detail)) {
+    return data.detail[0];
+  }
+
+  if (typeof data?.detail === 'string') {
     return data.detail;
   }
 
