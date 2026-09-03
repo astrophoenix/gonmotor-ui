@@ -1,4 +1,4 @@
 {
-  "installCommand": "npm install && curl -L https://github.com/gohugoio/hugo/releases/download/v0.144.5/hugo_extended_0.144.5_linux-amd64.tar.gz | tar -xz -C /usr/local/bin hugo",
+  "installCommand": "npm install && curl -L https://github.com/gohugoio/hugo/releases/download/v0.154.5/hugo_extended_0.154.5_linux-amd64.tar.gz | tar -xz -C /usr/local/bin hugo",
   "buildCommand": "npm run build"
 }
