@@ -75,6 +75,7 @@
   "dependencies": {
     "@popperjs/core": "^2.10.2",
     "@tailwindcss/postcss": "^4.0.0",
+    "@vue/devtools-api": "^8.2.1",
     "apexcharts": "^3.46.0",
     "flowbite": "^3.1.1",
     "pinia": "^4.0.3",
