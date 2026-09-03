@@ -10,7 +10,7 @@ import { mountRecepciones, mountRecepcionDetail, mountRecepcionEdit } from './mo
 import { mountInspecciones, mountInspeccionEdit } from './modules/inspecciones';
 import { mountEmpleados, mountEmpleadoEdit } from './modules/empleados';
 import { mountProfileEdit } from './modules/auth';
-import { mountEmpresaConfig } from './modules/configuracion';
+import { mountEmpresaConfig, mountSucursalesConfig } from './modules/configuracion';
 import UserMenu from './shared/components/UserMenu.vue';
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
@@ -121,4 +121,10 @@ const empresaConfigApp = document.getElementById('empresa-config-app');
 
 if (empresaConfigApp) {
     mountEmpresaConfig(empresaConfigApp, pinia);
+}
+
+const sucursalesConfigApp = document.getElementById('sucursales-config-app');
+
+if (sucursalesConfigApp) {
+    mountSucursalesConfig(sucursalesConfigApp, pinia);
 }

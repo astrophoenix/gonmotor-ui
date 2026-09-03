@@ -50,17 +50,17 @@ export const recepcionesService = {
     return request(buildUrl(id));
   },
 
-  create(payload) {
+  create(formData) {
     return request(ENDPOINT, {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: formData,
     });
   },
 
-  update(id, payload) {
+  update(id, formData) {
     return request(buildUrl(id), {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: formData,
     });
   },
 

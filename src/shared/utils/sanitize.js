@@ -99,6 +99,19 @@ export function sanitizeMotor(value) {
   return (value == null ? '' : String(value)).toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
+/**
+ * Sanitiza el nombre de un taller/sucursal: permite letras (con acentos), dígitos,
+ * espacios y los separadores típicos de numeración de sedes (- _ / ( ) [ ]).
+ * Elimina etiquetas HTML, entidades y cualquier otro carácter no permitido.
+ * No recorta espacios para conservar el formato que escribe el usuario.
+ */
+export function sanitizeTaller(value) {
+  return (value == null ? '' : String(value))
+    .replace(/<[^>]*>/g, '')
+    .replace(/&[a-zA-Z]+;/g, '')
+    .replace(/[^a-zA-ZÁÉÍÓÚÜáéíóúüÑñ0-9\s\-_/()[\]]/g, '');
+}
+
 /** Notas: letras, dígitos, espacios (incl. salto de línea), acentos, puntuación y símbolos comunes (@ / \ | # $ % _ - [ ] { } * = +). 
  * No recorta espacios ni saltos de línea para conservar el formato del usuario. 
  * */

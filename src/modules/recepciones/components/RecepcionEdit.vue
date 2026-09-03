@@ -6,6 +6,7 @@ import { sanitizeObservaciones } from '../../../shared/utils/sanitize';
 import Alert from '../../../shared/components/Alert.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TestigosTablero from '../../../shared/components/TestigosTablero.vue';
+import PhotoSlotGrid from '../../../shared/components/PhotoSlotGrid.vue';
 
 const recepcionId = new URLSearchParams(window.location.search).get('id');
 const isEditMode = Boolean(recepcionId);
@@ -14,6 +15,8 @@ const isSaving = ref(false);
 const errorMessage = ref('');
 const successMessage = ref('');
 const formErrors = ref({});
+const fotoErrors = ref({});
+const fotosPresence = ref({});
 
 const defaultNow = new Date().toISOString().slice(0, 16);
 
@@ -119,6 +122,17 @@ const firmaClienteCanvas = ref(null);
 const isDrawingReceptor = ref(false);
 const isDrawingCliente = ref(false);
 
+const FOTO_VISTAS = [
+  { key: 'FRONTAL', label: 'Vista Frontal' },
+  { key: 'LATERAL_IZQ', label: 'Lateral Izquierda' },
+  { key: 'LATERAL_DER', label: 'Lateral Derecha' },
+  { key: 'POSTERIOR', label: 'Posterior' },
+  { key: 'TABLERO', label: 'Tablero / Kilometraje' },
+];
+
+const fotoGridRef = ref(null);
+const fotosExisting = ref({});
+
 function formatPlaca(placa) {
   if (!placa) return '';
   const cleaned = String(placa).replace(/-/g, '').toUpperCase();
@@ -169,6 +183,12 @@ function wait(ms) {
 
 function showError(error) {
   errorMessage.value = error.message || 'No fue posible completar la operación.';
+}
+
+function onFotosChange() {
+  if (fotoGridRef.value) {
+    fotosPresence.value = fotoGridRef.value.getPresence();
+  }
 }
 
 function initCanvas(canvas) {
@@ -359,6 +379,20 @@ async function loadRecepcion() {
         testigo_temperatura: data.testigo_temperatura || false,
         otros_testigos_observaciones: data.otros_testigos_observaciones || '',
       });
+      if (Array.isArray(data.fotos)) {
+        const existing = {};
+        FOTO_VISTAS.forEach((v) => {
+          const foto = data.fotos.find((f) => f.tipo_vista === v.key);
+          if (foto) {
+            existing[v.key] = foto.imagen;
+          }
+        });
+        fotosExisting.value = existing;
+      } else {
+        fotosExisting.value = {};
+      }
+      await nextTick();
+      onFotosChange();
       const descripciones = parseDetallesCarroceria(data.detalles_carroceria);
       if (descripciones.length > 0) {
         marcas.value = marcas.value.map((punto, idx) => ({
@@ -580,6 +614,17 @@ function validateRecepcion() {
     errors.detalles_carroceria = 'Completa todas las descripciones de carrocería.';
   }
 
+  const fotoErrs = {};
+  FOTO_VISTAS.forEach((v) => {
+    if (!fotosPresence.value[v.key]) {
+      fotoErrs[v.key] = `Debes subir la foto de ${v.label.toLowerCase()}.`;
+    }
+  });
+  fotoErrors.value = fotoErrs;
+  if (Object.keys(fotoErrs).length > 0) {
+    errors.fotos = 'Las 5 fotos de la recepción son obligatorias.';
+  }
+
   formErrors.value = errors;
   detallesErrors.value = {};
   marcas.value.forEach((p, idx) => {
@@ -654,11 +699,31 @@ async function submit() {
       aceptacion_condiciones: isEditMode ? undefined : !!form.aceptacion_condiciones,
     };
 
+    const fd = new FormData();
+    Object.keys(payload).forEach((key) => {
+      const value = payload[key];
+      if (value === undefined || value === null) {
+        return;
+      }
+      if (Array.isArray(value)) {
+        fd.append(key, JSON.stringify(value));
+        return;
+      }
+      fd.append(key, String(value));
+    });
+    const fotosSubidas = fotoGridRef.value ? fotoGridRef.value.getFiles() : {};
+    Object.keys(fotosSubidas).forEach((key) => {
+      const file = fotosSubidas[key];
+      if (file) {
+        fd.append(`foto_${key}`, file, file.name);
+      }
+    });
+
     if (isEditMode) {
-      await recepcionesService.update(recepcionId, payload);
+      await recepcionesService.update(recepcionId, fd);
       successMessage.value = 'Recepción actualizada correctamente.';
     } else {
-      await recepcionesService.create(payload);
+      await recepcionesService.create(fd);
       successMessage.value = 'Recepción creada correctamente.';
     }
 
@@ -1136,6 +1201,34 @@ onMounted(() => {
               class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"
             ></textarea>
           </div>
+        </div>
+
+        <h4 class="mb-1 text-xl font-semibold dark:text-white">
+          <span class="inline-flex items-center gap-2">
+            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+              <path stroke="currentColor" stroke-linejoin="round" stroke-width="2" d="M3 7a1 1 0 0 1 1-1h11.586a1 1 0 0 1 .707.293l2.414 2.414a1 1 0 0 1 .293.707V17a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7Z"/>
+              <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M8 4h1v3H8V4Zm4 0h1v3h-1V4Zm4 0h2v3h-2V4Z"/>
+            </svg>
+            Evidencia Fotográfica del Vehículo
+          </span>
+        </h4>
+        <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+          Debes adjuntar las 5 vistas obligatorias del estado del vehículo en el momento de la recepción.
+        </p>
+
+        <div v-if="formErrors.fotos" class="mb-4">
+          <Alert type="error" :message="formErrors.fotos" />
+        </div>
+
+        <div class="mb-8">
+          <PhotoSlotGrid
+            ref="fotoGridRef"
+            :slots="FOTO_VISTAS"
+            :existing="fotosExisting"
+            :errors="fotoErrors"
+            previewable
+            @change="onFotosChange"
+          />
         </div>
 
         <h4 class="mb-4 text-xl font-semibold dark:text-white">

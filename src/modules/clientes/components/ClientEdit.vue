@@ -524,7 +524,7 @@ onMounted(() => {
                 <input v-model="vehiculo.kilometraje_actual" type="number" min="0" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
                 <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual }}</p>
               </div>
-              <div class="col-span-1 md:col-span-2">
+              <div class="col-span-1 md:col-span-1">
                 <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Imagen</p>
                 <VehicleImageField
                   :image-url="vehiculo.imagen"
@@ -535,7 +535,7 @@ onMounted(() => {
                   @remove="() => { vehiculo.imagenFile = null; vehiculo.imagenPreview = ''; vehiculo.imagen = ''; }"
                 />
               </div>
-              <div class="col-span-1 md:col-span-2">
+              <div class="col-span-1 md:col-span-3">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Observaciones</label>
                 <textarea v-model="vehiculo.observaciones" rows="8" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"></textarea>
               </div>

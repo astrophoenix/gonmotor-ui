@@ -32,6 +32,7 @@ const form = reactive({
   pais_origen: 'EC',
   kilometraje_actual: 0,
   observaciones: '',
+  cliente_id: null,
 });
 const isLoading = ref(true);
 const isSaving = ref(false);
@@ -43,6 +44,13 @@ const isLoadingChoices = ref(false);
 const vehicleErrors = ref({});
 const imageFieldRef = ref(null);
 const imagenFile = ref(null);
+const clienteSearch = ref('');
+const clienteOptions = ref([]);
+const showClienteDropdown = ref(false);
+
+function wait(ms) {
+  return new Promise(resolve => window.setTimeout(resolve, ms));
+}
 
 function showError(error) {
   errorMessage.value = error.message || 'No fue posible completar la operación.';
@@ -57,6 +65,13 @@ async function loadVehicle() {
   try {
     const data = await vehiclesService.getById(vehicleId);
     Object.assign(form, data);
+    if (data.cliente_id) {
+      form.cliente_id = data.cliente_id;
+      clienteSearch.value = data.cliente_nombre || '';
+    } else {
+      form.cliente_id = null;
+      clienteSearch.value = '';
+    }
   } catch (error) {
     showError(error);
   } finally {
@@ -84,6 +99,34 @@ function onImageUpload(file) {
 function onImageRemove() {
   imagenFile.value = null;
   form.imagen = '';
+}
+
+async function searchClientes() {
+  const term = clienteSearch.value.trim();
+  if (!term) {
+    clienteOptions.value = [];
+    return;
+  }
+  try {
+    const params = new URLSearchParams({ search: term, ordering: 'nombre', page: '1' });
+    const data = await request(`/api/clientes/?${params.toString()}`);
+    clienteOptions.value = Array.isArray(data?.results) ? data.results : [];
+  } catch (error) {
+    console.error('No se pudieron buscar clientes:', error);
+  }
+}
+
+function selectCliente(cliente) {
+  form.cliente_id = cliente.id;
+  clienteSearch.value = cliente.nombre;
+  showClienteDropdown.value = false;
+  clienteOptions.value = [];
+}
+
+function clearCliente() {
+  form.cliente_id = null;
+  clienteSearch.value = '';
+  clienteOptions.value = [];
 }
 
 function validateVehicle() {
@@ -163,12 +206,17 @@ async function submit() {
       return;
     }
     const payload = { ...form, placa: stripPlacaDash(form.placa) };
+    payload.cliente_id = form.cliente_id ?? null;
     let formData = null;
 
     if (imagenFile.value) {
       formData = new FormData();
       Object.entries(payload).forEach(([key, value]) => {
         if (key === 'imagen') return;
+        if (key === 'cliente_id') {
+          formData.append(key, value === null || value === undefined || value === '' ? '' : String(value));
+          return;
+        }
         if (value !== null && value !== undefined && value !== '') {
           formData.append(key, value);
         }
@@ -239,6 +287,14 @@ watch(() => form.observaciones, (val) => {
   if (clean !== val) form.observaciones = clean;
 });
 
+watch(() => clienteSearch.value, () => {
+  if (!clienteSearch.value.trim()) {
+    clearCliente();
+    return;
+  }
+  searchClientes();
+});
+
 function goToAdd() {
   window.location.assign('/crud/vehiculos/agregar/');
 }
@@ -287,11 +343,43 @@ onMounted(() => {
         </span>
       </h4>
       <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando vehículo...</div>
-      <form v-else class="grid grid-cols-1 md:grid-cols-4 gap-6" novalidate @submit.prevent="submit">
+      <form v-else class="grid grid-cols-1 md:grid-cols-3 gap-6" novalidate @submit.prevent="submit">
+          <div class="relative col-span-1 md:col-span-3">
+            <label for="cliente" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente Propietario</label>
+            <input
+              id="cliente"
+              v-model="clienteSearch"
+              autocomplete="off"
+              placeholder="Buscar cliente por nombre o identificación..."
+              class="block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white"
+              @focus="showClienteDropdown = true"
+              @blur="async () => { await wait(150); showClienteDropdown = false; }"
+            />
+            <div v-if="showClienteDropdown && clienteOptions.length" class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
+              <button
+                v-for="item in clienteOptions"
+                :key="item.id"
+                type="button"
+                class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600"
+                @mousedown="selectCliente(item)"
+              >
+                {{ item.nombre }} <span class="text-gray-400 text-xs">({{ item.identificacion }})</span>
+              </button>
+            </div>
+          </div>
           <div class="col-span-1">
             <label for="placa" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Placa</label>
             <input id="placa" v-model="form.placa" required maxlength="10" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.placa ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
             <p v-if="vehicleErrors.placa" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.placa }}</p>
+          </div>
+          <div class="col-span-1">
+            <label for="vin" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">VIN / Chasis</label>
+            <input id="vin" v-model="form.vin" maxlength="17" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.vin ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+            <p v-if="vehicleErrors.vin" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.vin }}</p>
+          </div>
+          <div class="col-span-1">
+            <label for="numero_motor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Número de Motor</label>
+            <input id="numero_motor" v-model="form.numero_motor" maxlength="50" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
           </div>
           <div class="col-span-1">
             <label for="marca" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Marca</label>
@@ -307,6 +395,10 @@ onMounted(() => {
             <label for="anio" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Año de Fabricación</label>
             <input id="anio" v-model="form.anio" type="number" min="1900" :max="new Date().getFullYear() + 1" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.anio ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
             <p v-if="vehicleErrors.anio" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.anio }}</p>
+          </div>
+          <div class="col-span-1">
+            <label for="color" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Color</label>
+            <input id="color" v-model="form.color" maxlength="30" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
           </div>
           <div class="col-span-1">
             <label for="tipo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo</label>
@@ -332,19 +424,6 @@ onMounted(() => {
             </select>
           </div>
           <div class="col-span-1">
-            <label for="color" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Color</label>
-            <input id="color" v-model="form.color" maxlength="30" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-          </div>
-          <div class="col-span-1">
-            <label for="vin" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">VIN / Chasis</label>
-            <input id="vin" v-model="form.vin" maxlength="17" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.vin ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-            <p v-if="vehicleErrors.vin" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.vin }}</p>
-          </div>
-          <div class="col-span-1">
-            <label for="numero_motor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Número de Motor</label>
-            <input id="numero_motor" v-model="form.numero_motor" maxlength="50" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-          </div>
-          <div class="col-span-1">
             <label for="pais_origen" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">País de Origen</label>
             <select id="pais_origen" v-model="form.pais_origen" :disabled="isLoadingChoices" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
               <option v-for="item in paises" :key="item.code" :value="item.code">{{ item.name }}</option>
@@ -355,7 +434,7 @@ onMounted(() => {
             <input id="kilometraje_actual" v-model="form.kilometraje_actual" type="number" min="0" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.kilometraje_actual ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
             <p v-if="vehicleErrors.kilometraje_actual" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.kilometraje_actual }}</p>
           </div>
-          <div class="col-span-1 md:col-span-2">
+          <div class="col-span-1">
             <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Imagen</p>
             <VehicleImageField
               :image-url="form.imagen"
@@ -367,9 +446,9 @@ onMounted(() => {
           </div>
           <div class="col-span-1 md:col-span-2">
             <label for="observaciones" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Observaciones</label>
-            <textarea id="observaciones" v-model="form.observaciones" rows="8" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"></textarea>
+            <textarea id="observaciones" v-model="form.observaciones" rows="4" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"></textarea>
           </div>
-          <div class="col-span-1 md:col-span-4">
+          <div class="col-span-1 md:col-span-3">
             <FormSaveActions
               :is-loading="isSaving"
               :is-edit-mode="isEditMode"

@@ -6,6 +6,7 @@ import ConfirmDeleteModal from '../../../shared/components/ConfirmDeleteModal.vu
 // import ToastContainer from '../../../shared/components/ToastContainer.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
+import ImportExcelModal from './ImportExcelModal.vue';
 import { formatPlate } from '../../../shared/utils/formatPlate';
 
 const {
@@ -41,6 +42,17 @@ const showDeleteModal = ref(false);
 const clientToDelete = ref(null);
 let searchTimer;
 const openPopoverId = ref(null);
+
+const showImportModal = ref(false);
+
+function openImportModal() {
+  showImportModal.value = true;
+}
+
+async function onImported(count) {
+  showAlert('success', '', `${count} cliente(s) importado(s) exitosamente.`);
+  loadClients(1);
+}
 
 function togglePopover(clientId) {
   openPopoverId.value = openPopoverId.value === clientId ? null : clientId;
@@ -156,6 +168,16 @@ onUnmounted(() => {
           </form>
         </div>
         <div class="flex items-center ml-auto space-x-2 sm:space-x-3">
+          <button
+            type="button"
+            class="inline-flex items-center px-3 py-2 text-sm font-medium text-white rounded-lg bg-emerald-600 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-300 dark:focus:ring-emerald-800"
+            @click="openImportModal"
+          >
+            <svg class="w-5 h-5 mr-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v9m0 0 3.5-3.5M12 13l-3.5-3.5M5 17v2a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2"/>
+            </svg>
+            Importar Clientes (Excel)
+          </button>
           <EntityActionButtons 
             entity="clientes" 
             @pdfExportError="handlePdfError"
@@ -276,6 +298,11 @@ onUnmounted(() => {
     :is-deleting="isDeleting"
     @confirm="confirmDelete"
     @cancel="clientToDelete = null"
+  />
+
+  <ImportExcelModal
+    v-model="showImportModal"
+    @imported="onImported"
   />
 
   <!-- <ToastContainer /> -->
