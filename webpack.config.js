@@ -53,7 +53,11 @@ module.exports = {
   ],
   optimization: {
     minimizer: [
-      new CssMinimizerPlugin()
+      new CssMinimizerPlugin({
+        minimizerOptions: {
+          preset: ['default', { calc: false }],
+        },
+      })
     ]
   },
 };
