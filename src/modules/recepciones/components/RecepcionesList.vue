@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue';
 import { useRecepciones } from '../composables/useRecepciones';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import Alert from '../../../shared/components/Alert.vue';
+import EntityTable from '../../../shared/components/EntityTable.vue';
 
 const { recepciones, loading, error, loadRecepciones } = useRecepciones();
 
@@ -133,67 +134,51 @@ onMounted(async () => {
     </div>
   </div>
 
-  <div class="flex flex-col">
-    <div class="overflow-x-auto">
-      <div class="inline-block min-w-full align-middle">
-        <div class="overflow-hidden shadow">
-          <table class="min-w-full divide-y divide-gray-200 table-fixed dark:divide-gray-600">
-            <thead class="bg-gray-200 dark:bg-gray-900">
-              <tr>
-                <th scope="col" class="p-4 text-sm font-medium text-left text-gray-900 uppercase dark:text-gray-900">#</th>
-                <th scope="col" class="p-4 text-sm font-medium text-left text-gray-900 uppercase dark:text-gray-900">Vehículo</th>
-                <th scope="col" class="p-4 text-sm font-medium text-left text-gray-900 uppercase dark:text-gray-900">Cliente</th>
-                <th scope="col" class="p-4 text-sm font-medium text-left text-gray-900 uppercase dark:text-gray-900">Fecha ingreso</th>
-                <th scope="col" class="p-4 text-sm font-medium text-left text-gray-900 uppercase dark:text-gray-900">Grúa</th>
-                <th scope="col" class="p-4 text-sm font-medium text-left text-gray-900 uppercase dark:text-gray-900">Estado</th>
-                <th scope="col" class="p-4 text-sm font-medium text-left text-gray-900 uppercase dark:text-gray-900">Acciones</th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-              <tr v-if="loading"><td colspan="7" class="p-4 text-center text-gray-500 dark:text-gray-400">Cargando recepciones...</td></tr>
-              <tr v-else-if="!recepciones.length"><td colspan="7" class="p-4 text-center text-gray-500 dark:text-gray-400">No hay recepciones registradas.</td></tr>
-              <template v-else>
-                <tr v-for="(item, index) in recepciones" :key="item.id" class="hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ index + 1 }}</td>
-                  <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">
-                    <span class="font-medium">{{ item.vehiculo?.placa || '-' }}</span>
-                    <span class="block text-xs text-gray-500 dark:text-gray-400">
-                      {{ item.vehiculo?.marca }} {{ item.vehiculo?.modelo }}
-                    </span>
-                  </td>
-                  <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.cliente?.nombre || '-' }}</td>
-                  <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ formatDate(item.created_at) }}</td>
-                  <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.ingreso_en_grua ? 'Sí' : 'No' }}</td>
-                  <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">
-                    <span :class="['px-2 py-1 rounded-full text-xs font-medium', getEstadoBadge(item).color]">
-                      {{ getEstadoBadge(item).label }}
-                    </span>
-                  </td>
-                  <td class="p-4 whitespace-nowrap">
-                    <div class="flex items-center gap-2">
-                      <button type="button" title="Ver detalle" aria-label="Ver detalle" class="inline-flex items-center p-2 text-blue-600 rounded-lg hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700" @click="handleVerDetalle(item.id)">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path></svg>
-                      </button>
-                      <button type="button" title="Editar" aria-label="Editar" class="inline-flex items-center p-2 text-yellow-600 rounded-lg hover:bg-yellow-100 dark:text-yellow-400 dark:hover:bg-gray-700" @click="handleEditar(item.id)">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg>
-                      </button>
-                      <button type="button" :title="item.inspecciones?.length > 0 ? 'Ver Diagnóstico' : 'Crear Diagnóstico'" :aria-label="item.inspecciones?.length > 0 ? 'Ver Diagnóstico' : 'Crear Diagnóstico'" class="inline-flex items-center p-2 text-purple-600 rounded-lg hover:bg-purple-100 dark:text-purple-400 dark:hover:bg-gray-700" @click="handleVerDiagnostico(item)">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M4 2a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V2zm2 0v12h8V2H6zm3 8h2v2H9v-2zm0-4h2v2H9V6z" clip-rule="evenodd"></path></svg>
-                      </button>
-                      <button v-if="item.cotizaciones_generadas?.length" type="button" title="Ver Cotización" aria-label="Ver Cotización" class="inline-flex items-center p-2 text-emerald-600 rounded-lg hover:bg-emerald-100 dark:text-emerald-400 dark:hover:bg-gray-700" @click="handleVerCotizacion(item.cotizaciones_generadas[0]?.id)">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 3a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V3zm2 0v10h8V3H6z"></path><path d="M10 13l3 3 3-3"></path></svg>
-                      </button>
-                      <button v-if="item.orden_trabajo_id" type="button" title="Ver Orden" aria-label="Ver Orden" class="inline-flex items-center p-2 text-indigo-600 rounded-lg hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-gray-700" @click="handleVerOrden(item.orden_trabajo_id)">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2a6 6 0 016 6v2H4V8a6 6 0 016-6z"></path><path d="M4 14v-2h12v2a2 2 0 01-2 2H6a2 2 0 01-2-2z"></path></svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              </template>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
+  <EntityTable
+    :columns="['#', 'Vehículo', 'Cliente', 'Fecha ingreso', 'Grúa', 'Estado', 'Acciones']"
+    :items="recepciones"
+    :loading="loading"
+    loading-text="Cargando recepciones..."
+    empty-text="No hay recepciones registradas."
+    :empty-colspan="7"
+  >
+    <template #row="{ item, index }">
+      <tr class="hover:bg-gray-100 dark:hover:bg-gray-700">
+        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ index + 1 }}</td>
+        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">
+          <span class="font-medium">{{ item.vehiculo?.placa || '-' }}</span>
+          <span class="block text-xs text-gray-500 dark:text-gray-400">
+            {{ item.vehiculo?.marca }} {{ item.vehiculo?.modelo }}
+          </span>
+        </td>
+        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.cliente?.nombre || '-' }}</td>
+        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ formatDate(item.created_at) }}</td>
+        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.ingreso_en_grua ? 'Sí' : 'No' }}</td>
+        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">
+          <span :class="['px-2 py-1 rounded-full text-xs font-medium', getEstadoBadge(item).color]">
+            {{ getEstadoBadge(item).label }}
+          </span>
+        </td>
+        <td class="p-4 whitespace-nowrap">
+          <div class="flex items-center gap-2">
+            <button type="button" title="Ver detalle" aria-label="Ver detalle" class="inline-flex items-center p-2 text-blue-600 rounded-lg hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700" @click="handleVerDetalle(item.id)">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path></svg>
+            </button>
+            <button type="button" title="Editar" aria-label="Editar" class="inline-flex items-center p-2 text-yellow-600 rounded-lg hover:bg-yellow-100 dark:text-yellow-400 dark:hover:bg-gray-700" @click="handleEditar(item.id)">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg>
+            </button>
+            <button type="button" :title="item.inspecciones?.length > 0 ? 'Ver Diagnóstico' : 'Crear Diagnóstico'" :aria-label="item.inspecciones?.length > 0 ? 'Ver Diagnóstico' : 'Crear Diagnóstico'" class="inline-flex items-center p-2 text-purple-600 rounded-lg hover:bg-purple-100 dark:text-purple-400 dark:hover:bg-gray-700" @click="handleVerDiagnostico(item)">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M4 2a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V2zm2 0v12h8V2H6zm3 8h2v2H9v-2zm0-4h2v2H9V6z" clip-rule="evenodd"></path></svg>
+            </button>
+            <button v-if="item.cotizaciones_generadas?.length" type="button" title="Ver Cotización" aria-label="Ver Cotización" class="inline-flex items-center p-2 text-emerald-600 rounded-lg hover:bg-emerald-100 dark:text-emerald-400 dark:hover:bg-gray-700" @click="handleVerCotizacion(item.cotizaciones_generadas[0]?.id)">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 3a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V3zm2 0v10h8V3H6z"></path><path d="M10 13l3 3 3-3"></path></svg>
+            </button>
+            <button v-if="item.orden_trabajo_id" type="button" title="Ver Orden" aria-label="Ver Orden" class="inline-flex items-center p-2 text-indigo-600 rounded-lg hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-gray-700" @click="handleVerOrden(item.orden_trabajo_id)">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2a6 6 0 016 6v2H4V8a6 6 0 016-6z"></path><path d="M4 14v-2h12v2a2 2 0 01-2 2H6a2 2 0 01-2-2z"></path></svg>
+            </button>
+          </div>
+        </td>
+      </tr>
+    </template>
+  </EntityTable>
 </template>

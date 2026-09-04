@@ -4,8 +4,8 @@ import { useVehicles } from '../composables/useVehicles';
 import ConfirmDeleteModal from '../../../shared/components/ConfirmDeleteModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
+import EntityTable from '../../../shared/components/EntityTable.vue';
 import { formatPlate } from '../../../shared/utils/formatPlate';
-
 const {
   vehicles,
   isLoading,
@@ -133,72 +133,38 @@ onMounted(() => loadVehicles());
     </div>
   </div>
 
-  <div class="flex flex-col">
-    <div class="overflow-x-auto">
-      <div class="inline-block min-w-full align-middle">
-        <div class="overflow-hidden shadow">
-          <table class="min-w-full divide-y divide-gray-200 table-fixed dark:divide-gray-600">
-            <thead class="bg-gray-200 dark:bg-gray-900">
-              <tr>
-                <th v-for="heading in ['Placa', 'Marca', 'Modelo', 'Año', 'Dueño', 'Acciones']" :key="heading" scope="col" class="p-4 text-sm font-medium text-left text-gray-900 uppercase dark:text-gray-900">{{ heading }}</th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-              <tr v-if="isLoading"><td colspan="6" class="p-4 text-center text-gray-500 dark:text-gray-400">Cargando vehículos...</td></tr>
-              <tr v-else-if="!vehicles.length"><td colspan="6" class="p-4 text-center text-gray-500 dark:text-gray-400">No se encontraron vehículos.</td></tr>
-              <template v-else>
-                <tr v-for="vehicle in vehicles" :key="vehicle.id" class="hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ formatPlate(vehicle.placa) }}</td>
-                  <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ vehicle.marca }}</td>
-                  <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ vehicle.modelo }}</td>
-                  <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ vehicle.anio || '—' }}</td>
-                  <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ vehicle.cliente_nombre || 'Sin dueño' }}</td>
-                  <td class="p-4 whitespace-nowrap">
-                    <button type="button" title="Editar vehículo" aria-label="Editar vehículo" class="inline-flex items-center p-2 text-primary-600 rounded-lg hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700" @click="editVehicle(vehicle.id)">
-                      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg>
-                    </button>
-                    <button type="button" title="Eliminar vehículo" aria-label="Eliminar vehículo" :disabled="isDeleting" class="inline-flex items-center p-2 text-red-600 rounded-lg hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-gray-700" @click="openDeleteModal(vehicle)">
-                      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
-                    </button>
-                  </td>
-                </tr>
-              </template>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="sticky bottom-0 right-0 items-center w-full p-4 bg-white border-t border-gray-200 sm:flex sm:justify-between dark:bg-gray-800 dark:border-gray-700">
-    <span class="mb-4 text-sm text-gray-500 sm:mb-0 dark:text-gray-400">{{ rangeLabel }}</span>
-    <div class="flex items-center space-x-2">
-      <button
-        type="button"
-        :disabled="!previousUrl || isLoading"
-        title="Anterior"
-        aria-label="Anterior"
-        class="inline-flex items-center p-1.5 text-sm font-medium text-white rounded-lg bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800"
-        @click="loadVehicles(currentPage - 1)"
-      >
-        <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M13 6l-6 6 6 6" />
-        </svg>
-      </button>
-      <button
-        type="button"
-        :disabled="!nextUrl || isLoading"
-        title="Siguiente"
-        aria-label="Siguiente"
-        class="inline-flex items-center p-1.5 text-sm font-medium text-white rounded-lg bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800"
-        @click="loadVehicles(currentPage + 1)"
-      >
-        <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M13 6l6 6-6 6" />
-        </svg>
-      </button>
-    </div>
-  </div>
+  <EntityTable
+    :columns="['Placa', 'Marca', 'Modelo', 'Año', 'Dueño', 'Acciones']"
+    :items="vehicles"
+    :loading="isLoading"
+    loading-text="Cargando vehículos..."
+    empty-text="No se encontraron vehículos."
+    :empty-colspan="6"
+    :show-pagination="true"
+    :previous-url="previousUrl"
+    :next-url="nextUrl"
+    :pagination-disabled="isLoading"
+    :range-label="rangeLabel"
+    @page-change="(delta) => loadVehicles(currentPage + delta)"
+  >
+    <template #row="{ item }">
+      <tr class="hover:bg-gray-100 dark:hover:bg-gray-700">
+        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ formatPlate(item.placa) }}</td>
+        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.marca }}</td>
+        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.modelo }}</td>
+        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.anio || '—' }}</td>
+        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.cliente_nombre || 'Sin dueño' }}</td>
+        <td class="p-4 whitespace-nowrap">
+          <button type="button" title="Editar vehículo" aria-label="Editar vehículo" class="inline-flex items-center p-2 text-primary-600 rounded-lg hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700" @click="editVehicle(item.id)">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg>
+          </button>
+          <button type="button" title="Eliminar vehículo" aria-label="Eliminar vehículo" :disabled="isDeleting" class="inline-flex items-center p-2 text-red-600 rounded-lg hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+          </button>
+        </td>
+      </tr>
+    </template>
+  </EntityTable>
 
   <ConfirmDeleteModal
     v-model="showDeleteModal"
