@@ -7,6 +7,7 @@ import Alert from '../../../shared/components/Alert.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TestigosTablero from '../../../shared/components/TestigosTablero.vue';
 import PhotoSlotGrid from '../../../shared/components/PhotoSlotGrid.vue';
+import ClientCreateModal from '../../clientes/components/ClientCreateModal.vue';
 
 const recepcionId = new URLSearchParams(window.location.search).get('id');
 const isEditMode = Boolean(recepcionId);
@@ -104,6 +105,7 @@ const clienteOptions = ref([]);
 const vehiculoOptions = ref([]);
 const showClienteDropdown = ref(false);
 const showVehiculoDropdown = ref(false);
+const showClientCreateModal = ref(false);
 const blueprintImageUrl = ref('');
 const marcas = ref([]);
 const detallesSyncVersion = ref(0);
@@ -547,6 +549,13 @@ function clearCliente() {
   clearVehiculo();
 }
 
+function onClientCreated(cliente) {
+  showClientCreateModal.value = false;
+  if (cliente && cliente.id) {
+    selectCliente(cliente);
+  }
+}
+
 function clearVehiculo() {
   form.vehiculo = null;
   form.vehiculo_color = '';
@@ -814,15 +823,28 @@ onMounted(() => {
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div class="relative col-span-1">
             <label for="cliente" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente</label>
-            <input
-              id="cliente"
-              v-model="clienteSearch"
-              autocomplete="off"
-              placeholder="Buscar cliente..."
-              :class="['block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.cliente ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']"
-               @focus="showClienteDropdown = true"
-               @blur="async () => { await wait(150); showClienteDropdown = false; }"
-            />
+            <div class="flex">
+              <input
+                id="cliente"
+                v-model="clienteSearch"
+                autocomplete="off"
+                placeholder="Buscar cliente..."
+                :class="['block w-full p-2.5 text-sm rounded-l-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.cliente ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']"
+                 @focus="showClienteDropdown = true"
+                 @blur="async () => { await wait(150); showClienteDropdown = false; }"
+              />
+              <button
+                type="button"
+                title="Crear cliente nuevo"
+                aria-label="Crear cliente nuevo"
+                class="shrink-0 inline-flex items-center px-3 py-2.5 text-white bg-primary-blue-500 border border-primary-blue-500 rounded-r-lg hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300"
+                @click="showClientCreateModal = true"
+              >
+                <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12h4m-2 2v-4M4 18v-1a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Zm8-10a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                </svg>
+              </button>
+            </div>
             <p v-if="formErrors.cliente" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.cliente }}</p>
             <div v-if="showClienteDropdown && clienteOptions.length" class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
               <button
@@ -1326,4 +1348,9 @@ onMounted(() => {
       </form>
     </div>
   </div>
+
+  <ClientCreateModal
+    v-model="showClientCreateModal"
+    @created="onClientCreated"
+  />
 </template>

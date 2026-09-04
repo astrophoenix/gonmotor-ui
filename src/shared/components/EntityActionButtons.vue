@@ -85,7 +85,9 @@ async function exportPdf() {
     });
 
     if (!response.ok) {
-      throw new Error(`Error en la descarga (status ${response.status}).`);
+      const data = await response.json().catch(() => ({}));
+      const message = data?.detail || `Error en la descarga (status ${response.status}).`;
+      throw new Error(message);
     }
 
     const blob = await response.blob();
@@ -109,12 +111,18 @@ async function exportPdf() {
   }
 }
 
+const isExportingExcel = ref(false);
+
 async function exportExcel() {
+  if (isExportingExcel.value) return;
+  isExportingExcel.value = true;
   try {
     await downloadFile(`/api/${props.entity}/export-excel/`, `${props.entity}_reporte.xlsx`);
     showSuccess(`Excel generado: ${props.entity}_reporte.xlsx`);
   } catch (error) {
     emit('excelExportError', error.message || 'Ocurrió un error al generar el Excel.');
+  } finally {
+    isExportingExcel.value = false;
   }
 }
 </script>
@@ -124,10 +132,10 @@ async function exportExcel() {
     <button
       v-if="showAdd"
       type="button"
-      class="inline-flex items-center px-3 py-2 text-sm font-medium text-primary-700 rounded-lg border border-primary-700 hover:bg-primary-100 active:bg-primary-200 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800 dark:active:bg-gray-700"
+      class="inline-flex items-center px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300 disabled:opacity-50"
       @click="goToAdd"
     >
-      <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+      <svg class="w-5 h-5 mr-1.5 -ml-1 text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 7.757v8.486M7.757 12h8.486M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
       </svg>
       Agregar
@@ -150,11 +158,16 @@ async function exportExcel() {
     <button
       v-if="showExportExcel"
       type="button"
-      class="inline-flex items-center px-3 py-2 text-sm font-medium text-emerald-600 rounded-lg border border-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-400 dark:hover:bg-gray-800"
+      :disabled="isExportingExcel"
+      class="inline-flex items-center px-3 py-2 text-sm font-medium text-emerald-600 rounded-lg border border-emerald-600 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-400 dark:border-emerald-400 dark:hover:bg-gray-800"
       @click="exportExcel"
     >
-      <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+      <svg v-if="!isExportingExcel" class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 3v4a1 1 0 0 1-1 1H5m8-2h3m-3 3h3m-4 3v6m4-3H8M19 4v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1ZM8 12v6h8v-6H8Z"/>
+      </svg>
+      <svg v-else class="w-5 h-5 animate-spin" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
       </svg>
     </button>
   </div>

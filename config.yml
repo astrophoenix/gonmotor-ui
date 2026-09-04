@@ -1,5 +1,5 @@
-languageCode:           "en"
-title:                  "Flowbite Admin Dashboard"
+languageCode:           "es"
+title:                  "GonMotor Gestión"
 baseURL:                "/"
 enableInlineShortcodes: true
 canonifyURLs: false

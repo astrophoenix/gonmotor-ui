@@ -52,3 +52,106 @@
 .gray-workshop {
   background-color: #C6CCD4;
 }
+
+/* ===== Sidebar collapse (desktop) ===== */
+html.sidebar-collapsed #sidebar { width: 4rem; }
+
+/* Header del sidebar */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0.5rem 0.75rem 0.75rem;
+  margin-bottom: 1rem;
+}
+.sidebar-toggle-btn {
+  display: none;
+  padding: 0.375rem;
+  color: #4b5563;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+@media (min-width: 64rem) {
+  .sidebar-toggle-btn { display: flex; align-items: center; justify-content: center; }
+}
+.sidebar-toggle-btn:hover { background-color: #e5e7eb; color: #111827; }
+.sidebar-toggle-btn:focus { outline: none; box-shadow: 0 0 0 2px #d1d5db; }
+
+/* Colapsado: conservar logo (icono) arriba y flecha abajo siempre visibles */
+html.sidebar-collapsed #sidebar .sidebar-header {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+html.sidebar-collapsed #sidebar .sidebar-brand img { height: 2rem; }
+
+.transition-width { transition-property: width; }
+
+/* Ocultar textos/labels al colapsar */
+html.sidebar-collapsed #sidebar [sidebar-toggle-item] { display: none; }
+
+/* Centrar iconos en los elementos del sidebar */
+html.sidebar-collapsed #sidebar a.flex,
+html.sidebar-collapsed #sidebar button.flex { justify-content: center; }
+html.sidebar-collapsed #sidebar a.flex svg,
+html.sidebar-collapsed #sidebar button.flex svg {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Ajuste de navbar y main content */
+html.sidebar-collapsed #navbar-dashboard {
+  left: 4rem;
+  width: calc(100% - 4rem);
+}
+html.sidebar-collapsed #navbar-dashboard > div { padding-left: 1rem; }
+html.sidebar-collapsed #main-content { margin-left: 4rem; }
+
+/* Tooltip simple para enlaces directos */
+html.sidebar-collapsed #sidebar a[sidebar-tooltip],
+html.sidebar-collapsed #sidebar button[sidebar-tooltip] { position: relative; }
+
+html.sidebar-collapsed #sidebar a[sidebar-tooltip]::after,
+html.sidebar-collapsed #sidebar button[sidebar-tooltip]::after {
+  content: attr(sidebar-tooltip);
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 0.5rem;
+  background: #111827;
+  color: #fff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  z-index: 60;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.2);
+}
+html.sidebar-collapsed #sidebar a[sidebar-tooltip]:hover::after,
+html.sidebar-collapsed #sidebar button[sidebar-tooltip]:hover::after,
+html.sidebar-collapsed #sidebar button[sidebar-tooltip]:focus::after { opacity: 1; }
+
+/* Dropdown flyout al colapsar */
+html.sidebar-collapsed #sidebar [sidebar-dropdown] > ul { display: none; }
+
+html.sidebar-collapsed #sidebar [sidebar-dropdown]:hover > ul,
+html.sidebar-collapsed #sidebar [sidebar-dropdown]:focus-within > ul {
+  display: block !important;
+  position: absolute;
+  left: 100%;
+  top: -0.75rem;
+  margin-left: 0.5rem;
+  min-width: 13rem;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background: var(--color-brand-600);
+  z-index: 60;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.2);
+}
+html.sidebar-collapsed #sidebar [sidebar-dropdown] > ul a { padding-left: 0.75rem; }
