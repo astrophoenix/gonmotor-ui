@@ -5,6 +5,7 @@ import ConfirmDeleteModal from '../../../shared/components/ConfirmDeleteModal.vu
 import Alert from '../../../shared/components/Alert.vue';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
+import EmpleadoModal from './EmpleadoModal.vue';
 
 const {
   empleados,
@@ -46,7 +47,34 @@ function handleExcelError(message) {
 }
 
 function editEmpleado(id) {
-  window.location.assign(`/crud/empleados/editar/?id=${encodeURIComponent(id)}`);
+  openEditModal(id);
+}
+
+const showEmpleadoModal = ref(false);
+const empleadoModalId = ref(null);
+
+function openCreateModal() {
+  empleadoModalId.value = null;
+  showEmpleadoModal.value = true;
+}
+
+function openEditModal(id) {
+  empleadoModalId.value = id;
+  showEmpleadoModal.value = true;
+}
+
+async function onEmpleadoSaved(message) {
+  showEmpleadoModal.value = false;
+  showAlert('success', '', message);
+  await fetchEmpleados(currentPage.value);
+}
+
+function onEmpleadoCreated() {
+  onEmpleadoSaved('Empleado creado correctamente.');
+}
+
+function onEmpleadoUpdated() {
+  onEmpleadoSaved('Empleado actualizado correctamente.');
 }
 
 function openDeleteModal(empleado) {
@@ -125,6 +153,7 @@ onUnmounted(() => {
         <div class="flex items-center ml-auto space-x-2 sm:space-x-3">
           <EntityActionButtons 
             entity="empleados" 
+            @add="openCreateModal"
             @pdfExportError="handlePdfError"
             @excelExportError="handleExcelError" />
         </div>
@@ -192,5 +221,12 @@ onUnmounted(() => {
     :is-deleting="isDeleting"
     @confirm="confirmDelete"
     @cancel="empleadoToDelete = null"
+  />
+
+  <EmpleadoModal
+    v-model="showEmpleadoModal"
+    :empleado-id="empleadoModalId"
+    @created="onEmpleadoCreated"
+    @updated="onEmpleadoUpdated"
   />
 </template>

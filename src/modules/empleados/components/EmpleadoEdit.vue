@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, reactive, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { empleadosService } from '../services/empleadosService';
 import { request } from '../../../shared/services/httpClient';
 import Alert from '../../../shared/components/Alert.vue';
@@ -37,6 +37,48 @@ const roles = [
 ];
 const talleres = ref([]);
 const isLoadingTalleres = ref(false);
+const tallerSearch = ref('');
+const showTallerDropdown = ref(false);
+
+const talleresFiltrados = computed(() => {
+  const term = (tallerSearch.value || '').trim().toLowerCase();
+  if (!term) return talleres.value;
+  return talleres.value.filter((t) => {
+    const text = [
+      t.nombre,
+      t.codigo_sucursal,
+      t.ciudad,
+      t.direccion,
+      t.telefono,
+    ].filter(Boolean).join(' ').toLowerCase();
+    return text.includes(term);
+  });
+});
+
+function isTallerSelected(id) {
+  return form.talleres.includes(id);
+}
+
+function toggleTaller(id) {
+  const index = form.talleres.indexOf(id);
+  if (index >= 0) {
+    form.talleres.splice(index, 1);
+  } else {
+    form.talleres.push(id);
+  }
+}
+
+function onTallerDocClick(event) {
+  if (showTallerDropdown.value && event.target && !event.target.closest('#dropdownTalleresButton') && !event.target.closest('[data-taller-dropdown]')) {
+    showTallerDropdown.value = false;
+  }
+}
+
+function onTallerEscape(event) {
+  if (event.key === 'Escape') {
+    showTallerDropdown.value = false;
+  }
+}
 
 function showError(error) {
   errorMessage.value = error.message || 'No fue posible completar la operación.';
@@ -175,6 +217,13 @@ watch(() => form.rol, (val) => {
 onMounted(() => {
   loadTalleres();
   loadEmpleado();
+  document.addEventListener('click', onTallerDocClick);
+  document.addEventListener('keydown', onTallerEscape);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', onTallerDocClick);
+  document.removeEventListener('keydown', onTallerEscape);
 });
 </script>
 
@@ -199,9 +248,9 @@ onMounted(() => {
       <h4 class="mb-4 text-xl font-semibold dark:text-white">
         <span class="inline-flex items-center gap-2">
           <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6a2.25 2.25 0 00-2.25-2.25H4.5A2.25 2.25 0 002.25 6v11.25A2.25 2.25 0 004.5 19.5z"/>
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 3v4a1 1 0 0 1-1 1H5m4 8h6m-6-4h6m4-8v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1Z"/>
           </svg>
-          Información del Empleado
+          Información General
         </span>
       </h4>
       <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando empleado...</div>
@@ -247,10 +296,108 @@ onMounted(() => {
           <span class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Talleres Asignados</span>
           <div v-if="isLoadingTalleres" class="text-sm text-gray-500 dark:text-gray-400">Cargando talleres...</div>
           <div v-else-if="!talleres.length" class="text-sm text-gray-500 dark:text-gray-400">No hay talleres disponibles.</div>
-          <div v-else class="space-y-2">
-            <div v-for="taller in talleres" :key="taller.id" class="flex items-center">
-              <input :id="`taller-${taller.id}`" v-model="form.talleres" :value="taller.id" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
-              <label :for="`taller-${taller.id}`" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">{{ taller.nombre }}</label>
+
+          <div v-else-if="talleres.length <= 6" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <label
+              v-for="taller in talleres"
+              :key="taller.id"
+              :for="`taller-${taller.id}`"
+              class="relative flex cursor-pointer rounded-lg border transition-colors p-3"
+              :class="isTallerSelected(taller.id)
+                ? 'bg-primary-50 border-primary-500 dark:bg-primary-900/30 dark:border-primary-500'
+                : 'bg-gray-50 border-gray-200 hover:bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:hover:bg-gray-600'"
+            >
+              <div class="flex-1 space-y-1.5 pr-7">
+                <div class="flex items-center gap-2">
+                  <svg class="shrink-0 w-4 h-4 text-primary-600 dark:text-primary-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 4h12M6 4v16M6 4H5m13 0v16m0-16h1m-1 16H6m12 0h1M6 20H5M9 7h1v1H9V7Zm5 0h1v1h-1V7Zm-5 4h1v1H9v-1Zm5 0h1v1h-1v-1Zm-3 4h2a1 1 0 0 1 1 1v4h-4v-4a1 1 0 0 1 1-1Z"/>
+                  </svg>
+                  <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ taller.nombre }}</p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <svg class="shrink-0 w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8-4-4H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-3l-4 4Z"/>
+                  </svg>
+                  <span class="text-xs text-gray-600 dark:text-gray-400 truncate">
+                    {{ [taller.codigo_sucursal, taller.ciudad].filter(Boolean).join(' · ') || '—' }}
+                  </span>
+                </div>
+
+                <div v-if="taller.direccion" class="flex items-center gap-2">
+                  <svg class="shrink-0 w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.8 13.938h-.011a7 7 0 1 0-11.464.144h-.016l.14.171c.1.127.2.251.3.371L12 21l5.13-6.248c.194-.209.374-.429.54-.659l.13-.155Z"/>
+                  </svg>
+                  <span class="text-xs text-gray-600 dark:text-gray-400 truncate">{{ taller.direccion }}</span>
+                </div>
+
+                <div v-if="taller.telefono" class="flex items-center gap-2">
+                  <svg class="shrink-0 w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 5h3l2 4-2 1a8 8 0 0 0 5 5l1-2 4 2v3a2 2 0 0 1-2 2A14 14 0 0 1 4 7a2 2 0 0 1 2-2Z"/>
+                  </svg>
+
+                  <span class="text-xs text-gray-600 dark:text-gray-400">{{ taller.telefono }}</span>
+                </div>
+              </div>
+
+              <input
+                :id="`taller-${taller.id}`"
+                v-model="form.talleres"
+                :value="taller.id"
+                type="checkbox"
+                class="absolute top-3 right-3 w-4 h-4 rounded border border-gray-300 bg-white text-primary-600 focus:ring-2 focus:ring-primary-300 dark:bg-gray-600 dark:border-gray-500 dark:focus:ring-primary-800"
+              />
+            </label>
+          </div>
+
+          <div v-else class="w-full max-w-xs sm:max-w-sm">
+            <button
+              id="dropdownTalleresButton"
+              type="button"
+              class="inline-flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-center text-white bg-primary-700 rounded-lg hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800"
+              @click="showTallerDropdown = !showTallerDropdown"
+            >
+              <span>{{ form.talleres.length }} taller(es) seleccionado(s)</span>
+            </button>
+
+            <div v-if="showTallerDropdown" data-taller-dropdown class="z-10 w-full mt-2 bg-white rounded-lg shadow-sm dark:bg-gray-700">
+              <div class="p-3">
+                <label for="talleres-search" class="sr-only">Buscar taller</label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                    <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                      <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
+                    </svg>
+                  </div>
+                  <input
+                    id="talleres-search"
+                    v-model="tallerSearch"
+                    type="text"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full ps-10 p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                    placeholder="Buscar taller..."
+                    @click.stop
+                  />
+                </div>
+              </div>
+              <ul class="h-48 px-3 pb-3 overflow-y-auto text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownTalleresButton">
+                <li v-if="!talleresFiltrados.length" class="p-2 text-sm text-gray-500 dark:text-gray-400">
+                  No se encontraron resultados.
+                </li>
+                <li v-for="taller in talleresFiltrados" :key="taller.id">
+                  <div class="flex items-center p-2 rounded-sm hover:bg-gray-100 dark:hover:bg-gray-600">
+                    <input
+                      :id="`taller-check-${taller.id}`"
+                      :checked="isTallerSelected(taller.id)"
+                      type="checkbox"
+                      value=""
+                      class="w-4 h-4 text-primary-600 bg-white border-gray-300 rounded-sm focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
+                      @change="toggleTaller(taller.id)"
+                    >
+                    <label :for="`taller-check-${taller.id}`" class="w-full ms-2 text-sm font-medium text-gray-900 rounded-sm dark:text-gray-300">{{ taller.nombre }}</label>
+                  </div>
+                </li>
+              </ul>
             </div>
           </div>
         </div>

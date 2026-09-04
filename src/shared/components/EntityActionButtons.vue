@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { API_BASE_URL } from '../config/env';
 import { useToast } from '../composables/useToast';
 import ToastContainer from './ToastContainer.vue';
+import { ADD_MODE, getEntityAddMode } from '../config/entityConfig';
 
 const props = defineProps({
   entity: {
@@ -23,7 +24,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['pdfExportError', 'excelExportError']);
+const emit = defineEmits(['add', 'pdfExportError', 'excelExportError']);
 
 const { showSuccess } = useToast();
 
@@ -38,6 +39,10 @@ function getEmpresaId() {
 }
 
 function goToAdd() {
+  if (getEntityAddMode(props.entity) === ADD_MODE.modal) {
+    emit('add');
+    return;
+  }
   window.location.assign(`/crud/${props.entity}/agregar/`);
 }
 

@@ -7,7 +7,7 @@ import Alert from '../../../shared/components/Alert.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TestigosTablero from '../../../shared/components/TestigosTablero.vue';
 import PhotoSlotGrid from '../../../shared/components/PhotoSlotGrid.vue';
-import ClientCreateModal from '../../clientes/components/ClientCreateModal.vue';
+import ClientModal from '../../clientes/components/ClientModal.vue';
 
 const recepcionId = new URLSearchParams(window.location.search).get('id');
 const isEditMode = Boolean(recepcionId);
@@ -550,9 +550,20 @@ function clearCliente() {
 }
 
 function onClientCreated(cliente) {
-  showClientCreateModal.value = false;
   if (cliente && cliente.id) {
     selectCliente(cliente);
+    const nombre = cliente.nombre || 'el cliente';
+    successMessage.value = `Cliente "${nombre}" creado correctamente. Continúa con la recepción.`;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function onClientReactivated(cliente) {
+  if (cliente && cliente.id) {
+    selectCliente(cliente);
+    const nombre = cliente.nombre || 'el cliente';
+    successMessage.value = `Cliente "${nombre}" reactivado correctamente. Continúa con la recepción.`;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }
 
@@ -1349,8 +1360,9 @@ onMounted(() => {
     </div>
   </div>
 
-  <ClientCreateModal
+  <ClientModal
     v-model="showClientCreateModal"
     @created="onClientCreated"
+    @reactivated="onClientReactivated"
   />
 </template>

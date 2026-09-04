@@ -100,7 +100,7 @@ export function sanitizeMotor(value) {
 }
 
 /**
- * Sanitiza el nombre de un taller/sucursal: permite letras (con acentos), dígitos,
+ * Sanitiza el nombre de un taller: permite letras (con acentos), dígitos,
  * espacios y los separadores típicos de numeración de sedes (- _ / ( ) [ ]).
  * Elimina etiquetas HTML, entidades y cualquier otro carácter no permitido.
  * No recorta espacios para conservar el formato que escribe el usuario.

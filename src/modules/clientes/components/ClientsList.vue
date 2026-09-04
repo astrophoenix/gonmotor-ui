@@ -8,6 +8,7 @@ import Alert from '../../../shared/components/Alert.vue';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
 import ImportExcelModal from './ImportExcelModal.vue';
+import ClientModal from './ClientModal.vue';
 import { formatPlate } from '../../../shared/utils/formatPlate';
 
 const {
@@ -45,6 +46,37 @@ let searchTimer;
 const openPopoverId = ref(null);
 
 const showImportModal = ref(false);
+
+const showClientModal = ref(false);
+const clientModalId = ref(null);
+
+function openCreateModal() {
+  clientModalId.value = null;
+  showClientModal.value = true;
+}
+
+function openEditModal(id) {
+  clientModalId.value = id;
+  showClientModal.value = true;
+}
+
+async function onClientSaved(message) {
+  showClientModal.value = false;
+  showAlert('success', '', message);
+  await loadClients(currentPage.value);
+}
+
+function onClientCreated(client) {
+  onClientSaved('Cliente creado correctamente.');
+}
+
+function onClientUpdated() {
+  onClientSaved('Cliente actualizado correctamente.');
+}
+
+function onClientReactivated() {
+  onClientSaved('Cliente reactivado correctamente.');
+}
 
 function openImportModal() {
   showImportModal.value = true;
@@ -84,7 +116,7 @@ async function loadClients(page = 1) {
 }
 
 function editClient(id) {
-  window.location.assign(`/crud/clientes/editar/?id=${encodeURIComponent(id)}`);
+  openEditModal(id);
 }
 
 function openDeleteModal(client) {
@@ -183,6 +215,7 @@ onUnmounted(() => {
           </button>
           <EntityActionButtons 
             entity="clientes" 
+            @add="openCreateModal"
             @pdfExportError="handlePdfError"
             @excelExportError="handleExcelError" />
         </div>
@@ -296,6 +329,14 @@ onUnmounted(() => {
   <ImportExcelModal
     v-model="showImportModal"
     @imported="onImported"
+  />
+
+  <ClientModal
+    v-model="showClientModal"
+    :client-id="clientModalId"
+    @created="onClientCreated"
+    @updated="onClientUpdated"
+    @reactivated="onClientReactivated"
   />
 
   <!-- <ToastContainer /> -->

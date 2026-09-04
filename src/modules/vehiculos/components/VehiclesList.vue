@@ -5,6 +5,7 @@ import ConfirmDeleteModal from '../../../shared/components/ConfirmDeleteModal.vu
 import Alert from '../../../shared/components/Alert.vue';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
+import VehicleModal from './VehicleModal.vue';
 import { formatPlate } from '../../../shared/utils/formatPlate';
 const {
   vehicles,
@@ -35,6 +36,8 @@ function hideAlert() {
 
 const showDeleteModal = ref(false);
 const vehicleToDelete = ref(null);
+const showVehicleModal = ref(false);
+const vehicleModalId = ref(null);
 let searchTimer;
 
 async function loadVehicles(page = 1) {
@@ -45,8 +48,33 @@ async function loadVehicles(page = 1) {
   }
 }
 
-function editVehicle(id) {
-  window.location.assign(`/crud/vehiculos/editar/?id=${encodeURIComponent(id)}`);
+function openCreateModal() {
+  vehicleModalId.value = null;
+  showVehicleModal.value = true;
+}
+
+function openEditModal(id) {
+  vehicleModalId.value = id;
+  showVehicleModal.value = true;
+}
+
+function onVehicleSaved(message) {
+  showVehicleModal.value = false;
+  vehicleModalId.value = null;
+  showAlert('success', '', message);
+  loadVehicles(currentPage.value);
+}
+
+function onVehicleCreated() {
+  onVehicleSaved('Vehículo creado correctamente.');
+}
+
+function onVehicleUpdated() {
+  onVehicleSaved('Vehículo actualizado correctamente.');
+}
+
+function onVehicleReactivated() {
+  onVehicleSaved('Vehículo reactivado correctamente.');
 }
 
 function openDeleteModal(vehicle) {
@@ -123,9 +151,10 @@ onMounted(() => loadVehicles());
           <input id="vehicles-search" v-model="search" type="search" placeholder="Buscar vehículos" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full lg:w-64 xl:w-96 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
           </form>
         </div>
-        <div class="flex items-center ml-auto space-x-2 sm:space-x-3">
+<div class="flex items-center ml-auto space-x-2 sm:space-x-3">
           <EntityActionButtons 
           entity="vehiculos" 
+          @add="openCreateModal"
           @pdfExportError="handlePdfError"
           @excelExportError="handleExcelError" />
         </div>
@@ -155,7 +184,7 @@ onMounted(() => loadVehicles());
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.anio || '—' }}</td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.cliente_nombre || 'Sin dueño' }}</td>
         <td class="p-4 whitespace-nowrap">
-          <button type="button" title="Editar vehículo" aria-label="Editar vehículo" class="inline-flex items-center p-2 text-primary-600 rounded-lg hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700" @click="editVehicle(item.id)">
+          <button type="button" title="Editar vehículo" aria-label="Editar vehículo" class="inline-flex items-center p-2 text-primary-600 rounded-lg hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700" @click="openEditModal(item.id)">
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg>
           </button>
           <button type="button" title="Eliminar vehículo" aria-label="Eliminar vehículo" :disabled="isDeleting" class="inline-flex items-center p-2 text-red-600 rounded-lg hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
@@ -173,5 +202,13 @@ onMounted(() => loadVehicles());
     :is-deleting="isDeleting"
     @confirm="confirmDelete"
     @cancel="vehicleToDelete = null"
+  />
+
+  <VehicleModal
+    v-model="showVehicleModal"
+    :vehicle-id="vehicleModalId"
+    @created="onVehicleCreated"
+    @updated="onVehicleUpdated"
+    @reactivated="onVehicleReactivated"
   />
 </template>
