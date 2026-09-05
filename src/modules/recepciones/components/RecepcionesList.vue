@@ -54,6 +54,10 @@ function handleVerDetalle(id) {
   window.location.assign(`/crud/recepciones/ver/?id=${encodeURIComponent(id)}`);
 }
 
+function handleEditar(id) {
+  window.location.assign(`/crud/recepciones/editar/?id=${encodeURIComponent(id)}`);
+}
+
 function handleCrearDiagnostico(id) {
   window.location.assign(`/crud/inspecciones/nuevo/?recepcion=${id}`);
 }
@@ -154,16 +158,21 @@ onMounted(async () => {
           <span class="inline-block px-2 py-1 rounded-full text-xs font-medium mr-1" :class="getEstadoFirmaBadge(item).color">
             {{ getEstadoFirmaBadge(item).label }}
           </span>
-          <span v-if="item.estado !== 'NO_ACEPTADA'" class="inline-block px-2 py-1 rounded-full text-xs font-medium" :class="getEstadoBadge(item).color">
+          <span v-if="item.estado === 'ACEPTADA'" class="inline-block px-2 py-1 rounded-full text-xs font-medium" :class="getEstadoBadge(item).color">
             {{ getEstadoBadge(item).label }}
           </span>
         </td>
         <td class="p-4 whitespace-nowrap">
           <div class="flex items-center gap-2">
             <button type="button" title="Ver detalle" aria-label="Ver detalle" class="inline-flex items-center p-2 text-blue-600 rounded-lg hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700" @click="handleVerDetalle(item.id)">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path></svg>
+              <svg class="w-5 h-5 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 3v4a1 1 0 0 1-1 1H5m8-2h3m-3 3h3m-4 3v6m4-3H8M19 4v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1ZM8 12v6h8v-6H8Z"/>
+              </svg>
             </button>
-            <button v-if="item.estado !== 'NO_ACEPTADA'" type="button" :title="item.inspecciones?.length > 0 ? 'Ver Diagnóstico' : 'Crear Diagnóstico'" :aria-label="item.inspecciones?.length > 0 ? 'Ver Diagnóstico' : 'Crear Diagnóstico'" class="inline-flex items-center p-2 text-purple-600 rounded-lg hover:bg-purple-100 dark:text-purple-400 dark:hover:bg-gray-700" @click="handleVerDiagnostico(item)">
+            <button v-if="item.estado === 'PENDIENTE'" type="button" title="Editar recepción" aria-label="Editar recepción" class="inline-flex items-center p-2 text-primary-600 rounded-lg hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700" @click="handleEditar(item.id)">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg>
+            </button>
+            <button v-if="item.estado === 'ACEPTADA'" type="button" :title="item.inspecciones?.length > 0 ? 'Ver Diagnóstico' : 'Crear Diagnóstico'" :aria-label="item.inspecciones?.length > 0 ? 'Ver Diagnóstico' : 'Crear Diagnóstico'" class="inline-flex items-center p-2 text-purple-600 rounded-lg hover:bg-purple-100 dark:text-purple-400 dark:hover:bg-gray-700" @click="handleVerDiagnostico(item)">
               <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M4 2a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V2zm2 0v12h8V2H6zm3 8h2v2H9v-2zm0-4h2v2H9V6z" clip-rule="evenodd"></path></svg>
             </button>
           </div>

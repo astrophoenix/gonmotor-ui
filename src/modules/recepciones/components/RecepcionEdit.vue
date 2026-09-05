@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, reactive, ref, watch, nextTick } from 'vue';
+import { computed, onMounted, reactive, ref, watch, nextTick } from 'vue';
 import { recepcionesService } from '../services/recepcionesService';
 import { request } from '../../../shared/services/httpClient';
 import { sanitizeObservaciones } from '../../../shared/utils/sanitize';
@@ -15,19 +15,33 @@ const isLoading = ref(true);
 const isSaving = ref(false);
 const errorMessage = ref('');
 const successMessage = ref('');
+const savedError = ref('');
 const formErrors = ref({});
 const fotoErrors = ref({});
 const fotosPresence = ref({});
 
-const defaultNow = new Date().toISOString().slice(0, 16);
+function pad2(n) {
+  return String(n).padStart(2, '0');
+}
+
+function localDatetimeNow() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+
+const defaultNow = localDatetimeNow();
 
 function toLocalDatetimeInput(value) {
   if (!value) return '';
   if (typeof value === 'string') {
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) {
+      return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}T${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+    }
     return value.slice(0, 16);
   }
   if (value instanceof Date) {
-    return value.toISOString().slice(0, 16);
+    return `${value.getFullYear()}-${pad2(value.getMonth() + 1)}-${pad2(value.getDate())}T${pad2(value.getHours())}:${pad2(value.getMinutes())}`;
   }
   return '';
 }
@@ -126,6 +140,8 @@ const firmaClienteCanvas = ref(null);
 const isDrawingReceptor = ref(false);
 const isDrawingCliente = ref(false);
 const clienteNoFirma = ref(false);
+
+const esNoAceptada = computed(() => clienteNoFirma.value || (form.motivo_no_recepcion || '').trim() !== '');
 
 const FOTO_VISTAS = [
   { key: 'FRONTAL', label: 'Vista Frontal' },
@@ -241,10 +257,28 @@ function stopDrawing(canvas, isDrawingRef, saveRef) {
   saveRef.value = canvas.toDataURL('image/png');
 }
 
-function clearCanvas(canvas, saveRef) {
+function borrarFirmaReceptor() {
+  clearCanvas(firmaReceptorCanvas.value, firmaReceptorData, isDrawingReceptor);
+}
+
+function borrarFirmaCliente() {
+  clearCanvas(firmaClienteCanvas.value, firmaClienteData, isDrawingCliente);
+  form.aceptacion_condiciones = false;
+}
+
+function clearCanvas(canvas, saveRef, isDrawingRef) {
   if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.restore();
+  ctx.beginPath();
   initCanvas(canvas);
+  if (isDrawingRef) isDrawingRef.value = false;
   saveRef.value = null;
+  if (saveRef === firmaReceptorData) form.fecha_firma_receptor = null;
+  if (saveRef === firmaClienteData) form.fecha_firma_cliente = null;
 }
 
 function onReceptorPointerDown(event) {
@@ -281,6 +315,25 @@ function onClientePointerUp(event) {
   const canvas = firmaClienteCanvas.value;
   if (!canvas) return;
   stopDrawing(canvas, isDrawingCliente, firmaClienteData);
+  if (tieneTrazado(canvas)) {
+    form.aceptacion_condiciones = true;
+  }
+}
+
+function tieneTrazado(canvas) {
+  if (!canvas) return false;
+  const ctx = canvas.getContext('2d');
+  try {
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i] !== 255 || data[i + 1] !== 255 || data[i + 2] !== 255) {
+        return true;
+      }
+    }
+  } catch (e) {
+    return false;
+  }
+  return false;
 }
 
 function hasCanvasContent(canvas) {
@@ -590,90 +643,105 @@ function clearVehiculo() {
 
 function validateRecepcion() {
   const errors = {};
-  const esNoAceptada = clienteNoFirma.value;
+  const esNoAceptadaValor = esNoAceptada.value;
 
   if (!form.cliente) {
     errors.cliente = 'El cliente es obligatorio.';
   }
 
   if (!form.vehiculo) {
-    errors.vehiculo = 'El vehículo es obligatorio.';
+    errors.vehiculo = 'El vehículo / placa es obligatorio.';
   }
 
   if (!form.recibido_por) {
     errors.recibido_por = 'El empleado que recibe es obligatorio.';
   }
 
-  if (esNoAceptada && !firmaReceptorData.value) {
-    errors.firma_receptor = 'La firma del receptor es obligatoria como testigo del rechazo del cliente.';
-  }
-
-  const kmRaw = form.kilometraje_ingreso;
-  const kmStr = kmRaw == null ? '' : String(kmRaw).trim();
-  if (kmStr === '') {
-    errors.kilometraje_ingreso = 'El kilometraje es obligatorio y debe ser mayor a 0.';
-  } else {
-    const km = Number(kmStr);
-    if (Number.isNaN(km)) {
-      errors.kilometraje_ingreso = 'El kilometraje no es válido. Ingresa solo números enteros mayores a 0.';
-    } else if (km < 0) {
-      errors.kilometraje_ingreso = 'El kilometraje no puede ser negativo. Por favor ingresa un valor mayor a 0.';
-    } else if (!Number.isInteger(km)) {
-      errors.kilometraje_ingreso = 'El kilometraje debe ser un número entero mayor a 0.';
-    } else if (!esNoAceptada && km === 0) {
-      errors.kilometraje_ingreso = 'El kilometraje debe ser mayor a 0.';
-    } else if (!esNoAceptada && form.vehiculo && form.vehiculo.kilometraje_actual != null) {
-      const kmVehiculo = Number(form.vehiculo.kilometraje_actual);
-      const conservarKmEnEdicion = isEditMode && km === kmVehiculo;
-      if (km < kmVehiculo || (km === kmVehiculo && !conservarKmEnEdicion)) {
-        errors.kilometraje_ingreso = `El kilometraje de ingreso debe ser mayor al kilometraje registrado del vehículo (${kmVehiculo} km).`;
-      }
-    }
-  }
-
   if (!form.fecha_ingreso) {
     errors.fecha_ingreso = 'La fecha de ingreso es obligatoria.';
   }
 
-  if (!esNoAceptada && !form.tipo_recepcion) {
+  if (esNoAceptadaValor && !form.fecha_salida) {
+    errors.fecha_salida = 'La fecha de salida es obligatoria.';
+  }
+
+  if (form.fecha_ingreso && form.fecha_salida) {
+    const fechain = new Date(form.fecha_ingreso);
+    const fechasal = new Date(form.fecha_salida);
+    if (!Number.isNaN(fechain.getTime()) && !Number.isNaN(fechasal.getTime()) && fechain >= fechasal) {
+      errors.fecha_salida = 'La fecha de salida debe ser posterior a la fecha de ingreso.';
+    }
+  }
+
+  if (!form.tipo_recepcion) {
     errors.tipo_recepcion = 'El tipo de recepción es obligatorio.';
   }
 
-  if (!esNoAceptada && (!form.motivo_ingreso || !form.motivo_ingreso.trim())) {
-    errors.motivo_ingreso = 'El motivo de ingreso es obligatorio.';
-  }
-
-  if (esNoAceptada && !(form.motivo_no_recepcion || '').trim()) {
+  if (esNoAceptadaValor && !(form.motivo_no_recepcion || '').trim()) {
     errors.motivo_no_recepcion = 'Registra el motivo por el cual el cliente no desea firmar la recepción.';
   }
 
-  if (form.ingreso_en_grua && !form.datos_grua) {
-    errors.datos_grua = 'Ingresa los datos de la grúa o chófer.';
-  }
-
-  const detallesVacios = marcas.value.filter(p => !(p.descripcion || '').trim());
-  if (detallesVacios.length > 0) {
-    errors.detalles_carroceria = 'Completa todas las descripciones de carrocería.';
-  }
-
-  const fotoErrs = {};
-  FOTO_VISTAS.forEach((v) => {
-    if (!fotosPresence.value[v.key]) {
-      fotoErrs[v.key] = `Debes subir la foto de ${v.label.toLowerCase()}.`;
+  if (!esNoAceptadaValor) {
+    const kmRaw = form.kilometraje_ingreso;
+    const kmStr = kmRaw == null ? '' : String(kmRaw).trim();
+    if (kmStr === '') {
+      errors.kilometraje_ingreso = 'El kilometraje es obligatorio y debe ser mayor a 0.';
+    } else {
+      const km = Number(kmStr);
+      if (Number.isNaN(km)) {
+        errors.kilometraje_ingreso = 'El kilometraje no es válido. Ingresa solo números enteros mayores a 0.';
+      } else if (km < 0) {
+        errors.kilometraje_ingreso = 'El kilometraje no puede ser negativo. Por favor ingresa un valor mayor a 0.';
+      } else if (km === 0) {
+        errors.kilometraje_ingreso = 'El kilometraje debe ser mayor a 0.';
+      } else if (!Number.isInteger(km)) {
+        errors.kilometraje_ingreso = 'El kilometraje debe ser un número entero mayor a 0.';
+      } else if (form.vehiculo && form.vehiculo.kilometraje_actual != null) {
+        const kmVehiculo = Number(form.vehiculo.kilometraje_actual);
+        const conservarKmEnEdicion = isEditMode && km === kmVehiculo;
+        if (km < kmVehiculo || (km === kmVehiculo && !conservarKmEnEdicion)) {
+          errors.kilometraje_ingreso = `El kilometraje de ingreso debe ser mayor al kilometraje registrado del vehículo (${kmVehiculo} km).`;
+        }
+      }
     }
-  });
-  fotoErrors.value = fotoErrs;
-  if (Object.keys(fotoErrs).length > 0) {
-    errors.fotos = 'Las 5 fotos de la recepción son obligatorias.';
+
+    if (!form.motivo_ingreso || !form.motivo_ingreso.trim()) {
+      errors.motivo_ingreso = 'El motivo de ingreso es obligatorio.';
+    }
+
+    if (form.ingreso_en_grua && !form.datos_grua) {
+      errors.datos_grua = 'Ingresa los datos de la grúa o chófer.';
+    }
+
+    const detallesVacios = marcas.value.filter(p => !(p.descripcion || '').trim());
+    if (detallesVacios.length > 0) {
+      errors.detalles_carroceria = 'Completa todas las descripciones de carrocería.';
+    }
+
+    const presenciaFotos = fotoGridRef.value ? fotoGridRef.value.getPresence() : fotosPresence.value;
+      const fotoErrs = {};
+      FOTO_VISTAS.forEach((v) => {
+        if (!presenciaFotos[v.key]) {
+          fotoErrs[v.key] = `Debes subir la foto de ${v.label.toLowerCase()}.`;
+        }
+      });
+    fotoErrors.value = fotoErrs;
+    if (Object.keys(fotoErrs).length > 0) {
+      errors.fotos = 'Las 5 fotos de la recepción son obligatorias.';
+    }
+  } else {
+    fotoErrors.value = {};
   }
 
   formErrors.value = errors;
   detallesErrors.value = {};
-  marcas.value.forEach((p, idx) => {
-    if (!(p.descripcion || '').trim()) {
-      detallesErrors.value[idx] = 'La descripción es obligatoria.';
-    }
-  });
+  if (!esNoAceptadaValor) {
+    marcas.value.forEach((p, idx) => {
+      if (!(p.descripcion || '').trim()) {
+        detallesErrors.value[idx] = 'La descripción es obligatoria.';
+      }
+    });
+  }
 
   return Object.keys(errors).length === 0;
 }
@@ -681,6 +749,7 @@ function validateRecepcion() {
 async function submit() {
   errorMessage.value = '';
   successMessage.value = '';
+  savedError.value = '';
   formErrors.value = {};
   isSaving.value = true;
 
@@ -698,10 +767,12 @@ async function submit() {
       vehiculo: form.vehiculo?.id || null,
       tipo_recepcion: form.tipo_recepcion,
       motivo_ingreso: form.motivo_ingreso?.trim() || '',
-      fecha_ingreso: form.fecha_ingreso || defaultNow,
+      fecha_ingreso: form.fecha_ingreso || localDatetimeNow(),
       fecha_salida: form.fecha_salida || null,
       recibido_por: form.recibido_por || null,
-      kilometraje_ingreso: Number(form.kilometraje_ingreso),
+      kilometraje_ingreso: (esNoAceptada.value && String(form.kilometraje_ingreso ?? '').trim() === '')
+        ? null
+        : Number(form.kilometraje_ingreso),
       nivel_combustible: form.nivel_combustible,
       ingreso_en_grua: form.ingreso_en_grua,
       datos_grua: form.ingreso_en_grua ? form.datos_grua : null,
@@ -737,16 +808,22 @@ async function submit() {
       datos_danos_carroceria: marcas.value,
       detalles_carroceria: form.detalles_carroceria || '',
       firma_receptor: firmaReceptorData.value,
-      firma_cliente: clienteNoFirma.value ? null : firmaClienteData.value,
-      aceptacion_condiciones: clienteNoFirma.value ? false : (isEditMode ? undefined : !!form.aceptacion_condiciones),
-      estado: clienteNoFirma.value ? 'NO_ACEPTADA' : (form.estado || 'PENDIENTE'),
+      firma_cliente: esNoAceptada.value ? null : firmaClienteData.value,
+      aceptacion_condiciones: esNoAceptada.value ? false : !!form.aceptacion_condiciones,
+      estado: esNoAceptada.value ? 'NO_ACEPTADA' : (form.estado && form.estado !== 'NO_ACEPTADA' ? form.estado : 'PENDIENTE'),
       motivo_no_recepcion: (form.motivo_no_recepcion || '').trim() || null,
     };
 
     const fd = new FormData();
     Object.keys(payload).forEach((key) => {
       const value = payload[key];
-      if (value === undefined || value === null) {
+      if (value === undefined) {
+        return;
+      }
+      if (value === null) {
+        if (key === 'firma_receptor' || key === 'firma_cliente') {
+          fd.append(key, '');
+        }
         return;
       }
       if (Array.isArray(value)) {
@@ -765,15 +842,27 @@ async function submit() {
 
     if (isEditMode) {
       await recepcionesService.update(recepcionId, fd);
+      const clienteAcepto = !esNoAceptada.value && !!firmaClienteData.value && !!form.aceptacion_condiciones;
+      if (clienteAcepto) {
+        sessionStorage.setItem('recepcion_aceptada_exito', 'La recepción ha sido aceptada y firmada con éxito.');
+        window.location.assign(`/crud/recepciones/ver/?id=${encodeURIComponent(recepcionId)}`);
+        return;
+      }
       successMessage.value = 'Recepción actualizada correctamente.';
     } else {
-      await recepcionesService.create(fd);
+      const saved = await recepcionesService.create(fd);
+      if (saved?.id) {
+        sessionStorage.setItem('recepcion_exito', 'Recepción creada correctamente.');
+        window.location.assign(`/crud/recepciones/editar/?id=${encodeURIComponent(saved.id)}`);
+        return;
+      }
       successMessage.value = 'Recepción creada correctamente.';
     }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (error) {
     showError(error);
+    if (error?.data) savedError.value = true;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } finally {
     isSaving.value = false;
@@ -818,12 +907,12 @@ watch(() => form.motivo_ingreso, (val) => {
   if (clean !== val) form.motivo_ingreso = clean;
 });
 
-function cancelarClienteNoFirma() {
-  clienteNoFirma.value = false;
-  formErrors.value = { ...formErrors.value, motivo_no_recepcion: '' };
-}
-
 onMounted(() => {
+  const mensajeExito = sessionStorage.getItem('recepcion_exito');
+  if (mensajeExito) {
+    successMessage.value = mensajeExito;
+    sessionStorage.removeItem('recepcion_exito');
+  }
   loadRecepcion();
   loadEmpleados();
 });
@@ -849,7 +938,7 @@ onMounted(() => {
       <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
 
       <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando recepción...</div>
-      <form v-else-if="!errorMessage" class="space-y-6" novalidate @submit.prevent="submit">
+      <form v-else-if="!savedError" class="space-y-6" novalidate @submit.prevent="submit">
         <h4 class="mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
             <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
@@ -880,7 +969,7 @@ onMounted(() => {
                 class="shrink-0 inline-flex items-center px-3 py-2.5 text-white bg-primary-blue-500 border border-primary-blue-500 rounded-r-lg hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300"
                 @click="showClientCreateModal = true"
               >
-                <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <svg class="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                   <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12h4m-2 2v-4M4 18v-1a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Zm8-10a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
                 </svg>
               </button>
@@ -1021,8 +1110,9 @@ onMounted(() => {
               id="fecha_salida"
               v-model="form.fecha_salida"
               type="datetime-local"
-              class="block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white"
+              :class="['block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.fecha_salida ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']"
             />
+            <p v-if="formErrors.fecha_salida" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.fecha_salida }}</p>
           </div>
 
            <div class="col-span-1">
@@ -1321,7 +1411,7 @@ onMounted(() => {
               ></canvas>
             </div>
             <div class="flex justify-between items-center mt-2">
-              <button type="button" class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-700 border border-red-400 rounded hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-900/20" @click="clearCanvas(firmaReceptorCanvas.value, firmaReceptorData)">
+              <button type="button" class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-700 border border-red-400 rounded hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-900/20" @click="borrarFirmaReceptor">
                 <svg class="w-5 h-5 text-red-700 dark:text-red-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
                   <path fill-rule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm5.757-1a1 1 0 1 0 0 2h8.486a1 1 0 1 0 0-2H7.757Z" clip-rule="evenodd"/>
                 </svg>
@@ -1329,7 +1419,6 @@ onMounted(() => {
               </button>
               <span class="text-xs text-gray-500 dark:text-gray-400">Firme del receptor</span>
             </div>
-            <p v-if="formErrors.firma_receptor" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.firma_receptor }}</p>
           </div>
 
           <div class="col-span-1">
@@ -1350,7 +1439,7 @@ onMounted(() => {
               ></canvas>
             </div>
             <div class="flex justify-between items-center mt-2">
-              <button type="button" class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-700 border border-red-400 rounded hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-900/20" @click="clearCanvas(firmaClienteCanvas.value, firmaClienteData)">
+              <button type="button" class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-700 border border-red-400 rounded hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-900/20" @click="borrarFirmaCliente">
                 <svg class="w-5 h-5 text-red-700 dark:text-red-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
                   <path fill-rule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm5.757-1a1 1 0 1 0 0 2h8.486a1 1 0 1 0 0-2H7.757Z" clip-rule="evenodd"/>
                 </svg>
@@ -1366,54 +1455,31 @@ onMounted(() => {
             <input
               v-model="form.aceptacion_condiciones"
               type="checkbox"
-              :disabled="isEditMode"
+              :disabled="isEditMode && form.estado !== 'PENDIENTE'"
               class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
             />
             <span class="text-sm font-medium text-gray-900 dark:text-white">
               El cliente acepta las condiciones de recepción y el estado reportado del vehículo.
             </span>
           </label>
-          <p v-if="isEditMode" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          <p v-if="isEditMode && form.estado !== 'PENDIENTE'" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
             Esta opción no se puede modificar una vez creada la recepción.
           </p>
         </div>
 
         <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
-          <template v-if="!clienteNoFirma">
-            <button
-              type="button"
-              class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-yellow-700 bg-yellow-50 border border-yellow-300 rounded-lg hover:bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/20 dark:border-yellow-500"
-              @click="clienteNoFirma = true"
-            >
-              <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                <path fill-rule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm11-4.243a1 1 0 1 0-2 0V11H7.757a1 1 0 1 0 0 2H11v3.243a1 1 0 1 0 2 0V13h3.243a1 1 0 1 0 0-2H13V7.757Z" clip-rule="evenodd"/>
-              </svg>
-              El cliente no desea firmar
-            </button>
-          </template>
-          <template v-else>
-            <div class="p-4 bg-yellow-50 border border-yellow-300 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-500">
-              <p class="mb-2 text-sm font-medium text-yellow-900 dark:text-yellow-200">
-                El cliente no firmará la recepción. Registra el motivo y guarda para dejar la recepción como "No Aceptada / Sin Firma".
-              </p>
-              <textarea
-                v-model="form.motivo_no_recepcion"
-                rows="3"
-                placeholder="Registra el motivo por el cual el cliente no aceptó las condiciones o no dejó el vehículo..."
-                :class="['block w-full p-2.5 text-sm rounded-lg bg-white border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.motivo_no_recepcion ? 'bg-yellow-50 border-yellow-500 text-yellow-900 dark:bg-gray-700 dark:text-yellow-500 dark:border-yellow-500' : '']"
-              ></textarea>
-              <p v-if="formErrors.motivo_no_recepcion" class="mt-2 text-sm text-yellow-600 dark:text-yellow-500">{{ formErrors.motivo_no_recepcion }}</p>
-              <div class="flex items-center gap-2 mt-3">
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-yellow-700 border border-yellow-400 rounded hover:bg-yellow-50 dark:text-yellow-400 dark:border-yellow-500 dark:hover:bg-yellow-900/20"
-                  @click="cancelarClienteNoFirma"
-                >
-                  Aceptar
-                </button>
-              </div>
-            </div>
-          </template>
+          <div class="p-4 bg-yellow-50 border border-yellow-300 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-500">
+            <p class="mb-2 text-sm font-medium text-yellow-900 dark:text-yellow-200">
+              El cliente no firmará la recepción. Registra el motivo y guarda para dejar la recepción como "No Aceptada / Sin Firma".
+            </p>
+            <textarea
+              v-model="form.motivo_no_recepcion"
+              rows="3"
+              placeholder="Registra el motivo por el cual el cliente no aceptó las condiciones o no dejó el vehículo..."
+              :class="['block w-full p-2.5 text-sm rounded-lg bg-white border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.motivo_no_recepcion ? 'bg-yellow-50 border-yellow-500 text-yellow-900 dark:bg-gray-700 dark:text-yellow-500 dark:border-yellow-500' : '']"
+            ></textarea>
+            <p v-if="formErrors.motivo_no_recepcion" class="mt-2 text-sm text-yellow-600 dark:text-yellow-500">{{ formErrors.motivo_no_recepcion }}</p>
+          </div>
         </div>
 
         <div class="col-span-1 md:col-span-4">

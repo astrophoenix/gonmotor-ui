@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
+import Alert from '../../../shared/components/Alert.vue';
 import { useRecepciones } from '../composables/useRecepciones';
 
 const { loading, error, loadRecepcion } = useRecepciones();
@@ -7,6 +8,7 @@ const recepcion = ref(null);
 const blueprintImageUrl = ref('');
 const previewImg = ref('');
 const showImageModal = ref(false);
+const successMessage = ref('');
 
 const FOTO_VISTAS = [
   { key: 'FRONTAL', label: 'Vista Frontal' },
@@ -100,6 +102,11 @@ async function resolveBlueprint(grupo) {
 }
 
 onMounted(async () => {
+  const mensajeExito = sessionStorage.getItem('recepcion_aceptada_exito');
+  if (mensajeExito) {
+    successMessage.value = mensajeExito;
+    sessionStorage.removeItem('recepcion_aceptada_exito');
+  }
   const id = getIdFromUrl();
   if (id) {
     recepcion.value = await loadRecepcion(id);
@@ -123,6 +130,7 @@ const tieneInspeccion = computed(() => (recepcion.value?.inspecciones?.length ??
 const puedeEditar = computed(() => {
   const r = recepcion.value;
   if (!r) return false;
+  if (r.estado === 'NO_ACEPTADA') return false;
   return !(r.aceptacion_condiciones && r.fecha_firma_cliente);
 });
 
@@ -255,6 +263,8 @@ function irAInspeccion(recepcion) {
 
   <div class="p-4">
     <div class="relative max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
+      <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
+
       <div v-if="error" class="mb-4 p-3 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-900 dark:text-red-200">
         {{ error }}
       </div>
@@ -289,7 +299,7 @@ function irAInspeccion(recepcion) {
               Editar
             </button>
             <button
-              v-if="!tieneInspeccion && recepcion.estado !== 'NO_ACEPTADA'"
+              v-if="!tieneInspeccion && recepcion.estado === 'ACEPTADA'"
               type="button"
               title="Crear Diagnóstico"
               class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-purple-700 rounded-lg border border-purple-700 hover:bg-purple-50 dark:text-purple-400 dark:border-purple-400 dark:hover:bg-gray-800"
@@ -300,18 +310,19 @@ function irAInspeccion(recepcion) {
               </svg>
               Crear Diagnóstico
             </button>
-            <button
-              v-else
-              type="button"
-              title="Ver / Editar Diagnóstico"
-              class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-amber-700 rounded-lg border border-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:border-amber-400 dark:hover:bg-gray-800"
-              @click="irAInspeccion(recepcion)"
-            >
-              <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m14.3 4.8 2.9 2.9M7 17l-1 4 4-1 9.3-9.3a2 2 0 0 0-2.8-2.8L7 17Z"/>
-              </svg>
-              Ver / Editar Diagnóstico
-            </button>
+            <template v-if="tieneInspeccion && recepcion.estado === 'ACEPTADA'">
+              <button
+                type="button"
+                title="Ver / Editar Diagnóstico"
+                class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-amber-700 rounded-lg border border-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:border-amber-400 dark:hover:bg-gray-800"
+                @click="irAInspeccion(recepcion)"
+              >
+                <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m14.3 4.8 2.9 2.9M7 17l-1 4 4-1 9.3-9.3a2 2 0 0 0-2.8-2.8L7 17Z"/>
+                </svg>
+                Ver / Editar Diagnóstico
+              </button>
+            </template>
             <button
               v-if="recepcion.cotizaciones_generadas?.length"
               type="button"
@@ -728,10 +739,9 @@ function irAInspeccion(recepcion) {
           </label>
           <div
             v-if="recepcion.estado === 'NO_ACEPTADA'"
-            class="mt-4 p-4 bg-red-50 border border-red-300 rounded-lg dark:bg-red-900/20 dark:border-red-500"
-          >
-            <p class="text-sm font-medium text-red-900 dark:text-red-200">Recepción no aceptada por el cliente</p>
-            <p class="mt-1 text-sm text-red-800 dark:text-red-300">
+            class="mt-4 p-4 bg-yellow-50 border border-yellow-300 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-500">
+            <p class="text-sm font-medium text-yellow-900 dark:text-yellow-200">Recepción no aceptada por el cliente</p>
+            <p class="mt-1 text-sm text-yellow-800 dark:text-yellow-300">
               {{ recepcion.motivo_no_recepcion || 'No se registró un motivo.' }}
             </p>
           </div>
