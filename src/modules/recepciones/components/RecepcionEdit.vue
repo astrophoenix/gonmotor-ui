@@ -77,6 +77,8 @@ const form = reactive({
   fecha_firma_receptor: null,
   fecha_firma_cliente: null,
   aceptacion_condiciones: false,
+  estado: 'PENDIENTE',
+  motivo_no_recepcion: '',
 });
 
 let testigos = reactive({
@@ -123,6 +125,7 @@ const firmaReceptorCanvas = ref(null);
 const firmaClienteCanvas = ref(null);
 const isDrawingReceptor = ref(false);
 const isDrawingCliente = ref(false);
+const clienteNoFirma = ref(false);
 
 const FOTO_VISTAS = [
   { key: 'FRONTAL', label: 'Vista Frontal' },
@@ -336,6 +339,11 @@ async function loadRecepcion() {
   try {
     const data = await recepcionesService.getById(recepcionId);
     if (data) {
+      if (data.aceptacion_condiciones && data.fecha_firma_cliente) {
+        errorMessage.value = 'Esta recepción ya fue aceptada y firmada por el cliente, por lo que no es posible editarla.';
+        isLoading.value = false;
+        return;
+      }
       Object.assign(form, {
         ...data,
         cliente: data.cliente || null,
@@ -350,7 +358,10 @@ async function loadRecepcion() {
         fecha_firma_receptor: data.fecha_firma_receptor || null,
         fecha_firma_cliente: data.fecha_firma_cliente || null,
         aceptacion_condiciones: data.aceptacion_condiciones || false,
+        estado: data.estado || 'PENDIENTE',
+        motivo_no_recepcion: data.motivo_no_recepcion || '',
       });
+      clienteNoFirma.value = data.estado === 'NO_ACEPTADA';
       if (data.cliente) {
         form.cliente_identificacion = data.cliente.identificacion || '';
         form.cliente_telefono = data.cliente.telefono || '';
@@ -550,6 +561,7 @@ function clearCliente() {
 }
 
 function onClientCreated(cliente) {
+  showClientCreateModal.value = false;
   if (cliente && cliente.id) {
     selectCliente(cliente);
     const nombre = cliente.nombre || 'el cliente';
@@ -559,6 +571,7 @@ function onClientCreated(cliente) {
 }
 
 function onClientReactivated(cliente) {
+  showClientCreateModal.value = false;
   if (cliente && cliente.id) {
     selectCliente(cliente);
     const nombre = cliente.nombre || 'el cliente';
@@ -577,6 +590,7 @@ function clearVehiculo() {
 
 function validateRecepcion() {
   const errors = {};
+  const esNoAceptada = clienteNoFirma.value;
 
   if (!form.cliente) {
     errors.cliente = 'El cliente es obligatorio.';
@@ -590,6 +604,10 @@ function validateRecepcion() {
     errors.recibido_por = 'El empleado que recibe es obligatorio.';
   }
 
+  if (esNoAceptada && !firmaReceptorData.value) {
+    errors.firma_receptor = 'La firma del receptor es obligatoria como testigo del rechazo del cliente.';
+  }
+
   const kmRaw = form.kilometraje_ingreso;
   const kmStr = kmRaw == null ? '' : String(kmRaw).trim();
   if (kmStr === '') {
@@ -600,11 +618,11 @@ function validateRecepcion() {
       errors.kilometraje_ingreso = 'El kilometraje no es válido. Ingresa solo números enteros mayores a 0.';
     } else if (km < 0) {
       errors.kilometraje_ingreso = 'El kilometraje no puede ser negativo. Por favor ingresa un valor mayor a 0.';
-    } else if (km === 0) {
-      errors.kilometraje_ingreso = 'El kilometraje debe ser mayor a 0.';
     } else if (!Number.isInteger(km)) {
       errors.kilometraje_ingreso = 'El kilometraje debe ser un número entero mayor a 0.';
-    } else if (form.vehiculo && form.vehiculo.kilometraje_actual != null) {
+    } else if (!esNoAceptada && km === 0) {
+      errors.kilometraje_ingreso = 'El kilometraje debe ser mayor a 0.';
+    } else if (!esNoAceptada && form.vehiculo && form.vehiculo.kilometraje_actual != null) {
       const kmVehiculo = Number(form.vehiculo.kilometraje_actual);
       const conservarKmEnEdicion = isEditMode && km === kmVehiculo;
       if (km < kmVehiculo || (km === kmVehiculo && !conservarKmEnEdicion)) {
@@ -617,12 +635,16 @@ function validateRecepcion() {
     errors.fecha_ingreso = 'La fecha de ingreso es obligatoria.';
   }
 
-  if (!form.tipo_recepcion) {
+  if (!esNoAceptada && !form.tipo_recepcion) {
     errors.tipo_recepcion = 'El tipo de recepción es obligatorio.';
   }
 
-  if (!form.motivo_ingreso || !form.motivo_ingreso.trim()) {
+  if (!esNoAceptada && (!form.motivo_ingreso || !form.motivo_ingreso.trim())) {
     errors.motivo_ingreso = 'El motivo de ingreso es obligatorio.';
+  }
+
+  if (esNoAceptada && !(form.motivo_no_recepcion || '').trim()) {
+    errors.motivo_no_recepcion = 'Registra el motivo por el cual el cliente no desea firmar la recepción.';
   }
 
   if (form.ingreso_en_grua && !form.datos_grua) {
@@ -715,8 +737,10 @@ async function submit() {
       datos_danos_carroceria: marcas.value,
       detalles_carroceria: form.detalles_carroceria || '',
       firma_receptor: firmaReceptorData.value,
-      firma_cliente: firmaClienteData.value,
-      aceptacion_condiciones: isEditMode ? undefined : !!form.aceptacion_condiciones,
+      firma_cliente: clienteNoFirma.value ? null : firmaClienteData.value,
+      aceptacion_condiciones: clienteNoFirma.value ? false : (isEditMode ? undefined : !!form.aceptacion_condiciones),
+      estado: clienteNoFirma.value ? 'NO_ACEPTADA' : (form.estado || 'PENDIENTE'),
+      motivo_no_recepcion: (form.motivo_no_recepcion || '').trim() || null,
     };
 
     const fd = new FormData();
@@ -794,6 +818,11 @@ watch(() => form.motivo_ingreso, (val) => {
   if (clean !== val) form.motivo_ingreso = clean;
 });
 
+function cancelarClienteNoFirma() {
+  clienteNoFirma.value = false;
+  formErrors.value = { ...formErrors.value, motivo_no_recepcion: '' };
+}
+
 onMounted(() => {
   loadRecepcion();
   loadEmpleados();
@@ -820,7 +849,7 @@ onMounted(() => {
       <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
 
       <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando recepción...</div>
-      <form v-else class="space-y-6" novalidate @submit.prevent="submit">
+      <form v-else-if="!errorMessage" class="space-y-6" novalidate @submit.prevent="submit">
         <h4 class="mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
             <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
@@ -1299,7 +1328,8 @@ onMounted(() => {
                 Borrar firma receptor
               </button>
               <span class="text-xs text-gray-500 dark:text-gray-400">Firme del receptor</span>
-            </div>  
+            </div>
+            <p v-if="formErrors.firma_receptor" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.firma_receptor }}</p>
           </div>
 
           <div class="col-span-1">
@@ -1346,6 +1376,44 @@ onMounted(() => {
           <p v-if="isEditMode" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
             Esta opción no se puede modificar una vez creada la recepción.
           </p>
+        </div>
+
+        <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
+          <template v-if="!clienteNoFirma">
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-yellow-700 bg-yellow-50 border border-yellow-300 rounded-lg hover:bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/20 dark:border-yellow-500"
+              @click="clienteNoFirma = true"
+            >
+              <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                <path fill-rule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm11-4.243a1 1 0 1 0-2 0V11H7.757a1 1 0 1 0 0 2H11v3.243a1 1 0 1 0 2 0V13h3.243a1 1 0 1 0 0-2H13V7.757Z" clip-rule="evenodd"/>
+              </svg>
+              El cliente no desea firmar
+            </button>
+          </template>
+          <template v-else>
+            <div class="p-4 bg-yellow-50 border border-yellow-300 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-500">
+              <p class="mb-2 text-sm font-medium text-yellow-900 dark:text-yellow-200">
+                El cliente no firmará la recepción. Registra el motivo y guarda para dejar la recepción como "No Aceptada / Sin Firma".
+              </p>
+              <textarea
+                v-model="form.motivo_no_recepcion"
+                rows="3"
+                placeholder="Registra el motivo por el cual el cliente no aceptó las condiciones o no dejó el vehículo..."
+                :class="['block w-full p-2.5 text-sm rounded-lg bg-white border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.motivo_no_recepcion ? 'bg-yellow-50 border-yellow-500 text-yellow-900 dark:bg-gray-700 dark:text-yellow-500 dark:border-yellow-500' : '']"
+              ></textarea>
+              <p v-if="formErrors.motivo_no_recepcion" class="mt-2 text-sm text-yellow-600 dark:text-yellow-500">{{ formErrors.motivo_no_recepcion }}</p>
+              <div class="flex items-center gap-2 mt-3">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-yellow-700 border border-yellow-400 rounded hover:bg-yellow-50 dark:text-yellow-400 dark:border-yellow-500 dark:hover:bg-yellow-900/20"
+                  @click="cancelarClienteNoFirma"
+                >
+                  Aceptar
+                </button>
+              </div>
+            </div>
+          </template>
         </div>
 
         <div class="col-span-1 md:col-span-4">

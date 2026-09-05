@@ -28,6 +28,7 @@ const form = reactive({
   testigo_airbag: false,
   testigo_bateria: false,
   testigo_aceite: false,
+  testigo_temperatura: false,
   otros_testigos_observaciones: '',
 });
 
@@ -71,6 +72,13 @@ async function loadRecepcion() {
       }
       form.motivo_ingreso = data.motivo_ingreso || '';
       form.tipo_inspeccion = data.tipo_recepcion || 'DIAGNOSTICO';
+      form.testigo_check_engine = data.testigo_check_engine || false;
+      form.testigo_abs = data.testigo_abs || false;
+      form.testigo_airbag = data.testigo_airbag || false;
+      form.testigo_bateria = data.testigo_bateria || false;
+      form.testigo_aceite = data.testigo_aceite || false;
+      form.testigo_temperatura = data.testigo_temperatura || false;
+      form.otros_testigos_observaciones = data.otros_testigos_observaciones || '';
     }
   } catch (error) {
     console.error('No se pudo cargar la recepción:', error);
@@ -98,6 +106,7 @@ async function loadInspeccion() {
       testigo_airbag: data.testigo_airbag || false,
       testigo_bateria: data.testigo_bateria || false,
       testigo_aceite: data.testigo_aceite || false,
+      testigo_temperatura: data.testigo_temperatura || false,
       otros_testigos_observaciones: data.otros_testigos_observaciones || '',
     });
     if (data.recepcion) {
@@ -136,6 +145,7 @@ async function submit() {
       testigo_airbag: form.testigo_airbag,
       testigo_bateria: form.testigo_bateria,
       testigo_aceite: form.testigo_aceite,
+      testigo_temperatura: form.testigo_temperatura,
       otros_testigos_observaciones: form.otros_testigos_observaciones?.trim() || '',
     };
 
@@ -304,6 +314,10 @@ onMounted(() => {
             <div class="flex items-center">
               <input id="testigo_aceite" v-model="form.testigo_aceite" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600">
               <label for="testigo_aceite" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Presión de Aceite</label>
+            </div>
+            <div class="flex items-center">
+              <input id="testigo_temperatura" v-model="form.testigo_temperatura" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600">
+              <label for="testigo_temperatura" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Temperatura / Refrigerante</label>
             </div>
           </div>
         </div>

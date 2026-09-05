@@ -27,6 +27,16 @@ function formatDate(dateString) {
   return date.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
+function getEstadoFirmaBadge(recepcion) {
+  const estado = recepcion.estado || 'PENDIENTE';
+  const map = {
+    ACEPTADA: { label: 'Aceptada y Firmada', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
+    NO_ACEPTADA: { label: 'No Aceptada / Sin Firma', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' },
+    PENDIENTE: { label: 'Pendiente de Firma', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
+  };
+  return map[estado] || map.PENDIENTE;
+}
+
 function getEstadoBadge(recepcion) {
   if (recepcion.inspecciones?.length > 0) {
     if (recepcion.cotizaciones_generadas?.length > 0) {
@@ -44,10 +54,6 @@ function handleVerDetalle(id) {
   window.location.assign(`/crud/recepciones/ver/?id=${encodeURIComponent(id)}`);
 }
 
-function handleEditar(id) {
-  window.location.assign(`/crud/recepciones/editar/?id=${encodeURIComponent(id)}`);
-}
-
 function handleCrearDiagnostico(id) {
   window.location.assign(`/crud/inspecciones/nuevo/?recepcion=${id}`);
 }
@@ -59,16 +65,6 @@ function handleVerDiagnostico(recepcion) {
   } else {
     handleCrearDiagnostico(recepcion.id);
   }
-}
-
-function handleVerCotizacion(cotizacionId) {
-  if (!cotizacionId) return;
-  window.location.assign(`/crud/cotizaciones/ver/${cotizacionId}/`);
-}
-
-function handleVerOrden(ordenId) {
-  if (!ordenId) return;
-  window.location.assign(`/crud/ordenes/ver/${ordenId}/`);
 }
 
 function handlePdfError(message) {
@@ -155,7 +151,10 @@ onMounted(async () => {
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ formatDate(item.created_at) }}</td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.ingreso_en_grua ? 'Sí' : 'No' }}</td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">
-          <span :class="['px-2 py-1 rounded-full text-xs font-medium', getEstadoBadge(item).color]">
+          <span class="inline-block px-2 py-1 rounded-full text-xs font-medium mr-1" :class="getEstadoFirmaBadge(item).color">
+            {{ getEstadoFirmaBadge(item).label }}
+          </span>
+          <span v-if="item.estado !== 'NO_ACEPTADA'" class="inline-block px-2 py-1 rounded-full text-xs font-medium" :class="getEstadoBadge(item).color">
             {{ getEstadoBadge(item).label }}
           </span>
         </td>
@@ -164,17 +163,8 @@ onMounted(async () => {
             <button type="button" title="Ver detalle" aria-label="Ver detalle" class="inline-flex items-center p-2 text-blue-600 rounded-lg hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700" @click="handleVerDetalle(item.id)">
               <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path></svg>
             </button>
-            <button type="button" title="Editar" aria-label="Editar" class="inline-flex items-center p-2 text-yellow-600 rounded-lg hover:bg-yellow-100 dark:text-yellow-400 dark:hover:bg-gray-700" @click="handleEditar(item.id)">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg>
-            </button>
-            <button type="button" :title="item.inspecciones?.length > 0 ? 'Ver Diagnóstico' : 'Crear Diagnóstico'" :aria-label="item.inspecciones?.length > 0 ? 'Ver Diagnóstico' : 'Crear Diagnóstico'" class="inline-flex items-center p-2 text-purple-600 rounded-lg hover:bg-purple-100 dark:text-purple-400 dark:hover:bg-gray-700" @click="handleVerDiagnostico(item)">
+            <button v-if="item.estado !== 'NO_ACEPTADA'" type="button" :title="item.inspecciones?.length > 0 ? 'Ver Diagnóstico' : 'Crear Diagnóstico'" :aria-label="item.inspecciones?.length > 0 ? 'Ver Diagnóstico' : 'Crear Diagnóstico'" class="inline-flex items-center p-2 text-purple-600 rounded-lg hover:bg-purple-100 dark:text-purple-400 dark:hover:bg-gray-700" @click="handleVerDiagnostico(item)">
               <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M4 2a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V2zm2 0v12h8V2H6zm3 8h2v2H9v-2zm0-4h2v2H9V6z" clip-rule="evenodd"></path></svg>
-            </button>
-            <button v-if="item.cotizaciones_generadas?.length" type="button" title="Ver Cotización" aria-label="Ver Cotización" class="inline-flex items-center p-2 text-emerald-600 rounded-lg hover:bg-emerald-100 dark:text-emerald-400 dark:hover:bg-gray-700" @click="handleVerCotizacion(item.cotizaciones_generadas[0]?.id)">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 3a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V3zm2 0v10h8V3H6z"></path><path d="M10 13l3 3 3-3"></path></svg>
-            </button>
-            <button v-if="item.orden_trabajo_id" type="button" title="Ver Orden" aria-label="Ver Orden" class="inline-flex items-center p-2 text-indigo-600 rounded-lg hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-gray-700" @click="handleVerOrden(item.orden_trabajo_id)">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2a6 6 0 016 6v2H4V8a6 6 0 016-6z"></path><path d="M4 14v-2h12v2a2 2 0 01-2 2H6a2 2 0 01-2-2z"></path></svg>
             </button>
           </div>
         </td>
