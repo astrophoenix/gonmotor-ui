@@ -1,5 +1,6 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
+import { X, Building2, MessageSquare, MapPin, Phone, ChevronDown, Search, Save } from 'lucide-vue-next';
 import { empleadosService } from '../services/empleadosService';
 import { request } from '../../../shared/services/httpClient';
 import Alert from '../../../shared/components/Alert.vue';
@@ -296,7 +297,7 @@ onBeforeUnmount(() => {
           aria-label="Cerrar"
           @click="close"
         >
-          <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 17.94 6M18 18 6.06 6"/></svg>
+          <X class="w-5 h-5" />
         </button>
       </div>
 
@@ -361,32 +362,23 @@ onBeforeUnmount(() => {
                     ? 'bg-primary-50 border-primary-500 dark:bg-primary-900/30 dark:border-primary-500'
                     : 'bg-gray-50 border-gray-200 hover:bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:hover:bg-gray-600'"
                 >
-                  <div class="flex-1 space-y-1.5 pr-7">
+                  <div class="flex-1 space-y-1.5 pr-8 min-w-0">
                     <div class="flex items-center gap-2">
-                      <svg class="shrink-0 w-4 h-4 text-primary-600 dark:text-primary-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 4h12M6 4v16M6 4H5m13 0v16m0-16h1m-1 16H6m12 0h1M6 20H5M9 7h1v1H9V7Zm5 0h1v1h-1V7Zm-5 4h1v1H9v-1Zm5 0h1v1h-1v-1Zm-3 4h2a1 1 0 0 1 1 1v4h-4v-4a1 1 0 0 1 1-1Z"/>
-                      </svg>
+                      <Building2 class="shrink-0 w-4 h-4 text-primary-600 dark:text-primary-400" />
                       <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ taller.nombre }}</p>
                     </div>
                     <div class="flex items-center gap-2">
-                      <svg class="shrink-0 w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8-4-4H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-3l-4 4Z"/>
-                      </svg>
+                      <MessageSquare class="shrink-0 w-4 h-4 text-gray-500 dark:text-gray-400" />
                       <span class="text-xs text-gray-600 dark:text-gray-400 truncate">
                         {{ [taller.codigo_sucursal, taller.ciudad].filter(Boolean).join(' · ') || '—' }}
                       </span>
                     </div>
                     <div v-if="taller.direccion" class="flex items-center gap-2">
-                      <svg class="shrink-0 w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.8 13.938h-.011a7 7 0 1 0-11.464.144h-.016l.14.171c.1.127.2.251.3.371L12 21l5.13-6.248c.194-.209.374-.429.54-.659l.13-.155Z"/>
-                      </svg>
+                      <MapPin class="shrink-0 w-4 h-4 text-gray-500 dark:text-gray-400" />
                       <span class="text-xs text-gray-600 dark:text-gray-400 truncate">{{ taller.direccion }}</span>
                     </div>
                     <div v-if="taller.telefono" class="flex items-center gap-2">
-                      <svg class="shrink-0 w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 5h3l2 4-2 1a8 8 0 0 0 5 5l1-2 4 2v3a2 2 0 0 1-2 2A14 14 0 0 1 4 7a2 2 0 0 1 2-2Z"/>
-                      </svg>
+                      <Phone class="shrink-0 w-4 h-4 text-gray-500 dark:text-gray-400" />
                       <span class="text-xs text-gray-600 dark:text-gray-400">{{ taller.telefono }}</span>
                     </div>
                   </div>
@@ -408,18 +400,14 @@ onBeforeUnmount(() => {
                   @click="showTallerDropdown = !showTallerDropdown"
                 >
                   <span>{{ form.talleres.length }} taller(es) seleccionado(s)</span>
-                  <svg class="w-2.5 h-2.5 ms-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
-                  </svg>
+                  <ChevronDown class="w-2.5 h-2.5 ms-2.5" />
                 </button>
                 <div v-if="showTallerDropdown" data-taller-dropdown class="z-10 w-full mt-2 bg-white rounded-lg shadow-sm dark:bg-gray-700">
                   <div class="p-3">
                     <label for="modal-talleres-search" class="sr-only">Buscar taller</label>
                     <div class="relative">
                       <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-                        <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
-                        </svg>
+                        <Search class="w-4 h-4 text-gray-500 dark:text-gray-400" />
                       </div>
                       <input
                         id="modal-talleres-search"
@@ -469,10 +457,7 @@ onBeforeUnmount(() => {
           class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="submit"
         >
-          <svg v-if="!isSaving" class="w-5 h-5 mr-1.5 -ml-1 text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <path stroke="currentColor" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 0 1 1-1h11.586a1 1 0 0 1 .707.293l2.414 2.414a1 1 0 0 1 .293.707V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5Z"/>
-            <path stroke="currentColor" stroke-linejoin="round" stroke-width="2" d="M8 4h8v4H8V4Zm7 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
-          </svg>
+          <Save v-if="!isSaving" class="w-5 h-5 mr-1.5 -ml-1 text-white" />
           <svg v-else class="w-5 h-5 mr-1.5 animate-spin" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>

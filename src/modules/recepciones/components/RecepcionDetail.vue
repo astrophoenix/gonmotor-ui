@@ -1,6 +1,23 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
+import {
+  Pencil,
+  Plus,
+  FileText,
+  FileDown,
+  FileCheck,
+  FileSearch,
+  TriangleAlert,
+  Camera,
+  Signature,
+  X,
+  CheckCircle2,
+  XCircle,
+  Clock,
+} from 'lucide-vue-next';
 import Alert from '../../../shared/components/Alert.vue';
+import MdiIcon from '../../../shared/components/MdiIcon.vue';
+import { TESTIGOS } from '../../../shared/config/testigos';
 import { useRecepciones } from '../composables/useRecepciones';
 
 const { loading, error, loadRecepcion } = useRecepciones();
@@ -73,14 +90,7 @@ const accesorios = [
   },
 ];
 
-const testigosMeta = [
-  { key: 'testigo_check_engine', label: 'Check Engine', color: 'yellow', icon: 'checkEngine' },
-  { key: 'testigo_abs', label: 'ABS', color: 'yellow', icon: 'abs' },
-  { key: 'testigo_airbag', label: 'Airbag', color: 'red', icon: 'airbag' },
-  { key: 'testigo_bateria', label: 'Batería', color: 'red', icon: 'battery' },
-  { key: 'testigo_aceite', label: 'Presión de Aceite', color: 'red', icon: 'oil' },
-  { key: 'testigo_temperatura', label: 'Temperatura', color: 'yellow', icon: 'temperature' },
-];
+const testigosMeta = TESTIGOS;
 
 function getIdFromUrl() {
   const params = new URLSearchParams(window.location.search);
@@ -141,17 +151,17 @@ const estadoBadge = computed(() => {
     ACEPTADA: {
       label: 'Aceptada y Firmada',
       color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      icon: 'M8.5 11.5l2 2 5-5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+      icon: CheckCircle2,
     },
     NO_ACEPTADA: {
       label: 'No Aceptada / Sin Firma',
       color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-      icon: 'm9 9 6 6m0-6-6 6M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+      icon: XCircle,
     },
     PENDIENTE: {
       label: 'Pendiente de Firma',
       color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-      icon: 'M12 8v4l2.5 2.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+      icon: Clock,
     },
   };
   return map[estado] || map.PENDIENTE;
@@ -225,6 +235,7 @@ function getTestigoCardClasses(testigo) {
   const base = 'flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200';
   if (!testigoActivo(testigo)) return `${base} bg-gray-50 border-gray-200 dark:bg-gray-700 dark:border-gray-600 opacity-70`;
   if (testigo.color === 'red') return `${base} bg-red-50 border-red-300 dark:bg-red-900/20 dark:border-red-500`;
+  if (testigo.color === 'green') return `${base} bg-green-50 border-green-300 dark:bg-green-900/20 dark:border-green-500`;
   return `${base} bg-yellow-50 border-yellow-300 dark:bg-yellow-900/20 dark:border-yellow-500`;
 }
 
@@ -232,6 +243,7 @@ function getTestigoIconClasses(testigo) {
   const base = 'w-8 h-8 transition-all duration-200';
   if (!testigoActivo(testigo)) return `${base} text-gray-400 dark:text-gray-500`;
   if (testigo.color === 'red') return `${base} text-red-500 dark:text-red-400 drop-shadow-[0_0_6px_rgba(239,68,68,0.5)]`;
+  if (testigo.color === 'green') return `${base} text-green-500 dark:text-green-400 drop-shadow-[0_0_6px_rgba(34,197,94,0.5)]`;
   return `${base} text-yellow-500 dark:text-yellow-400 drop-shadow-[0_0_6px_rgba(234,179,8,0.5)]`;
 }
 
@@ -274,16 +286,14 @@ function irAInspeccion(recepcion) {
         Recepción #{{ recepcion?.id }}
       </h1>
       <span v-if="recepcion" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium" :class="estadoBadge.color">
-        <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="estadoBadge.icon"/>
-        </svg>
+        <component :is="estadoBadge.icon" class="w-4 h-4" aria-hidden="true" />
         {{ estadoBadge.label }}
       </span>
     </div>
   </div>
 
   <div class="p-4">
-    <div class="relative max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
+    <div class="relative mx-auto max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
       <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
 
       <div v-if="error" class="mb-4 p-3 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-900 dark:text-red-200">
@@ -308,9 +318,7 @@ function irAInspeccion(recepcion) {
               class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-yellow-700 rounded-lg border border-yellow-700 hover:bg-yellow-50 dark:text-yellow-400 dark:border-yellow-400 dark:hover:bg-gray-800"
               @click="goTo(`/crud/recepciones/editar/?id=${recepcion.id}`)"
             >
-              <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m14.3 4.8 2.9 2.9M7 17l-1 4 4-1 9.3-9.3a2 2 0 0 0-2.8-2.8L7 17Z"/>
-              </svg>
+              <Pencil class="w-4 h-4" />
               Editar
             </button>
             <button
@@ -320,9 +328,7 @@ function irAInspeccion(recepcion) {
               class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-purple-700 rounded-lg border border-purple-700 hover:bg-purple-50 dark:text-purple-400 dark:border-purple-400 dark:hover:bg-gray-800"
               @click="irADiagnostico(recepcion)"
             >
-              <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13.5h14M12 6.5v14"/>
-              </svg>
+              <Plus class="w-4 h-4" />
               Crear Inspección
             </button>
             <template v-if="tieneInspeccion && recepcion.estado === 'ACEPTADA'">
@@ -332,9 +338,7 @@ function irAInspeccion(recepcion) {
                 class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-amber-700 rounded-lg border border-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:border-amber-400 dark:hover:bg-gray-800"
                 @click="irAInspeccion(recepcion)"
               >
-                <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m14.3 4.8 2.9 2.9M7 17l-1 4 4-1 9.3-9.3a2 2 0 0 0-2.8-2.8L7 17Z"/>
-                </svg>
+                <Pencil class="w-4 h-4" />
                 Ver / Editar Inspección
               </button>
             </template>
@@ -359,141 +363,101 @@ function irAInspeccion(recepcion) {
 
         <h4 class="mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
-            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 3v4a1 1 0 0 1-1 1H5m4 8h6m-6-4h6m4-8v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1Z"/>
-            </svg>
+            <FileText class="w-6 h-6 text-gray-800 dark:text-white" />
             Información General
           </span>
         </h4>
 
         <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Cliente</h5>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div class="col-span-1">
-            <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente</p>
-            <div class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
-              {{ cliente?.nombre || '-' }}
-            </div>
+        <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Cliente</dt>
+            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ cliente?.nombre || '—' }}</dd>
           </div>
-          <div class="col-span-1">
-            <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Identificación</p>
-            <div class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
-              {{ cliente?.identificacion || '-' }}
-            </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Identificación</dt>
+            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ cliente?.identificacion || '—' }}</dd>
           </div>
-          <div class="col-span-1">
-            <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Teléfono</p>
-            <div class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
-              {{ cliente?.telefono || '-' }}
-            </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Teléfono</dt>
+            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ cliente?.telefono || '—' }}</dd>
           </div>
-          <div class="col-span-1">
-            <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Correo</p>
-            <div class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
-              {{ cliente?.email || '-' }}
-            </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Correo</dt>
+            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ cliente?.email || '—' }}</dd>
           </div>
-        </div>
+        </dl>
 
         <h5 class="mt-8 mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Vehículo</h5>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div class="col-span-1">
-            <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Placa</p>
-            <div class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
-              {{ vehiculo?.placa || recepcion.placa || '-' }}
-            </div>
+        <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Placa</dt>
+            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.placa || recepcion.placa || '—' }}</dd>
           </div>
-          <div class="col-span-1">
-            <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Marca</p>
-            <div class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
-              {{ vehiculo?.marca || '-' }}
-            </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Marca</dt>
+            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.marca || '—' }}</dd>
           </div>
-          <div class="col-span-1">
-            <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Modelo</p>
-            <div class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
-              {{ vehiculo?.modelo || '-' }}
-            </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Modelo</dt>
+            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.modelo || '—' }}</dd>
           </div>
-          <div class="col-span-1">
-            <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Color</p>
-            <div class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
-              {{ vehiculo?.color || '-' }}
-            </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Color</dt>
+            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ vehiculo?.color || '—' }}</dd>
           </div>
-        </div>
+        </dl>
 
         <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
-            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 3v4a1 1 0 0 1-1 1H5m4 8h6m-6-4h6m4-8v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1Z"/>
-            </svg>
+            <FileDown class="w-6 h-6 text-gray-800 dark:text-white" />
             Información de Ingreso
           </span>
         </h4>
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div class="col-span-1">
-            <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Fecha de Ingreso</p>
-            <div class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
-              {{ formatDate(recepcion.fecha_ingreso || recepcion.created_at) }}
-            </div>
+        <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de Ingreso</dt>
+            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ formatDate(recepcion.fecha_ingreso || recepcion.created_at) }}</dd>
           </div>
-          <div class="col-span-1">
-            <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Fecha de Salida (estimada)</p>
-            <div class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
-              {{ formatDate(recepcion.fecha_salida) }}
-            </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de Salida (estimada)</dt>
+            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ formatDate(recepcion.fecha_salida) }}</dd>
           </div>
-          <div class="col-span-1">
-            <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de Recepción</p>
-            <div class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
-              {{ tipoRecepcionDisplay }}
-            </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Tipo de Recepción</dt>
+            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ tipoRecepcionDisplay }}</dd>
           </div>
-          <div class="col-span-1">
-            <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Recibido por</p>
-            <div class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
-              {{ recepcion.recibido_por_nombre || '-' }}
-            </div>
-          </div>  
-          <div class="col-span-1">
-            <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kilometraje de Ingreso</p>
-            <div class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
-              {{ recepcion.kilometraje_ingreso }} km
-            </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Recibido por</dt>
+            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ recepcion.recibido_por_nombre || '—' }}</dd>
           </div>
-          <div class="col-span-1">
-            <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nivel de Combustible</p>
-            <div class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
-              {{ nivelCombustibleDisplay }}
-            </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Kilometraje de Ingreso</dt>
+            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ recepcion.kilometraje_ingreso }} km</dd>
           </div>
-          <div class="col-span-1">
-            <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Ingresó en Grúa</p>
-            <div class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
-              {{ recepcion.ingreso_en_grua ? 'Sí' : 'No' }}
-            </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Nivel de Combustible</dt>
+            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ nivelCombustibleDisplay }}</dd>
           </div>
-          <div v-if="recepcion.ingreso_en_grua" class="col-span-1">
-            <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Datos de la Grúa / Chófer</p>
-            <div class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
-              {{ recepcion.datos_grua || '-' }}
-            </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Ingresó en Grúa</dt>
+            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ recepcion.ingreso_en_grua ? 'Sí' : 'No' }}</dd>
+          </div>
+          <div v-if="recepcion.ingreso_en_grua">
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Datos de la Grúa / Chófer</dt>
+            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ recepcion.datos_grua || '—' }}</dd>
           </div>
 
-          <div class="col-span-1 col-span-4 md:col-span-4">
-            <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Motivo de Ingreso</p>
-            <div class="block w-full p-3 text-sm whitespace-pre-line rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
-              {{ recepcion.motivo_ingreso || '-' }}
-            </div>
+          <div class="sm:col-span-2 lg:col-span-3">
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Motivo de Ingreso</dt>
+            <dd class="mt-1 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ recepcion.motivo_ingreso || '—' }}</dd>
           </div>
-        </div>
+        </dl>
 
         <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
-            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 4h3a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3m0 3h6m-6 7 2 2 4-4m-5-9v4h4V3h-4Z"/>
-            </svg>
+            <FileCheck class="w-6 h-6 text-gray-800 dark:text-white" />
             Inventario del Vehículo
           </span>
         </h4>
@@ -517,9 +481,7 @@ function irAInspeccion(recepcion) {
 
         <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
-            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
-            </svg>
+            <TriangleAlert class="w-6 h-6 text-gray-800 dark:text-white" />
             Luces Tablero
           </span>
         </h4>
@@ -531,78 +493,7 @@ function irAInspeccion(recepcion) {
               :key="testigo.key"
               :class="getTestigoCardClasses(testigo)"
             >
-              <svg
-                v-if="testigo.icon === 'checkEngine'"
-                :class="getTestigoIconClasses(testigo)"
-                fill="none"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-              </svg>
-              <svg
-                v-else-if="testigo.icon === 'abs'"
-                :class="getTestigoIconClasses(testigo)"
-                fill="none"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <circle cx="12" cy="12" r="9" />
-                <text x="12" y="15" text-anchor="middle" font-size="6" font-weight="bold" fill="currentColor" stroke="none">ABS</text>
-              </svg>
-              <svg
-                v-else-if="testigo.icon === 'airbag'"
-                :class="getTestigoIconClasses(testigo)"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 2.5 1.5 4.5 3.5 5.5L12 22l3.5-7.5C17.5 13.5 19 11.5 19 9c0-3.87-3.13-7-7-7zm0 2c2.76 0 5 2.24 5 5s-2.24 5-5 5-5-2.24-5-5 2.24-5 5-5z" />
-                <circle cx="12" cy="9" r="2.5" fill="white" />
-              </svg>
-              <svg
-                v-else-if="testigo.icon === 'battery'"
-                :class="getTestigoIconClasses(testigo)"
-                fill="none"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <rect x="2" y="7" width="18" height="10" rx="2" ry="2" />
-                <line x1="22" y1="11" x2="22" y2="13" />
-                <line x1="6" y1="11" x2="6" y2="13" />
-                <line x1="10" y1="11" x2="10" y2="13" />
-                <line x1="14" y1="11" x2="14" y2="13" />
-              </svg>
-              <svg
-                v-else-if="testigo.icon === 'oil'"
-                :class="getTestigoIconClasses(testigo)"
-                fill="none"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path d="M12 2C12 2 19 9 19 14C19 17.87 15.87 21 12 21C8.13 21 5 17.87 5 14C5 9 12 2 12 2Z" />
-                <path d="M9 14C9 14 10 16 12 16C14 16 15 14 15 14" />
-              </svg>
-              <svg
-                v-else-if="testigo.icon === 'temperature'"
-                :class="getTestigoIconClasses(testigo)"
-                fill="none"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z" />
-                <circle cx="11.5" cy="17.5" r="1.5" fill="currentColor" />
-              </svg>
+              <MdiIcon :path="testigo.path" :class="getTestigoIconClasses(testigo)" />
               <span class="mt-2 text-xs font-medium text-center text-gray-700 dark:text-gray-300">
                 {{ testigo.label }}
               </span>
@@ -618,10 +509,7 @@ function irAInspeccion(recepcion) {
 
         <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
-            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/>
-            </svg>
+            <FileSearch class="w-6 h-6 text-gray-800 dark:text-white" />
             Inspección Física / Carrocería
           </span>
         </h4>
@@ -665,10 +553,7 @@ function irAInspeccion(recepcion) {
 
         <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
-            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" stroke-linejoin="round" stroke-width="2" d="M3 7a1 1 0 0 1 1-1h11.586a1 1 0 0 1 .707.293l2.414 2.414a1 1 0 0 1 .293.707V17a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7Z"/>
-              <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M8 4h1v3H8V4Zm4 0h1v3h-1V4Zm4 0h2v3h-2V4Z"/>
-            </svg>
+            <Camera class="w-6 h-6 text-gray-800 dark:text-white" />
             Evidencia Fotográfica del Vehículo
           </span>
         </h4>
@@ -698,9 +583,7 @@ function irAInspeccion(recepcion) {
 
         <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
-            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6a2.25 2.25 0 0 0-2.25-2.25H6A2.25 2.25 0 0 0 3.75 6v8.25A2.25 2.25 0 0 0 6 16.5h.75m3 3h.375a.375.375 0 0 0 .375-.375v-1.125a.375.375 0 0 0-.375-.375h-.375m0 0h3.75m-3.75 0v1.5m0 0h3.75m-3.75 0v1.5m0 0h3.75"/>
-            </svg>
+            <Signature class="w-6 h-6 text-gray-800 dark:text-white" />
             Firma y Aceptación
           </span>
         </h4>
@@ -776,9 +659,7 @@ function irAInspeccion(recepcion) {
         aria-label="Cerrar"
         @click="cerrarFoto"
       >
-        <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 17 7M18 6 7 17"/>
-        </svg>
+        <X class="w-5 h-5" />
       </button>
       <img :src="previewImg" class="max-h-[90vh] max-w-[90vw] object-contain" alt="Foto ampliada" />
     </div>

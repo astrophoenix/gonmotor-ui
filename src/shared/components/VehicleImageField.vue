@@ -1,5 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue';
+import { ZoomIn, Image as ImageIcon, Plus, X } from 'lucide-vue-next';
 
 const props = defineProps({
   imageUrl: {
@@ -155,16 +156,10 @@ defineExpose({ resetPreview });
         v-if="previewable && (localPreview || imageUrl)"
         class="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition hover:bg-black/20 hover:opacity-100"
       >
-        <svg class="w-8 h-8 text-white drop-shadow" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-          <path stroke="currentColor" stroke-linecap="round" strokeWidth="2" d="m21 21-4-4m-1-7a6 6 0 1 1-12 0 6 6 0 0 1 12 0Z"/>
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" strokeWidth="2" d="M8 11h6m-3-3v6"/>
-        </svg>
+        <ZoomIn class="w-8 h-8 text-white drop-shadow" />
       </span>
       <span v-else-if="!localPreview && !imageUrl" class="flex flex-col items-center justify-center gap-2 px-4 text-center">
-        <svg class="w-10 h-10 text-gray-400 dark:text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3 16 5-7 2 2 3-4 8.5 9H3Z"/>
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 20h8m-4-4v4"/>
-        </svg>
+        <ImageIcon class="w-10 h-10 text-gray-400 dark:text-gray-500" />
         <span class="text-xs text-gray-500 dark:text-gray-400">{{ hint }}</span>
       </span>
     </div>
@@ -173,9 +168,7 @@ defineExpose({ resetPreview });
       class="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-600"
       :class="{ 'opacity-50 cursor-not-allowed': disabled }"
     >
-      <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m-7-7h14"/>
-      </svg>
+      <Plus class="w-5 h-5" />
       {{ localPreview || imageUrl ? 'Reemplazar' : 'Subir' }}
       <input type="file" class="sr-only" :accept="allowedTypes.join(',')" :disabled="disabled" @change="onFileChange" />
     </label>
@@ -198,9 +191,7 @@ defineExpose({ resetPreview });
         aria-label="Cerrar"
         @click="closePreview"
       >
-        <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 17 7M18 6 7 17"/>
-        </svg>
+        <X class="w-5 h-5" />
       </button>
       <img
         :src="currentImage()"

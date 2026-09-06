@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-vue-next';
 import { useAuthStore } from '../stores/authStore';
 
 const authStore = useAuthStore();
@@ -90,7 +91,7 @@ async function confirmCompany() {
         </label>
         <div class="relative">
           <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-            <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3.5 5.5 7.893 6.036a1 1 0 0 0 1.214 0L20.5 5.5M4 19h16a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Z"/></svg>
+            <Mail class="w-5 h-5 text-gray-500 dark:text-gray-400" />
           </div>
           <input
             id="login"
@@ -111,7 +112,7 @@ async function confirmCompany() {
         </label>
         <div class="relative">
           <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-            <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path></svg>
+            <Lock class="w-5 h-5 text-gray-500 dark:text-gray-400" />
           </div>
           <input
             id="password"
@@ -130,8 +131,8 @@ async function confirmCompany() {
               class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
               :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
             >
-              <svg v-if="showPassword" class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
-              <svg v-else class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4l16 16"/></svg>
+              <Eye v-if="showPassword" class="w-5 h-5" />
+              <EyeOff v-else class="w-5 h-5" />
             </button>
             <button
               type="button"
@@ -163,9 +164,7 @@ async function confirmCompany() {
         :disabled="authStore.isLoading"
         class="inline-flex items-center justify-center gap-2 w-full px-5 py-3 text-base font-medium text-center text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300 sm:w-auto dark:bg-primary-blue-600 dark:hover:bg-primary-blue-700 dark:focus:ring-primary-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <svg class="w-6 h-6 text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14v3m4-6V7a3 3 0 1 1 6 0v4M5 11h10a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1Z"/>
-        </svg>
+        <Lock class="w-6 h-6 text-white" />
         {{ authStore.isLoading ? ' Iniciando sesión...' : ' Iniciar sesión' }}
       </button>
     </form>

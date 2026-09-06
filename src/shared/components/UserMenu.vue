@@ -16,19 +16,19 @@
     >
       <div class="px-4 py-3" role="none">
         <div class="flex items-center gap-2">
-          <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
+          <CircleUser class="w-4 h-4 text-gray-400" />
           <p class="text-sm text-gray-900 dark:text-white" role="none">
             {{ fullName }}
           </p>
         </div>
         <div class="flex items-center gap-2 mt-1">
-          <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884zM18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path></svg>
+          <Mail class="w-4 h-4 text-gray-400" />
           <p class="text-sm font-medium text-gray-900 truncate dark:text-gray-300" role="none">
             {{ email }}
           </p>
         </div>
         <div class="flex items-center gap-2 mt-1">
-          <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd"></path></svg>
+          <Building2 class="w-4 h-4 text-gray-400" />
           <p class="text-sm font-medium text-gray-900 truncate dark:text-gray-300" role="none">
             {{ enterpriseName }}
           </p>
@@ -54,6 +54,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { CircleUser, Mail, Building2 } from 'lucide-vue-next';
 import { useAuthStore } from '../../modules/auth/stores/authStore';
 
 const authStore = useAuthStore();

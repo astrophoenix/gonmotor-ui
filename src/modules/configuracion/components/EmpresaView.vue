@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue';
+import { FileText, Image as ImageIcon, Upload, Trash2 } from 'lucide-vue-next';
 import { empresaConfigService } from '../services/empresaConfigService';
 import Alert from '../../../shared/components/Alert.vue';
 import {
@@ -200,9 +201,7 @@ onMounted(loadEmpresa);
         <div>
           <h4 class="mb-4 text-xl font-semibold dark:text-white">
             <span class="inline-flex items-center gap-2">
-              <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 3v4a1 1 0 0 1-1 1H5m4 8h6m-6-4h6m4-8v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1Z"/>
-              </svg>
+              <FileText class="w-6 h-6 text-gray-800 dark:text-white" />
               Datos de la Empresa
             </span>
           </h4>
@@ -270,10 +269,7 @@ onMounted(loadEmpresa);
         <div>
           <h4 class="mb-4 text-xl font-semibold dark:text-white">
             <span class="inline-flex items-center gap-2">
-              <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M16 18H8l2.5-6 2 4 1.5-2 2 4Zm-1-8.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0Z"/>
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 3v4a1 1 0 0 1-1 1H5m14-4v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1ZM8 18h8l-2-4-1.5 2-2-4L8 18Zm7-8.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0Z"/>
-              </svg>
+              <ImageIcon class="w-6 h-6 text-gray-800 dark:text-white" />
 
               Logotipo oficial
             </span>
@@ -286,15 +282,13 @@ onMounted(loadEmpresa);
                 class="w-full h-full object-contain"
                 alt="Logotipo de la empresa"
               >
-              <svg v-if="!logoPreview && (!form.logo || logoRemoved)" class="w-16 h-16 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 5 2-3 3 6z" clip-rule="evenodd"/>
-              </svg>
+              <ImageIcon v-if="!logoPreview && (!form.logo || logoRemoved)" class="w-16 h-16 text-gray-400 dark:text-gray-500" />
             </div>
             <div class="flex-1">
               <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">JPG, PNG, WebP o SVG. Máximo 2MB</p>
               <div class="flex items-center space-x-3">
                 <label class="inline-flex items-center px-4 py-2 text-sm font-medium text-center text-white rounded-lg bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 cursor-pointer">
-                  <svg class="w-4 h-4 mr-2 -ml-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M5.5 13a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 13H11V9.413l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13H5.5z"></path><path d="M9 13h2v5a1 1 0 11-2 0v-5z"></path></svg>
+                  <Upload class="w-4 h-4 mr-2 -ml-1" />
                   Subir
                   <input type="file" class="hidden" accept="image/*" @change="onLogoChange">
                 </label>
@@ -304,9 +298,7 @@ onMounted(loadEmpresa);
                   @click="cancelLogo"
                   class="inline-flex items-center py-2 px-3 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <svg class="w-4 h-4 mr-2 -ml-1 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 7h14m-9 3v8m4-8v8M10 3h4a1 1 0 0 1 1 1v3H9V4a1 1 0 0 1 1-1ZM6 7h12v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7Z"/>
-                  </svg>
+                  <Trash2 class="w-4 h-4 mr-2 -ml-1 text-gray-800 dark:text-white" />
                   Eliminar
                 </button>
               </div>

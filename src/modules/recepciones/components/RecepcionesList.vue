@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted } from 'vue';
+import { ClipboardList, Pencil, FileText } from 'lucide-vue-next';
 import { useRecepciones } from '../composables/useRecepciones';
 import { talleresService } from '../../configuracion/services/talleresService';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
@@ -151,9 +152,7 @@ onUnmounted(() => {
           </ol>
         </nav>
         <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-          <svg class="w-6 h-6 inline-block text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 4h3a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3m0 3h6m-6 5h6m-6 4h6M10 3v4h4V3h-4Z"/>
-          </svg> 
+          <ClipboardList class="w-6 h-6 inline-block text-gray-90 dark:text-gray-400" />
           Recepciones
         </h1>
       </div>
@@ -185,7 +184,7 @@ onUnmounted(() => {
   </div>
 
   <EntityTable
-    :columns="['#', 'Nº Recepción', 'Vehículo', 'Cliente', 'Fecha ingreso', 'Grúa', 'Estado', 'Acciones']"
+    :columns="['Nº Recepción', 'Vehículo', 'Cliente', 'Fecha ingreso', 'Grúa', 'Estado', 'Acciones']"
     :items="recepciones"
     :loading="loading"
     loading-text="Cargando recepciones..."
@@ -200,7 +199,6 @@ onUnmounted(() => {
   >
     <template #row="{ item, index }">
       <tr class="hover:bg-gray-100 dark:hover:bg-gray-700">
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ index + 1 }}</td>
         <td class="p-4 whitespace-nowrap">
           <a
             :href="`/crud/recepciones/ver/?id=${encodeURIComponent(item.id)}`"
@@ -237,10 +235,10 @@ onUnmounted(() => {
         <td class="p-4 whitespace-nowrap">
           <div class="flex items-center gap-2">
             <button v-if="item.estado === 'PENDIENTE'" type="button" title="Editar recepción" aria-label="Editar recepción" class="inline-flex items-center p-2 text-primary-600 rounded-lg hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700" @click="handleEditar(item.id)">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg>
+              <Pencil class="w-5 h-5" />
             </button>
             <button v-if="item.estado === 'ACEPTADA'" type="button" :title="item.inspecciones?.length > 0 ? 'Ver Diagnóstico' : 'Crear Diagnóstico'" :aria-label="item.inspecciones?.length > 0 ? 'Ver Diagnóstico' : 'Crear Diagnóstico'" class="inline-flex items-center p-2 text-purple-600 rounded-lg hover:bg-purple-100 dark:text-purple-400 dark:hover:bg-gray-700" @click="handleVerDiagnostico(item)">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M4 2a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V2zm2 0v12h8V2H6zm3 8h2v2H9v-2zm0-4h2v2H9V6z" clip-rule="evenodd"></path></svg>
+              <FileText class="w-5 h-5" />
             </button>
           </div>
         </td>

@@ -33,6 +33,14 @@ export function sanitizeNombre(value) {
     .replace(LATIN_PATTERN, '');
 }
 
+/**
+ * Nombre / Razón Social en mayúsculas: además de limpiar caracteres no
+ * permitidos, convierte el texto a mayúsculas mientras se escribe.
+ */
+export function sanitizeNombreUpper(value) {
+  return sanitizeNombre(value).toUpperCase();
+}
+
 /** Elimina espacios y limpia el correo. */
 export function sanitizeEmail(value) {
   return (value == null ? '' : String(value)).replace(/\s+/g, '').trim();

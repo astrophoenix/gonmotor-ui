@@ -1,7 +1,8 @@
 <script setup>
 import { computed, nextTick, reactive, ref, watch } from 'vue';
+import { X, Trash2, Save } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
-import { sanitizeIdentificacion, sanitizeNombre, sanitizeEmail, sanitizeTelefono, formatPlaca, sanitizeVin, sanitizeText, sanitizeColor, sanitizeMotor, sanitizeObservaciones, getItemKey as getVehicleKey, validatePlaca } from '../../../shared/utils/sanitize';
+import { sanitizeIdentificacion, sanitizeNombreUpper, sanitizeEmail, sanitizeTelefono, formatPlaca, sanitizeVin, sanitizeText, sanitizeColor, sanitizeMotor, sanitizeObservaciones, getItemKey as getVehicleKey, validatePlaca } from '../../../shared/utils/sanitize';
 import Alert from '../../../shared/components/Alert.vue';
 import VehicleImageField from '../../../shared/components/VehicleImageField.vue';
 
@@ -366,7 +367,7 @@ watch(() => form.identificacion, (val) => {
   if (clean !== val) form.identificacion = clean;
 });
 watch(() => form.nombre, (val) => {
-  const clean = sanitizeNombre(val);
+  const clean = sanitizeNombreUpper(val);
   if (clean !== val) form.nombre = clean;
 });
 watch(() => form.email, (val) => {
@@ -403,7 +404,7 @@ watch(vehiculos, (list) => {
           aria-label="Cerrar"
           @click="close"
         >
-          <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 17.94 6M18 18 6.06 6"/></svg>
+          <X class="w-5 h-5" />
         </button>
       </div>
 
@@ -467,7 +468,7 @@ watch(vehiculos, (list) => {
             <div class="flex items-center justify-between mb-4">
               <h5 class="text-base font-medium text-gray-900 dark:text-white">Vehículo {{ index + 1 }}</h5>
               <button type="button" @click="removeVehiculo(index)" class="inline-flex items-center p-2 text-red-600 border border-red-500 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-600" title="Eliminar vehículo" aria-label="Eliminar vehículo">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                <Trash2 class="w-5 h-5" />
               </button>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -579,10 +580,7 @@ watch(vehiculos, (list) => {
           class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="submit"
         >
-          <svg v-if="!isSaving" class="w-5 h-5 mr-1.5 -ml-1 text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <path stroke="currentColor" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 0 1 1-1h11.586a1 1 0 0 1 .707.293l2.414 2.414a1 1 0 0 1 .293.707V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5Z"/>
-            <path stroke="currentColor" stroke-linejoin="round" stroke-width="2" d="M8 4h8v4H8V4Zm7 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
-          </svg>
+          <Save v-if="!isSaving" class="w-5 h-5 mr-1.5 -ml-1 text-white" />
           <svg v-else class="w-5 h-5 mr-1.5 animate-spin" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>

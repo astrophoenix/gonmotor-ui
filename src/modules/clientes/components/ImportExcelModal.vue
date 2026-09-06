@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
+import { X, Download, FileUp, CheckCircle, XCircle } from 'lucide-vue-next';
 import { clientsService } from '../services/clientesService';
 import { useToast } from '../../../shared/composables/useToast';
 import ToastContainer from '../../../shared/components/ToastContainer.vue';
@@ -159,9 +160,7 @@ watch(
           :disabled="isImporting"
           @click="close"
         >
-          <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 17.94 6M18 18 6.06 6"/>
-          </svg>
+          <X class="w-5 h-5" />
           <span class="sr-only">Cerrar modal</span>
         </button>
 
@@ -179,9 +178,7 @@ watch(
             class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-indigo-700 rounded-lg border border-indigo-600 hover:bg-indigo-100 disabled:opacity-60 disabled:cursor-not-allowed dark:text-indigo-300 dark:border-indigo-500 dark:hover:bg-indigo-900/40"
             @click="downloadTemplate"
           >
-            <svg v-if="!isDownloadingTemplate" class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v9m0 0 3.5-3.5M12 13l-3.5-3.5M5 17v2a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2"/>
-            </svg>
+            <Download v-if="!isDownloadingTemplate" class="w-4 h-4" />
             <svg v-else class="w-4 h-4 animate-spin" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -198,9 +195,7 @@ watch(
             @drop.prevent="onFileChange({ target: { files: $event.dataTransfer.files } })"
             @click="fileInput && fileInput.click()"
           >
-            <svg class="w-10 h-10 mb-3 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 13V4m0 9 4-4m-4 4-4-4m8 9H8m13 3V5a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1Z"/>
-            </svg>
+            <FileUp class="w-10 h-10 mb-3 text-gray-500 dark:text-gray-400" />
             <p class="mb-2 text-sm text-gray-500 dark:text-gray-400">
               <span class="font-semibold">Haz clic para seleccionar</span> o arrastra el archivo aquí
             </p>
@@ -277,14 +272,14 @@ watch(
           <div class="grid grid-cols-2 gap-4">
             <div class="flex flex-col items-center p-4 rounded-lg bg-green-50 border border-green-200 dark:bg-green-900/30 dark:border-green-700">
               <div class="flex items-center gap-2 text-green-700 dark:text-green-400">
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                <CheckCircle class="w-6 h-6 text-green-700 dark:text-green-400" />
                 <span class="text-2xl font-bold">{{ result.exitosos }}</span>
               </div>
               <p class="mt-1 text-sm font-medium text-green-700 dark:text-green-400">Importados exitosamente</p>
             </div>
             <div class="flex flex-col items-center p-4 rounded-lg bg-red-50 border border-red-200 dark:bg-red-900/30 dark:border-red-700">
               <div class="flex items-center gap-2 text-red-700 dark:text-red-400">
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                <XCircle class="w-6 h-6 text-red-700 dark:text-red-400" />
                 <span class="text-2xl font-bold">{{ (result.errores || []).length }}</span>
               </div>
               <p class="mt-1 text-sm font-medium text-red-700 dark:text-red-400">Registros fallidos</p>
@@ -299,9 +294,7 @@ watch(
               class="inline-flex items-center px-4 py-2 text-sm font-medium text-emerald-700 rounded-lg border border-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-400 dark:hover:bg-gray-800"
               @click="downloadErrors"
             >
-              <svg class="w-5 h-5 mr-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v12m0 0 3.5-3.5M12 15l-3.5-3.5M5 17v2a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2"/>
-              </svg>
+              <Download class="w-5 h-5 mr-1" />
               Descargar Excel de Errores
             </button>
           </div>

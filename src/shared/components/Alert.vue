@@ -1,4 +1,7 @@
 <script setup>
+import { computed } from 'vue';
+import { Info, CheckCircle, TriangleAlert, XCircle, X } from 'lucide-vue-next';
+
 const props = defineProps({
   type: {
     type: String,
@@ -28,13 +31,15 @@ const typeClasses = {
   error: 'text-red-800 bg-red-50 dark:bg-gray-800 dark:text-red-400',
 };
 
-const iconPaths = {
-  default: 'M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z',
-  info: 'M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z',
-  success: 'M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z',
-  warning: 'M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM12 14a1 1 0 100-2 1 1 0 000 2zm-1 5a1 1 0 011-1h2a1 1 0 011 1v1a1 1 0 11-2 0v-1z',
-  error: 'M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z',
+const typeIcons = {
+  default: Info,
+  info: Info,
+  success: CheckCircle,
+  warning: TriangleAlert,
+  error: XCircle,
 };
+
+const alertIcon = computed(() => typeIcons[props.type] || typeIcons.default);
 
 function dismiss() {
   emit('dismiss');
@@ -50,15 +55,7 @@ function dismiss() {
     ]"
     role="alert"
   >
-    <svg
-      class="shrink-0 w-4 h-4 me-3"
-      aria-hidden="true"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="currentColor"
-      viewBox="0 0 20 20"
-    >
-      <path :d="iconPaths[type] || iconPaths.default"/>
-    </svg>
+    <component :is="alertIcon" class="shrink-0 w-4 h-4 me-3" aria-hidden="true" />
     <span class="sr-only">{{ type }}</span>
     <div>
       <span v-if="title" class="font-medium mr-1">{{ title }} </span>
@@ -80,9 +77,7 @@ function dismiss() {
       aria-label="Close"
     >
       <span class="sr-only">Cerrar notificación</span>
-      <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
-      </svg>
+      <X class="w-3 h-3" />
     </button>
   </div>
 </template>

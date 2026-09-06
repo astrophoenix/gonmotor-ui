@@ -1,7 +1,9 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { Camera, FilePlus2, FileText, Plus, Trash2, X, ZoomIn, ZoomOut } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
 import { inspeccionesService } from '../services/inspeccionesService';
+import { TESTIGO_KEYS, testigoDefaults, testigoPayload } from '../../../shared/config/testigos';
 import Alert from '../../../shared/components/Alert.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TestigosTablero from '../../../shared/components/TestigosTablero.vue';
@@ -20,50 +22,24 @@ const formErrors = ref({});
 
 const form = reactive({
   recepcion: recepcionId || null,
+  numero_inspeccion: '',
   tipo_inspeccion: 'DIAGNOSTICO',
   motivo_ingreso: '',
   codigos_dtc: '',
   diagnostico_tecnico: '',
   recomendaciones: '',
-  testigo_check_engine: false,
-  testigo_abs: false,
-  testigo_airbag: false,
-  testigo_bateria: false,
-  testigo_aceite: false,
-  testigo_temperatura: false,
-  otros_testigos_observaciones: '',
+  ...testigoDefaults(),
 });
 
-const testigos = ref({
-  testigo_check_engine: false,
-  testigo_abs: false,
-  testigo_airbag: false,
-  testigo_bateria: false,
-  testigo_aceite: false,
-  testigo_temperatura: false,
-  otros_testigos_observaciones: '',
-});
+const testigos = ref(testigoDefaults());
 
 watch(testigos.value, (val) => {
-  form.testigo_check_engine = val.testigo_check_engine;
-  form.testigo_abs = val.testigo_abs;
-  form.testigo_airbag = val.testigo_airbag;
-  form.testigo_bateria = val.testigo_bateria;
-  form.testigo_aceite = val.testigo_aceite;
-  form.testigo_temperatura = val.testigo_temperatura;
+  TESTIGO_KEYS.forEach((key) => { form[key] = val[key]; });
   form.otros_testigos_observaciones = val.otros_testigos_observaciones;
 }, { deep: true });
 
 function syncTestigosDesdeForm() {
-  Object.assign(testigos.value, {
-    testigo_check_engine: form.testigo_check_engine,
-    testigo_abs: form.testigo_abs,
-    testigo_airbag: form.testigo_airbag,
-    testigo_bateria: form.testigo_bateria,
-    testigo_aceite: form.testigo_aceite,
-    testigo_temperatura: form.testigo_temperatura,
-    otros_testigos_observaciones: form.otros_testigos_observaciones,
-  });
+  Object.assign(testigos.value, testigoPayload(form));
 }
 
 const recepcion = ref(null);
@@ -79,6 +55,43 @@ const serviciosDetectados = ref([]);
 const repuestosSugeridos = ref([]);
 const serviciosEliminados = ref([]);
 const repuestosEliminados = ref([]);
+
+const FOTO_MAX = 5;
+const FOTO_MAX_SIZE = 5 * 1024 * 1024;
+const FOTO_ALLOWED = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+const fotosInspeccion = reactive({ items: [] });
+const fotosError = ref('');
+const fotoZoom = reactive({ visible: false, src: '', scale: 1 });
+
+function abrirFotoZoom(foto) {
+  const src = foto.preview || foto.url;
+  if (!src) return;
+  fotoZoom.src = src;
+  fotoZoom.scale = 1;
+  fotoZoom.visible = true;
+}
+
+function cerrarFotoZoom() {
+  fotoZoom.visible = false;
+  fotoZoom.src = '';
+  fotoZoom.scale = 1;
+}
+
+function zoomMas() {
+  fotoZoom.scale = Math.min(3, fotoZoom.scale + 0.25);
+}
+
+function zoomMenos() {
+  fotoZoom.scale = Math.max(0.5, fotoZoom.scale - 0.25);
+}
+
+function toggleZoom() {
+  if (fotoZoom.scale === 1) {
+    zoomMas();
+  } else {
+    fotoZoom.scale = 1;
+  }
+}
 
 const catalogoServicios = ref([]);
 const catalogoRepuestos = ref([]);
@@ -116,8 +129,8 @@ async function loadDetalles() {
   if (!inspeccionId) return;
   try {
     const [servData, repData] = await Promise.all([
-      request(`/api/inspeccion-servicios/?inspeccion=${inspeccionId}`),
-      request(`/api/inspeccion-repuestos/?inspeccion=${inspeccionId}`),
+      request(`/api/ordenes/inspeccion-servicios/?inspeccion=${inspeccionId}`),
+      request(`/api/ordenes/inspeccion-repuestos/?inspeccion=${inspeccionId}`),
     ]);
     serviciosDetectados.value = Array.isArray(servData) ? servData : (servData.results || []);
     repuestosSugeridos.value = Array.isArray(repData) ? repData : (repData.results || []);
@@ -176,50 +189,206 @@ function quitarRepuesto(index) {
   if (removed && removed.id) repuestosEliminados.value.push(removed.id);
 }
 
-async function guardarDetalles() {
-  if (!isEditMode) return;
-  const asyncOps = [];
+async function guardarDetalles(idInspeccion) {
+  const inspeccionRef = Number(idInspeccion);
+  if (!inspeccionRef) return;
 
-  serviciosDetectados.value.forEach((s) => {
+  const errores = [];
+
+  async function guardarServicio(s) {
     const payload = {
       servicio: s.servicio || null,
-      descripcion: s.descripcion || '',
+      descripcion: s.descripcion || s.servicio_nombre || '',
       horas_estimadas: String(s.horas_estimadas ?? '1.00'),
       precio_referencial: String(s.precio_referencial ?? '0.00'),
       es_sugerido: Boolean(s.es_sugerido),
       prioridad: s.prioridad || 'MEDIA',
     };
-    if (s.id) {
-      asyncOps.push(request(`/api/inspeccion-servicios/${s.id}/`, { method: 'PATCH', body: JSON.stringify(payload) }));
-    } else {
-      asyncOps.push(request('/api/inspeccion-servicios/', { method: 'POST', body: JSON.stringify({ ...payload, inspeccion: Number(inspeccionId) }) }));
+    try {
+      if (s.id) {
+        await request(`/api/ordenes/inspeccion-servicios/${s.id}/`, { method: 'PATCH', body: JSON.stringify(payload) });
+      } else {
+        const creado = await request('/api/ordenes/inspeccion-servicios/', {
+          method: 'POST',
+          body: JSON.stringify({ ...payload, inspeccion: inspeccionRef }),
+        });
+        s.id = creado && creado.id;
+      }
+    } catch (error) {
+      errores.push(`Servicio "${traducirErrorItem(s.descripcion, 'sin descripción')}"`);
     }
-  });
+  }
 
-  repuestosSugeridos.value.forEach((r) => {
+  async function guardarRepuesto(r) {
     const payload = {
       repuesto: r.repuesto || null,
-      descripcion: r.descripcion || '',
+      descripcion: r.descripcion || r.repuesto_nombre || '',
       cantidad: String(r.cantidad ?? '1.00'),
       precio_referencial: String(r.precio_referencial ?? '0.00'),
       es_sugerido: Boolean(r.es_sugerido),
       prioridad: r.prioridad || 'MEDIA',
     };
-    if (r.id) {
-      asyncOps.push(request(`/api/inspeccion-repuestos/${r.id}/`, { method: 'PATCH', body: JSON.stringify(payload) }));
-    } else {
-      asyncOps.push(request('/api/inspeccion-repuestos/', { method: 'POST', body: JSON.stringify({ ...payload, inspeccion: Number(inspeccionId) }) }));
+    try {
+      if (r.id) {
+        await request(`/api/ordenes/inspeccion-repuestos/${r.id}/`, { method: 'PATCH', body: JSON.stringify(payload) });
+      } else {
+        const creado = await request('/api/ordenes/inspeccion-repuestos/', {
+          method: 'POST',
+          body: JSON.stringify({ ...payload, inspeccion: inspeccionRef }),
+        });
+        r.id = creado && creado.id;
+      }
+    } catch (error) {
+      errores.push(`Repuesto "${traducirErrorItem(r.descripcion, 'sin descripción')}"`);
     }
-  });
+  }
 
-  serviciosEliminados.value.forEach((id) => {
-    asyncOps.push(request(`/api/inspeccion-servicios/${id}/`, { method: 'DELETE' }));
-  });
-  repuestosEliminados.value.forEach((id) => {
-    asyncOps.push(request(`/api/inspeccion-repuestos/${id}/`, { method: 'DELETE' }));
-  });
+  async function eliminarServicio(id) {
+    try {
+      await request(`/api/ordenes/inspeccion-servicios/${id}/`, { method: 'DELETE' });
+    } catch (error) {
+      errores.push(`Servicio eliminado (#${id})`);
+    }
+  }
 
-  await Promise.all(asyncOps);
+  async function eliminarRepuesto(id) {
+    try {
+      await request(`/api/ordenes/inspeccion-repuestos/${id}/`, { method: 'DELETE' });
+    } catch (error) {
+      errores.push(`Repuesto eliminado (#${id})`);
+    }
+  }
+
+  for (const s of serviciosDetectados.value) await guardarServicio(s);
+  for (const r of repuestosSugeridos.value) await guardarRepuesto(r);
+  for (const id of serviciosEliminados.value) await eliminarServicio(id);
+  for (const id of repuestosEliminados.value) await eliminarRepuesto(id);
+
+  if (errores.length) {
+    throw new Error(
+      `No se pudieron guardar los siguientes ítems: ${errores.join(', ')}. Revisa la información y vuelve a intentarlo.`
+    );
+  }
+
+  serviciosEliminados.value = [];
+  repuestosEliminados.value = [];
+}
+
+async function loadFotos() {
+  if (!inspeccionId) return;
+  try {
+    const data = await inspeccionesService.listFotos(inspeccionId);
+    const items = (Array.isArray(data) ? data : (data.results || (data.fotos || []))).map((f) => ({
+      id: f.id,
+      file: null,
+      preview: null,
+      url: f.imagen,
+      descripcion: f.descripcion || '',
+      descripcionOriginal: f.descripcion || '',
+      eliminada: false,
+    }));
+    fotosInspeccion.items.splice(0, fotosInspeccion.items.length, ...items);
+  } catch (error) {
+    fotosError.value = error.message || 'No se pudieron cargar las fotos de la inspección.';
+  }
+}
+
+function onFotoSelected(event) {
+  const input = event.target;
+  const file = input && input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+  if (!FOTO_ALLOWED.includes(file.type)) {
+    fotosError.value = 'Formato no permitido. Solo JPG, PNG o WebP.';
+    return;
+  }
+  if (file.size > FOTO_MAX_SIZE) {
+    fotosError.value = 'La imagen supera el tamaño máximo de 5 MB.';
+    return;
+  }
+  if (fotosInspeccion.items.filter((f) => !f.eliminada).length >= FOTO_MAX) {
+    fotosError.value = `Solo se permiten hasta ${FOTO_MAX} fotos por inspección.`;
+    return;
+  }
+  fotosError.value = '';
+  fotosInspeccion.items.push({
+    id: null,
+    file,
+    preview: URL.createObjectURL(file),
+    url: null,
+    descripcion: '',
+    descripcionOriginal: '',
+    eliminada: false,
+  });
+}
+
+function quitarFotoInspeccion(index) {
+  const foto = fotosInspeccion.items[index];
+  if (!foto) return;
+  if (foto.id) {
+    foto.eliminada = true;
+  } else {
+    if (foto.preview) URL.revokeObjectURL(foto.preview);
+    fotosInspeccion.items.splice(index, 1);
+  }
+}
+
+function restaurarFoto(index) {
+  const foto = fotosInspeccion.items[index];
+  if (foto) foto.eliminada = false;
+}
+
+async function guardarFotos(idInspeccion) {
+  const inspeccionRef = Number(idInspeccion);
+  if (!inspeccionRef) return;
+  const errores = [];
+
+  for (const f of fotosInspeccion.items) {
+    if (f.eliminada && f.id) {
+      try {
+        await inspeccionesService.deleteFoto(f.id);
+      } catch (error) {
+        errores.push(`Foto eliminada (#${f.id})`);
+      }
+    }
+  }
+
+  for (const f of fotosInspeccion.items) {
+    if (f.eliminada) continue;
+    if (!f.id && f.file) {
+      try {
+        const creada = await inspeccionesService.createFoto({
+          inspeccion: inspeccionRef,
+          imagen: f.file,
+          descripcion: f.descripcion,
+        });
+        f.id = creada && creada.id;
+        f.url = creada && creada.imagen;
+        f.file = null;
+        if (f.preview) URL.revokeObjectURL(f.preview);
+        f.preview = null;
+      } catch (error) {
+        errores.push(`Foto "${traducirErrorItem(f.descripcion, 'sin descripción')}": ${error.message}`);
+      }
+    } else if (f.id && f.descripcion !== f.descripcionOriginal) {
+      try {
+        await inspeccionesService.updateFoto(f.id, { descripcion: f.descripcion });
+        f.descripcionOriginal = f.descripcion;
+      } catch (error) {
+        errores.push(`Foto: ${error.message}`);
+      }
+    }
+  }
+
+  if (errores.length) {
+    throw new Error(`No se pudieron guardar las fotos: ${errores.join(', ')}`);
+  }
+
+  fotosInspeccion.items = fotosInspeccion.items.filter((f) => !f.eliminada);
+}
+
+function traducirErrorItem(valor, porDefecto) {
+  return (typeof valor === 'string' && valor.trim()) ? valor.trim() : porDefecto;
 }
 
 function showError(error) {
@@ -264,13 +433,7 @@ async function loadRecepcion() {
       }
       form.motivo_ingreso = data.motivo_ingreso || '';
       form.tipo_inspeccion = data.tipo_recepcion || 'DIAGNOSTICO';
-      form.testigo_check_engine = data.testigo_check_engine || false;
-      form.testigo_abs = data.testigo_abs || false;
-      form.testigo_airbag = data.testigo_airbag || false;
-      form.testigo_bateria = data.testigo_bateria || false;
-      form.testigo_aceite = data.testigo_aceite || false;
-      form.testigo_temperatura = data.testigo_temperatura || false;
-      form.otros_testigos_observaciones = data.otros_testigos_observaciones || '';
+      Object.assign(form, testigoPayload(data));
       syncTestigosDesdeForm();
     }
   } catch (error) {
@@ -290,18 +453,13 @@ async function loadInspeccion() {
     const recepcionIdVal = data.recepcion && typeof data.recepcion === 'object' ? data.recepcion.id : data.recepcion;
     Object.assign(form, {
       recepcion: recepcionIdVal,
+      numero_inspeccion: data.numero_inspeccion || '',
       tipo_inspeccion: data.tipo_inspeccion || 'DIAGNOSTICO',
       motivo_ingreso: data.motivo_ingreso || '',
       codigos_dtc: data.codigos_dtc || '',
       diagnostico_tecnico: data.diagnostico_tecnico || '',
       recomendaciones: data.recomendaciones || '',
-      testigo_check_engine: data.testigo_check_engine || false,
-      testigo_abs: data.testigo_abs || false,
-      testigo_airbag: data.testigo_airbag || false,
-      testigo_bateria: data.testigo_bateria || false,
-      testigo_aceite: data.testigo_aceite || false,
-      testigo_temperatura: data.testigo_temperatura || false,
-      otros_testigos_observaciones: data.otros_testigos_observaciones || '',
+      ...testigoPayload(data),
     });
     syncTestigosDesdeForm();
     if (data.recepcion) {
@@ -335,24 +493,21 @@ async function submit() {
       codigos_dtc: form.codigos_dtc?.trim() || '',
       diagnostico_tecnico: form.diagnostico_tecnico.trim(),
       recomendaciones: form.recomendaciones?.trim() || '',
-      testigo_check_engine: form.testigo_check_engine,
-      testigo_abs: form.testigo_abs,
-      testigo_airbag: form.testigo_airbag,
-      testigo_bateria: form.testigo_bateria,
-      testigo_aceite: form.testigo_aceite,
-      testigo_temperatura: form.testigo_temperatura,
-      otros_testigos_observaciones: form.otros_testigos_observaciones?.trim() || '',
+      ...testigoPayload(form),
     };
 
     if (isEditMode) {
       await inspeccionesService.update(inspeccionId, payload);
-      await guardarDetalles();
+      await guardarDetalles(inspeccionId);
+      await guardarFotos(inspeccionId);
       successMessage.value = 'Inspección actualizada correctamente.';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       const response = await inspeccionesService.create(payload);
       const nuevoId = response && response.id;
       if (nuevoId) {
+        await guardarDetalles(nuevoId);
+        await guardarFotos(nuevoId);
         window.location.assign(`/crud/inspecciones/editar/?id=${encodeURIComponent(nuevoId)}`);
       } else {
         successMessage.value = 'Inspección creada correctamente.';
@@ -386,6 +541,7 @@ onMounted(() => {
   loadRecepcion();
   loadInspeccion();
   loadDetalles();
+  loadFotos();
 });
 </script>
 
@@ -399,22 +555,30 @@ onMounted(() => {
         <li class="text-gray-400">/ {{ isEditMode ? 'Editar' : 'Nueva' }} Inspección</li>
       </ol>
     </nav>
-    <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-      {{ isEditMode ? 'Editar Inspección' : 'Nueva Inspección' }}
-    </h1>
+    <div class="flex items-center gap-3 flex-wrap">
+      <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
+        {{ isEditMode ? 'Editar Inspección' : 'Nueva Inspección' }}
+      </h1>
+      <span
+        v-if="isEditMode"
+        class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+      >
+        N° {{ form.numero_inspeccion || 'Sin asignar' }}
+      </span>
+    </div>
     <button
       v-if="isEditMode && estadoInspeccion === 'PENDIENTE'"
       type="button"
       class="inline-flex items-center px-4 py-2 mt-3 text-sm font-medium text-white rounded-lg bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
       @click="crearCotizacion"
     >
-      <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm4 3a1 1 0 000 2h8a1 1 0 100-2H8zm0 4a1 1 0 000 2h8a1 1 0 100-2H8zm0 4a1 1 0 000 2h5a1 1 0 100-2H8z"></path></svg>
+      <FilePlus2 class="w-4 h-4 mr-2" />
       Crear cotización
     </button>
   </div>
 
   <div class="p-4">
-    <div class="relative max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
+    <div class="relative mx-auto max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
       <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
       <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
 
@@ -454,9 +618,7 @@ onMounted(() => {
 
       <h4 class="mb-4 text-xl font-semibold dark:text-white">
         <span class="inline-flex items-center gap-2">
-          <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 3v4a1 1 0 0 1-1 1H5m4 8h6m-6-4h6m4-8v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1Z"/>
-          </svg>
+          <FileText class="w-6 h-6 text-gray-800 dark:text-white" />
           Información de la Inspección
         </span>
       </h4>
@@ -502,6 +664,127 @@ onMounted(() => {
         <div class="col-span-1">
           <h5 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Testigos del Tablero</h5>
           <TestigosTablero v-model="testigos" />
+        </div>
+
+        <div class="col-span-1">
+          <h5 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Fotos de la Inspección</h5>
+          <p class="mb-3 text-sm text-gray-500 dark:text-gray-400">
+            Opcional: hasta {{ FOTO_MAX }} fotos de evidencia de los hallazgos (DTC en pantalla, desgastes, fugas, testigos encendidos).
+            JPG, PNG o WebP de máximo 5 MB.
+          </p>
+          <Alert v-if="fotosError" type="error" :message="fotosError" dismissible @dismiss="fotosError = ''" class="mb-3" />
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div
+              v-for="(foto, index) in fotosInspeccion.items"
+              :key="foto.id || foto.preview || index"
+              class="border border-gray-200 rounded-lg p-3 dark:border-gray-600 bg-gray-50 dark:bg-gray-700"
+              :class="{ 'border-red-500 dark:border-red-500': foto.eliminada }"
+            >
+              <div
+                class="relative aspect-square w-full overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-800 flex items-center justify-center"
+                :class="{ 'cursor-zoom-in': foto.url || foto.preview }"
+                @click="abrirFotoZoom(foto)"
+              >
+                <img v-if="foto.url || foto.preview" :src="foto.preview || foto.url" :alt="'Foto ' + (index + 1)" class="h-full w-full object-cover" />
+                <span v-else class="text-xs text-gray-500 dark:text-gray-400">Sin foto</span>
+                <span
+                  v-if="!foto.eliminada && (foto.url || foto.preview)"
+                  class="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition hover:bg-black/20 hover:opacity-100"
+                >
+                  <ZoomIn class="w-8 h-8 text-white drop-shadow" />
+                </span>
+                <button
+                  v-if="!foto.eliminada"
+                  type="button"
+                  class="absolute top-1 right-1 inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-600 text-white hover:bg-red-700"
+                  aria-label="Quitar foto"
+                  @click.stop="quitarFotoInspeccion(index)"
+                >
+                  <X class="w-4 h-4" />
+                </button>
+                <button
+                  v-else
+                  type="button"
+                  class="absolute top-1 right-1 inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-600 text-white hover:bg-gray-700"
+                  aria-label="Restaurar foto"
+                  @click.stop="restaurarFoto(index)"
+                >
+                  <Plus class="w-4 h-4" />
+                </button>
+              </div>
+              <input
+                v-model="foto.descripcion"
+                placeholder="Descripción (opcional)"
+                class="mt-2 block w-full p-2 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-800 dark:text-white dark:border-gray-600"
+              >
+              <p v-if="foto.eliminada" class="mt-1 text-xs text-red-600 dark:text-red-500">Se eliminará al guardar</p>
+            </div>
+
+            <label
+              v-if="fotosInspeccion.items.filter((f) => !f.eliminada).length < FOTO_MAX"
+              class="flex min-h-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 p-3 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-600"
+            >
+              <Camera class="w-6 h-6" />
+              Agregar foto
+              <input
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                class="sr-only"
+                @change="onFotoSelected"
+              />
+            </label>
+          </div>
+
+          <div
+            v-if="fotoZoom.visible"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+            @click="cerrarFotoZoom"
+          >
+            <div class="relative max-h-[90vh] max-w-[90vw] overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl" @click.stop>
+              <button
+                type="button"
+                class="absolute top-2 right-2 z-10 inline-flex items-center justify-center w-8 h-8 rounded-full bg-black/50 text-white hover:bg-black/70"
+                aria-label="Cerrar"
+                @click="cerrarFotoZoom"
+              >
+                <X class="w-5 h-5" />
+              </button>
+              <div class="absolute top-2 left-2 z-10 inline-flex items-center gap-1">
+                <button
+                  type="button"
+                  class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-black/50 text-white hover:bg-black/70"
+                  aria-label="Alejar"
+                  @click="zoomMenos"
+                >
+                  <ZoomOut class="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-black/50 text-white hover:bg-black/70"
+                  aria-label="Acercar"
+                  @click="zoomMas"
+                >
+                  <ZoomIn class="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex items-center justify-center h-8 px-2 rounded-lg bg-black/50 text-white hover:bg-black/70"
+                  aria-label="Restablecer zoom"
+                  @click="fotoZoom.scale = 1"
+                >
+                  {{ Math.round(fotoZoom.scale * 100) }}%
+                </button>
+              </div>
+              <img
+                :src="fotoZoom.src"
+                class="max-h-[90vh] max-w-[90vw] object-contain cursor-zoom-in transition-transform duration-150 select-none"
+                :style="{ transform: `scale(${fotoZoom.scale})` }"
+                alt="Foto ampliada"
+                @dblclick="toggleZoom"
+              />
+            </div>
+          </div>
         </div>
 
         <div class="col-span-1">
@@ -564,7 +847,7 @@ onMounted(() => {
                   </td>
                   <td class="p-2 text-right">
                     <button type="button" title="Quitar servicio" aria-label="Quitar servicio" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarServicio(index)">
-                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9z" clip-rule="evenodd"></path></svg>
+                      <Trash2 class="w-4 h-4" />
                     </button>
                   </td>
                 </tr>
@@ -633,7 +916,7 @@ onMounted(() => {
                   </td>
                   <td class="p-2 text-right">
                     <button type="button" title="Quitar repuesto" aria-label="Quitar repuesto" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarRepuesto(index)">
-                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9z" clip-rule="evenodd"></path></svg>
+                      <Trash2 class="w-4 h-4" />
                     </button>
                   </td>
                 </tr>

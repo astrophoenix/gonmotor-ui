@@ -40,4 +40,38 @@ export const inspeccionesService = {
   getByRecepcion(recepcionId) {
     return request(`${ENDPOINT}?recepcion=${encodeURIComponent(recepcionId)}`);
   },
+
+  listFotos(inspeccionId) {
+    return request(`/api/ordenes/inspeccion-fotos/?inspeccion=${encodeURIComponent(inspeccionId)}`);
+  },
+
+  createFoto(payload) {
+    return request('/api/ordenes/inspeccion-fotos/', {
+      method: 'POST',
+      body: buildFormData(payload),
+    });
+  },
+
+  updateFoto(id, payload) {
+    return request(`/api/ordenes/inspeccion-fotos/${encodeURIComponent(id)}/`, {
+      method: 'PATCH',
+      body: buildFormData(payload),
+    });
+  },
+
+  deleteFoto(id) {
+    return request(`/api/ordenes/inspeccion-fotos/${encodeURIComponent(id)}/`, {
+      method: 'DELETE',
+    });
+  },
 };
+
+function buildFormData(payload) {
+  const formData = new FormData();
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      formData.append(key, value);
+    }
+  });
+  return formData;
+}

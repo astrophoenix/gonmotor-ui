@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
+import { FileText, Building2, MessageSquare, MapPin, Phone, Search } from 'lucide-vue-next';
 import { empleadosService } from '../services/empleadosService';
 import { request } from '../../../shared/services/httpClient';
 import Alert from '../../../shared/components/Alert.vue';
@@ -242,14 +243,12 @@ onBeforeUnmount(() => {
   </div>
 
   <div class="p-4">
-    <div class="relative max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
+    <div class="relative mx-auto max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
       <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
       <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
       <h4 class="mb-4 text-xl font-semibold dark:text-white">
         <span class="inline-flex items-center gap-2">
-          <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 3v4a1 1 0 0 1-1 1H5m4 8h6m-6-4h6m4-8v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1Z"/>
-          </svg>
+          <FileText class="w-6 h-6 text-gray-800 dark:text-white" />
           Información General
         </span>
       </h4>
@@ -307,36 +306,26 @@ onBeforeUnmount(() => {
                 ? 'bg-primary-50 border-primary-500 dark:bg-primary-900/30 dark:border-primary-500'
                 : 'bg-gray-50 border-gray-200 hover:bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:hover:bg-gray-600'"
             >
-              <div class="flex-1 space-y-1.5 pr-7">
+              <div class="flex-1 space-y-1.5 pr-8 min-w-0">
                 <div class="flex items-center gap-2">
-                  <svg class="shrink-0 w-4 h-4 text-primary-600 dark:text-primary-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 4h12M6 4v16M6 4H5m13 0v16m0-16h1m-1 16H6m12 0h1M6 20H5M9 7h1v1H9V7Zm5 0h1v1h-1V7Zm-5 4h1v1H9v-1Zm5 0h1v1h-1v-1Zm-3 4h2a1 1 0 0 1 1 1v4h-4v-4a1 1 0 0 1 1-1Z"/>
-                  </svg>
+                  <Building2 class="shrink-0 w-4 h-4 text-primary-600 dark:text-primary-400" />
                   <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ taller.nombre }}</p>
                 </div>
 
                 <div class="flex items-center gap-2">
-                  <svg class="shrink-0 w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8-4-4H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-3l-4 4Z"/>
-                  </svg>
+                  <MessageSquare class="shrink-0 w-4 h-4 text-gray-500 dark:text-gray-400" />
                   <span class="text-xs text-gray-600 dark:text-gray-400 truncate">
                     {{ [taller.codigo_sucursal, taller.ciudad].filter(Boolean).join(' · ') || '—' }}
                   </span>
                 </div>
 
                 <div v-if="taller.direccion" class="flex items-center gap-2">
-                  <svg class="shrink-0 w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.8 13.938h-.011a7 7 0 1 0-11.464.144h-.016l.14.171c.1.127.2.251.3.371L12 21l5.13-6.248c.194-.209.374-.429.54-.659l.13-.155Z"/>
-                  </svg>
+                  <MapPin class="shrink-0 w-4 h-4 text-gray-500 dark:text-gray-400" />
                   <span class="text-xs text-gray-600 dark:text-gray-400 truncate">{{ taller.direccion }}</span>
                 </div>
 
                 <div v-if="taller.telefono" class="flex items-center gap-2">
-                  <svg class="shrink-0 w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 5h3l2 4-2 1a8 8 0 0 0 5 5l1-2 4 2v3a2 2 0 0 1-2 2A14 14 0 0 1 4 7a2 2 0 0 1 2-2Z"/>
-                  </svg>
-
+                  <Phone class="shrink-0 w-4 h-4 text-gray-500 dark:text-gray-400" />
                   <span class="text-xs text-gray-600 dark:text-gray-400">{{ taller.telefono }}</span>
                 </div>
               </div>
@@ -366,9 +355,7 @@ onBeforeUnmount(() => {
                 <label for="talleres-search" class="sr-only">Buscar taller</label>
                 <div class="relative">
                   <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-                    <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                      <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
-                    </svg>
+                    <Search class="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   </div>
                   <input
                     id="talleres-search"

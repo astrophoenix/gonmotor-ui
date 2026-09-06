@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, reactive, ref, watch } from 'vue';
+import { CirclePlus, FileText, Car, Trash2 } from 'lucide-vue-next';
 import { clientsService } from '../services/clientesService';
 import { request } from '../../../shared/services/httpClient';
 import Alert from '../../../shared/components/Alert.vue';
@@ -7,7 +8,7 @@ import VehicleImageField from '../../../shared/components/VehicleImageField.vue'
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import {
   sanitizeIdentificacion,
-  sanitizeNombre,
+  sanitizeNombreUpper,
   sanitizeEmail,
   sanitizeTelefono,
   formatPlaca,
@@ -318,7 +319,7 @@ watch(() => form.identificacion, (val) => {
 });
 
 watch(() => form.nombre, (val) => {
-  const clean = sanitizeNombre(val);
+  const clean = sanitizeNombreUpper(val);
   if (clean !== val) form.nombre = clean;
 });
 
@@ -385,23 +386,19 @@ onMounted(() => {
         class="inline-flex items-center px-3 py-2 text-sm font-medium text-primary-700 rounded-lg border border-primary-700 hover:bg-primary-100 active:bg-primary-200 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800 dark:active:bg-gray-700"
         @click="goToAdd"
       >
-        <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 7.757v8.486M7.757 12h8.486M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-        </svg>
+        <CirclePlus class="w-5 h-5" />
         Nuevo
       </button>
     </div>
   </div>
 
   <div class="p-4">
-    <div class="relative max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
+    <div class="relative mx-auto max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
       <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
       <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
       <h4 class="mb-4 text-xl font-semibold dark:text-white">
         <span class="inline-flex items-center gap-2">
-          <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 3v4a1 1 0 0 1-1 1H5m4 8h6m-6-4h6m4-8v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1Z"/>
-          </svg>
+          <FileText class="w-6 h-6 text-gray-800 dark:text-white" />
           Información General
         </span>
       </h4>
@@ -440,7 +437,7 @@ onMounted(() => {
         <div class="col-span-6">
           <div class="mb-4">
             <span class="inline-flex items-center gap-2">
-              <svg class="flex-shrink-0 w-6 h-6 text-gray-900 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3 8 2.722 2.268a1 1 0 0 0 .64.232h11.276a1 1 0 0 0 .64-.232L21 8M6.5 14h.01m10.99 0h.01M8.16 4.5h7.68a2 2 0 0 1 1.736 1.008l2.897 5.07A4 4 0 0 1 21 12.562V18.5a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H6v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5.938a4 4 0 0 1 .527-1.984l2.897-5.07A2 2 0 0 1 8.161 4.5M7 14a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m11 0a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0"/></svg>
+              <Car class="flex-shrink-0 w-6 h-6 text-gray-900 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <h4 class="text-xl font-semibold dark:text-white">Vehículos del Cliente</h4>
             </span>
           </div>
@@ -453,7 +450,7 @@ onMounted(() => {
             <div class="flex items-center justify-between mb-4">
               <h5 class="text-lg font-medium text-gray-900 dark:text-white">Vehículo {{ index + 1 }}</h5>
               <button type="button" @click="removeVehiculo(index)" class="inline-flex items-center p-2 text-red-600 border border-red-500 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" title="Eliminar vehículo" aria-label="Eliminar vehículo">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                <Trash2 class="w-5 h-5" />
               </button>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">

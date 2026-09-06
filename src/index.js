@@ -4,7 +4,7 @@ import './sidebar';
 import './charts';
 import './dark-mode';
 import { mountLogin, mountRegister } from './modules/auth';
-import { mountClients, mountClientEdit } from './modules/clientes';
+import { mountClients, mountClientEdit, mountClientDetail } from './modules/clientes';
 import { mountVehicles, mountVehicleEdit } from './modules/vehiculos';
 import { mountRecepciones, mountRecepcionDetail, mountRecepcionEdit } from './modules/recepciones';
 import { mountInspecciones, mountInspeccionEdit } from './modules/inspecciones';
@@ -51,6 +51,12 @@ const clientEditApp = document.getElementById('client-edit-app');
 
 if (clientEditApp) {
   mountClientEdit(clientEditApp, pinia);
+}
+
+const clientDetailApp = document.getElementById('client-detail-app');
+
+if (clientDetailApp) {
+  mountClientDetail(clientDetailApp, pinia);
 }
 
 const vehiclesApp = document.getElementById('vehicles-app');

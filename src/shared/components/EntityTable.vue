@@ -1,4 +1,6 @@
 <script setup>
+import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
+
 const props = defineProps({
   columns: {
     type: Array,
@@ -124,9 +126,7 @@ const colspan = Math.max(props.emptyColspan, props.columns.length);
           class="inline-flex items-center p-2.5 text-primary-700 border border-primary-700 rounded-full hover:bg-primary-100 focus:ring-4 focus:outline-none focus:ring-primary-300 disabled:cursor-not-allowed disabled:opacity-50 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800 dark:focus:ring-primary-800"
           @click="emit('page-change', -1)"
         >
-          <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
-            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5m0 0 4 4M1 5h12"/>
-          </svg>
+          <ChevronLeft class="w-4 h-4" />
           <span class="sr-only">{{ previousText }}</span>
         </button>
         <button
@@ -137,9 +137,7 @@ const colspan = Math.max(props.emptyColspan, props.columns.length);
           class="inline-flex items-center p-2.5 text-primary-700 border border-primary-700 rounded-full hover:bg-primary-100 focus:ring-4 focus:outline-none focus:ring-primary-300 disabled:cursor-not-allowed disabled:opacity-50 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800 dark:focus:ring-primary-800"
           @click="emit('page-change', 1)"
         >
-          <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
-            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 1l4 4-4 4M13 5H1"/>
-          </svg>
+          <ChevronRight class="w-4 h-4" />
           <span class="sr-only">{{ nextText }}</span>
         </button>
       </div>

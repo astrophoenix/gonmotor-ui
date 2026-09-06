@@ -1,5 +1,6 @@
 <script setup>
 import { reactive, ref, watch } from 'vue';
+import { ZoomIn, X, Plus } from 'lucide-vue-next';
 
 const props = defineProps({
   slots: {
@@ -182,10 +183,7 @@ function hasAllFiles() {
           v-if="previewable && (files[s.key].previewUrl || files[s.key].existingUrl)"
           class="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition hover:bg-black/20 hover:opacity-100"
         >
-          <svg class="w-8 h-8 text-white drop-shadow" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <path stroke="currentColor" stroke-linecap="round" strokeWidth="2" d="m21 21-4-4m-1-7a6 6 0 1 1-12 0 6 6 0 0 1 12 0Z"/>
-            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" strokeWidth="2" d="M8 11h6m-3-3v6"/>
-          </svg>
+          <ZoomIn class="w-8 h-8 text-white drop-shadow" />
         </span>
         <span v-if="!files[s.key].previewUrl && !files[s.key].existingUrl" class="text-xs text-gray-500 dark:text-gray-400">Sin foto</span>
 
@@ -196,16 +194,12 @@ function hasAllFiles() {
           aria-label="Eliminar foto"
           @click.stop="removeFile(s.key)"
         >
-          <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 17.94 6M18 18 6.06 6"/>
-          </svg>
+          <X class="w-4 h-4" />
         </button>
       </div>
 
       <label class="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-600">
-        <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m-7-7h14"/>
-        </svg>
+        <Plus class="w-5 h-5" />
         {{ files[s.key].file || files[s.key].existingUrl ? 'Reemplazar' : 'Subir foto' }}
         <input
           type="file"
@@ -234,9 +228,7 @@ function hasAllFiles() {
         aria-label="Cerrar"
         @click="closePreview"
       >
-        <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 17.94 6M18 18 6.06 6"/>
-        </svg>
+        <X class="w-5 h-5" />
       </button>
       <img
         :src="previewSrc"

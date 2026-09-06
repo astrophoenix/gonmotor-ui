@@ -1,8 +1,26 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch, nextTick } from 'vue';
+import {
+  FileText,
+  SquareArrowRightEnter,
+  UserPlus,
+  FileCheck,
+  TriangleAlert,
+  FileSearch,
+  Camera,
+  Signature,
+  BrushCleaning,
+  CircleMinus,
+  CircleAlert,
+  CheckCircle2,
+  Wand2,
+  Loader2,
+  X,
+} from 'lucide-vue-next';
 import { recepcionesService } from '../services/recepcionesService';
 import { request } from '../../../shared/services/httpClient';
 import { sanitizeObservaciones } from '../../../shared/utils/sanitize';
+import { testigoDefaults, testigoFromData, testigoPayload } from '../../../shared/config/testigos';
 import Alert from '../../../shared/components/Alert.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TestigosTablero from '../../../shared/components/TestigosTablero.vue';
@@ -96,15 +114,7 @@ const form = reactive({
   motivo_no_recepcion: '',
 });
 
-let testigos = reactive({
-  testigo_check_engine: false,
-  testigo_abs: false,
-  testigo_airbag: false,
-  testigo_bateria: false,
-  testigo_aceite: false,
-  testigo_temperatura: false,
-  otros_testigos_observaciones: '',
-});
+const testigos = reactive(testigoDefaults());
 
 const GRUPO_BLUEPRINT_MAP = {
   AUTO: 'liviano',
@@ -439,15 +449,7 @@ async function loadRecepcion() {
         vehiculoSearch.value = '';
         vehiculoSearchDisplay.value = '';
       }
-      Object.assign(testigos, {
-        testigo_check_engine: data.testigo_check_engine || false,
-        testigo_abs: data.testigo_abs || false,
-        testigo_airbag: data.testigo_airbag || false,
-        testigo_bateria: data.testigo_bateria || false,
-        testigo_aceite: data.testigo_aceite || false,
-        testigo_temperatura: data.testigo_temperatura || false,
-        otros_testigos_observaciones: data.otros_testigos_observaciones || '',
-      });
+      Object.assign(testigos, testigoFromData(data));
       if (Array.isArray(data.fotos)) {
         const existing = {};
         FOTO_VISTAS.forEach((v) => {
@@ -827,13 +829,7 @@ async function ejecutarGuardado() {
       tiene_botiquin: form.tiene_botiquin,
       tiene_copas_ruedas: form.tiene_copas_ruedas,
       tiene_llave_tuercas: form.tiene_llave_tuercas,
-      testigo_check_engine: testigos.testigo_check_engine,
-      testigo_abs: testigos.testigo_abs,
-      testigo_airbag: testigos.testigo_airbag,
-      testigo_bateria: testigos.testigo_bateria,
-      testigo_aceite: testigos.testigo_aceite,
-      testigo_temperatura: testigos.testigo_temperatura,
-      otros_testigos_observaciones: testigos.otros_testigos_observaciones || '',
+      ...testigoPayload(testigos),
       datos_danos_carroceria: marcas.value,
       detalles_carroceria: form.detalles_carroceria || '',
       firma_receptor: firmaReceptorData.value,
@@ -975,7 +971,7 @@ onMounted(() => {
   </div>
 
   <div class="p-4">
-    <div class="relative max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
+    <div class="relative mx-auto max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
       <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
       <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
 
@@ -983,9 +979,7 @@ onMounted(() => {
       <form v-else-if="!savedError" class="space-y-6" novalidate @submit.prevent="submit">
         <h4 class="mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
-            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 3v4a1 1 0 0 1-1 1H5m4 8h6m-6-4h6m4-8v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1Z"/>
-            </svg>
+            <FileText class="w-6 h-6 text-gray-800 dark:text-white" />
             Información General
           </span>
         </h4>
@@ -1011,9 +1005,7 @@ onMounted(() => {
                 class="shrink-0 inline-flex items-center px-3 py-2.5 text-white bg-primary-blue-500 border border-primary-blue-500 rounded-r-lg hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300"
                 @click="showClientCreateModal = true"
               >
-                <svg class="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12h4m-2 2v-4M4 18v-1a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Zm8-10a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
-                </svg>
+                <UserPlus class="w-6 h-6" />
               </button>
             </div>
             <p v-if="formErrors.cliente" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.cliente }}</p>
@@ -1127,9 +1119,7 @@ onMounted(() => {
 
         <h4 class="mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
-            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 3v4a1 1 0 0 1-1 1H5m4 8h6m-6-4h6m4-8v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1Z"/>
-            </svg>
+            <SquareArrowRightEnter class="w-6 h-6 text-gray-800 dark:text-white" />
             Información de Ingreso
           </span>
         </h4>
@@ -1254,13 +1244,8 @@ onMounted(() => {
                   class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-primary-blue-700 text-primary-blue-700 hover:bg-primary-blue-50 focus:ring-4 focus:ring-primary-blue-300 dark:border-primary-blue-400 dark:text-primary-blue-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   @click="mejorar"
                 >
-                  <svg v-if="!mejorando" class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z"/>
-                  </svg>
-                  <svg v-else class="w-4 h-4 animate-spin" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4z"/>
-                  </svg>
+                  <Wand2 v-if="!mejorando" class="w-4 h-4" />
+                  <Loader2 v-else class="w-4 h-4 animate-spin" />
                   {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
                 </button>
               </div>
@@ -1268,9 +1253,7 @@ onMounted(() => {
               <p v-if="formErrors.motivo_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.motivo_ingreso }}</p>
               <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error }}</p>
               <div v-if="mejorado && !error" class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
-                <svg class="w-5 h-5 shrink-0" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-                </svg>
+                <CheckCircle2 class="w-5 h-5 shrink-0" />
                 <div class="flex flex-wrap items-center gap-x-2">
                   <p>Texto mejorado. Revisa antes de guardar.</p>
                   <button v-if="tieneOriginal" type="button" class="text-sm font-medium underline hover:no-underline" @click="restaurar">Restaurar original</button>
@@ -1282,9 +1265,7 @@ onMounted(() => {
 
         <h4 class="mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
-            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 4h3a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3m0 3h6m-6 7 2 2 4-4m-5-9v4h4V3h-4Z"/>
-            </svg>
+            <FileCheck class="w-6 h-6 text-gray-800 dark:text-white" />
             Inventario del Vehículo
           </span>
         </h4>
@@ -1346,9 +1327,7 @@ onMounted(() => {
 
         <h4 class="mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
-            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
-            </svg>
+            <TriangleAlert class="w-6 h-6 text-gray-800 dark:text-white" />
             Luces Tablero
           </span>
         </h4>
@@ -1357,9 +1336,7 @@ onMounted(() => {
 
         <h4 class="mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
-            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 3v4a1 1 0 0 1-1 1H5m8 7.5 2.5 2.5M19 4v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1Zm-5 9.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z"/>.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/>
-            </svg>
+            <FileSearch class="w-6 h-6 text-gray-800 dark:text-white" />
             Inspección Física / Carrocería
           </span>
         </h4>
@@ -1386,9 +1363,7 @@ onMounted(() => {
             </div>
             <div class="flex justify-center mt-3">
               <button type="button" class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-700 border border-red-400 rounded hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-900/20" @click="clearMarcas">
-                <svg class="w-5 h-5 text-red-700 dark:text-red-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 7h14m-9 3v8m4-8v8M10 3h4a1 1 0 0 1 1 1v3H9V4a1 1 0 0 1 1-1ZM6 7h12v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7Z"/>
-                </svg>
+                <BrushCleaning class="w-5 h-5 text-red-700 dark:text-red-400" />
                 Limpiar marcaciones
               </button>
             </div>
@@ -1413,9 +1388,7 @@ onMounted(() => {
                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ punto.descripcion.length }}/80</p>
                 </div>
                 <button type="button" class="inline-flex items-center justify-center w-8 h-8 text-red-700 border border-red-400 rounded hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-900/20 mt-1" @click="marcas = marcas.filter(m => m.id !== punto.id)">
-                  <svg class="w-5 h-5 text-red-700 dark:text-red-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                    <path fill-rule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm5.757-1a1 1 0 1 0 0 2h8.486a1 1 0 1 0 0-2H7.757Z" clip-rule="evenodd"/>
-                  </svg>
+                  <CircleMinus class="w-5 h-5 text-red-700 dark:text-red-400" />
                 </button>
               </div>
             </div>
@@ -1432,10 +1405,7 @@ onMounted(() => {
 
         <h4 class="mb-1 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
-            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" stroke-linejoin="round" stroke-width="2" d="M4 18V8a1 1 0 0 1 1-1h1.5l1.707-1.707A1 1 0 0 1 8.914 5h6.172a1 1 0 0 1 .707.293L17.5 7H19a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z"/>
-              <path stroke="currentColor" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
-            </svg>     
+            <Camera class="w-6 h-6 text-gray-800 dark:text-white" />     
             Evidencia Fotográfica del Vehículo
           </span>
         </h4>
@@ -1460,9 +1430,7 @@ onMounted(() => {
 
         <h4 class="mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
-            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m4.988 19.012 5.41-5.41m2.366-6.424 4.058 4.058-2.03 5.41L5.3 20 4 18.701l3.355-9.494 5.41-2.029Zm4.626 4.625L12.197 6.61 14.807 4 20 9.194l-2.61 2.61Z"/>
-            </svg>
+            <Signature class="w-6 h-6 text-gray-800 dark:text-white" />
             Firma y Aceptación
           </span>
         </h4>
@@ -1487,9 +1455,7 @@ onMounted(() => {
             </div>
             <div class="flex justify-between items-center mt-2">
               <button type="button" class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-700 border border-red-400 rounded hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-900/20" @click="borrarFirmaReceptor">
-                <svg class="w-5 h-5 text-red-700 dark:text-red-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                  <path fill-rule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm5.757-1a1 1 0 1 0 0 2h8.486a1 1 0 1 0 0-2H7.757Z" clip-rule="evenodd"/>
-                </svg>
+                <BrushCleaning class="w-5 h-5 text-red-700 dark:text-red-400" />
                 Borrar firma receptor
               </button>
               <span class="text-xs text-gray-500 dark:text-gray-400">Firme del receptor</span>
@@ -1515,9 +1481,7 @@ onMounted(() => {
             </div>
             <div class="flex justify-between items-center mt-2">
               <button type="button" class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-700 border border-red-400 rounded hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-900/20" @click="borrarFirmaCliente">
-                <svg class="w-5 h-5 text-red-700 dark:text-red-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                  <path fill-rule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm5.757-1a1 1 0 1 0 0 2h8.486a1 1 0 1 0 0-2H7.757Z" clip-rule="evenodd"/>
-                </svg>
+                <BrushCleaning class="w-5 h-5 text-red-700 dark:text-red-400" />
                 Borrar firma cliente
               </button>
               <span class="text-xs text-gray-500 dark:text-gray-400">Firma del cliente</span>
@@ -1575,9 +1539,7 @@ onMounted(() => {
     <div class="relative w-full max-w-md rounded-lg bg-white shadow-xl dark:bg-gray-800">
       <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
         <h3 class="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-          <svg class="w-6 h-6 text-yellow-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11h2v5m-2 0h4m-2.592-8.5h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-          </svg>
+          <CircleAlert class="w-6 h-6 text-yellow-500" />
           ¿El cliente se retractó?
         </h3>
         <button
@@ -1586,7 +1548,7 @@ onMounted(() => {
           aria-label="Cerrar"
           @click="showContradiccionModal = false"
         >
-          <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 17.94 6M18 18 6.06 6"/></svg>
+          <X class="w-5 h-5" />
         </button>
       </div>
       <div class="px-6 py-4">
@@ -1603,7 +1565,7 @@ onMounted(() => {
           class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
           @click="showContradiccionModal = false"
         >
-          <svg class="w-5 h-5 mr-1.5 -ml-1 text-gray-500 dark:text-gray-300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 17.94 6M18 18 6.06 6"/></svg>
+          <X class="w-5 h-5 mr-1.5 -ml-1 text-gray-500 dark:text-gray-300" />
           Cancelar
         </button>
         <button
@@ -1611,7 +1573,7 @@ onMounted(() => {
           class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded-lg bg-red-600 hover:bg-red-700 focus:ring-4 focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800"
           @click="confirmarGuardadoNoAceptada"
         >
-          <svg class="w-5 h-5 mr-1.5 -ml-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8.5 11.5 2 2 5-5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+          <CheckCircle2 class="w-5 h-5 mr-1.5 -ml-1" />
           Confirmar no aceptación
         </button>
       </div>

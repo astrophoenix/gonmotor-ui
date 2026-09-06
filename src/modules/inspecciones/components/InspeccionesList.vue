@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted } from 'vue';
+import { FileSearchCorner, Plus, SquarePen, FilePlus2, Trash2 } from 'lucide-vue-next';
 import { useInspecciones } from '../composables/useInspecciones';
 import { talleresService } from '../../configuracion/services/talleresService';
 import ConfirmDeleteModal from '../../../shared/components/ConfirmDeleteModal.vue';
@@ -152,9 +153,7 @@ onUnmounted(() => {
           </ol>
         </nav>
         <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-          <svg class="w-6 h-6 inline-block text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 2v6M15 2v6M5 12h14M5 6h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Z"/>
-          </svg>
+          <FileSearchCorner class="w-6 h-6 inline-block text-gray-900 dark:text-gray-400" />
           Inspecciones
         </h1>
       </div>
@@ -174,7 +173,7 @@ onUnmounted(() => {
         </div>
         <div class="flex items-center ml-auto space-x-2 sm:space-x-3">
           <button type="button" class="inline-flex items-center px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700" @click="handleNueva">
-            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path clip-rule="evenodd" fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"></path></svg>
+            <Plus class="w-4 h-4 mr-2" />
             Nueva
           </button>
         </div>
@@ -228,17 +227,15 @@ onUnmounted(() => {
         <td class="p-4 whitespace-nowrap">
           <div class="flex items-center gap-2">
             <button type="button" title="Editar inspección" aria-label="Editar inspección" class="inline-flex items-center p-2 text-yellow-600 rounded-lg hover:bg-yellow-100 dark:text-yellow-400 dark:hover:bg-gray-700" @click="handleEditar(item.id)">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg>
+              <SquarePen class="w-5 h-5" />
             </button>
             <button v-if="item.estado === 'PENDIENTE'" type="button" title="Crear cotización" aria-label="Crear cotización" class="inline-flex items-center p-2 text-green-600 rounded-lg hover:bg-green-100 dark:text-green-400 dark:hover:bg-gray-700" @click="handleCrearCotizacion(item.id)">
-              <svg class="w-5 h-5 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9V4a1 1 0 0 0-1-1H8.914a1 1 0 0 0-.707.293L4.293 7.207A1 1 0 0 0 4 7.914V20a1 1 0 0 0 1 1h4M9 3v4a1 1 0 0 1-1 1H4m11 6v4m-2-2h4m3 0a5 5 0 1 1-10 0 5 5 0 0 1 10 0Z"/>
-              </svg>
+              <FilePlus2 class="w-5 h-5 text-gray-800 dark:text-white" />
             </button>
 
 
             <button type="button" title="Eliminar inspección" aria-label="Eliminar inspección" :disabled="isDeleting" class="inline-flex items-center p-2 text-red-600 rounded-lg hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+              <Trash2 class="w-5 h-5" />
             </button>
           </div>
         </td>

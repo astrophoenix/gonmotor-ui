@@ -25,6 +25,7 @@
  * Sin slot, se renderiza un botón por defecto junto a los mensajes de estado.
  */
 import { computed, ref } from 'vue';
+import { Wand2, Loader2 } from 'lucide-vue-next';
 import { mejorarTexto } from '../services/textImproverService';
 
 const props = defineProps({
@@ -120,13 +121,8 @@ defineExpose({ mejorar, restaurar, limpiar, mejorando, error, mejorado, tieneOri
         class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-primary-blue-700 text-primary-blue-700 hover:bg-primary-blue-50 focus:ring-4 focus:ring-primary-blue-300 dark:border-primary-blue-400 dark:text-primary-blue-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
         @click="mejorar"
       >
-        <svg v-if="!mejorando" class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z"/>
-        </svg>
-        <svg v-else class="w-4 h-4 animate-spin" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4z"/>
-        </svg>
+        <Wand2 v-if="!mejorando" class="w-4 h-4" />
+        <Loader2 v-else class="w-4 h-4 animate-spin" />
         {{ mejorando ? loadingLabel : label }}
       </button>
       <p v-if="error" class="text-sm text-red-600 dark:text-red-500">{{ error }}</p>

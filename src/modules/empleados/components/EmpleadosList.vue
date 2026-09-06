@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted } from 'vue';
+import { IdCard, Pencil, Trash2 } from 'lucide-vue-next';
 import { useEmpleados } from '../composables/useEmpleados';
 import ConfirmDeleteModal from '../../../shared/components/ConfirmDeleteModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
@@ -129,10 +130,7 @@ onUnmounted(() => {
           </ol>
         </nav>
         <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-          <svg class="w-6 h-6 inline-block text-gray-900 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path clip-rule="evenodd" fill-rule="evenodd" d="M6 2c-1.10457 0-2 .89543-2 2v4c0 .55228.44772 1 1 1s1-.44772 1-1V4h12v7h-2c-.5523 0-1 .4477-1 1v2h-1c-.5523 0-1 .4477-1 1s.4477 1 1 1h5c.5523 0 1-.4477 1-1V3.85714C20 2.98529 19.3667 2 18.268 2H6Z"/>
-            <path clip-rule="evenodd" fill-rule="evenodd" d="M6 11.5C6 9.567 7.567 8 9.5 8S13 9.567 13 11.5 11.433 15 9.5 15 6 13.433 6 11.5ZM4 20c0-2.2091 1.79086-4 4-4h3c2.2091 0 4 1.7909 4 4 0 1.1046-.8954 2-2 2H6c-1.10457 0-2-.8954-2-2Z"/>
-          </svg>
+          <IdCard class="w-6 h-6 inline-block text-gray-900 dark:text-gray-400" />
           Empleados
         </h1>
       </div>
@@ -204,10 +202,10 @@ onUnmounted(() => {
         </td>
         <td class="p-4 whitespace-nowrap">
           <button type="button" title="Editar empleado" aria-label="Editar empleado" class="inline-flex items-center p-2 text-primary-600 rounded-lg hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700" @click="editEmpleado(item.id)">
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg>
+            <Pencil class="w-5 h-5" />
           </button>
           <button type="button" title="Eliminar empleado" aria-label="Eliminar empleado" :disabled="isDeleting" class="inline-flex items-center p-2 text-red-600 rounded-lg hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+            <Trash2 class="w-5 h-5" />
           </button>
         </td>
       </tr>
