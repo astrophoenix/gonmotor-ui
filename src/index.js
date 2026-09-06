@@ -9,6 +9,8 @@ import { mountVehicles, mountVehicleEdit } from './modules/vehiculos';
 import { mountRecepciones, mountRecepcionDetail, mountRecepcionEdit } from './modules/recepciones';
 import { mountInspecciones, mountInspeccionEdit } from './modules/inspecciones';
 import { mountEmpleados, mountEmpleadoEdit } from './modules/empleados';
+import { mountRepuestos } from './modules/inventario/repuestos';
+import { mountServicios } from './modules/inventario/servicios';
 import { mountProfileEdit } from './modules/auth';
 import { mountEmpresaConfig, mountTalleresConfig } from './modules/configuracion';
 import UserMenu from './shared/components/UserMenu.vue';
@@ -127,4 +129,16 @@ const talleresConfigApp = document.getElementById('talleres-config-app');
 
 if (talleresConfigApp) {
     mountTalleresConfig(talleresConfigApp, pinia);
+}
+
+const repuestosApp = document.getElementById('repuestos-app');
+
+if (repuestosApp) {
+  mountRepuestos(repuestosApp, pinia);
+}
+
+const serviciosApp = document.getElementById('servicios-app');
+
+if (serviciosApp) {
+  mountServicios(serviciosApp, pinia);
 }

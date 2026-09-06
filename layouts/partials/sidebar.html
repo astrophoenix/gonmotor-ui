@@ -51,9 +51,28 @@
                <li>
                   <a href="{{ "crud/inspecciones/" | relURL }}" class="text-base text-white flex items-center p-2 group hover:bg-brand-550 transition duration-75 pl-11 dark:text-white dark:hover:bg-brand-550 {{ if eq $page_slug "inspecciones" }} bg-brand-600 dark:bg-brand-600 {{ end }}">Inspecciones</a>
                </li>
-               <li>
-                  <a href="{{ "crud/ordenes/" | relURL }}" class="text-base text-white flex items-center p-2 group hover:bg-brand-550 transition duration-75 pl-11 dark:text-white dark:hover:bg-brand-550 {{ if eq $page_slug "ordenes" }} bg-brand-600 dark:bg-brand-600 {{ end }}">Órdenes</a>
-               </li>
+<li>
+                   <a href="{{ "crud/ordenes/" | relURL }}" class="text-base text-white flex items-center p-2 group hover:bg-brand-550 transition duration-75 pl-11 dark:text-white dark:hover:bg-brand-550 {{ if eq $page_slug "ordenes" }} bg-brand-600 dark:bg-brand-600 {{ end }}">Órdenes</a>
+                </li>
+              </ul>
+            </div>
+          </li>
+          <li>
+            <button type="button" class="flex items-center w-full p-2 text-base text-white transition duration-75 group hover:bg-brand-550 dark:text-white dark:hover:bg-brand-550 {{ if eq .Params.group "inventario" }} bg-brand-600 dark:bg-brand-600 {{ end }}" aria-controls="dropdown-inventario" data-collapse-toggle="dropdown-inventario">
+                <svg class="flex-shrink-0 w-5 h-5 mx-auto text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M7 11.5a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0Zm4 0a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0Zm2.5-.5a.5.5 0 1 1 0 1 .5.5 0 0 1 0-1Zm1.5 1.5a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0Zm-9-6.5H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-6.5L9.6 4.2A1 1 0 0 0 8.8 4H5a1 1 0 0 0-1 1v.5ZM6 10.5a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0Zm4 0a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0Z"/>
+                </svg>
+                <span class="flex-1 ml-3 text-left whitespace-nowrap" sidebar-toggle-item>Inventario</span>
+                <svg sidebar-toggle-item class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+            </button>
+            <div sidebar-dropdown class="relative">
+              <ul id="dropdown-inventario" class="space-y-2 py-0 bg-brand-600 {{ if not (eq .Params.group "inventario") }}hidden {{ end }}">
+                <li>
+                   <a href="{{ "crud/repuestos/" | relURL }}" class="text-base text-white flex items-center p-2 group hover:bg-brand-550 transition duration-75 pl-11 dark:text-white dark:hover:bg-brand-550 {{ if eq $page_slug "repuestos" }} bg-brand-600 dark:bg-brand-600 {{ end }}">Repuestos</a>
+                </li>
+                <li>
+                   <a href="{{ "crud/servicios/" | relURL }}" class="text-base text-white flex items-center p-2 group hover:bg-brand-550 transition duration-75 pl-11 dark:text-white dark:hover:bg-brand-550 {{ if eq $page_slug "servicios" }} bg-brand-600 dark:bg-brand-600 {{ end }}">Servicios</a>
+                </li>
               </ul>
             </div>
           </li>

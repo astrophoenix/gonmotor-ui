@@ -1,17 +1,20 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch, onUnmounted } from 'vue';
 import { useRecepciones } from '../composables/useRecepciones';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
 
-const { recepciones, loading, error, loadRecepciones } = useRecepciones();
+const { recepciones, loading, error, loadRecepciones, currentPage, nextUrl, previousUrl, rangeLabel } = useRecepciones();
 
 const alert = ref({
   type: 'default',
   title: '',
   message: '',
 });
+
+const search = ref('');
+let searchTimer;
 
 function showAlert(type, title, message) {
   alert.value = { type, title, message };
@@ -79,12 +82,23 @@ function handleExcelError(message) {
   showAlert('error', '', message || 'No se pudo generar el Excel.');
 }
 
+function scheduleSearch() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => loadRecepciones(1, search.value), 300);
+}
+
+watch(search, scheduleSearch);
+
 onMounted(async () => {
   try {
     await loadRecepciones();
   } catch (err) {
     showAlert('error', '', err.message || 'No se pudieron cargar las recepciones.');
   }
+});
+
+onUnmounted(() => {
+  clearTimeout(searchTimer);
 });
 </script>
 
@@ -118,9 +132,9 @@ onMounted(async () => {
 
       <div class="sm:flex">
         <div class="items-center hidden mb-3 sm:flex sm:divide-x sm:divide-gray-100 sm:mb-0 dark:divide-gray-700">
-          <form class="flex items-center mb-3 sm:mb-0 lg:pr-3" @submit.prevent="loadRecepciones">
+          <form class="flex items-center mb-3 sm:mb-0 lg:pr-3" @submit.prevent="loadRecepciones(1, search.value)">
             <label for="recepciones-search" class="sr-only">Buscar recepciones</label>
-            <input id="recepciones-search" type="search" placeholder="Buscar por placa, cliente u orden" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full lg:w-64 xl:w-96 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" disabled />
+            <input id="recepciones-search" v-model="search" type="search" placeholder="Buscar por placa, cliente u orden" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full lg:w-64 xl:w-96 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" />
           </form>
         </div>
         <div class="flex items-center ml-auto space-x-2 sm:space-x-3">
@@ -141,6 +155,12 @@ onMounted(async () => {
     loading-text="Cargando recepciones..."
     empty-text="No hay recepciones registradas."
     :empty-colspan="7"
+    :show-pagination="true"
+    :previous-url="previousUrl"
+    :next-url="nextUrl"
+    :pagination-disabled="loading"
+    :range-label="rangeLabel"
+    @page-change="(delta) => loadRecepciones(currentPage + delta, search.value)"
   >
     <template #row="{ item, index }">
       <tr class="hover:bg-gray-100 dark:hover:bg-gray-700">
@@ -166,7 +186,7 @@ onMounted(async () => {
           <div class="flex items-center gap-2">
             <button type="button" title="Ver detalle" aria-label="Ver detalle" class="inline-flex items-center p-2 text-blue-600 rounded-lg hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700" @click="handleVerDetalle(item.id)">
               <svg class="w-5 h-5 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 3v4a1 1 0 0 1-1 1H5m8-2h3m-3 3h3m-4 3v6m4-3H8M19 4v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1ZM8 12v6h8v-6H8Z"/>
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 4h3a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3m0 3h6m-6 5h6m-6 4h6M10 3v4h4V3h-4Z"/>
               </svg>
             </button>
             <button v-if="item.estado === 'PENDIENTE'" type="button" title="Editar recepción" aria-label="Editar recepción" class="inline-flex items-center p-2 text-primary-600 rounded-lg hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700" @click="handleEditar(item.id)">

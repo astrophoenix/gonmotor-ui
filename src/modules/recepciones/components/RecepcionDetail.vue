@@ -21,7 +21,7 @@ const FOTO_VISTAS = [
 const TIPO_RECEPCION_LABELS = {
   PREVENTIVO: 'Mantenimiento Preventivo',
   CORRECTIVO: 'Reparación Correctiva',
-  DIAGNOSTICO: 'Solo Diagnóstico / Escaneo',
+  DIAGNOSTICO: 'Solo Inspección / Escaneo',
   ESTETICA: 'Enderezada, Pintura o Detailing',
   GARANTIA: 'Garantía / Retorno',
 };
@@ -102,10 +102,11 @@ async function resolveBlueprint(grupo) {
 }
 
 onMounted(async () => {
-  const mensajeExito = sessionStorage.getItem('recepcion_aceptada_exito');
+  const mensajeExito = sessionStorage.getItem('recepcion_aceptada_exito') || sessionStorage.getItem('recepcion_exito');
   if (mensajeExito) {
     successMessage.value = mensajeExito;
     sessionStorage.removeItem('recepcion_aceptada_exito');
+    sessionStorage.removeItem('recepcion_exito');
   }
   const id = getIdFromUrl();
   if (id) {
@@ -137,9 +138,21 @@ const puedeEditar = computed(() => {
 const estadoBadge = computed(() => {
   const estado = recepcion.value?.estado || 'PENDIENTE';
   const map = {
-    ACEPTADA: { label: 'Aceptada y Firmada', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
-    NO_ACEPTADA: { label: 'No Aceptada / Sin Firma', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' },
-    PENDIENTE: { label: 'Pendiente de Firma', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
+    ACEPTADA: {
+      label: 'Aceptada y Firmada',
+      color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+      icon: 'M8.5 11.5l2 2 5-5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+    },
+    NO_ACEPTADA: {
+      label: 'No Aceptada / Sin Firma',
+      color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+      icon: 'm9 9 6 6m0-6-6 6M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+    },
+    PENDIENTE: {
+      label: 'Pendiente de Firma',
+      color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+      icon: 'M12 8v4l2.5 2.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+    },
   };
   return map[estado] || map.PENDIENTE;
 });
@@ -253,12 +266,20 @@ function irAInspeccion(recepcion) {
           <a href="/" class="inline-flex items-center text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Inicio</a>
         </li>
         <li class="text-gray-400">/ <a href="/crud/recepciones/" class="hover:text-primary-600">Recepciones</a></li>
-        <li class="text-gray-400">/ Cedula de recepción #{{ recepcion?.id }}</li>
+        <li class="text-gray-400">/ Detalle recepción #{{ recepcion?.id }}</li>
       </ol>
     </nav>
-    <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-      Recepción #{{ recepcion?.id }}
-    </h1>
+    <div class="flex items-center gap-3 flex-wrap">
+      <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
+        Recepción #{{ recepcion?.id }}
+      </h1>
+      <span v-if="recepcion" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium" :class="estadoBadge.color">
+        <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="estadoBadge.icon"/>
+        </svg>
+        {{ estadoBadge.label }}
+      </span>
+    </div>
   </div>
 
   <div class="p-4">
@@ -278,13 +299,7 @@ function irAInspeccion(recepcion) {
       </div>
 
       <div v-else>
-        <div class="flex items-center justify-between gap-2 mb-6 flex-wrap">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-3">
-            Detalle de la recepción
-            <span :class="['px-2 py-1 rounded-full text-xs font-medium', estadoBadge.color]">
-              {{ estadoBadge.label }}
-            </span>
-          </h2>
+        <div class="flex items-center justify-end gap-2 mb-6 flex-wrap">
           <div class="flex items-center gap-2 flex-wrap">
             <button
               v-if="puedeEditar"
@@ -301,26 +316,26 @@ function irAInspeccion(recepcion) {
             <button
               v-if="!tieneInspeccion && recepcion.estado === 'ACEPTADA'"
               type="button"
-              title="Crear Diagnóstico"
+              title="Crear Inspección"
               class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-purple-700 rounded-lg border border-purple-700 hover:bg-purple-50 dark:text-purple-400 dark:border-purple-400 dark:hover:bg-gray-800"
               @click="irADiagnostico(recepcion)"
             >
               <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13.5h14M12 6.5v14"/>
               </svg>
-              Crear Diagnóstico
+              Crear Inspección
             </button>
             <template v-if="tieneInspeccion && recepcion.estado === 'ACEPTADA'">
               <button
                 type="button"
-                title="Ver / Editar Diagnóstico"
+                title="Ver / Editar Inspección"
                 class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-amber-700 rounded-lg border border-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:border-amber-400 dark:hover:bg-gray-800"
                 @click="irAInspeccion(recepcion)"
               >
                 <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                   <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m14.3 4.8 2.9 2.9M7 17l-1 4 4-1 9.3-9.3a2 2 0 0 0-2.8-2.8L7 17Z"/>
                 </svg>
-                Ver / Editar Diagnóstico
+                Ver / Editar Inspección
               </button>
             </template>
             <button
@@ -440,15 +455,7 @@ function irAInspeccion(recepcion) {
             <div class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
               {{ recepcion.recibido_por_nombre || '-' }}
             </div>
-          </div>
-
-          <div class="col-span-1 md:col-span-4">
-            <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Motivo de Ingreso</p>
-            <div class="block w-full p-2.5 text-sm whitespace-pre-line rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
-              {{ recepcion.motivo_ingreso || '-' }}
-            </div>
-          </div>
-
+          </div>  
           <div class="col-span-1">
             <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kilometraje de Ingreso</p>
             <div class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
@@ -471,6 +478,13 @@ function irAInspeccion(recepcion) {
             <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Datos de la Grúa / Chófer</p>
             <div class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
               {{ recepcion.datos_grua || '-' }}
+            </div>
+          </div>
+
+          <div class="col-span-1 col-span-4 md:col-span-4">
+            <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Motivo de Ingreso</p>
+            <div class="block w-full p-3 text-sm whitespace-pre-line rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
+              {{ recepcion.motivo_ingreso || '-' }}
             </div>
           </div>
         </div>
@@ -704,7 +718,7 @@ function irAInspeccion(recepcion) {
                 alt="Firma del receptor"
                 class="w-full h-auto"
               />
-              <div v-else class="flex items-center justify-center h-24 text-xs text-gray-500 bg-white">Sin firma</div>
+              <div v-else class="flex items-center justify-center w-full aspect-[4/1] text-xs text-gray-500 bg-white">Sin firma</div>
             </div>
           </div>
 
@@ -720,7 +734,7 @@ function irAInspeccion(recepcion) {
                 alt="Firma del cliente"
                 class="w-full h-auto"
               />
-              <div v-else class="flex items-center justify-center h-24 text-xs text-gray-500 bg-white">Sin firma</div>
+              <div v-else class="flex items-center justify-center w-full aspect-[4/1] text-xs text-gray-500 bg-white">Sin firma</div>
             </div>
           </div>
         </div>
@@ -741,7 +755,7 @@ function irAInspeccion(recepcion) {
             v-if="recepcion.estado === 'NO_ACEPTADA'"
             class="mt-4 p-4 bg-yellow-50 border border-yellow-300 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-500">
             <p class="text-sm font-medium text-yellow-900 dark:text-yellow-200">Recepción no aceptada por el cliente</p>
-            <p class="mt-1 text-sm text-yellow-800 dark:text-yellow-300">
+            <p class="mt-1 text-sm whitespace-pre-line text-yellow-800 dark:text-yellow-300">
               {{ recepcion.motivo_no_recepcion || 'No se registró un motivo.' }}
             </p>
           </div>

@@ -8,6 +8,14 @@ Convenciones y estándares del proyecto.
 - Paginación y tablas de listado: usar el componente reutilizable `src/shared/components/EntityTable.vue` (slots scoped `#row="{ item, index }"`, `@page-change`).
 - UI de estados: componente `src/shared/components/Alert.vue` (props `type`, `title`, `message`, `dismissible`; emite `dismiss`).
 
+## Mejora de texto con IA (REUTILIZABLE)
+
+Cualquier campo de texto libre (motivos, observaciones, notas, etc.) puede ofrecer el botón "Mejorar texto" sin duplicar lógica:
+
+- **Componente**: `src/shared/components/TextImprover.vue` — usa `v-model` sobre el campo y un prop `contexto` (pista del tipo de campo). Soporta scoped slot (`mejorar`, `restaurar`, `mejorando`, `error`, `mejorado`, `tieneOriginal`) para colocar el botón y los mensajes donde se prefiera.
+- **Endpoint backend**: `POST /api/core/mejorar-texto/` con `{ texto, contexto? }` → `{ mejorado }`. Genérico y autenticado; no enviar datos personales del cliente (solo el texto del campo).
+- **Contrato del campo mejorado**: la mejora reemplaza el contenido del campo y se conserva el original para "Restaurar"; el usuario debe revisar antes de guardar. Si falla, el mensaje de error se muestra inline **sin perder** el texto escrito.
+
 ## Estándar de modales Crear / Editar (CONTRATO ACORDADO)
 
 Todas las entidades (clientes, proveedores, vehículos, empleados, talleres, etc.) deben **crear y editar desde un modal** reutilizable, no con redirección a pantallas `agregar/`/`editar/`. Al finalizar, el listado se recarga **sin recarga de página** (re-llamada al API).

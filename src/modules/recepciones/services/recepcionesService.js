@@ -7,13 +7,16 @@ function buildUrl(id) {
   return `${ENDPOINT}${encodeURIComponent(id)}/`;
 }
 
-export async function fetchRecepciones(token, empresaId) {
+export async function fetchRecepciones(token, empresaId, page = 1, search = '') {
   const headers = {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(empresaId ? { 'X-Empresa-ID': empresaId } : {}),
   };
 
-  const response = await fetch(`${API_BASE_URL}/api/recepciones/`, { headers });
+  const params = new URLSearchParams({ page: String(page) });
+  if (search) params.set('search', search);
+
+  const response = await fetch(`${API_BASE_URL}/api/recepciones/?${params.toString()}`, { headers });
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
     const message = data?.detail || data?.non_field_errors?.[0] || 'No se pudo cargar las recepciones.';

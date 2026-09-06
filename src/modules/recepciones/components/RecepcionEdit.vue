@@ -8,6 +8,7 @@ import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TestigosTablero from '../../../shared/components/TestigosTablero.vue';
 import PhotoSlotGrid from '../../../shared/components/PhotoSlotGrid.vue';
 import ClientModal from '../../clientes/components/ClientModal.vue';
+import TextImprover from '../../../shared/components/TextImprover.vue';
 
 const recepcionId = new URLSearchParams(window.location.search).get('id');
 const isEditMode = Boolean(recepcionId);
@@ -140,6 +141,7 @@ const firmaClienteCanvas = ref(null);
 const isDrawingReceptor = ref(false);
 const isDrawingCliente = ref(false);
 const clienteNoFirma = ref(false);
+const showContradiccionModal = ref(false);
 
 const esNoAceptada = computed(() => clienteNoFirma.value || (form.motivo_no_recepcion || '').trim() !== '');
 
@@ -313,7 +315,7 @@ function onClientePointerMove(event) {
 
 function onClientePointerUp(event) {
   const canvas = firmaClienteCanvas.value;
-  if (!canvas) return;
+  if (!canvas || !isDrawingCliente.value) return;
   stopDrawing(canvas, isDrawingCliente, firmaClienteData);
   if (tieneTrazado(canvas)) {
     form.aceptacion_condiciones = true;
@@ -326,7 +328,8 @@ function tieneTrazado(canvas) {
   try {
     const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
     for (let i = 0; i < data.length; i += 4) {
-      if (data[i] !== 255 || data[i + 1] !== 255 || data[i + 2] !== 255) {
+      const alpha = data[i + 3];
+      if (alpha !== 0 && (data[i] !== 255 || data[i + 1] !== 255 || data[i + 2] !== 255)) {
         return true;
       }
     }
@@ -753,15 +756,41 @@ async function submit() {
   formErrors.value = {};
   isSaving.value = true;
 
-  try {
-    const isValid = validateRecepcion();
-    if (!isValid) {
-      errorMessage.value = 'Completa correctamente los campos obligatorios.';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      isSaving.value = false;
-      return;
-    }
+  const isValid = validateRecepcion();
+  if (!isValid) {
+    errorMessage.value = 'Completa correctamente los campos obligatorios.';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    isSaving.value = false;
+    return;
+  }
 
+  if (tieneContradiccionNoAceptacion()) {
+    isSaving.value = false;
+    showContradiccionModal.value = true;
+    return;
+  }
+
+  await ejecutarGuardado();
+}
+
+function tieneContradiccionNoAceptacion() {
+  return (
+    !!firmaClienteData.value &&
+    !!form.aceptacion_condiciones &&
+    (form.motivo_no_recepcion || '').trim() !== ''
+  );
+}
+
+async function confirmarGuardadoNoAceptada() {
+  showContradiccionModal.value = false;
+  isSaving.value = true;
+  await ejecutarGuardado();
+}
+
+async function ejecutarGuardado() {
+  const esAceptadaYFirmada = () => !esNoAceptada.value && !!firmaClienteData.value && !!form.aceptacion_condiciones;
+
+  try {
     const payload = {
       cliente: form.cliente?.id || null,
       vehiculo: form.vehiculo?.id || null,
@@ -842,8 +871,12 @@ async function submit() {
 
     if (isEditMode) {
       await recepcionesService.update(recepcionId, fd);
-      const clienteAcepto = !esNoAceptada.value && !!firmaClienteData.value && !!form.aceptacion_condiciones;
-      if (clienteAcepto) {
+      if (esNoAceptada.value) {
+        sessionStorage.setItem('recepcion_exito', "Recepción actualizada correctamente. Registrada como 'No Aceptada / Sin Firma'.");
+        window.location.assign(`/crud/recepciones/ver/?id=${encodeURIComponent(recepcionId)}`);
+        return;
+      }
+      if (esAceptadaYFirmada()) {
         sessionStorage.setItem('recepcion_aceptada_exito', 'La recepción ha sido aceptada y firmada con éxito.');
         window.location.assign(`/crud/recepciones/ver/?id=${encodeURIComponent(recepcionId)}`);
         return;
@@ -852,8 +885,17 @@ async function submit() {
     } else {
       const saved = await recepcionesService.create(fd);
       if (saved?.id) {
-        sessionStorage.setItem('recepcion_exito', 'Recepción creada correctamente.');
-        window.location.assign(`/crud/recepciones/editar/?id=${encodeURIComponent(saved.id)}`);
+        sessionStorage.setItem(
+          'recepcion_exito',
+          esNoAceptada.value
+            ? "Recepción creada correctamente. Registrada como 'No Aceptada / Sin Firma'."
+            : 'Recepción creada correctamente.'
+        );
+        if (esNoAceptada.value || esAceptadaYFirmada()) {
+          window.location.assign(`/crud/recepciones/ver/?id=${encodeURIComponent(saved.id)}`);
+        } else {
+          window.location.assign(`/crud/recepciones/editar/?id=${encodeURIComponent(saved.id)}`);
+        }
         return;
       }
       successMessage.value = 'Recepción creada correctamente.';
@@ -903,7 +945,7 @@ watch(() => marcas.value, () => {
 }, { deep: true });
 
 watch(() => form.motivo_ingreso, (val) => {
-  const clean = sanitizeObservaciones(val);
+  const clean = sanitizeObservaciones(val).slice(0, 500);
   if (clean !== val) form.motivo_ingreso = clean;
 });
 
@@ -1127,12 +1169,6 @@ onMounted(() => {
             <p v-if="formErrors.tipo_recepcion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.tipo_recepcion }}</p>
           </div>
 
-          <div class="col-span-1">
-            <label for="motivo_ingreso" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Motivo de Ingreso</label>
-            <textarea id="motivo_ingreso" v-model="form.motivo_ingreso" rows="2" placeholder="Describe la razón por la que el cliente trae el vehículo..." :class="['block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.motivo_ingreso ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']"></textarea>
-            <p v-if="formErrors.motivo_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.motivo_ingreso }}</p>
-          </div>
-
           <div class="relative col-span-1">
             <label for="recibido_por" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Recibido por</label>
             <input
@@ -1201,6 +1237,46 @@ onMounted(() => {
               :class="['block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.datos_grua ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']"
             />
             <p v-if="formErrors.datos_grua" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.datos_grua }}</p>
+          </div>
+
+          <div class="col-span-1 col-span-4 md:col-span-4">
+            <TextImprover
+              v-model="form.motivo_ingreso"
+              contexto="motivo de ingreso"
+              v-slot="{ mejorar, restaurar, mejorando, error, mejorado, tieneOriginal }"
+            >
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <label for="motivo_ingreso" class="block text-sm font-medium text-gray-900 dark:text-white">Motivo de Ingreso</label>
+                <button
+                  type="button"
+                  title="Mejorar el texto con IA"
+                  :disabled="mejorando"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-primary-blue-700 text-primary-blue-700 hover:bg-primary-blue-50 focus:ring-4 focus:ring-primary-blue-300 dark:border-primary-blue-400 dark:text-primary-blue-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  @click="mejorar"
+                >
+                  <svg v-if="!mejorando" class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z"/>
+                  </svg>
+                  <svg v-else class="w-4 h-4 animate-spin" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4z"/>
+                  </svg>
+                  {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
+                </button>
+              </div>
+              <textarea id="motivo_ingreso" v-model="form.motivo_ingreso" rows="3" maxlength="500" placeholder="Describe la razón por la que el cliente trae el vehículo..." :class="['block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.motivo_ingreso ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']"></textarea>
+              <p v-if="formErrors.motivo_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.motivo_ingreso }}</p>
+              <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error }}</p>
+              <div v-if="mejorado && !error" class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
+                <svg class="w-5 h-5 shrink-0" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                </svg>
+                <div class="flex flex-wrap items-center gap-x-2">
+                  <p>Texto mejorado. Revisa antes de guardar.</p>
+                  <button v-if="tieneOriginal" type="button" class="text-sm font-medium underline hover:no-underline" @click="restaurar">Restaurar original</button>
+                </div>
+              </div>
+            </TextImprover>
           </div>
         </div>
 
@@ -1282,8 +1358,7 @@ onMounted(() => {
         <h4 class="mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
             <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/>
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 3v4a1 1 0 0 1-1 1H5m8 7.5 2.5 2.5M19 4v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1Zm-5 9.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z"/>.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/>
             </svg>
             Inspección Física / Carrocería
           </span>
@@ -1358,9 +1433,9 @@ onMounted(() => {
         <h4 class="mb-1 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
             <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" stroke-linejoin="round" stroke-width="2" d="M3 7a1 1 0 0 1 1-1h11.586a1 1 0 0 1 .707.293l2.414 2.414a1 1 0 0 1 .293.707V17a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7Z"/>
-              <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M8 4h1v3H8V4Zm4 0h1v3h-1V4Zm4 0h2v3h-2V4Z"/>
-            </svg>
+              <path stroke="currentColor" stroke-linejoin="round" stroke-width="2" d="M4 18V8a1 1 0 0 1 1-1h1.5l1.707-1.707A1 1 0 0 1 8.914 5h6.172a1 1 0 0 1 .707.293L17.5 7H19a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z"/>
+              <path stroke="currentColor" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+            </svg>     
             Evidencia Fotográfica del Vehículo
           </span>
         </h4>
@@ -1386,7 +1461,7 @@ onMounted(() => {
         <h4 class="mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
             <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6a2.25 2.25 0 0 0-2.25-2.25H6A2.25 2.25 0 0 0 3.75 6v8.25A2.25 2.25 0 0 0 6 16.5h.75m3 3h.375a.375.375 0 0 0 .375-.375v-1.125a.375.375 0 0 0-.375-.375h-.375m0 0h3.75m-3.75 0v1.5m0 0h3.75m-3.75 0v1.5m0 0h3.75"/>
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m4.988 19.012 5.41-5.41m2.366-6.424 4.058 4.058-2.03 5.41L5.3 20 4 18.701l3.355-9.494 5.41-2.029Zm4.626 4.625L12.197 6.61 14.807 4 20 9.194l-2.61 2.61Z"/>
             </svg>
             Firma y Aceptación
           </span>
@@ -1402,7 +1477,7 @@ onMounted(() => {
               <canvas
                 ref="firmaReceptorCanvas"
                 width="400"
-                height="150"
+                height="100"
                 class="w-full h-auto bg-white touch-none"
                 @pointerdown="onReceptorPointerDown"
                 @pointermove="onReceptorPointerMove"
@@ -1430,7 +1505,7 @@ onMounted(() => {
               <canvas
                 ref="firmaClienteCanvas"
                 width="400"
-                height="150"
+                height="100"
                 class="w-full h-auto bg-white touch-none"
                 @pointerdown="onClientePointerDown"
                 @pointermove="onClientePointerMove"
@@ -1473,8 +1548,10 @@ onMounted(() => {
               El cliente no firmará la recepción. Registra el motivo y guarda para dejar la recepción como "No Aceptada / Sin Firma".
             </p>
             <textarea
+              id="motivo_no_recepcion"
               v-model="form.motivo_no_recepcion"
-              rows="3"
+              rows="2"
+              maxlength="500"
               placeholder="Registra el motivo por el cual el cliente no aceptó las condiciones o no dejó el vehículo..."
               :class="['block w-full p-2.5 text-sm rounded-lg bg-white border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.motivo_no_recepcion ? 'bg-yellow-50 border-yellow-500 text-yellow-900 dark:bg-gray-700 dark:text-yellow-500 dark:border-yellow-500' : '']"
             ></textarea>
@@ -1491,6 +1568,53 @@ onMounted(() => {
           />
         </div>
       </form>
+    </div>
+  </div>
+
+  <div v-if="showContradiccionModal" class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 p-4">
+    <div class="relative w-full max-w-md rounded-lg bg-white shadow-xl dark:bg-gray-800">
+      <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
+        <h3 class="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
+          <svg class="w-6 h-6 text-yellow-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11h2v5m-2 0h4m-2.592-8.5h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+          </svg>
+          ¿El cliente se retractó?
+        </h3>
+        <button
+          type="button"
+          class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+          aria-label="Cerrar"
+          @click="showContradiccionModal = false"
+        >
+          <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 17.94 6M18 18 6.06 6"/></svg>
+        </button>
+      </div>
+      <div class="px-6 py-4">
+        <p class="text-sm text-gray-700 dark:text-gray-300">
+          Hay firma y aceptación del cliente, pero también un motivo de no aceptación.
+        </p>
+        <p class="mt-2 text-sm font-semibold text-yellow-700 dark:text-yellow-400">
+          Si continúas se guardará como "No Aceptada / Sin Firma" y se descartará la aceptación registrada.
+        </p>
+      </div>
+      <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
+        <button
+          type="button"
+          class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+          @click="showContradiccionModal = false"
+        >
+          <svg class="w-5 h-5 mr-1.5 -ml-1 text-gray-500 dark:text-gray-300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 17.94 6M18 18 6.06 6"/></svg>
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded-lg bg-red-600 hover:bg-red-700 focus:ring-4 focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800"
+          @click="confirmarGuardadoNoAceptada"
+        >
+          <svg class="w-5 h-5 mr-1.5 -ml-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8.5 11.5 2 2 5-5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+          Confirmar no aceptación
+        </button>
+      </div>
     </div>
   </div>
 
