@@ -21,12 +21,21 @@ const props = defineProps({
   showExportExcel: {
     type: Boolean,
     default: true
+  },
+  entityApiPath: {
+    type: String,
+    default: ''
   }
 });
 
 const emit = defineEmits(['add', 'pdfExportError', 'excelExportError']);
 
 const { showSuccess } = useToast();
+
+function apiPath() {
+  const base = props.entityApiPath || props.entity;
+  return base.replace(/^\/+|\/+$/g, '');
+}
 
 function getAccessToken() {
   return localStorage.getItem('gonmotor_access_token')
@@ -80,7 +89,7 @@ async function exportPdf() {
   try {
     const token = getAccessToken();
     const empresaId = getEmpresaId();
-    const url = `${API_BASE_URL.replace(/\/$/, '')}/api/${props.entity}/exportar-pdf/`;
+    const url = `${API_BASE_URL.replace(/\/$/, '')}/api/${apiPath()}/exportar-pdf/`;
 
     const response = await fetch(url, {
       headers: {
@@ -122,7 +131,7 @@ async function exportExcel() {
   if (isExportingExcel.value) return;
   isExportingExcel.value = true;
   try {
-    await downloadFile(`/api/${props.entity}/export-excel/`, `${props.entity}_reporte.xlsx`);
+    await downloadFile(`/api/${apiPath()}/export-excel/`, `${props.entity}_reporte.xlsx`);
     showSuccess(`Excel generado: ${props.entity}_reporte.xlsx`);
   } catch (error) {
     emit('excelExportError', error.message || 'Ocurrió un error al generar el Excel.');

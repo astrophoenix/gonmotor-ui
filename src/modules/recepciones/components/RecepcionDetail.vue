@@ -347,10 +347,10 @@ function irAInspeccion(recepcion) {
               Ver Cotización
             </button>
             <button
-              v-if="recepcion.orden_trabajo_id"
+              v-if="recepcion.orden_trabajo"
               type="button"
               class="inline-flex items-center px-3 py-2 text-sm font-medium text-indigo-700 rounded-lg border border-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:border-indigo-400 dark:hover:bg-gray-800"
-              @click="goTo(`/crud/ordenes/ver/${recepcion.orden_trabajo_id}/`)"
+              @click="goTo(`/crud/ordenes/ver/${recepcion.orden_trabajo}/`)"
             >
               Ver Orden
             </button>

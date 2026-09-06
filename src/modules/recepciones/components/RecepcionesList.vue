@@ -1,11 +1,36 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted } from 'vue';
 import { useRecepciones } from '../composables/useRecepciones';
+import { talleresService } from '../../configuracion/services/talleresService';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
 
 const { recepciones, loading, error, loadRecepciones, currentPage, nextUrl, previousUrl, rangeLabel } = useRecepciones();
+
+const prefijoRecepcionBySucursal = ref({});
+
+async function loadPrefijosRecepcion() {
+  try {
+    const data = await talleresService.listTalleres();
+    const list = Array.isArray(data) ? data : data?.results || [];
+    const map = {};
+    list.forEach((taller) => {
+      if (taller.id && taller.prefijo_recepcion) {
+        map[taller.id] = taller.prefijo_recepcion;
+      }
+    });
+    prefijoRecepcionBySucursal.value = map;
+  } catch (error) {
+    prefijoRecepcionBySucursal.value = {};
+  }
+}
+
+function numeroDisplay(item) {
+  if (item.numero_recepcion) return item.numero_recepcion;
+  const prefijo = prefijoRecepcionBySucursal.value[item.sucursal] || '';
+  return `#${prefijo}${item.id}`;
+}
 
 const alert = ref({
   type: 'default',
@@ -42,19 +67,29 @@ function getEstadoFirmaBadge(recepcion) {
 
 function getEstadoBadge(recepcion) {
   if (recepcion.inspecciones?.length > 0) {
+    const inspeccion = recepcion.inspecciones[0];
     if (recepcion.cotizaciones_generadas?.length > 0) {
-      return { label: 'Con cotización', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' };
+      const cotizacion = recepcion.cotizaciones_generadas[0];
+      return {
+        label: cotizacion.numero_cotizacion ? `Con cotización ${cotizacion.numero_cotizacion}` : 'Con cotización',
+        color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+        href: `/crud/cotizaciones/ver/${encodeURIComponent(cotizacion.id)}/`,
+      };
     }
-    if (recepcion.orden_trabajo_id) {
-      return { label: 'Convertida a OT', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' };
+    if (recepcion.orden_trabajo) {
+      return {
+        label: recepcion.orden_trabajo_numero ? `Convertida a OT ${recepcion.orden_trabajo_numero}` : 'Convertida a OT',
+        color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+        href: `/crud/ordenes/ver/${encodeURIComponent(recepcion.orden_trabajo)}/`,
+      };
     }
-    return { label: 'Con diagnóstico', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' };
+    return {
+      label: inspeccion.numero_inspeccion ? `Con diagnóstico ${inspeccion.numero_inspeccion}` : 'Con diagnóstico',
+      color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+      href: `/crud/inspecciones/editar/?id=${encodeURIComponent(inspeccion.id)}`,
+    };
   }
   return { label: 'Sin diagnóstico', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' };
-}
-
-function handleVerDetalle(id) {
-  window.location.assign(`/crud/recepciones/ver/?id=${encodeURIComponent(id)}`);
 }
 
 function handleEditar(id) {
@@ -90,6 +125,7 @@ function scheduleSearch() {
 watch(search, scheduleSearch);
 
 onMounted(async () => {
+  loadPrefijosRecepcion();
   try {
     await loadRecepciones();
   } catch (err) {
@@ -149,12 +185,12 @@ onUnmounted(() => {
   </div>
 
   <EntityTable
-    :columns="['#', 'Vehículo', 'Cliente', 'Fecha ingreso', 'Grúa', 'Estado', 'Acciones']"
+    :columns="['#', 'Nº Recepción', 'Vehículo', 'Cliente', 'Fecha ingreso', 'Grúa', 'Estado', 'Acciones']"
     :items="recepciones"
     :loading="loading"
     loading-text="Cargando recepciones..."
     empty-text="No hay recepciones registradas."
-    :empty-colspan="7"
+    :empty-colspan="8"
     :show-pagination="true"
     :previous-url="previousUrl"
     :next-url="nextUrl"
@@ -165,6 +201,14 @@ onUnmounted(() => {
     <template #row="{ item, index }">
       <tr class="hover:bg-gray-100 dark:hover:bg-gray-700">
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ index + 1 }}</td>
+        <td class="p-4 whitespace-nowrap">
+          <a
+            :href="`/crud/recepciones/ver/?id=${encodeURIComponent(item.id)}`"
+            class="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+          >
+            {{ numeroDisplay(item) }}
+          </a>
+        </td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">
           <span class="font-medium">{{ item.vehiculo?.placa || '-' }}</span>
           <span class="block text-xs text-gray-500 dark:text-gray-400">
@@ -178,17 +222,20 @@ onUnmounted(() => {
           <span class="inline-block px-2 py-1 rounded-full text-xs font-medium mr-1" :class="getEstadoFirmaBadge(item).color">
             {{ getEstadoFirmaBadge(item).label }}
           </span>
-          <span v-if="item.estado === 'ACEPTADA'" class="inline-block px-2 py-1 rounded-full text-xs font-medium" :class="getEstadoBadge(item).color">
-            {{ getEstadoBadge(item).label }}
-          </span>
+          <template v-if="item.estado === 'ACEPTADA'">
+            <a
+              v-if="getEstadoBadge(item).href"
+              :href="getEstadoBadge(item).href"
+              class="inline-block px-2 py-1 rounded-full text-xs font-medium"
+              :class="getEstadoBadge(item).color"
+            >{{ getEstadoBadge(item).label }}</a>
+            <span v-else class="inline-block px-2 py-1 rounded-full text-xs font-medium" :class="getEstadoBadge(item).color">
+              {{ getEstadoBadge(item).label }}
+            </span>
+          </template>
         </td>
         <td class="p-4 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <button type="button" title="Ver detalle" aria-label="Ver detalle" class="inline-flex items-center p-2 text-blue-600 rounded-lg hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700" @click="handleVerDetalle(item.id)">
-              <svg class="w-5 h-5 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 4h3a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3m0 3h6m-6 5h6m-6 4h6M10 3v4h4V3h-4Z"/>
-              </svg>
-            </button>
             <button v-if="item.estado === 'PENDIENTE'" type="button" title="Editar recepción" aria-label="Editar recepción" class="inline-flex items-center p-2 text-primary-600 rounded-lg hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700" @click="handleEditar(item.id)">
               <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg>
             </button>

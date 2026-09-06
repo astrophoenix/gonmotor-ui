@@ -1,9 +1,10 @@
 <script setup>
-import { onMounted, reactive, ref, computed } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { request } from '../../../shared/services/httpClient';
 import { inspeccionesService } from '../services/inspeccionesService';
 import Alert from '../../../shared/components/Alert.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
+import TestigosTablero from '../../../shared/components/TestigosTablero.vue';
 import { formatCurrency } from '../../../shared/utils/format';
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -32,6 +33,38 @@ const form = reactive({
   testigo_temperatura: false,
   otros_testigos_observaciones: '',
 });
+
+const testigos = ref({
+  testigo_check_engine: false,
+  testigo_abs: false,
+  testigo_airbag: false,
+  testigo_bateria: false,
+  testigo_aceite: false,
+  testigo_temperatura: false,
+  otros_testigos_observaciones: '',
+});
+
+watch(testigos.value, (val) => {
+  form.testigo_check_engine = val.testigo_check_engine;
+  form.testigo_abs = val.testigo_abs;
+  form.testigo_airbag = val.testigo_airbag;
+  form.testigo_bateria = val.testigo_bateria;
+  form.testigo_aceite = val.testigo_aceite;
+  form.testigo_temperatura = val.testigo_temperatura;
+  form.otros_testigos_observaciones = val.otros_testigos_observaciones;
+}, { deep: true });
+
+function syncTestigosDesdeForm() {
+  Object.assign(testigos.value, {
+    testigo_check_engine: form.testigo_check_engine,
+    testigo_abs: form.testigo_abs,
+    testigo_airbag: form.testigo_airbag,
+    testigo_bateria: form.testigo_bateria,
+    testigo_aceite: form.testigo_aceite,
+    testigo_temperatura: form.testigo_temperatura,
+    otros_testigos_observaciones: form.otros_testigos_observaciones,
+  });
+}
 
 const recepcion = ref(null);
 const estadoInspeccion = ref('');
@@ -238,6 +271,7 @@ async function loadRecepcion() {
       form.testigo_aceite = data.testigo_aceite || false;
       form.testigo_temperatura = data.testigo_temperatura || false;
       form.otros_testigos_observaciones = data.otros_testigos_observaciones || '';
+      syncTestigosDesdeForm();
     }
   } catch (error) {
     console.error('No se pudo cargar la recepción:', error);
@@ -269,6 +303,7 @@ async function loadInspeccion() {
       testigo_temperatura: data.testigo_temperatura || false,
       otros_testigos_observaciones: data.otros_testigos_observaciones || '',
     });
+    syncTestigosDesdeForm();
     if (data.recepcion) {
       recepcion.value = data.recepcion;
     }
@@ -466,37 +501,7 @@ onMounted(() => {
 
         <div class="col-span-1">
           <h5 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Testigos del Tablero</h5>
-          <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div class="flex items-center">
-              <input id="testigo_check_engine" v-model="form.testigo_check_engine" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600">
-              <label for="testigo_check_engine" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Check Engine</label>
-            </div>
-            <div class="flex items-center">
-              <input id="testigo_abs" v-model="form.testigo_abs" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600">
-              <label for="testigo_abs" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">ABS</label>
-            </div>
-            <div class="flex items-center">
-              <input id="testigo_airbag" v-model="form.testigo_airbag" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600">
-              <label for="testigo_airbag" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Airbag</label>
-            </div>
-            <div class="flex items-center">
-              <input id="testigo_bateria" v-model="form.testigo_bateria" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600">
-              <label for="testigo_bateria" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Batería</label>
-            </div>
-            <div class="flex items-center">
-              <input id="testigo_aceite" v-model="form.testigo_aceite" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600">
-              <label for="testigo_aceite" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Presión de Aceite</label>
-            </div>
-            <div class="flex items-center">
-              <input id="testigo_temperatura" v-model="form.testigo_temperatura" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600">
-              <label for="testigo_temperatura" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Temperatura / Refrigerante</label>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-span-1">
-          <label for="otros_testigos_observaciones" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Otros Testigos u Observaciones del Tablero</label>
-          <input id="otros_testigos_observaciones" v-model="form.otros_testigos_observaciones" maxlength="255" placeholder="Otros testigos o notas adicionales..." class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+          <TestigosTablero v-model="testigos" />
         </div>
 
         <div class="col-span-1">

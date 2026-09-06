@@ -44,16 +44,19 @@ function onTallerSaved(message) {
 }
 
 function onTallerCreated() {
-  onTallerSaved('Taller creado correctamente.');
+  onTallerSaved('El taller ha sido creado exitosamente.');
 }
 
 function onTallerUpdated() {
-  onTallerSaved('Taller actualizado correctamente.');
+  onTallerSaved('El taller ha sido actualizado exitosamente.');
+}
+
+function onTallerExportError(message) {
+  showAlert('error', '', message || 'Ocurrió un error al generar el archivo.');
 }
 
 async function loadTalleres() {
   isLoading.value = true;
-  hideAlert();
   try {
     const data = await talleresService.listTalleres();
     talleres.value = Array.isArray(data) ? data : data?.results || [];
@@ -124,9 +127,10 @@ onMounted(loadTalleres);
           <div class="flex items-center mt-3 ml-auto sm:mt-0">
             <EntityActionButtons
               entity="talleres"
-              :show-export-pdf="false"
-              :show-export-excel="false"
+              entity-api-path="configuracion/sucursales"
               @add="openCreateModal"
+              @pdf-export-error="onTallerExportError"
+              @excel-export-error="onTallerExportError"
             />
           </div>
         </div>

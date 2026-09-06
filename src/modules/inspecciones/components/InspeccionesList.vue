@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted } from 'vue';
 import { useInspecciones } from '../composables/useInspecciones';
+import { talleresService } from '../../configuracion/services/talleresService';
 import ConfirmDeleteModal from '../../../shared/components/ConfirmDeleteModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
@@ -30,6 +31,30 @@ function showAlert(type, title, message) {
 
 function hideAlert() {
   alert.value = { type: 'default', title: '', message: '' };
+}
+
+const prefijoInspeccionBySucursal = ref({});
+
+async function loadPrefijosInspeccion() {
+  try {
+    const data = await talleresService.listTalleres();
+    const list = Array.isArray(data) ? data : data?.results || [];
+    const map = {};
+    list.forEach((taller) => {
+      if (taller.id && taller.prefijo_inspeccion) {
+        map[taller.id] = taller.prefijo_inspeccion;
+      }
+    });
+    prefijoInspeccionBySucursal.value = map;
+  } catch (error) {
+    prefijoInspeccionBySucursal.value = {};
+  }
+}
+
+function numeroDisplay(item) {
+  if (item.numero_inspeccion) return item.numero_inspeccion;
+  const prefijo = prefijoInspeccionBySucursal.value[item.sucursal] || '';
+  return `#${prefijo}${item.id}`;
 }
 
 const showDeleteModal = ref(false);
@@ -105,6 +130,7 @@ function scheduleSearch() {
 
 watch(search, scheduleSearch);
 onMounted(() => {
+  loadPrefijosInspeccion();
   loadInspecciones();
 });
 
@@ -157,12 +183,12 @@ onUnmounted(() => {
   </div>
 
   <EntityTable
-    :columns="['#', 'Vehículo', 'Cliente', 'Tipo', 'Estado', 'Fecha', 'Acciones']"
+    :columns="['#', 'Nº Inspección', 'Vehículo', 'Cliente', 'Tipo', 'Estado', 'Fecha', 'Acciones']"
     :items="inspecciones"
     :loading="loading"
     loading-text="Cargando inspecciones..."
     empty-text="No se encontraron inspecciones."
-    :empty-colspan="7"
+    :empty-colspan="8"
     :show-pagination="true"
     :previous-url="previousUrl"
     :next-url="nextUrl"
@@ -173,6 +199,14 @@ onUnmounted(() => {
     <template #row="{ item, index }">
       <tr class="hover:bg-gray-100 dark:hover:bg-gray-700">
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ index + 1 }}</td>
+        <td class="p-4 whitespace-nowrap">
+          <a
+            :href="`/crud/inspecciones/editar/?id=${encodeURIComponent(item.id)}`"
+            class="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+          >
+            {{ numeroDisplay(item) }}
+          </a>
+        </td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">
           <span class="font-medium">{{ item.recepcion?.placa || '-' }}</span>
           <span class="block text-xs text-gray-500 dark:text-gray-400">
