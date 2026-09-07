@@ -89,6 +89,7 @@ const repuestosEliminados = ref([]);
 
 const catalogoServicios = ref([]);
 const catalogoRepuestos = ref([]);
+const mostrarServicios = ref(true);
 
 const modal = reactive({
   visible: false,
@@ -143,7 +144,7 @@ function loadCatalogo() {
 // ---------- Ítems: filas con autocompletado desde catálogo ----------
 function sugerenciasServicio(termino) {
   const term = (termino || '').trim().toLowerCase();
-  if (!term) return [];
+  if (!term) return catalogoServicios.value;
   return catalogoServicios.value.filter((s) =>
     [s.codigo, s.nombre, s.marca].filter(Boolean).join(' ').toLowerCase().includes(term)
   );
@@ -151,7 +152,7 @@ function sugerenciasServicio(termino) {
 
 function sugerenciasRepuesto(termino) {
   const term = (termino || '').trim().toLowerCase();
-  if (!term) return [];
+  if (!term) return catalogoRepuestos.value;
   return catalogoRepuestos.value.filter((r) =>
     [r.codigo, r.nombre, r.marca].filter(Boolean).join(' ').toLowerCase().includes(term)
   );
@@ -164,11 +165,13 @@ function cerrarSugerencias() {
 
 function abrirSugerenciasServicio(fila) {
   cerrarSugerencias();
+  fila.sel = 0;
   fila.abierto = true;
 }
 
 function abrirSugerenciasRepuesto(fila) {
   cerrarSugerencias();
+  fila.sel = 0;
   fila.abierto = true;
 }
 
@@ -176,11 +179,13 @@ function nuevaFilaServicio() {
   return {
     id: null,
     sufijo: Date.now() + Math.random(),
+    codigo: '',
     descripcion: '',
     horas_estimadas: '1.00',
     precio_unitario: '0.00',
     es_opcional: false,
     abierto: false,
+    sel: 0,
   };
 }
 
@@ -194,6 +199,7 @@ function nuevaFilaRepuesto() {
     precio_unitario_referencial: '0.00',
     es_opcional: false,
     abierto: false,
+    sel: 0,
   };
 }
 
@@ -202,6 +208,14 @@ function focusInput(id) {
     const el = document.getElementById(id);
     if (el) el.focus();
   });
+}
+
+function formatearItem(codigo, nombre) {
+  if (!codigo) return nombre;
+  const codigoTexto = String(codigo).trim();
+  return codigoTexto && !nombre.startsWith(codigoTexto)
+    ? `${codigoTexto} - ${nombre}`
+    : nombre;
 }
 
 function agregarServicioVacio() {
@@ -221,7 +235,8 @@ function agregarRepuestoVacio() {
 }
 
 function seleccionarServicio(item, fila) {
-  fila.descripcion = item.nombre;
+  fila.codigo = item.codigo || '';
+  fila.descripcion = formatearItem(item.codigo, item.nombre);
   fila.horas_estimadas = '1.00';
   fila.precio_unitario = String(item.precio_referencial ?? '0.00');
   fila.es_opcional = false;
@@ -231,21 +246,44 @@ function seleccionarServicio(item, fila) {
 
 function seleccionarRepuesto(item, fila) {
   fila.codigo_repuesto = item.codigo || '';
-  fila.descripcion = item.nombre;
+  fila.descripcion = formatearItem(item.codigo, item.nombre);
   fila.cantidad = '1';
   fila.precio_unitario_referencial = String(item.precio_venta ?? '0.00');
   fila.abierto = false;
+  fila.es_opcional = false;
   focusInput(`rpt-cant-${fila.sufijo}`);
 }
 
-function seleccionarPrimeraServicio(fila) {
-  const sugerencias = sugerenciasServicio(fila.descripcion);
-  if (sugerencias.length) seleccionarServicio(sugerencias[0], fila);
+function selServicioValido(fila, lista) {
+  return Math.min(Math.max(0, fila.sel || 0), lista.length - 1);
 }
 
-function seleccionarPrimeraRepuesto(fila) {
-  const sugerencias = sugerenciasRepuesto(fila.descripcion);
-  if (sugerencias.length) seleccionarRepuesto(sugerencias[0], fila);
+function selRepuestoValido(fila, lista) {
+  return Math.min(Math.max(0, fila.sel || 0), lista.length - 1);
+}
+
+function moverSeleccionServicio(fila, direccion) {
+  const lista = sugerenciasServicio(fila.descripcion);
+  if (!fila.abierto || !lista.length) return;
+  fila.sel = Math.min(Math.max(0, (fila.sel || 0) + direccion), lista.length - 1);
+}
+
+function moverSeleccionRepuesto(fila, direccion) {
+  const lista = sugerenciasRepuesto(fila.descripcion);
+  if (!fila.abierto || !lista.length) return;
+  fila.sel = Math.min(Math.max(0, (fila.sel || 0) + direccion), lista.length - 1);
+}
+
+function elegirSeleccionServicio(fila) {
+  const lista = sugerenciasServicio(fila.descripcion);
+  if (!lista.length) return;
+  seleccionarServicio(lista[selServicioValido(fila, lista)], fila);
+}
+
+function elegirSeleccionRepuesto(fila) {
+  const lista = sugerenciasRepuesto(fila.descripcion);
+  if (!lista.length) return;
+  seleccionarRepuesto(lista[selRepuestoValido(fila, lista)], fila);
 }
 
 // ---------- Cliente / Vehículo (solo creación independiente) ----------
@@ -346,7 +384,8 @@ function aplicarCotizacion(data) {
   servicios.value = (data.servicios || []).map((s) => ({
     id: s.id,
     sufijo: Date.now() + Math.random(),
-    descripcion: s.descripcion,
+    codigo: s.codigo || '',
+    descripcion: formatearItem(s.codigo, s.descripcion),
     horas_estimadas: String(s.horas_estimadas ?? '1.00'),
     precio_unitario: String(s.precio_unitario ?? '0.00'),
     es_opcional: Boolean(s.es_opcional),
@@ -355,7 +394,7 @@ function aplicarCotizacion(data) {
     id: r.id,
     sufijo: Date.now() + Math.random(),
     codigo_repuesto: r.codigo_repuesto || '',
-    descripcion: r.descripcion,
+    descripcion: formatearItem(r.codigo_repuesto, r.descripcion),
     cantidad: String(r.cantidad ?? '1'),
     precio_unitario_referencial: String(r.precio_unitario_referencial ?? '0.00'),
     es_opcional: Boolean(r.es_opcional),
@@ -459,6 +498,7 @@ async function guardarDetalles(idCotizacion) {
 
   async function guardarServicio(s) {
     const payload = {
+      codigo: s.codigo || '',
       descripcion: s.descripcion || '',
       horas_estimadas: String(s.horas_estimadas ?? '1.00'),
       precio_unitario: String(s.precio_unitario ?? '0.00'),
@@ -910,10 +950,23 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
+          <div class="flex gap-4 border-b border-gray-200 dark:border-gray-600">
+            <button
+              type="button"
+              :class="[mostrarServicios ? 'pb-2 text-sm font-medium border-b-2 border-primary-blue-700 text-primary-blue-700 dark:border-primary-blue-400 dark:text-primary-blue-400' : 'pb-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white']"
+              @click="mostrarServicios = true"
+            >Servicios / Mano de obra</button>
+            <button
+              type="button"
+              :class="[!mostrarServicios ? 'pb-2 text-sm font-medium border-b-2 border-primary-blue-700 text-primary-blue-700 dark:border-primary-blue-400 dark:text-primary-blue-400' : 'pb-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white']"
+              @click="mostrarServicios = false"
+            >Repuestos / Materiales</button>
+          </div>
+
           <!-- Servicios -->
-          <div class="col-span-1">
+          <div v-show="mostrarServicios" class="col-span-1">
             <h3 class="text-lg font-semibold text-gray-900 mb-3 dark:text-white">Servicios / Mano de obra</h3>
-            <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
+            <div class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-x-visible">
               <table class="w-full text-sm text-left text-gray-900 dark:text-white">
                 <thead class="text-xs uppercase bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
                   <tr>
@@ -941,17 +994,25 @@ onBeforeUnmount(() => {
                           :disabled="!esEditable"
                           @focus="abrirSugerenciasServicio(servicio)"
                           @blur="servicio.abierto = false"
-                          @keydown.enter.prevent="seleccionarPrimeraServicio(servicio)"
+                          @input="servicio.sel = 0"
+                          @keydown.down.prevent="moverSeleccionServicio(servicio, 1)"
+                          @keydown.up.prevent="moverSeleccionServicio(servicio, -1)"
+                          @keydown.enter.prevent="elegirSeleccionServicio(servicio)"
                           @keydown.esc="servicio.abierto = false"
                         />
                         <ul
-                          v-if="servicio.abierto && esEditable && servicio.descripcion.trim().length >= 3"
+                          v-if="servicio.abierto && esEditable"
                           class="absolute left-0 right-0 z-50 mt-1 max-h-52 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl dark:bg-gray-700 dark:border-gray-600"
                         >
-                          <li v-for="item in sugerenciasServicio(servicio.descripcion)" :key="item.id">
-                            <button type="button" class="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600" @mousedown.prevent="seleccionarServicio(item, servicio)">
-                              <span class="font-medium block">{{ item.nombre }}</span>
-                              <span class="text-xs text-gray-500 dark:text-gray-400">{{ item.codigo || '' }} · $ {{ formatMoney(item.precio_referencial) }}</span>
+                          <li v-for="(item, index) in sugerenciasServicio(servicio.descripcion)" :key="item.id">
+                            <button
+                              type="button"
+                              :class="['block w-full px-4 py-2 text-left text-sm', index === selServicioValido(servicio, sugerenciasServicio(servicio.descripcion)) ? 'bg-gray-100 dark:bg-gray-600' : 'hover:bg-gray-100 dark:hover:bg-gray-600']"
+                              @mouseover="servicio.sel = index"
+                              @mousedown.prevent="seleccionarServicio(item, servicio)"
+                            >
+                              <span class="font-medium block">{{ item.codigo ? `${item.codigo} - ${item.nombre}` : item.nombre }}</span>
+                              <span class="text-xs text-gray-500 dark:text-gray-400">$ {{ formatMoney(item.precio_referencial) }}</span>
                             </button>
                           </li>
                           <li v-if="!sugerenciasServicio(servicio.descripcion).length" class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
@@ -995,9 +1056,9 @@ onBeforeUnmount(() => {
           </div>
 
           <!-- Repuestos -->
-          <div class="col-span-1">
+          <div v-show="!mostrarServicios" class="col-span-1">
             <h3 class="text-lg font-semibold text-gray-900 mb-3 dark:text-white">Repuestos / Materiales</h3>
-            <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
+            <div class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-x-visible">
               <table class="w-full text-sm text-left text-gray-900 dark:text-white">
                 <thead class="text-xs uppercase bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
                   <tr>
@@ -1025,18 +1086,25 @@ onBeforeUnmount(() => {
                           :disabled="!esEditable"
                           @focus="abrirSugerenciasRepuesto(repuesto)"
                           @blur="repuesto.abierto = false"
-                          @keydown.enter.prevent="seleccionarPrimeraRepuesto(repuesto)"
+                          @input="repuesto.sel = 0"
+                          @keydown.down.prevent="moverSeleccionRepuesto(repuesto, 1)"
+                          @keydown.up.prevent="moverSeleccionRepuesto(repuesto, -1)"
+                          @keydown.enter.prevent="elegirSeleccionRepuesto(repuesto)"
                           @keydown.esc="repuesto.abierto = false"
                         />
-                        <span v-if="repuesto.codigo_repuesto" class="block mt-1 text-xs text-gray-400 dark:text-gray-400">{{ repuesto.codigo_repuesto }}</span>
                         <ul
-                          v-if="repuesto.abierto && esEditable && repuesto.descripcion.trim().length >= 3"
+                          v-if="repuesto.abierto && esEditable"
                           class="absolute left-0 right-0 z-50 mt-1 max-h-52 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl dark:bg-gray-700 dark:border-gray-600"
                         >
-                          <li v-for="item in sugerenciasRepuesto(repuesto.descripcion)" :key="item.id">
-                            <button type="button" class="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600" @mousedown.prevent="seleccionarRepuesto(item, repuesto)">
-                              <span class="font-medium block">{{ item.nombre }}</span>
-                              <span class="text-xs text-gray-500 dark:text-gray-400">{{ item.codigo || '' }} · $ {{ formatMoney(item.precio_venta) }}</span>
+                          <li v-for="(item, index) in sugerenciasRepuesto(repuesto.descripcion)" :key="item.id">
+                            <button
+                              type="button"
+                              :class="['block w-full px-4 py-2 text-left text-sm', index === selRepuestoValido(repuesto, sugerenciasRepuesto(repuesto.descripcion)) ? 'bg-gray-100 dark:bg-gray-600' : 'hover:bg-gray-100 dark:hover:bg-gray-600']"
+                              @mouseover="repuesto.sel = index"
+                              @mousedown.prevent="seleccionarRepuesto(item, repuesto)"
+                            >
+                              <span class="font-medium block">{{ item.codigo ? `${item.codigo} - ${item.nombre}` : item.nombre }}</span>
+                              <span class="text-xs text-gray-500 dark:text-gray-400">$ {{ formatMoney(item.precio_venta) }}</span>
                             </button>
                           </li>
                           <li v-if="!sugerenciasRepuesto(repuesto.descripcion).length" class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
