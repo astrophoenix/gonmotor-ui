@@ -8,6 +8,7 @@ import { mountClients, mountClientEdit, mountClientDetail } from './modules/clie
 import { mountVehicles, mountVehicleEdit } from './modules/vehiculos';
 import { mountRecepciones, mountRecepcionDetail, mountRecepcionEdit } from './modules/recepciones';
 import { mountInspecciones, mountInspeccionEdit } from './modules/inspecciones';
+import { mountCotizaciones, mountCotizacionEdit } from './modules/cotizaciones';
 import { mountEmpleados, mountEmpleadoEdit } from './modules/empleados';
 import { mountRepuestos } from './modules/inventario/repuestos';
 import { mountServicios } from './modules/inventario/servicios';
@@ -99,6 +100,18 @@ const inspeccionEditApp = document.getElementById('inspeccion-edit-app');
 
 if (inspeccionEditApp) {
   mountInspeccionEdit(inspeccionEditApp, pinia);
+}
+
+const cotizacionesApp = document.getElementById('cotizaciones-app');
+
+if (cotizacionesApp) {
+  mountCotizaciones(cotizacionesApp, pinia);
+}
+
+const cotizacionEditApp = document.getElementById('cotizacion-edit-app');
+
+if (cotizacionEditApp) {
+  mountCotizacionEdit(cotizacionEditApp, pinia);
 }
 
 const userMenuApp = document.getElementById('user-menu-app');

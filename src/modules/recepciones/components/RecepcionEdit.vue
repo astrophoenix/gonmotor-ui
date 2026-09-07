@@ -1328,7 +1328,7 @@ onMounted(() => {
         <h4 class="mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
             <TriangleAlert class="w-6 h-6 text-gray-800 dark:text-white" />
-            Luces Tablero
+            Testigos luminosos
           </span>
         </h4>
 

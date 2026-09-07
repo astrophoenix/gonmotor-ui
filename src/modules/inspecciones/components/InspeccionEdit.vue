@@ -1,13 +1,14 @@
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue';
-import { Camera, FilePlus2, FileText, Plus, Trash2, X, ZoomIn, ZoomOut } from 'lucide-vue-next';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
+import { Camera, CheckCircle2, FilePlus2, FileText, Loader2, Trash2, Wand2, X, ZoomIn, ZoomOut, ListPlus } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
 import { inspeccionesService } from '../services/inspeccionesService';
 import { TESTIGO_KEYS, testigoDefaults, testigoPayload } from '../../../shared/config/testigos';
 import Alert from '../../../shared/components/Alert.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TestigosTablero from '../../../shared/components/TestigosTablero.vue';
-import { formatCurrency } from '../../../shared/utils/format';
+import TextImprover from '../../../shared/components/TextImprover.vue';
+import { sanitizeObservaciones } from '../../../shared/utils/sanitize';
 
 const urlParams = new URLSearchParams(window.location.search);
 const inspeccionId = urlParams.get('id');
@@ -42,8 +43,20 @@ function syncTestigosDesdeForm() {
   Object.assign(testigos.value, testigoPayload(form));
 }
 
+const CAMPO_MAX_CHARS = 500;
+
+[['motivo_ingreso', form.motivo_ingreso], ['diagnostico_tecnico', form.diagnostico_tecnico], ['recomendaciones', form.recomendaciones]].forEach(([key]) => {
+  watch(() => form[key], (val) => {
+    const clean = sanitizeObservaciones(val).slice(0, CAMPO_MAX_CHARS);
+    if (clean !== val) form[key] = clean;
+  });
+});
+
 const recepcion = ref(null);
 const estadoInspeccion = ref('');
+const tieneOrdenTrabajo = ref(false);
+const tieneCotizacionActiva = ref(false);
+const estaCongelada = computed(() => isEditMode && tieneOrdenTrabajo.value);
 
 const PRIORIDADES = [
   { value: 'ALTA', label: 'Alta' },
@@ -60,6 +73,7 @@ const FOTO_MAX = 5;
 const FOTO_MAX_SIZE = 5 * 1024 * 1024;
 const FOTO_ALLOWED = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 const fotosInspeccion = reactive({ items: [] });
+const fotosEliminadas = ref([]);
 const fotosError = ref('');
 const fotoZoom = reactive({ visible: false, src: '', scale: 1 });
 
@@ -99,6 +113,21 @@ const servicioPickerSearch = ref('');
 const repuestoPickerSearch = ref('');
 const showServicioPicker = ref(false);
 const showRepuestoPicker = ref(false);
+
+function toggleServicioPicker() {
+  showServicioPicker.value = !showServicioPicker.value;
+  if (showServicioPicker.value) showRepuestoPicker.value = false;
+}
+
+function toggleRepuestoPicker() {
+  showRepuestoPicker.value = !showRepuestoPicker.value;
+  if (showRepuestoPicker.value) showServicioPicker.value = false;
+}
+
+function cerrarPickers() {
+  showServicioPicker.value = false;
+  showRepuestoPicker.value = false;
+}
 
 const serviciosFiltrados = computed(() => {
   const term = servicioPickerSearch.value.trim().toLowerCase();
@@ -149,7 +178,7 @@ function agregarServicio(item) {
     descripcion: item.nombre,
     horas_estimadas: '1.00',
     precio_referencial: item.precio_referencial || '0.00',
-    es_sugerido: true,
+    es_sugerido: false,
     prioridad: 'MEDIA',
   };
   if (!serviciosDetectados.value.some((s) => s.servicio === item.id)) {
@@ -169,7 +198,7 @@ function agregarRepuesto(item) {
     descripcion: item.nombre,
     cantidad: '1.00',
     precio_referencial: item.precio_venta || '0.00',
-    es_sugerido: true,
+    es_sugerido: false,
     prioridad: 'MEDIA',
   };
   if (!repuestosSugeridos.value.some((r) => r.repuesto === item.id)) {
@@ -285,7 +314,6 @@ async function loadFotos() {
       url: f.imagen,
       descripcion: f.descripcion || '',
       descripcionOriginal: f.descripcion || '',
-      eliminada: false,
     }));
     fotosInspeccion.items.splice(0, fotosInspeccion.items.length, ...items);
   } catch (error) {
@@ -306,7 +334,7 @@ function onFotoSelected(event) {
     fotosError.value = 'La imagen supera el tamaño máximo de 5 MB.';
     return;
   }
-  if (fotosInspeccion.items.filter((f) => !f.eliminada).length >= FOTO_MAX) {
+  if (fotosInspeccion.items.length >= FOTO_MAX) {
     fotosError.value = `Solo se permiten hasta ${FOTO_MAX} fotos por inspección.`;
     return;
   }
@@ -318,24 +346,14 @@ function onFotoSelected(event) {
     url: null,
     descripcion: '',
     descripcionOriginal: '',
-    eliminada: false,
   });
 }
 
 function quitarFotoInspeccion(index) {
-  const foto = fotosInspeccion.items[index];
+  const foto = fotosInspeccion.items.splice(index, 1)[0];
   if (!foto) return;
-  if (foto.id) {
-    foto.eliminada = true;
-  } else {
-    if (foto.preview) URL.revokeObjectURL(foto.preview);
-    fotosInspeccion.items.splice(index, 1);
-  }
-}
-
-function restaurarFoto(index) {
-  const foto = fotosInspeccion.items[index];
-  if (foto) foto.eliminada = false;
+  if (foto.id) fotosEliminadas.value.push(foto.id);
+  if (foto.preview) URL.revokeObjectURL(foto.preview);
 }
 
 async function guardarFotos(idInspeccion) {
@@ -343,18 +361,15 @@ async function guardarFotos(idInspeccion) {
   if (!inspeccionRef) return;
   const errores = [];
 
-  for (const f of fotosInspeccion.items) {
-    if (f.eliminada && f.id) {
-      try {
-        await inspeccionesService.deleteFoto(f.id);
-      } catch (error) {
-        errores.push(`Foto eliminada (#${f.id})`);
-      }
+  for (const id of fotosEliminadas.value) {
+    try {
+      await inspeccionesService.deleteFoto(id);
+    } catch (error) {
+      errores.push(`Foto eliminada (#${id})`);
     }
   }
 
   for (const f of fotosInspeccion.items) {
-    if (f.eliminada) continue;
     if (!f.id && f.file) {
       try {
         const creada = await inspeccionesService.createFoto({
@@ -384,7 +399,7 @@ async function guardarFotos(idInspeccion) {
     throw new Error(`No se pudieron guardar las fotos: ${errores.join(', ')}`);
   }
 
-  fotosInspeccion.items = fotosInspeccion.items.filter((f) => !f.eliminada);
+  fotosEliminadas.value = [];
 }
 
 function traducirErrorItem(valor, porDefecto) {
@@ -450,6 +465,8 @@ async function loadInspeccion() {
   try {
     const data = await inspeccionesService.getById(inspeccionId);
     estadoInspeccion.value = data.estado || '';
+    tieneOrdenTrabajo.value = Boolean(data.tiene_orden_trabajo);
+    tieneCotizacionActiva.value = Boolean(data.tiene_cotizacion_activa);
     const recepcionIdVal = data.recepcion && typeof data.recepcion === 'object' ? data.recepcion.id : data.recepcion;
     Object.assign(form, {
       recepcion: recepcionIdVal,
@@ -473,6 +490,7 @@ async function loadInspeccion() {
 }
 
 async function submit() {
+  if (estaCongelada.value) return;
   errorMessage.value = '';
   successMessage.value = '';
   formErrors.value = {};
@@ -542,6 +560,11 @@ onMounted(() => {
   loadInspeccion();
   loadDetalles();
   loadFotos();
+  document.addEventListener('click', cerrarPickers);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', cerrarPickers);
 });
 </script>
 
@@ -565,16 +588,18 @@ onMounted(() => {
       >
         N° {{ form.numero_inspeccion || 'Sin asignar' }}
       </span>
+      <button
+        v-if="isEditMode && estadoInspeccion === 'PENDIENTE'"
+        type="button"
+        :disabled="tieneCotizacionActiva"
+        :title="tieneCotizacionActiva ? 'Ya existe una cotización abierta para esta inspección. Edita la vigente.' : 'Generar una cotización desde este diagnóstico'"
+        class="inline-flex items-center px-4 py-2 ml-auto text-sm font-medium text-white rounded-lg bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed"
+        @click="crearCotizacion"
+      >
+        <FilePlus2 class="w-4 h-4 mr-2" />
+        Crear cotización
+      </button>
     </div>
-    <button
-      v-if="isEditMode && estadoInspeccion === 'PENDIENTE'"
-      type="button"
-      class="inline-flex items-center px-4 py-2 mt-3 text-sm font-medium text-white rounded-lg bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
-      @click="crearCotizacion"
-    >
-      <FilePlus2 class="w-4 h-4 mr-2" />
-      Crear cotización
-    </button>
   </div>
 
   <div class="p-4">
@@ -625,7 +650,14 @@ onMounted(() => {
 
       <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando inspección...</div>
 
-      <form v-else class="grid grid-cols-1 gap-6" novalidate @submit.prevent="submit">
+      <form class="grid grid-cols-1 gap-8" novalidate @submit.prevent="submit">
+        <Alert
+          v-if="estaCongelada"
+          type="warning"
+          title="Inspección en solo lectura"
+          message="Esta inspección ya se convirtió en orden de trabajo y no puede modificarse."
+        />
+        <fieldset :disabled="estaCongelada" class="grid grid-cols-1 gap-8">
         <div class="col-span-1 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="col-span-1">
             <label for="tipo_inspeccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de Inspección</label>
@@ -645,24 +677,78 @@ onMounted(() => {
 
         <div class="col-span-1">
           <label for="motivo_ingreso" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Motivo de Ingreso </label>
-          <textarea id="motivo_ingreso" v-model="form.motivo_ingreso" rows="3" placeholder="Razón por la cual el cliente trae el vehículo o falla reportada..." :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.motivo_ingreso ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
+          <textarea id="motivo_ingreso" v-model="form.motivo_ingreso" rows="3" maxlength="500" placeholder="Razón por la cual el cliente trae el vehículo o falla reportada..." :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.motivo_ingreso ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
           <p v-if="formErrors.motivo_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.motivo_ingreso }}</p>
         </div>
 
         <div class="col-span-1">
-          <label for="diagnostico_tecnico" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Diagnóstico</label>
-          <textarea id="diagnostico_tecnico" v-model="form.diagnostico_tecnico" rows="4" placeholder="Describe el diagnóstico realizado por el mecánico..." :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.diagnostico_tecnico ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
-          <p v-if="formErrors.diagnostico_tecnico" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.diagnostico_tecnico }}</p>
+          <TextImprover
+            v-model="form.diagnostico_tecnico"
+            contexto="diagnóstico técnico de una inspección vehicular"
+            v-slot="{ mejorar, restaurar, mejorando, error, mejorado, tieneOriginal }"
+          >
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <label for="diagnostico_tecnico" class="block text-sm font-medium text-gray-900 dark:text-white">Diagnóstico</label>
+              <button
+                type="button"
+                title="Mejorar el texto con IA"
+                :disabled="mejorando"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-primary-blue-700 text-primary-blue-700 hover:bg-primary-blue-50 focus:ring-4 focus:ring-primary-blue-300 dark:border-primary-blue-400 dark:text-primary-blue-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                @click="mejorar"
+              >
+                <Wand2 v-if="!mejorando" class="w-4 h-4" />
+                <Loader2 v-else class="w-4 h-4 animate-spin" />
+                {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
+              </button>
+            </div>
+            <textarea id="diagnostico_tecnico" v-model="form.diagnostico_tecnico" rows="4" maxlength="500" placeholder="Describe el diagnóstico realizado por el mecánico..." :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.diagnostico_tecnico ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
+            <p v-if="formErrors.diagnostico_tecnico" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.diagnostico_tecnico }}</p>
+            <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error }}</p>
+            <div v-if="mejorado && !error" class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
+              <CheckCircle2 class="w-5 h-5 shrink-0" />
+              <div class="flex flex-wrap items-center gap-x-2">
+                <p>Texto mejorado. Revisa antes de guardar.</p>
+                <button v-if="tieneOriginal" type="button" class="text-sm font-medium underline hover:no-underline" @click="restaurar">Restaurar original</button>
+              </div>
+            </div>
+          </TextImprover>
         </div>
 
         <div class="col-span-1">
-          <label for="recomendaciones" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Recomendaciones</label>
-          <textarea id="recomendaciones" v-model="form.recomendaciones" rows="3" placeholder="Describe las recomendaciones y plan de acción sugerido..." :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.recomendaciones ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
-          <p v-if="formErrors.recomendaciones" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.recomendaciones }}</p>
+          <TextImprover
+            v-model="form.recomendaciones"
+            contexto="recomendaciones y plan de acción de una inspección vehicular"
+            v-slot="{ mejorar, restaurar, mejorando, error, mejorado, tieneOriginal }"
+          >
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <label for="recomendaciones" class="block text-sm font-medium text-gray-900 dark:text-white">Recomendaciones</label>
+              <button
+                type="button"
+                title="Mejorar el texto con IA"
+                :disabled="mejorando"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-primary-blue-700 text-primary-blue-700 hover:bg-primary-blue-50 focus:ring-4 focus:ring-primary-blue-300 dark:border-primary-blue-400 dark:text-primary-blue-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                @click="mejorar"
+              >
+                <Wand2 v-if="!mejorando" class="w-4 h-4" />
+                <Loader2 v-else class="w-4 h-4 animate-spin" />
+                {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
+              </button>
+            </div>
+            <textarea id="recomendaciones" v-model="form.recomendaciones" rows="3" maxlength="500" placeholder="Describe las recomendaciones y plan de acción sugerido..." :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.recomendaciones ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
+            <p v-if="formErrors.recomendaciones" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.recomendaciones }}</p>
+            <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error }}</p>
+            <div v-if="mejorado && !error" class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
+              <CheckCircle2 class="w-5 h-5 shrink-0" />
+              <div class="flex flex-wrap items-center gap-x-2">
+                <p>Texto mejorado. Revisa antes de guardar.</p>
+                <button v-if="tieneOriginal" type="button" class="text-sm font-medium underline hover:no-underline" @click="restaurar">Restaurar original</button>
+              </div>
+            </div>
+          </TextImprover>
         </div>
 
         <div class="col-span-1">
-          <h5 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Testigos del Tablero</h5>
+          <h5 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Testigos luminosos</h5>
           <TestigosTablero v-model="testigos" />
         </div>
 
@@ -679,7 +765,6 @@ onMounted(() => {
               v-for="(foto, index) in fotosInspeccion.items"
               :key="foto.id || foto.preview || index"
               class="border border-gray-200 rounded-lg p-3 dark:border-gray-600 bg-gray-50 dark:bg-gray-700"
-              :class="{ 'border-red-500 dark:border-red-500': foto.eliminada }"
             >
               <div
                 class="relative aspect-square w-full overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-800 flex items-center justify-center"
@@ -689,13 +774,12 @@ onMounted(() => {
                 <img v-if="foto.url || foto.preview" :src="foto.preview || foto.url" :alt="'Foto ' + (index + 1)" class="h-full w-full object-cover" />
                 <span v-else class="text-xs text-gray-500 dark:text-gray-400">Sin foto</span>
                 <span
-                  v-if="!foto.eliminada && (foto.url || foto.preview)"
+                  v-if="foto.url || foto.preview"
                   class="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition hover:bg-black/20 hover:opacity-100"
                 >
                   <ZoomIn class="w-8 h-8 text-white drop-shadow" />
                 </span>
                 <button
-                  v-if="!foto.eliminada"
                   type="button"
                   class="absolute top-1 right-1 inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-600 text-white hover:bg-red-700"
                   aria-label="Quitar foto"
@@ -703,26 +787,16 @@ onMounted(() => {
                 >
                   <X class="w-4 h-4" />
                 </button>
-                <button
-                  v-else
-                  type="button"
-                  class="absolute top-1 right-1 inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-600 text-white hover:bg-gray-700"
-                  aria-label="Restaurar foto"
-                  @click.stop="restaurarFoto(index)"
-                >
-                  <Plus class="w-4 h-4" />
-                </button>
               </div>
               <input
                 v-model="foto.descripcion"
                 placeholder="Descripción (opcional)"
                 class="mt-2 block w-full p-2 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-800 dark:text-white dark:border-gray-600"
               >
-              <p v-if="foto.eliminada" class="mt-1 text-xs text-red-600 dark:text-red-500">Se eliminará al guardar</p>
             </div>
 
             <label
-              v-if="fotosInspeccion.items.filter((f) => !f.eliminada).length < FOTO_MAX"
+              v-if="fotosInspeccion.items.length < FOTO_MAX"
               class="flex min-h-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 p-3 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-600"
             >
               <Camera class="w-6 h-6" />
@@ -794,13 +868,13 @@ onMounted(() => {
               <input v-model="servicioPickerSearch" type="search" placeholder="Buscar servicio del catálogo..." class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
               <button
                 type="button"
-                class="inline-flex items-center px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300 disabled:opacity-50"
-                @click="showServicioPicker = !showServicioPicker"
+                class="inline-flex items-center justify-center w-9 h-9 text-lg leading-none font-medium text-primary-blue-700 rounded-lg border border-primary-blue-700 hover:bg-primary-blue-50 focus:ring-4 focus:ring-primary-blue-300 dark:border-primary-blue-400 dark:text-primary-blue-300 dark:hover:bg-gray-700"
+                @click.stop="toggleServicioPicker"
               >
-                Agregar
+                <ListPlus class="w-5 h-5" />
               </button>
             </div>
-            <div v-if="showServicioPicker" class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto dark:bg-gray-700 dark:border-gray-600">
+            <div v-if="showServicioPicker" @click.stop class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto dark:bg-gray-700 dark:border-gray-600">
               <button
                 v-for="item in serviciosFiltrados"
                 :key="item.id"
@@ -809,7 +883,6 @@ onMounted(() => {
                 @click.stop="agregarServicio(item)"
               >
                 <span class="font-medium">{{ item.codigo }}</span> - {{ item.nombre }}
-                <span class="text-gray-400 text-xs">({{ formatCurrency(item.precio_referencial) }})</span>
               </button>
               <p v-if="!serviciosFiltrados.length" class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">Sin resultados. Registra servicios en Inventario → Servicios.</p>
             </div>
@@ -820,9 +893,8 @@ onMounted(() => {
                 <tr>
                   <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Servicio</th>
                   <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Horas</th>
-                  <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Precio ref.</th>
                   <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Prioridad</th>
-                  <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Sugerido</th>
+                  <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Opcional</th>
                   <th class="p-2"></th>
                 </tr>
               </thead>
@@ -833,9 +905,6 @@ onMounted(() => {
                   </td>
                   <td class="p-2">
                     <input v-model="s.horas_estimadas" type="number" step="0.25" min="0" class="block w-20 p-2 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-                  </td>
-                  <td class="p-2">
-                    <input v-model="s.precio_referencial" type="number" step="0.01" min="0" class="block w-28 p-2 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
                   </td>
                   <td class="p-2">
                     <select v-model="s.prioridad" class="block w-24 p-2 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
@@ -863,13 +932,13 @@ onMounted(() => {
               <input v-model="repuestoPickerSearch" type="search" placeholder="Buscar repuesto del catálogo..." class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
               <button
                 type="button"
-                class="inline-flex items-center px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300 disabled:opacity-50"
-                @click="showRepuestoPicker = !showRepuestoPicker"
+                class="inline-flex items-center justify-center w-10 h-10 text-lg leading-none font-medium text-primary-blue-700 rounded-lg border border-primary-blue-700 hover:bg-primary-blue-50 focus:ring-4 focus:ring-primary-blue-300 dark:border-primary-blue-400 dark:text-primary-blue-300 dark:hover:bg-gray-700"
+                @click.stop="toggleRepuestoPicker"
               >
-                Agregar
+                <ListPlus class="w-5 h-5" />
               </button>
             </div>
-            <div v-if="showRepuestoPicker" class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto dark:bg-gray-700 dark:border-gray-600">
+            <div v-if="showRepuestoPicker" @click.stop class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto dark:bg-gray-700 dark:border-gray-600">
               <button
                 v-for="item in repuestosFiltrados"
                 :key="item.id"
@@ -878,7 +947,7 @@ onMounted(() => {
                 @click.stop="agregarRepuesto(item)"
               >
                 <span class="font-medium">{{ item.codigo }}</span> - {{ item.nombre }}
-                <span class="text-gray-400 text-xs">({{ formatCurrency(item.precio_venta) }} · stock {{ item.stock_actual }})</span>
+                <span class="text-gray-400 text-xs">(stock {{ item.stock_actual }})</span>
               </button>
               <p v-if="!repuestosFiltrados.length" class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">Sin resultados. Registra repuestos en Inventario → Repuestos.</p>
             </div>
@@ -889,9 +958,8 @@ onMounted(() => {
                 <tr>
                   <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Repuesto</th>
                   <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Cant.</th>
-                  <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Precio ref.</th>
                   <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Prioridad</th>
-                  <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Sugerido</th>
+                  <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Opcional</th>
                   <th class="p-2"></th>
                 </tr>
               </thead>
@@ -902,9 +970,6 @@ onMounted(() => {
                   </td>
                   <td class="p-2">
                     <input v-model="r.cantidad" type="number" step="0.5" min="0" class="block w-20 p-2 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-                  </td>
-                  <td class="p-2">
-                    <input v-model="r.precio_referencial" type="number" step="0.01" min="0" class="block w-28 p-2 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
                   </td>
                   <td class="p-2">
                     <select v-model="r.prioridad" class="block w-24 p-2 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
@@ -925,7 +990,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="col-span-1">
+        <div v-if="!estaCongelada" class="col-span-1">
           <FormSaveActions
             :is-loading="isSaving"
             :is-edit-mode="isEditMode"
@@ -933,6 +998,7 @@ onMounted(() => {
             :on-submit="submit"
           />
         </div>
+      </fieldset>
       </form>
     </div>
   </div>

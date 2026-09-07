@@ -232,7 +232,7 @@ function testigoActivo(testigo) {
 }
 
 function getTestigoCardClasses(testigo) {
-  const base = 'flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200';
+  const base = 'flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all duration-200';
   if (!testigoActivo(testigo)) return `${base} bg-gray-50 border-gray-200 dark:bg-gray-700 dark:border-gray-600 opacity-70`;
   if (testigo.color === 'red') return `${base} bg-red-50 border-red-300 dark:bg-red-900/20 dark:border-red-500`;
   if (testigo.color === 'green') return `${base} bg-green-50 border-green-300 dark:bg-green-900/20 dark:border-green-500`;
@@ -482,12 +482,12 @@ function irAInspeccion(recepcion) {
         <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
             <TriangleAlert class="w-6 h-6 text-gray-800 dark:text-white" />
-            Luces Tablero
+            Testigos luminosos
           </span>
         </h4>
 
         <div class="space-y-4">
-          <div class="grid grid-cols-3 md:grid-cols-6 gap-3">
+          <div class="grid grid-cols-5 lg:grid-cols-10 gap-2 lg:gap-3">
             <div
               v-for="testigo in testigosMeta"
               :key="testigo.key"
