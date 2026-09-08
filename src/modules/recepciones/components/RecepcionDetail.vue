@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
+  Eye,
 } from 'lucide-vue-next';
 import Alert from '../../../shared/components/Alert.vue';
 import MdiIcon from '../../../shared/components/MdiIcon.vue';
@@ -264,7 +265,10 @@ function irADiagnostico(recepcion) {
 
 function irAInspeccion(recepcion) {
   const inspeccion = recepcion.inspecciones?.[0];
-  if (inspeccion) {
+  if (!inspeccion) return;
+  if (inspeccion.tiene_orden_trabajo) {
+    goTo(`/crud/inspecciones/ver/?id=${inspeccion.id}`);
+  } else {
     goTo(`/crud/inspecciones/editar/?id=${inspeccion.id}`);
   }
 }
@@ -289,6 +293,64 @@ function irAInspeccion(recepcion) {
         <component :is="estadoBadge.icon" class="w-4 h-4" aria-hidden="true" />
         {{ estadoBadge.label }}
       </span>
+      <div v-if="recepcion" class="flex items-center gap-2 ml-auto flex-wrap">
+        <button
+          v-if="puedeEditar"
+          type="button"
+          title="Editar recepción"
+          class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-yellow-700 rounded-lg border border-yellow-700 hover:bg-yellow-50 dark:text-yellow-400 dark:border-yellow-400 dark:hover:bg-gray-800"
+          @click="goTo(`/crud/recepciones/editar/?id=${recepcion.id}`)"
+        >
+          <Pencil class="w-4 h-4" />
+          Editar
+        </button>
+        <button
+          v-if="!tieneInspeccion && recepcion.estado === 'ACEPTADA'"
+          type="button"
+          title="Crear Inspección"
+          class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-purple-700 rounded-lg border border-purple-700 hover:bg-purple-50 dark:text-purple-400 dark:border-purple-400 dark:hover:bg-gray-800"
+          @click="irADiagnostico(recepcion)"
+        >
+          <Plus class="w-4 h-4" />
+          Crear Inspección
+        </button>
+        <template v-if="tieneInspeccion && recepcion.estado === 'ACEPTADA'">
+          <a
+            v-if="recepcion.inspecciones[0]?.tiene_orden_trabajo"
+            :href="`/crud/inspecciones/ver/?id=${recepcion.inspecciones[0].id}`"
+            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-indigo-700 rounded-lg border border-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:border-indigo-400 dark:hover:bg-gray-800"
+          >
+            <Eye class="w-4 h-4" />
+            Ver Inspección
+          </a>
+          <button
+            v-else
+            type="button"
+            title="Ver / Editar Inspección"
+            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-amber-700 rounded-lg border border-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:border-amber-400 dark:hover:bg-gray-800"
+            @click="irAInspeccion(recepcion)"
+          >
+            <Pencil class="w-4 h-4" />
+            Ver / Editar Inspección
+          </button>
+        </template>
+        <button
+          v-if="recepcion.cotizaciones_generadas?.length"
+          type="button"
+          class="inline-flex items-center px-3 py-2 text-sm font-medium text-emerald-700 rounded-lg border border-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-400 dark:hover:bg-gray-800"
+          @click="goTo(`/crud/cotizaciones/editar/?id=${recepcion.cotizaciones_generadas[0]?.id}`)"
+        >
+          Ver Cotización
+        </button>
+        <button
+          v-if="recepcion.orden_trabajo"
+          type="button"
+          class="inline-flex items-center px-3 py-2 text-sm font-medium text-indigo-700 rounded-lg border border-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:border-indigo-400 dark:hover:bg-gray-800"
+          @click="goTo(`/crud/ordenes/ver/?id=${recepcion.orden_trabajo}`)"
+        >
+          Ver Orden
+        </button>
+      </div>
     </div>
   </div>
 
@@ -309,57 +371,6 @@ function irAInspeccion(recepcion) {
       </div>
 
       <div v-else>
-        <div class="flex items-center justify-end gap-2 mb-6 flex-wrap">
-          <div class="flex items-center gap-2 flex-wrap">
-            <button
-              v-if="puedeEditar"
-              type="button"
-              title="Editar recepción"
-              class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-yellow-700 rounded-lg border border-yellow-700 hover:bg-yellow-50 dark:text-yellow-400 dark:border-yellow-400 dark:hover:bg-gray-800"
-              @click="goTo(`/crud/recepciones/editar/?id=${recepcion.id}`)"
-            >
-              <Pencil class="w-4 h-4" />
-              Editar
-            </button>
-            <button
-              v-if="!tieneInspeccion && recepcion.estado === 'ACEPTADA'"
-              type="button"
-              title="Crear Inspección"
-              class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-purple-700 rounded-lg border border-purple-700 hover:bg-purple-50 dark:text-purple-400 dark:border-purple-400 dark:hover:bg-gray-800"
-              @click="irADiagnostico(recepcion)"
-            >
-              <Plus class="w-4 h-4" />
-              Crear Inspección
-            </button>
-            <template v-if="tieneInspeccion && recepcion.estado === 'ACEPTADA'">
-              <button
-                type="button"
-                title="Ver / Editar Inspección"
-                class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-amber-700 rounded-lg border border-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:border-amber-400 dark:hover:bg-gray-800"
-                @click="irAInspeccion(recepcion)"
-              >
-                <Pencil class="w-4 h-4" />
-                Ver / Editar Inspección
-              </button>
-            </template>
-            <button
-              v-if="recepcion.cotizaciones_generadas?.length"
-              type="button"
-              class="inline-flex items-center px-3 py-2 text-sm font-medium text-emerald-700 rounded-lg border border-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-400 dark:hover:bg-gray-800"
-              @click="goTo(`/crud/cotizaciones/editar/?id=${recepcion.cotizaciones_generadas[0]?.id}`)"
-            >
-              Ver Cotización
-            </button>
-            <button
-              v-if="recepcion.orden_trabajo"
-              type="button"
-              class="inline-flex items-center px-3 py-2 text-sm font-medium text-indigo-700 rounded-lg border border-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:border-indigo-400 dark:hover:bg-gray-800"
-              @click="goTo(`/crud/ordenes/ver/?id=${recepcion.orden_trabajo}`)"
-            >
-              Ver Orden
-            </button>
-          </div>
-        </div>
 
         <h4 class="mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">

@@ -61,6 +61,7 @@ function getTestigoIconClasses(testigo) {
 
 const tieneOrdenTrabajo = computed(() => Boolean(inspeccion.value?.tiene_orden_trabajo));
 const tieneCotizacionActiva = computed(() => Boolean(inspeccion.value?.tiene_cotizacion_activa));
+const estaFinalizada = computed(() => inspeccion.value?.estado === 'FINALIZADA');
 
 function formatDate(dateString) {
   if (!dateString) return '-';
@@ -149,6 +150,7 @@ onMounted(async () => {
           Volver a la lista
         </a>
         <a
+          v-if="!estaFinalizada"
           :href="`/crud/inspecciones/editar/?id=${encodeURIComponent(inspeccion.id)}`"
           class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700"
         >
