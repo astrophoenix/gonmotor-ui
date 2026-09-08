@@ -37,6 +37,8 @@ const form = reactive({
   tipo: 'AUTO',
   pais_origen: 'EC',
   kilometraje_actual: 0,
+  proximo_mantenimiento_km: null,
+  proxima_mantenimiento_fecha: null,
   observaciones: '',
   cliente_id: null,
   imagen: '',
@@ -62,6 +64,8 @@ function getComparableState() {
     tipo: form.tipo,
     pais_origen: form.pais_origen,
     kilometraje_actual: form.kilometraje_actual,
+    proximo_mantenimiento_km: form.proximo_mantenimiento_km,
+    proxima_mantenimiento_fecha: form.proxima_mantenimiento_fecha,
     observaciones: form.observaciones,
     cliente_id: form.cliente_id,
     imagen: form.imagen,
@@ -113,6 +117,8 @@ function createEmptyForm() {
     tipo: 'AUTO',
     pais_origen: 'EC',
     kilometraje_actual: 0,
+    proximo_mantenimiento_km: null,
+    proxima_mantenimiento_fecha: null,
     observaciones: '',
     cliente_id: null,
     imagen: '',
@@ -263,6 +269,15 @@ function buildFormData() {
       return;
     }
     if (key === 'anio' && (value === null || value === undefined || value === '')) return;
+    if (key === 'proximo_mantenimiento_km') {
+      const num = parseInt(value, 10);
+      formData.append(key, Number.isNaN(num) ? '' : String(num));
+      return;
+    }
+    if (key === 'proxima_mantenimiento_fecha') {
+      formData.append(key, value ? String(value) : '');
+      return;
+    }
     if (key === 'kilometraje_actual') {
       const num = parseInt(value, 10);
       formData.append(key, Number.isNaN(num) ? '0' : String(num));
@@ -523,6 +538,24 @@ watch(() => clienteSearch.value, () => {
               <label for="modal_veh_km" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kilometraje Actual</label>
               <input id="modal_veh_km" v-model="form.kilometraje_actual" type="number" min="0" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.kilometraje_actual ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
               <p v-if="vehicleErrors.kilometraje_actual" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.kilometraje_actual }}</p>
+            </div>
+            <div class="col-span-1 md:col-span-4">
+              <h4 class="py-2 text-base font-semibold dark:text-white border-t border-gray-200 dark:border-gray-700">
+                Mantenimiento preventivo (recordatorio WhatsApp)
+              </h4>
+              <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
+                Opcional. Si llenas estos datos, el sistema sabrá cuándo recordarle al cliente su próximo mantenimiento.
+              </p>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label for="modal_veh_prox_km" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Próximo mantenimiento (km)</label>
+                  <input id="modal_veh_prox_km" v-model="form.proximo_mantenimiento_km" type="number" min="0" placeholder="Ej. 50000" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                </div>
+                <div>
+                  <label for="modal_veh_prox_fecha" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Próximo mantenimiento (fecha)</label>
+                  <input id="modal_veh_prox_fecha" v-model="form.proxima_mantenimiento_fecha" type="date" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                </div>
+              </div>
             </div>
             <div class="col-span-1">
               <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Imagen</p>

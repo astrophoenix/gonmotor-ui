@@ -43,6 +43,13 @@ export const cotizacionesService = {
     });
   },
 
+  generarOrden(id, payload = {}) {
+    return request(`${buildUrl(id)}generar_orden/`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
   listServicios(cotizacionId) {
     return request(`/api/cotizaciones/servicios/?cotizacion=${encodeURIComponent(cotizacionId)}`);
   },

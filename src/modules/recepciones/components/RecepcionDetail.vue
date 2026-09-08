@@ -346,7 +346,7 @@ function irAInspeccion(recepcion) {
               v-if="recepcion.cotizaciones_generadas?.length"
               type="button"
               class="inline-flex items-center px-3 py-2 text-sm font-medium text-emerald-700 rounded-lg border border-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-400 dark:hover:bg-gray-800"
-              @click="goTo(`/crud/cotizaciones/ver/${recepcion.cotizaciones_generadas[0]?.id}/`)"
+              @click="goTo(`/crud/cotizaciones/editar/?id=${recepcion.cotizaciones_generadas[0]?.id}`)"
             >
               Ver Cotización
             </button>
@@ -354,7 +354,7 @@ function irAInspeccion(recepcion) {
               v-if="recepcion.orden_trabajo"
               type="button"
               class="inline-flex items-center px-3 py-2 text-sm font-medium text-indigo-700 rounded-lg border border-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:border-indigo-400 dark:hover:bg-gray-800"
-              @click="goTo(`/crud/ordenes/ver/${recepcion.orden_trabajo}/`)"
+              @click="goTo(`/crud/ordenes/ver/?id=${recepcion.orden_trabajo}`)"
             >
               Ver Orden
             </button>
@@ -431,6 +431,17 @@ function irAInspeccion(recepcion) {
           <div>
             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Recibido por</dt>
             <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ recepcion.recibido_por_nombre || '—' }}</dd>
+          </div>
+          <div v-if="recepcion.inspecciones?.length">
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Inspección</dt>
+            <dd class="mt-1 text-sm font-semibold">
+              <a
+                :href="`/crud/inspecciones/ver/?id=${recepcion.inspecciones[0]?.id}`"
+                class="text-purple-600 hover:underline dark:text-purple-400"
+              >
+                {{ recepcion.inspecciones[0]?.numero_inspeccion || `#${recepcion.inspecciones[0]?.id}` }}
+              </a>
+            </dd>
           </div>
           <div>
             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Kilometraje de Ingreso</dt>

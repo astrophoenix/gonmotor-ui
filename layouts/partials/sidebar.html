@@ -46,6 +46,9 @@
             <div sidebar-dropdown class="relative">
               <ul id="dropdown-operacion" class="space-y-2 py-0 bg-brand-600 {{ if not (eq .Params.group "operacion") }}hidden {{ end }}">
               <li>
+                  <a href="{{ "crud/citas/" | relURL }}" class="text-base text-white flex items-center p-2 group hover:bg-brand-550 transition duration-75 pl-11 dark:text-white dark:hover:bg-brand-550 {{ if eq $page_slug "citas" }} bg-brand-600 dark:bg-brand-600 {{ end }}">Citas</a>
+               </li>
+              <li>
                   <a href="{{ "crud/recepciones/" | relURL }}" class="text-base text-white flex items-center p-2 group hover:bg-brand-550 transition duration-75 pl-11 dark:text-white dark:hover:bg-brand-550 {{ if eq $page_slug "recepciones" }} bg-brand-600 dark:bg-brand-600 {{ end }}">Recepción</a>
                </li>
                <li>
@@ -102,6 +105,13 @@
             <a href="{{ "crud/vehiculos/" | relURL }}" sidebar-tooltip="Vehículos" class="flex items-center p-2 text-base text-white hover:bg-brand-550 group dark:text-white dark:hover:bg-brand-550 {{ if eq $page_slug "settings" }} bg-brand-600 dark:bg-brand-600 {{ end }}">
                 <svg class="flex-shrink-0 w-5 h-5 mx-auto text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3 8 2.722 2.268a1 1 0 0 0 .64.232h11.276a1 1 0 0 0 .64-.232L21 8M6.5 14h.01m10.99 0h.01M8.16 4.5h7.68a2 2 0 0 1 1.736 1.008l2.897 5.07A4 4 0 0 1 21 12.562V18.5a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H6v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5.938a4 4 0 0 1 .527-1.984l2.897-5.07A2 2 0 0 1 8.161 4.5M7 14a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m11 0a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0"/></svg>
                 <span class="ml-3" sidebar-toggle-item>Vehículos</span>
+            </a>
+          </li>
+
+          <li>
+            <a href="{{ "notificaciones/" | relURL }}" sidebar-tooltip="Notificaciones" class="flex items-center p-2 text-base text-white hover:bg-brand-550 group dark:text-white dark:hover:bg-brand-550 {{ if eq $page_slug "notificaciones" }} bg-brand-600 dark:bg-brand-600 {{ end }}">
+                <svg class="flex-shrink-0 w-5 h-5 mx-auto text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M5 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5Zm8.5 7.5V8a.5.5 0 0 1 1 0v2.5H17a.5.5 0 0 1 0 1h-2.5V14a.5.5 0 0 1-1 0v-2.5H11a.5.5 0 0 1 0-1h2.5Z" clip-rule="evenodd" fill-rule="evenodd"/><path d="M7 9.5A.5.5 0 0 1 7.5 9h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5Zm0 4a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5Z"/></svg>
+                <span class="ml-3" sidebar-toggle-item>Notificaciones</span>
             </a>
           </li>
 

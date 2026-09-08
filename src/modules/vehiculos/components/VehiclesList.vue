@@ -1,13 +1,17 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue';
-import { Car, Pencil, Trash2 } from 'lucide-vue-next';
+import { Car, MessageCircle, Pencil, Trash2 } from 'lucide-vue-next';
 import { useVehicles } from '../composables/useVehicles';
 import ConfirmDeleteModal from '../../../shared/components/ConfirmDeleteModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
 import VehicleModal from './VehicleModal.vue';
+import EnviarRecordatorioModal from '../../notificaciones/components/EnviarRecordatorioModal.vue';
+import { useToast } from '../../../shared/composables/useToast';
 import { formatPlate } from '../../../shared/utils/formatPlate';
+
+const { showSuccess } = useToast();
 const {
   vehicles,
   isLoading,
@@ -39,6 +43,8 @@ const showDeleteModal = ref(false);
 const vehicleToDelete = ref(null);
 const showVehicleModal = ref(false);
 const vehicleModalId = ref(null);
+const showEnviarRecordatorio = ref(false);
+const enviarRecordatorioVehicle = ref(null);
 let searchTimer;
 
 async function loadVehicles(page = 1) {
@@ -81,6 +87,24 @@ function onVehicleReactivated() {
 function openDeleteModal(vehicle) {
   vehicleToDelete.value = vehicle;
   showDeleteModal.value = true;
+}
+
+function openEnviarRecordatorio(vehicle) {
+  enviarRecordatorioVehicle.value = vehicle;
+  showEnviarRecordatorio.value = true;
+}
+
+function onRecordatorioSent(resultado) {
+  showEnviarRecordatorio.value = false;
+  enviarRecordatorioVehicle.value = null;
+  if (resultado?.ok) {
+    showAlert('success', '', resultado.descripcion || 'Recordatorio enviado correctamente.');
+    showSuccess(resultado.descripcion || 'Recordatorio enviado correctamente.');
+  } else if (resultado?.omitido) {
+    showAlert('info', '', resultado.detail || 'El vehículo ya fue notificado recientemente.');
+  } else {
+    showAlert('error', '', resultado?.descripcion || resultado?.error || 'No se pudo enviar el recordatorio.');
+  }
 }
 
 async function confirmDelete() {
@@ -183,6 +207,9 @@ onMounted(() => loadVehicles());
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.anio || '—' }}</td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.cliente_nombre || 'Sin dueño' }}</td>
         <td class="p-4 whitespace-nowrap">
+          <button type="button" title="Enviar recordatorio de mantenimiento por WhatsApp" aria-label="Enviar recordatorio por WhatsApp" class="inline-flex items-center p-2 text-green-600 rounded-lg hover:bg-green-100 dark:text-green-400 dark:hover:bg-gray-700" @click="openEnviarRecordatorio(item)">
+            <MessageCircle class="w-5 h-5" />
+          </button>
           <button type="button" title="Editar vehículo" aria-label="Editar vehículo" class="inline-flex items-center p-2 text-primary-600 rounded-lg hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700" @click="openEditModal(item.id)">
             <Pencil class="w-5 h-5" />
           </button>
@@ -209,5 +236,11 @@ onMounted(() => loadVehicles());
     @created="onVehicleCreated"
     @updated="onVehicleUpdated"
     @reactivated="onVehicleReactivated"
+  />
+
+  <EnviarRecordatorioModal
+    v-model="showEnviarRecordatorio"
+    :vehicle="enviarRecordatorioVehicle"
+    @sent="onRecordatorioSent"
   />
 </template>

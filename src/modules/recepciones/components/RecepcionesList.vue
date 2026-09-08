@@ -74,14 +74,14 @@ function getEstadoBadge(recepcion) {
       return {
         label: cotizacion.numero_cotizacion ? `Con cotización ${cotizacion.numero_cotizacion}` : 'Con cotización',
         color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-        href: `/crud/cotizaciones/ver/${encodeURIComponent(cotizacion.id)}/`,
+        href: `/crud/cotizaciones/editar/?id=${encodeURIComponent(cotizacion.id)}`,
       };
     }
     if (recepcion.orden_trabajo) {
       return {
         label: recepcion.orden_trabajo_numero ? `Convertida a OT ${recepcion.orden_trabajo_numero}` : 'Convertida a OT',
         color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-        href: `/crud/ordenes/ver/${encodeURIComponent(recepcion.orden_trabajo)}/`,
+        href: `/crud/ordenes/ver/?id=${encodeURIComponent(recepcion.orden_trabajo)}`,
       };
     }
     return {

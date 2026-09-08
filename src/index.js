@@ -7,13 +7,16 @@ import { mountLogin, mountRegister } from './modules/auth';
 import { mountClients, mountClientEdit, mountClientDetail } from './modules/clientes';
 import { mountVehicles, mountVehicleEdit } from './modules/vehiculos';
 import { mountRecepciones, mountRecepcionDetail, mountRecepcionEdit } from './modules/recepciones';
-import { mountInspecciones, mountInspeccionEdit } from './modules/inspecciones';
+import { mountInspecciones, mountInspeccionEdit, mountInspeccionDetail } from './modules/inspecciones';
 import { mountCotizaciones, mountCotizacionEdit } from './modules/cotizaciones';
+import { mountOrdenes, mountOrdenDetail, mountOrdenEdit } from './modules/ordenes';
+import { mountCitas } from './modules/citas';
 import { mountEmpleados, mountEmpleadoEdit } from './modules/empleados';
 import { mountRepuestos } from './modules/inventario/repuestos';
 import { mountServicios } from './modules/inventario/servicios';
 import { mountProfileEdit } from './modules/auth';
 import { mountEmpresaConfig, mountTalleresConfig } from './modules/configuracion';
+import { mountNotificaciones } from './modules/notificaciones';
 import UserMenu from './shared/components/UserMenu.vue';
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
@@ -102,6 +105,12 @@ if (inspeccionEditApp) {
   mountInspeccionEdit(inspeccionEditApp, pinia);
 }
 
+const inspeccionDetailApp = document.getElementById('inspeccion-detail-app');
+
+if (inspeccionDetailApp) {
+  mountInspeccionDetail(inspeccionDetailApp, pinia);
+}
+
 const cotizacionesApp = document.getElementById('cotizaciones-app');
 
 if (cotizacionesApp) {
@@ -114,10 +123,34 @@ if (cotizacionEditApp) {
   mountCotizacionEdit(cotizacionEditApp, pinia);
 }
 
+const ordenesApp = document.getElementById('ordenes-app');
+
+if (ordenesApp) {
+  mountOrdenes(ordenesApp, pinia);
+}
+
+const ordenDetailApp = document.getElementById('orden-detail-app');
+
+if (ordenDetailApp) {
+  mountOrdenDetail(ordenDetailApp, pinia);
+}
+
+const ordenEditApp = document.getElementById('orden-edit-app');
+
+if (ordenEditApp) {
+  mountOrdenEdit(ordenEditApp, pinia);
+}
+
 const userMenuApp = document.getElementById('user-menu-app');
 
 if (userMenuApp) {
     createApp(UserMenu).use(pinia).mount(userMenuApp);
+}
+
+const citasApp = document.getElementById('citas-app');
+
+if (citasApp) {
+  mountCitas(citasApp, pinia);
 }
 
 const profileEditApp = document.getElementById('profile-edit-app');
@@ -160,4 +193,10 @@ const serviciosApp = document.getElementById('servicios-app');
 
 if (serviciosApp) {
   mountServicios(serviciosApp, pinia);
+}
+
+const notificacionesApp = document.getElementById('notificaciones-app');
+
+if (notificacionesApp) {
+  mountNotificaciones(notificacionesApp, pinia);
 }

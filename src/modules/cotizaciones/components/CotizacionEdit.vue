@@ -62,6 +62,7 @@ const metodoAceptacion = ref('');
 const inspeccionOrigen = ref(null);
 const recepcionOrigen = ref(null);
 const ordenTrabajoNumero = ref('');
+const ordenGeneradaNumero = ref('');
 const inspeccionTipo = ref('');
 
 const cotizacion = ref(null);
@@ -102,6 +103,10 @@ const modal = reactive({
 const esEditable = computed(() => estado.value === 'BORRADOR');
 const estadoInfo = computed(() => ESTADOS[estado.value] || ESTADOS.BORRADOR);
 const estaConvertida = computed(() => estado.value === 'CONVERTIDA');
+const tieneOrdenTrabajo = computed(() => Boolean(ordenGeneradaNumero.value));
+const puedeGenerarOrden = computed(
+  () => !tieneOrdenTrabajo.value && !estaConvertida.value && ['BORRADOR', 'ENVIADA', 'RECHAZADA', 'VENCIDA', 'ACEPTADA'].includes(estado.value)
+);
 
 const subtotalServicios = computed(() =>
   servicios.value.reduce((acc, s) => acc + (Number(s.horas_estimadas) || 0) * (Number(s.precio_unitario) || 0), 0)
@@ -374,6 +379,7 @@ function aplicarCotizacion(data) {
   inspeccionOrigen.value = data.inspeccion_origen ? Number(data.inspeccion_origen) : null;
   recepcionOrigen.value = data.recepcion_origen ? Number(data.recepcion_origen) : null;
   ordenTrabajoNumero.value = data.orden_trabajo_numero || '';
+  ordenGeneradaNumero.value = data.orden_generada_numero || '';
   inspeccionTipo.value = data.inspeccion_tipo || '';
   form.validez_dias = Number(data.validez_dias) || 15;
   form.observaciones = data.observaciones || '';
@@ -566,7 +572,7 @@ async function guardarDetalles(idCotizacion) {
 // ---------- Acciones de estado ----------
 function abrirModal(tipo) {
   modal.tipo = tipo;
-  modal.metodo = tipo === 'ACEPTAR' ? 'PRESENCIAL' : modal.metodo;
+  modal.metodo = tipo === 'ACEPTAR' || tipo === 'GENERAR_ORDEN' ? 'PRESENCIAL' : modal.metodo;
   modal.error = '';
   modal.visible = true;
 }
@@ -596,9 +602,11 @@ async function confirmarModal() {
     } else if (modal.tipo === 'REENVIAR') {
       await cotizacionesService.update(cotizacionId.value, { estado: 'ENVIADA' });
       successMessage.value = 'Cotización reenviada al cliente.';
-    } else if (modal.tipo === 'CONVERTIR') {
-      const resultado = await cotizacionesService.convertirAOrden(cotizacionId.value);
-      successMessage.value = `Orden de trabajo N° ${resultado.numero_orden} creada. La cotización quedó convertida.`;
+    } else if (modal.tipo === 'GENERAR_ORDEN') {
+      const resultado = await cotizacionesService.generarOrden(cotizacionId.value, {
+        metodo_aceptacion: modal.metodo,
+      });
+      successMessage.value = `Orden de trabajo N° ${resultado.numero_orden} generada. La cotización quedó aceptada.`;
     }
     modal.visible = false;
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -764,14 +772,13 @@ onBeforeUnmount(() => {
           Marcar rechazada
         </button>
         <button
-          v-if="estado === 'ACEPTADA'"
+          v-if="puedeGenerarOrden"
           type="button"
-          :disabled="estaConvertida"
-          class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-indigo-600 hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-300 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-indigo-700 dark:hover:bg-indigo-800"
-          @click="abrirModal('CONVERTIR')"
+          class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-indigo-600 hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-300 dark:bg-indigo-700 dark:hover:bg-indigo-800"
+          @click="abrirModal('GENERAR_ORDEN')"
         >
           <ArrowLeftRight class="w-4 h-4 mr-2" />
-          Convertir a orden de trabajo
+          Generar orden de trabajo
         </button>
         <button
           v-if="estado === 'BORRADOR'"
@@ -1196,7 +1203,7 @@ onBeforeUnmount(() => {
     <div class="w-full max-w-md p-6 bg-white rounded-lg shadow-xl dark:bg-gray-800">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-          {{ modal.tipo === 'ENVIAR' ? 'Enviar cotización al cliente' : modal.tipo === 'ACEPTAR' ? 'Marcar cotización como aceptada' : modal.tipo === 'RECHAZAR' ? 'Marcar cotización como rechazada' : modal.tipo === 'REENVIAR' ? 'Reenviar cotización al cliente' : 'Convertir cotización en orden de trabajo' }}
+          {{ modal.tipo === 'ENVIAR' ? 'Enviar cotización al cliente' : modal.tipo === 'ACEPTAR' ? 'Marcar cotización como aceptada' : modal.tipo === 'RECHAZAR' ? 'Marcar cotización como rechazada' : modal.tipo === 'REENVIAR' ? 'Reenviar cotización al cliente' : 'Generar orden de trabajo' }}
         </h3>
         <button type="button" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" @click="cerrarModal">
           <X class="w-5 h-5" />
@@ -1215,11 +1222,11 @@ onBeforeUnmount(() => {
       <p v-else-if="modal.tipo === 'REENVIAR'" class="text-sm text-gray-600 dark:text-gray-300">
         La cotización volverá al estado <strong>Enviada al cliente</strong>.
       </p>
-      <p v-else-if="modal.tipo === 'CONVERTIR'" class="text-sm text-gray-600 dark:text-gray-300">
-        Se generará una <strong>orden de trabajo</strong> a partir de esta cotización. La inspección quedará finalizada y la cotización en estado <strong>Convertida</strong>.
+      <p v-else-if="modal.tipo === 'GENERAR_ORDEN'" class="text-sm text-gray-600 dark:text-gray-300">
+        Se generará una <strong>orden de trabajo</strong> a partir de esta cotización y la cotización quedará en estado <strong>Aceptada</strong>.
       </p>
 
-      <div v-if="modal.tipo === 'ACEPTAR'" class="mt-4">
+      <div v-if="modal.tipo === 'ACEPTAR' || modal.tipo === 'GENERAR_ORDEN'" class="mt-4">
         <label class="block text-sm font-medium text-gray-900 mb-2 dark:text-white">Método de aceptación *</label>
         <div class="space-y-2">
           <label v-for="metodo in METODOS_ACEPTACION" :key="metodo.value" class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">

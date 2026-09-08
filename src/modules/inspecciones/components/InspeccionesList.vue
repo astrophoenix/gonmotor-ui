@@ -200,7 +200,7 @@ onUnmounted(() => {
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ index + 1 }}</td>
         <td class="p-4 whitespace-nowrap">
           <a
-            :href="`/crud/inspecciones/editar/?id=${encodeURIComponent(item.id)}`"
+            :href="`/crud/inspecciones/ver/?id=${encodeURIComponent(item.id)}`"
             class="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
           >
             {{ numeroDisplay(item) }}
