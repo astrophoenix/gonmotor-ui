@@ -1,6 +1,7 @@
 <script setup>
 import { TESTIGOS } from '../config/testigos';
 import MdiIcon from './MdiIcon.vue';
+import { sanitizeObservaciones } from '../utils/sanitize';
 
 const modelValue = defineModel({ type: Object, required: true });
 
@@ -9,7 +10,7 @@ function toggleTestigo(key) {
 }
 
 function updateObservaciones(value) {
-  modelValue.value.otros_testigos_observaciones = value;
+  modelValue.value.otros_testigos_observaciones = sanitizeObservaciones(value || '').slice(0, 255);
 }
 
 function getIconClasses(testigo) {

@@ -3,7 +3,6 @@ import { computed, onMounted, reactive, ref, watch, nextTick } from 'vue';
 import {
   FileText,
   SquareArrowRightEnter,
-  UserPlus,
   FileCheck,
   TriangleAlert,
   FileSearch,
@@ -16,7 +15,6 @@ import {
   Wand2,
   Loader2,
   X,
-  Search,
 } from 'lucide-vue-next';
 import { recepcionesService } from '../services/recepcionesService';
 import { request } from '../../../shared/services/httpClient';
@@ -28,6 +26,7 @@ import TestigosTablero from '../../../shared/components/TestigosTablero.vue';
 import PhotoSlotGrid from '../../../shared/components/PhotoSlotGrid.vue';
 import ClientModal from '../../clientes/components/ClientModal.vue';
 import TextImprover from '../../../shared/components/TextImprover.vue';
+import ClienteSearchSelect from '../../../shared/components/ClienteSearchSelect.vue';
 
 const recepcionId = new URLSearchParams(window.location.search).get('id');
 const isEditMode = Boolean(recepcionId);
@@ -129,12 +128,9 @@ const MAX_DETALLES_CARROCERIA = 20;
 const clienteSearch = ref('');
 const vehiculoSearch = ref('');
 const vehiculoSearchDisplay = ref('');
-const clienteOptions = ref([]);
 const vehiculoOptions = ref([]);
-const showClienteDropdown = ref(false);
 const showVehiculoDropdown = ref(false);
 const showClientCreateModal = ref(false);
-const clienteActiveIndex = ref(-1);
 const vehiculoActiveIndex = ref(-1);
 const empleadoActiveIndex = ref(-1);
 const blueprintImageUrl = ref('');
@@ -147,7 +143,6 @@ const empleados = ref([]);
 const recibidoPorSearch = ref('');
 const showEmpleadoDropdown = ref(false);
 const empleadoOptions = ref([]);
-const clienteDropdownRef = ref(null);
 const vehiculoDropdownRef = ref(null);
 const empleadoDropdownRef = ref(null);
 
@@ -549,22 +544,6 @@ function onBlueprintClick(event) {
   marcas.value = [...marcas.value, { id: Date.now(), x: Math.round(x), y: Math.round(y), descripcion: '' }];
 }
 
-async function searchClientes() {
-  const term = clienteSearch.value.trim();
-  if (!term) {
-    clienteOptions.value = [];
-    return;
-  }
-
-  try {
-    const params = new URLSearchParams({ search: term, ordering: 'nombre', page: '1' });
-    const data = await request(`/api/clientes/?${params.toString()}`);
-    clienteOptions.value = Array.isArray(data?.results) ? data.results : [];
-  } catch (error) {
-    console.error('No se pudieron buscar clientes:', error);
-  }
-}
-
 async function searchVehiculos() {
   const term = vehiculoSearch.value.trim();
   const params = new URLSearchParams({ ordering: 'placa', page: '1' });
@@ -590,7 +569,6 @@ function selectCliente(cliente) {
   form.cliente_telefono = cliente.telefono || '';
   form.cliente_email = cliente.email || '';
   clienteSearch.value = cliente.nombre;
-  showClienteDropdown.value = false;
   form.vehiculo = null;
   form.vehiculo_color = '';
   vehiculoSearch.value = '';
@@ -621,7 +599,6 @@ function clearCliente() {
   form.cliente_telefono = '';
   form.cliente_email = '';
   clienteSearch.value = '';
-  clienteOptions.value = [];
   clearVehiculo();
 }
 
@@ -663,29 +640,6 @@ function scrollActiveIntoView(containerRef, activeIndex) {
   if (!container) return;
   const el = container.querySelector(`[data-option-index="${activeIndex}"]`);
   if (el) el.scrollIntoView({ block: 'nearest' });
-}
-
-function onClienteKeydown(event) {
-  if (!clienteOptions.value.length) return;
-  if (event.key === 'ArrowDown') {
-    event.preventDefault();
-    showClienteDropdown.value = true;
-    clienteActiveIndex.value = moveActiveIndex(clienteActiveIndex.value, clienteOptions.value.length, 1);
-    scrollActiveIntoView(clienteDropdownRef, clienteActiveIndex.value);
-  } else if (event.key === 'ArrowUp') {
-    event.preventDefault();
-    showClienteDropdown.value = true;
-    clienteActiveIndex.value = moveActiveIndex(clienteActiveIndex.value, clienteOptions.value.length, -1);
-    scrollActiveIntoView(clienteDropdownRef, clienteActiveIndex.value);
-  } else if (event.key === 'Enter') {
-    const item = clienteOptions.value[clienteActiveIndex.value];
-    if (item) {
-      event.preventDefault();
-      selectCliente(item);
-    }
-  } else if (event.key === 'Escape') {
-    showClienteDropdown.value = false;
-  }
 }
 
 function onVehiculoKeydown(event) {
@@ -995,15 +949,6 @@ async function ejecutarGuardado() {
   }
 }
 
-watch(() => clienteSearch.value, () => {
-  if (!clienteSearch.value.trim()) {
-    clearCliente();
-    return;
-  }
-  searchClientes();
-});
-
-watch(clienteOptions, () => { clienteActiveIndex.value = -1; });
 watch(vehiculoOptions, () => { vehiculoActiveIndex.value = -1; });
 watch(empleadoOptions, () => { empleadoActiveIndex.value = -1; });
 
@@ -1080,44 +1025,16 @@ onMounted(() => {
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div class="relative col-span-1">
             <label for="cliente" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente</label>
-            <div class="relative">
-              <Search class="absolute w-4 h-4 text-gray-400 left-3 top-3" />
-              <input
-                id="cliente"
-                v-model="clienteSearch"
-                autocomplete="off"
-                placeholder="Buscar por nombre..."
-                :class="['block w-full p-2.5 pl-9 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.cliente ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']"
-                @focus="showClienteDropdown = true"
-                @blur="async () => { await wait(150); showClienteDropdown = false; }"
-                @keydown="onClienteKeydown"
-              />
-              <button
-                type="button"
-                title="Crear cliente nuevo"
-                aria-label="Crear cliente nuevo"
-                class="absolute right-2 top-2 inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary-blue-700 rounded-md hover:bg-primary-blue-50 dark:text-primary-blue-400"
-                @click="showClientCreateModal = true"
-              >
-                <UserPlus class="w-3.5 h-3.5" />
-                Crear
-              </button>
-            </div>
-            <p v-if="formErrors.cliente" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.cliente }}</p>
-            <div ref="clienteDropdownRef" v-if="showClienteDropdown && clienteOptions.length" class="absolute z-10 w-full mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
-              <button
-                v-for="(item, index) in clienteOptions"
-                :key="item.id"
-                :data-option-index="index"
-                type="button"
-                class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600"
-                :class="index === clienteActiveIndex ? 'bg-primary-blue-50 dark:bg-gray-600' : ''"
-                @mouseenter="clienteActiveIndex = index"
-                @mousedown="selectCliente(item)"
-              >
-                {{ item.nombre }}
-              </button>
-            </div>
+            <ClienteSearchSelect
+              id="cliente"
+              v-model="clienteSearch"
+              :error="Boolean(formErrors.cliente)"
+              :error-message="formErrors.cliente"
+              show-create
+              @select="selectCliente"
+              @clear="clearCliente"
+              @create="showClientCreateModal = true"
+            />
           </div>
 
           <div class="col-span-1">
@@ -1252,11 +1169,13 @@ onMounted(() => {
            <div class="col-span-1">
             <label for="tipo_recepcion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de Recepción</label>
             <select id="tipo_recepcion" v-model="form.tipo_recepcion" :class="['block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.tipo_recepcion ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']">
-              <option value="PREVENTIVO">Mantenimiento Preventivo</option>
-              <option value="CORRECTIVO">Reparación Correctiva</option>
-              <option value="DIAGNOSTICO">Solo Diagnóstico / Escaneo</option>
-              <option value="ESTETICA">Enderezada, Pintura o Detailing</option>
-              <option value="GARANTIA">Garantía / Retorno</option>
+              <option value="MANTENIMIENTO">Mantenimiento</option>
+              <option value="REPARACIÓN">Reparación</option>
+              <option value="DIAGNOSTICO">Diagnóstico</option>
+              <option value="ESTETICA">Estética</option>
+              <option value="GARANTIA">Garantía</option>
+              <option value="SINISTRO">Siniestro</option>
+              <option value="OTRO">Otro</option>
             </select>
             <p v-if="formErrors.tipo_recepcion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.tipo_recepcion }}</p>
           </div>

@@ -16,6 +16,8 @@ import Alert from '../../../shared/components/Alert.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TextImprover from '../../../shared/components/TextImprover.vue';
 import ClientModal from '../../clientes/components/ClientModal.vue';
+import ClienteSearchSelect from '../../../shared/components/ClienteSearchSelect.vue';
+import CatalogoSelect from '../../../shared/components/CatalogoSelect.vue';
 
 const urlParams = new URLSearchParams(window.location.search);
 const cotizacionParamId = urlParams.get('id');
@@ -76,12 +78,9 @@ const form = reactive({
   observaciones: '',
 });
 
-const clienteOptions = ref([]);
 const vehiculoOptions = ref([]);
-const showClienteDropdown = ref(false);
 const showVehiculoDropdown = ref(false);
 const showClientCreateModal = ref(false);
-let clienteSearchTimer;
 
 const servicios = ref([]);
 const repuestos = ref([]);
@@ -146,40 +145,7 @@ function loadCatalogo() {
   }).catch(() => { catalogoRepuestos.value = []; });
 }
 
-// ---------- Ítems: filas con autocompletado desde catálogo ----------
-function sugerenciasServicio(termino) {
-  const term = (termino || '').trim().toLowerCase();
-  if (!term) return catalogoServicios.value;
-  return catalogoServicios.value.filter((s) =>
-    [s.codigo, s.nombre, s.marca].filter(Boolean).join(' ').toLowerCase().includes(term)
-  );
-}
-
-function sugerenciasRepuesto(termino) {
-  const term = (termino || '').trim().toLowerCase();
-  if (!term) return catalogoRepuestos.value;
-  return catalogoRepuestos.value.filter((r) =>
-    [r.codigo, r.nombre, r.marca].filter(Boolean).join(' ').toLowerCase().includes(term)
-  );
-}
-
-function cerrarSugerencias() {
-  servicios.value.forEach((s) => { s.abierto = false; });
-  repuestos.value.forEach((r) => { r.abierto = false; });
-}
-
-function abrirSugerenciasServicio(fila) {
-  cerrarSugerencias();
-  fila.sel = 0;
-  fila.abierto = true;
-}
-
-function abrirSugerenciasRepuesto(fila) {
-  cerrarSugerencias();
-  fila.sel = 0;
-  fila.abierto = true;
-}
-
+// ---------- Ítems: filas con autocompletado desde catálogo (CatalogoSelect) ----------
 function nuevaFilaServicio() {
   return {
     id: null,
@@ -189,8 +155,6 @@ function nuevaFilaServicio() {
     horas_estimadas: '1.00',
     precio_unitario: '0.00',
     es_opcional: false,
-    abierto: false,
-    sel: 0,
   };
 }
 
@@ -203,8 +167,6 @@ function nuevaFilaRepuesto() {
     cantidad: '1',
     precio_unitario_referencial: '0.00',
     es_opcional: false,
-    abierto: false,
-    sel: 0,
   };
 }
 
@@ -227,7 +189,6 @@ function agregarServicioVacio() {
   if (!esEditable.value) return;
   const fila = nuevaFilaServicio();
   servicios.value.push(fila);
-  fila.abierto = true;
   focusInput(`svc-desc-${fila.sufijo}`);
 }
 
@@ -235,7 +196,6 @@ function agregarRepuestoVacio() {
   if (!esEditable.value) return;
   const fila = nuevaFilaRepuesto();
   repuestos.value.push(fila);
-  fila.abierto = true;
   focusInput(`rpt-desc-${fila.sufijo}`);
 }
 
@@ -245,7 +205,6 @@ function seleccionarServicio(item, fila) {
   fila.horas_estimadas = '1.00';
   fila.precio_unitario = String(item.precio_referencial ?? '0.00');
   fila.es_opcional = false;
-  fila.abierto = false;
   focusInput(`svc-horas-${fila.sufijo}`);
 }
 
@@ -254,67 +213,14 @@ function seleccionarRepuesto(item, fila) {
   fila.descripcion = formatearItem(item.codigo, item.nombre);
   fila.cantidad = '1';
   fila.precio_unitario_referencial = String(item.precio_venta ?? '0.00');
-  fila.abierto = false;
   fila.es_opcional = false;
   focusInput(`rpt-cant-${fila.sufijo}`);
 }
 
-function selServicioValido(fila, lista) {
-  return Math.min(Math.max(0, fila.sel || 0), lista.length - 1);
-}
-
-function selRepuestoValido(fila, lista) {
-  return Math.min(Math.max(0, fila.sel || 0), lista.length - 1);
-}
-
-function moverSeleccionServicio(fila, direccion) {
-  const lista = sugerenciasServicio(fila.descripcion);
-  if (!fila.abierto || !lista.length) return;
-  fila.sel = Math.min(Math.max(0, (fila.sel || 0) + direccion), lista.length - 1);
-}
-
-function moverSeleccionRepuesto(fila, direccion) {
-  const lista = sugerenciasRepuesto(fila.descripcion);
-  if (!fila.abierto || !lista.length) return;
-  fila.sel = Math.min(Math.max(0, (fila.sel || 0) + direccion), lista.length - 1);
-}
-
-function elegirSeleccionServicio(fila) {
-  const lista = sugerenciasServicio(fila.descripcion);
-  if (!lista.length) return;
-  seleccionarServicio(lista[selServicioValido(fila, lista)], fila);
-}
-
-function elegirSeleccionRepuesto(fila) {
-  const lista = sugerenciasRepuesto(fila.descripcion);
-  if (!lista.length) return;
-  seleccionarRepuesto(lista[selRepuestoValido(fila, lista)], fila);
-}
-
 // ---------- Cliente / Vehículo (solo creación independiente) ----------
-function searchClientes() {
-  const term = form.clienteSearch.trim();
-  if (!term) {
-    clienteOptions.value = [];
-    showClienteDropdown.value = false;
-    return;
-  }
-  clearTimeout(clienteSearchTimer);
-  clienteSearchTimer = setTimeout(async () => {
-    try {
-      const data = await request(`/api/clientes/?${new URLSearchParams({ search: term, ordering: 'nombre', page: '1' })}`);
-      clienteOptions.value = Array.isArray(data?.results) ? data.results : [];
-      showClienteDropdown.value = true;
-    } catch (error) {
-      clienteOptions.value = [];
-    }
-  }, 300);
-}
-
 function selectCliente(cliente) {
   form.cliente = cliente;
   form.clienteSearch = cliente.nombre || '';
-  showClienteDropdown.value = false;
   form.vehiculo = null;
   form.vehiculoSearch = '';
   searchVehiculos();
@@ -323,8 +229,6 @@ function selectCliente(cliente) {
 function clearCliente() {
   form.cliente = null;
   form.clienteSearch = '';
-  clienteOptions.value = [];
-  showClienteDropdown.value = false;
   clearVehiculo();
 }
 
@@ -705,9 +609,7 @@ watch(() => form.observaciones, (val) => {
 // ---------- Ciclo de vida ----------
 function cerrarPopups(event) {
   const target = event.target;
-  if (target && !target.closest('.item-autocomplete') && !target.closest('.add-row-btn')) cerrarSugerencias();
-  if (target && !target.closest('.cliente-dropdown') && !target.closest('.vehiculo-dropdown')) {
-    showClienteDropdown.value = false;
+  if (target && !target.closest('.vehiculo-dropdown')) {
     showVehiculoDropdown.value = false;
   }
 }
@@ -821,30 +723,18 @@ onBeforeUnmount(() => {
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div class="relative cliente-dropdown">
               <label for="cliente" class="block text-sm font-medium text-gray-900 mb-1 dark:text-white">Cliente *</label>
-              <input
+              <ClienteSearchSelect
                 id="cliente"
                 v-model="form.clienteSearch"
-                type="text"
-                placeholder="Buscar cliente por nombre o cédula"
-                class="block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
-                @input="searchClientes"
-                @focus="searchClientes"
-              >
-              <ul v-if="showClienteDropdown && clienteOptions.length" class="absolute z-20 w-full mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
-                <li v-for="cliente in clienteOptions" :key="cliente.id">
-                  <button
-                    type="button"
-                    class="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600"
-                    @click="selectCliente(cliente)"
-                  >
-                    <span class="font-medium block">{{ cliente.nombre }}</span>
-                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ cliente.identificacion || '' }} · {{ cliente.telefono || '' }}</span>
-                  </button>
-                </li>
-              </ul>
+                placeholder="Buscar por nombre, cédula o teléfono"
+                :error="Boolean(formErrors.cliente)"
+                :error-message="formErrors.cliente"
+                @select="selectCliente"
+                @clear="clearCliente"
+                @create="showClientCreateModal = true"
+              />
               <button v-if="form.cliente" type="button" class="mt-2 text-sm text-red-600 hover:underline dark:text-red-400" @click="clearCliente">Quitar cliente</button>
               <button type="button" class="mt-2 ml-3 text-sm text-primary-blue-700 hover:underline dark:text-primary-blue-300" @click="showClientCreateModal = true">Crear cliente</button>
-              <p v-if="formErrors.cliente" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.cliente }}</p>
             </div>
 
             <div class="relative vehiculo-dropdown">
@@ -991,41 +881,16 @@ onBeforeUnmount(() => {
                   </tr>
                   <tr v-for="(servicio, index) in servicios" :key="servicio.sufijo || servicio.id" class="border-t border-gray-200 dark:border-gray-600">
                     <td class="px-4 py-2.5">
-                      <div class="relative item-autocomplete">
-                        <input
-                          :id="`svc-desc-${servicio.sufijo}`"
+                      <div class="relative">
+                        <CatalogoSelect
+                          :input-id="`svc-desc-${servicio.sufijo}`"
                           v-model="servicio.descripcion"
-                          type="text"
+                          :catalogo="catalogoServicios"
                           placeholder="Busca y selecciona..."
-                          class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
                           :disabled="!esEditable"
-                          @focus="abrirSugerenciasServicio(servicio)"
-                          @blur="servicio.abierto = false"
-                          @input="servicio.sel = 0"
-                          @keydown.down.prevent="moverSeleccionServicio(servicio, 1)"
-                          @keydown.up.prevent="moverSeleccionServicio(servicio, -1)"
-                          @keydown.enter.prevent="elegirSeleccionServicio(servicio)"
-                          @keydown.esc="servicio.abierto = false"
+                          mensaje-sin-resultados="Sin coincidencias. Puedes escribir un servicio libre."
+                          @select="(item) => seleccionarServicio(item, servicio)"
                         />
-                        <ul
-                          v-if="servicio.abierto && esEditable"
-                          class="absolute left-0 right-0 z-50 mt-1 max-h-52 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl dark:bg-gray-700 dark:border-gray-600"
-                        >
-                          <li v-for="(item, index) in sugerenciasServicio(servicio.descripcion)" :key="item.id">
-                            <button
-                              type="button"
-                              :class="['block w-full px-4 py-2 text-left text-sm', index === selServicioValido(servicio, sugerenciasServicio(servicio.descripcion)) ? 'bg-gray-100 dark:bg-gray-600' : 'hover:bg-gray-100 dark:hover:bg-gray-600']"
-                              @mouseover="servicio.sel = index"
-                              @mousedown.prevent="seleccionarServicio(item, servicio)"
-                            >
-                              <span class="font-medium block">{{ item.codigo ? `${item.codigo} - ${item.nombre}` : item.nombre }}</span>
-                              <span class="text-xs text-gray-500 dark:text-gray-400">$ {{ formatMoney(item.precio_referencial) }}</span>
-                            </button>
-                          </li>
-                          <li v-if="!sugerenciasServicio(servicio.descripcion).length" class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                            Sin coincidencias. Puedes escribir un servicio libre.
-                          </li>
-                        </ul>
                       </div>
                     </td>
                     <td class="px-4 py-2.5">
@@ -1083,41 +948,17 @@ onBeforeUnmount(() => {
                   </tr>
                   <tr v-for="(repuesto, index) in repuestos" :key="repuesto.sufijo || repuesto.id" class="border-t border-gray-200 dark:border-gray-600">
                     <td class="px-4 py-2.5">
-                      <div class="relative item-autocomplete">
-                        <input
-                          :id="`rpt-desc-${repuesto.sufijo}`"
+                      <div class="relative">
+                        <CatalogoSelect
+                          :input-id="`rpt-desc-${repuesto.sufijo}`"
                           v-model="repuesto.descripcion"
-                          type="text"
+                          :catalogo="catalogoRepuestos"
                           placeholder="Busca y selecciona..."
-                          class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
                           :disabled="!esEditable"
-                          @focus="abrirSugerenciasRepuesto(repuesto)"
-                          @blur="repuesto.abierto = false"
-                          @input="repuesto.sel = 0"
-                          @keydown.down.prevent="moverSeleccionRepuesto(repuesto, 1)"
-                          @keydown.up.prevent="moverSeleccionRepuesto(repuesto, -1)"
-                          @keydown.enter.prevent="elegirSeleccionRepuesto(repuesto)"
-                          @keydown.esc="repuesto.abierto = false"
+                          mostrar-stock
+                          mensaje-sin-resultados="Sin coincidencias. Puedes escribir un repuesto libre."
+                          @select="(item) => seleccionarRepuesto(item, repuesto)"
                         />
-                        <ul
-                          v-if="repuesto.abierto && esEditable"
-                          class="absolute left-0 right-0 z-50 mt-1 max-h-52 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl dark:bg-gray-700 dark:border-gray-600"
-                        >
-                          <li v-for="(item, index) in sugerenciasRepuesto(repuesto.descripcion)" :key="item.id">
-                            <button
-                              type="button"
-                              :class="['block w-full px-4 py-2 text-left text-sm', index === selRepuestoValido(repuesto, sugerenciasRepuesto(repuesto.descripcion)) ? 'bg-gray-100 dark:bg-gray-600' : 'hover:bg-gray-100 dark:hover:bg-gray-600']"
-                              @mouseover="repuesto.sel = index"
-                              @mousedown.prevent="seleccionarRepuesto(item, repuesto)"
-                            >
-                              <span class="font-medium block">{{ item.codigo ? `${item.codigo} - ${item.nombre}` : item.nombre }}</span>
-                              <span class="text-xs text-gray-500 dark:text-gray-400">$ {{ formatMoney(item.precio_venta) }}</span>
-                            </button>
-                          </li>
-                          <li v-if="!sugerenciasRepuesto(repuesto.descripcion).length" class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                            Sin coincidencias. Puedes escribir un repuesto libre.
-                          </li>
-                        </ul>
                       </div>
                     </td>
                     <td class="px-4 py-2.5">

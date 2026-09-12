@@ -3,7 +3,7 @@ import { onMounted, ref, watch, onUnmounted } from 'vue';
 import { Users, Download, Phone, Mail, Car, Pencil, Trash2 } from 'lucide-vue-next';
 import { useClients } from '../composables/useClients';
 // import { useToast } from '../../../shared/composables/useToast';
-import ConfirmDeleteModal from '../../../shared/components/ConfirmDeleteModal.vue';
+import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 // import ToastContainer from '../../../shared/components/ToastContainer.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
@@ -319,7 +319,7 @@ onUnmounted(() => {
   </EntityTable>
 
 
-  <ConfirmDeleteModal
+  <ConfirmModal
     v-model="showDeleteModal"
     entity-name="cliente"
     :item-name="clientToDelete?.nombre"

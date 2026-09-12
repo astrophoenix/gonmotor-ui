@@ -2,7 +2,7 @@
 import { onMounted, ref, watch, onUnmounted } from 'vue';
 import { Eye, SquarePen, Trash2, Wrench } from 'lucide-vue-next';
 import { useOrdenes } from '../composables/useOrdenes';
-import ConfirmDeleteModal from '../../../shared/components/ConfirmDeleteModal.vue';
+import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
 
@@ -220,7 +220,7 @@ onUnmounted(() => {
     </template>
   </EntityTable>
 
-  <ConfirmDeleteModal
+  <ConfirmModal
     v-model="showDeleteModal"
     entity-name="orden de trabajo"
     :item-name="`${ordenToDelete?.numero_orden || ordenToDelete?.id || ''}`"

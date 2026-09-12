@@ -1,8 +1,8 @@
 <script setup>
 import { computed, nextTick, reactive, ref, watch } from 'vue';
-import { X, Trash2, Save } from 'lucide-vue-next';
+import { X, Trash2, Save, FileText, Car, UserRound } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
-import { sanitizeIdentificacion, sanitizeNombreUpper, sanitizeEmail, sanitizeTelefono, formatPlaca, sanitizeVin, sanitizeText, sanitizeColor, sanitizeMotor, sanitizeObservaciones, getItemKey as getVehicleKey, validatePlaca } from '../../../shared/utils/sanitize';
+import { sanitizeIdentificacion, sanitizeNombreUpper, sanitizeEmail, sanitizeTelefono, formatPlaca, sanitizeVin, sanitizeText, sanitizeColor, sanitizeMotor, sanitizeObservaciones, getItemKey as getVehicleKey, validatePlaca, validateTelefono } from '../../../shared/utils/sanitize';
 import Alert from '../../../shared/components/Alert.vue';
 import VehicleImageField from '../../../shared/components/VehicleImageField.vue';
 
@@ -128,7 +128,8 @@ function validateForm() {
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
     errors.email = 'Ingresa un correo electrónico válido.';
   }
-  if (!form.telefono || !form.telefono.trim()) errors.telefono = 'El teléfono es obligatorio.';
+  const telefonoError = validateTelefono(form.telefono);
+  if (telefonoError) errors.telefono = telefonoError;
   if (!form.direccion || !form.direccion.trim()) errors.direccion = 'La dirección es obligatoria.';
 
   clientErrors.value = errors;
@@ -396,7 +397,10 @@ watch(vehiculos, (list) => {
     <div class="relative block w-full max-w-5xl rounded-lg bg-white shadow-xl dark:bg-gray-800 my-auto">
       <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-          {{ isEditMode ? 'Editar cliente' : 'Nuevo cliente' }}
+          <span class="inline-flex items-center gap-2">
+            <UserRound class="w-5 h-5 text-gray-800 dark:text-white" />
+            {{ isEditMode ? 'Editar cliente' : 'Nuevo cliente' }}
+          </span>
         </h3>
         <button
           type="button"
@@ -421,7 +425,12 @@ watch(vehiculos, (list) => {
 
         <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando cliente...</div>
         <template v-else>
-          <h4 class="mb-4 text-base font-semibold dark:text-white">Información General</h4>
+          <h4 class="mb-4 text-base font-semibold dark:text-white">
+            <span class="inline-flex items-center gap-2">
+              <FileText class="w-4 h-4 text-gray-800 dark:text-white" />
+              Información General
+            </span>
+          </h4>
           <div class="grid grid-cols-6 gap-4">
             <div class="col-span-6 sm:col-span-3">
               <label for="modal_tipo_identificacion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de identificación</label>
@@ -448,7 +457,7 @@ watch(vehiculos, (list) => {
             </div>
             <div class="col-span-6 sm:col-span-3">
               <label for="modal_telefono" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Teléfono</label>
-              <input id="modal_telefono" v-model="form.telefono" maxlength="20" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.telefono ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+              <input id="modal_telefono" v-model="form.telefono" maxlength="15" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.telefono ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
               <p v-if="clientErrors.telefono" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.telefono }}</p>
             </div>
             <div class="col-span-6 sm:col-span-3">
@@ -458,8 +467,12 @@ watch(vehiculos, (list) => {
             </div>
           </div>
 
-          <h4 class="mt-6 mb-4 text-base font-semibold dark:text-white">Vehículos del Cliente</h4>
-
+          <h4 class="mt-6 mb-4 text-base font-semibold dark:text-white">
+            <span class="inline-flex items-center gap-2">
+              <Car class="w-4 h-4 text-gray-800 dark:text-white" />
+              Vehículos del Cliente
+            </span>
+          </h4>
           <div v-if="!vehiculos.length" class="p-4 text-sm text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600">
             No hay vehículos asociados. Presiona "Agregar Vehículo" para crear uno.
           </div>

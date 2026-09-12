@@ -2,7 +2,7 @@
 import { onMounted, ref, watch } from 'vue';
 import { Wrench, Pencil, Trash2 } from 'lucide-vue-next';
 import { useServicios } from '../composables/useServicios';
-import ConfirmDeleteModal from '../../../../shared/components/ConfirmDeleteModal.vue';
+import ConfirmModal from '../../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../../shared/components/Alert.vue';
 import EntityActionButtons from '../../../../shared/components/EntityActionButtons.vue';
 import EntityTable from '../../../../shared/components/EntityTable.vue';
@@ -210,7 +210,7 @@ onMounted(() => loadServicios());
     </template>
   </EntityTable>
 
-  <ConfirmDeleteModal
+  <ConfirmModal
     v-model="showDeleteModal"
     entity-name="servicio"
     :item-name="servicioToDelete?.nombre"

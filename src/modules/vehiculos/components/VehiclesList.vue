@@ -2,7 +2,7 @@
 import { onMounted, ref, watch } from 'vue';
 import { Car, MessageCircle, Pencil, Trash2 } from 'lucide-vue-next';
 import { useVehicles } from '../composables/useVehicles';
-import ConfirmDeleteModal from '../../../shared/components/ConfirmDeleteModal.vue';
+import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
@@ -221,7 +221,7 @@ onMounted(() => loadVehicles());
     </template>
   </EntityTable>
 
-  <ConfirmDeleteModal
+  <ConfirmModal
     v-model="showDeleteModal"
     entity-name="vehículo"
     :item-name="vehicleToDelete?.placa"

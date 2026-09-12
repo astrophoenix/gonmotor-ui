@@ -2,7 +2,7 @@
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { FileText, SquarePen, Trash2 } from 'lucide-vue-next';
 import { useCotizaciones } from '../composables/useCotizaciones';
-import ConfirmDeleteModal from '../../../shared/components/ConfirmDeleteModal.vue';
+import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
 
@@ -195,7 +195,7 @@ onUnmounted(() => {
     </template>
   </EntityTable>
 
-  <ConfirmDeleteModal
+  <ConfirmModal
     v-model="showDeleteModal"
     entity-name="cotización"
     :item-name="cotizacionToDelete?.numero_cotizacion || `#${cotizacionToDelete?.id || ''}`"

@@ -36,12 +36,14 @@ const FOTO_VISTAS = [
   { key: 'TABLERO', label: 'Tablero / Kilometraje' },
 ];
 
-const TIPO_RECEPCION_LABELS = {
-  PREVENTIVO: 'Mantenimiento Preventivo',
-  CORRECTIVO: 'Reparación Correctiva',
-  DIAGNOSTICO: 'Solo Inspección / Escaneo',
-  ESTETICA: 'Enderezada, Pintura o Detailing',
-  GARANTIA: 'Garantía / Retorno',
+const TIPO_RECEPCION = {
+  MANTENIMIENTO: 'Mantenimiento',
+  REPARACIÓN: 'Reparación',
+  DIAGNOSTICO: 'Diagnóstico',
+  ESTETICA: 'Estética',
+  GARANTIA: 'Garantía',
+  SINISTRO: 'Siniestro',
+  OTRO: 'Otro',
 };
 
 const COMBUSTIBLE_LABELS = {
@@ -172,10 +174,14 @@ const cliente = computed(() => recepcion.value?.cliente || null);
 
 const vehiculo = computed(() => recepcion.value?.vehiculo || null);
 
+const numeroRecepcion = computed(
+  () => recepcion.value?.numero_recepcion || `#${recepcion.value?.id}`
+);
+
 const tipoRecepcionDisplay = computed(() => {
   const r = recepcion.value;
   if (!r || !r.tipo_recepcion) return '-';
-  return TIPO_RECEPCION_LABELS[r.tipo_recepcion] || r.tipo_recepcion;
+  return TIPO_RECEPCION[r.tipo_recepcion] || r.tipo_recepcion;
 });
 
 const nivelCombustibleDisplay = computed(() => {
@@ -266,7 +272,7 @@ function irADiagnostico(recepcion) {
 function irAInspeccion(recepcion) {
   const inspeccion = recepcion.inspecciones?.[0];
   if (!inspeccion) return;
-  if (inspeccion.tiene_orden_trabajo) {
+  if (inspeccion.tiene_orden_trabajo || inspeccion.estado === 'FINALIZADA') {
     goTo(`/crud/inspecciones/ver/?id=${inspeccion.id}`);
   } else {
     goTo(`/crud/inspecciones/editar/?id=${inspeccion.id}`);
@@ -282,12 +288,12 @@ function irAInspeccion(recepcion) {
           <a href="/" class="inline-flex items-center text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Inicio</a>
         </li>
         <li class="text-gray-400">/ <a href="/crud/recepciones/" class="hover:text-primary-600">Recepciones</a></li>
-        <li class="text-gray-400">/ Detalle recepción #{{ recepcion?.id }}</li>
+        <li class="text-gray-400">/ Detalle recepción / {{ numeroRecepcion }}</li>
       </ol>
     </nav>
     <div class="flex items-center gap-3 flex-wrap">
       <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-        Recepción #{{ recepcion?.id }}
+        Recepción {{ numeroRecepcion }}
       </h1>
       <span v-if="recepcion" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium" :class="estadoBadge.color">
         <component :is="estadoBadge.icon" class="w-4 h-4" aria-hidden="true" />
@@ -316,7 +322,7 @@ function irAInspeccion(recepcion) {
         </button>
         <template v-if="tieneInspeccion && recepcion.estado === 'ACEPTADA'">
           <a
-            v-if="recepcion.inspecciones[0]?.tiene_orden_trabajo"
+            v-if="recepcion.inspecciones[0]?.tiene_orden_trabajo || recepcion.inspecciones[0]?.estado === 'FINALIZADA'"
             :href="`/crud/inspecciones/ver/?id=${recepcion.inspecciones[0].id}`"
             class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-indigo-700 rounded-lg border border-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:border-indigo-400 dark:hover:bg-gray-800"
           >

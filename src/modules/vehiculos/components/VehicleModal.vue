@@ -1,6 +1,6 @@
 <script setup>
 import { computed, nextTick, reactive, ref, watch } from 'vue';
-import { X, Save } from 'lucide-vue-next';
+import { X, Save, FileText, Car } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
 import {
   formatPlaca,
@@ -14,6 +14,7 @@ import {
 } from '../../../shared/utils/sanitize';
 import Alert from '../../../shared/components/Alert.vue';
 import VehicleImageField from '../../../shared/components/VehicleImageField.vue';
+import ClienteSearchSelect from '../../../shared/components/ClienteSearchSelect.vue';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -79,12 +80,6 @@ const paises = ref([]);
 const isLoadingChoices = ref(false);
 const imagenFile = ref(null);
 const clienteSearch = ref('');
-const clienteOptions = ref([]);
-const showClienteDropdown = ref(false);
-
-function wait(ms) {
-  return new Promise((resolve) => window.setTimeout(resolve, ms));
-}
 
 function showError(error) {
   errorMessage.value = error.message || 'No fue posible completar la operación.';
@@ -125,32 +120,14 @@ function createEmptyForm() {
   };
 }
 
-async function searchClientes() {
-  const term = clienteSearch.value.trim();
-  if (!term) {
-    clienteOptions.value = [];
-    return;
-  }
-  try {
-    const params = new URLSearchParams({ search: term, ordering: 'nombre', page: '1' });
-    const data = await request(`/api/clientes/?${params.toString()}`);
-    clienteOptions.value = Array.isArray(data && data.results) ? data.results : [];
-  } catch (error) {
-    console.error('No se pudieron buscar clientes:', error);
-  }
-}
-
 function selectCliente(cliente) {
   form.cliente_id = cliente.id;
   clienteSearch.value = cliente.nombre;
-  showClienteDropdown.value = false;
-  clienteOptions.value = [];
 }
 
 function clearCliente() {
   form.cliente_id = null;
   clienteSearch.value = '';
-  clienteOptions.value = [];
 }
 
 function resetForm() {
@@ -408,13 +385,6 @@ watch(() => form.observaciones, (val) => {
   const clean = sanitizeObservaciones(val);
   if (clean !== val) form.observaciones = clean;
 });
-watch(() => clienteSearch.value, () => {
-  if (!clienteSearch.value.trim()) {
-    clearCliente();
-    return;
-  }
-  searchClientes();
-});
 </script>
 
 <template>
@@ -422,7 +392,10 @@ watch(() => clienteSearch.value, () => {
     <div class="relative block w-full max-w-5xl rounded-lg bg-white shadow-xl dark:bg-gray-800 my-auto">
       <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-          {{ isEditMode ? 'Editar vehículo' : 'Nuevo vehículo' }}
+          <span class="inline-flex items-center gap-2">
+            <Car class="w-5 h-5 text-gray-800 dark:text-white" />
+            {{ isEditMode ? 'Editar vehículo' : 'Nuevo vehículo' }}
+          </span>
         </h3>
         <button
           type="button"
@@ -447,30 +420,22 @@ watch(() => clienteSearch.value, () => {
 
         <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando vehículo...</div>
         <template v-else>
-          <h4 class="mb-4 text-base font-semibold dark:text-white">Información General</h4>
+          <h4 class="mb-4 text-base font-semibold dark:text-white">
+            <span class="inline-flex items-center gap-2">
+              <FileText class="w-4 h-4 text-gray-800 dark:text-white" />
+              Información General
+            </span>
+          </h4>
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div class="col-span-1 md:col-span-4">
               <label for="modal_veh_cliente" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente Propietario</label>
-              <input
+              <ClienteSearchSelect
                 id="modal_veh_cliente"
                 v-model="clienteSearch"
-                autocomplete="off"
-                placeholder="Buscar cliente por nombre o identificación..."
-                class="block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white"
-                @focus="showClienteDropdown = true"
-                @blur="async () => { await wait(150); showClienteDropdown = false; }"
+                placeholder="Buscar por nombre, cédula o teléfono"
+                @select="selectCliente"
+                @clear="clearCliente"
               />
-              <div v-if="showClienteDropdown && clienteOptions.length" class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600" style="position: relative;">
-                <button
-                  v-for="item in clienteOptions"
-                  :key="item.id"
-                  type="button"
-                  class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600"
-                  @mousedown="selectCliente(item)"
-                >
-                  {{ item.nombre }} <span class="text-gray-400 text-xs">({{ item.identificacion }})</span>
-                </button>
-              </div>
             </div>
             <div class="col-span-1">
               <label for="modal_veh_placa" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Placa</label>

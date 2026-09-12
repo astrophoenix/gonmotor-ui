@@ -20,6 +20,7 @@ import {
   getItemKey as getVehicleKey,
   stripPlacaDash,
   validatePlaca,
+  validateTelefono,
 } from '../../../shared/utils/sanitize';
 
 const clientId = new URLSearchParams(window.location.search).get('id');
@@ -134,8 +135,9 @@ function validateForm() {
     errors.email = 'Ingresa un correo electrónico válido.';
   }
 
-  if (!form.telefono || !form.telefono.trim()) {
-    errors.telefono = 'El teléfono es obligatorio.';
+  const telefonoError = validateTelefono(form.telefono);
+  if (telefonoError) {
+    errors.telefono = telefonoError;
   }
 
   if (!form.direccion || !form.direccion.trim()) {
@@ -425,7 +427,7 @@ onMounted(() => {
         </div>
         <div class="col-span-6 sm:col-span-3">
           <label for="telefono" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Teléfono</label>
-          <input id="telefono" v-model="form.telefono" maxlength="20" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.telefono ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+          <input id="telefono" v-model="form.telefono" maxlength="15" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.telefono ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
           <p v-if="clientErrors.telefono" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.telefono }}</p>
         </div>
         <div class="col-span-6 sm:col-span-3">

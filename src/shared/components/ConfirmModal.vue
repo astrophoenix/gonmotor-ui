@@ -19,6 +19,34 @@ const props = defineProps({
     type: String,
     default: ''
   },
+  title: {
+    type: String,
+    default: ''
+  },
+  icon: {
+    type: [Object, Function],
+    default: null
+  },
+  iconClass: {
+    type: String,
+    default: 'text-gray-400 dark:text-gray-600'
+  },
+  confirmText: {
+    type: String,
+    default: 'Sí, eliminar'
+  },
+  confirmingText: {
+    type: String,
+    default: 'Eliminando...'
+  },
+  variant: {
+    type: String,
+    default: 'danger'
+  },
+  confirmClass: {
+    type: String,
+    default: ''
+  },
   isDeleting: {
     type: Boolean,
     default: false
@@ -27,7 +55,15 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'confirm', 'cancel']);
 
-const title = computed(() => `Eliminar ${props.entityName}`);
+const title = computed(() => props.title || `Eliminar ${props.entityName}`);
+
+const variantClasses = {
+  danger: 'bg-red-600 hover:bg-red-700 focus:ring-red-300 dark:focus:ring-red-800',
+  primary: 'bg-primary-600 hover:bg-primary-700 focus:ring-primary-300 dark:bg-primary-700 dark:hover:bg-primary-800',
+  success: 'bg-green-600 hover:bg-green-700 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800',
+};
+
+const confirmButtonClass = computed(() => props.confirmClass || variantClasses[props.variant] || variantClasses.danger);
 
 const displayMessage = computed(() => {
   if (props.message) return props.message;
@@ -77,17 +113,17 @@ watch(
         </button>
 
         <div class="p-4 md:p-5 text-center">
-          <CircleAlert class="mx-auto mb-4 text-gray-400 w-12 h-12 dark:text-gray-600" />
+          <component :is="icon || CircleAlert" :class="['mx-auto mb-4 w-12 h-12', iconClass]" />
           <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">{{ title }}</h3>
           <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">{{ displayMessage }}</p>
           <div class="flex items-center space-x-4 justify-center">
             <button
               type="button"
-              class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-4 focus:ring-red-300 dark:focus:ring-red-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              :class="['inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg focus:ring-4 disabled:opacity-50 disabled:cursor-not-allowed', confirmButtonClass]"
               :disabled="isDeleting"
               @click="onConfirm"
             >
-              {{ isDeleting ? 'Eliminando...' : 'Sí, eliminar' }}
+              {{ isDeleting ? confirmingText : confirmText }}
             </button>
             <button
               type="button"

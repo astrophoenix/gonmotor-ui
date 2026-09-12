@@ -1,14 +1,17 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
-import { Camera, CheckCircle2, FilePlus2, FileText, Loader2, Trash2, Wand2, X, ZoomIn, ZoomOut, ListPlus } from 'lucide-vue-next';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { Camera, CheckCircle2, Clock, FileText, Loader2, Plus, Trash2, Wand2, Wrench, X, ZoomIn, ZoomOut } from 'lucide-vue-next';
+import { IconChecklist, IconPlayerPlayFilled } from '@tabler/icons-vue';
 import { request } from '../../../shared/services/httpClient';
+import CatalogoSelect from '../../../shared/components/CatalogoSelect.vue';
 import { inspeccionesService } from '../services/inspeccionesService';
 import { TESTIGO_KEYS, testigoDefaults, testigoPayload } from '../../../shared/config/testigos';
 import Alert from '../../../shared/components/Alert.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TestigosTablero from '../../../shared/components/TestigosTablero.vue';
 import TextImprover from '../../../shared/components/TextImprover.vue';
-import { sanitizeObservaciones } from '../../../shared/utils/sanitize';
+import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
+import { sanitizeDtc, sanitizeObservaciones, normalizarDecimal } from '../../../shared/utils/sanitize';
 
 const urlParams = new URLSearchParams(window.location.search);
 const inspeccionId = urlParams.get('id');
@@ -43,20 +46,77 @@ function syncTestigosDesdeForm() {
   Object.assign(testigos.value, testigoPayload(form));
 }
 
-const CAMPO_MAX_CHARS = 500;
+const CAMPO_MAX_CHARS = {
+  motivo_ingreso: 500,
+  diagnostico_tecnico: 1000,
+  recomendaciones: 1000,
+  codigos_dtc: 255,
+};
 
-[['motivo_ingreso', form.motivo_ingreso], ['diagnostico_tecnico', form.diagnostico_tecnico], ['recomendaciones', form.recomendaciones]].forEach(([key]) => {
+['motivo_ingreso', 'diagnostico_tecnico', 'recomendaciones', 'codigos_dtc'].forEach((key) => {
   watch(() => form[key], (val) => {
-    const clean = sanitizeObservaciones(val).slice(0, CAMPO_MAX_CHARS);
+    const clean = key === 'codigos_dtc'
+      ? sanitizeDtc(val, CAMPO_MAX_CHARS[key])
+      : sanitizeObservaciones(val).slice(0, CAMPO_MAX_CHARS[key]);
     if (clean !== val) form[key] = clean;
   });
 });
 
 const recepcion = ref(null);
 const estadoInspeccion = ref('');
-const tieneOrdenTrabajo = ref(false);
-const tieneCotizacionActiva = ref(false);
-const estaCongelada = computed(() => isEditMode && tieneOrdenTrabajo.value);
+
+const transicionEstado = ref(false);
+const showFinalizarModal = ref(false);
+
+function solicitarFinalizacion() {
+  if (transicionEstado.value) return;
+  showFinalizarModal.value = true;
+}
+
+async function confirmarFinalizar() {
+  await cambiarEstado('FINALIZADA');
+  showFinalizarModal.value = false;
+}
+
+async function cambiarEstado(nuevoEstado) {
+  if (!inspeccionId || transicionEstado.value) return;
+  transicionEstado.value = true;
+  try {
+    await inspeccionesService.update(inspeccionId, { estado: nuevoEstado });
+    if (nuevoEstado === 'FINALIZADA') {
+      window.location.assign(`/crud/inspecciones/ver/?id=${encodeURIComponent(inspeccionId)}&finalizada=1`);
+      return;
+    }
+    estadoInspeccion.value = nuevoEstado;
+    successMessage.value = 'Inspección iniciada. Ahora está en proceso.';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (error) {
+    showError(error);
+  } finally {
+    transicionEstado.value = false;
+  }
+}
+
+const estadoBadge = computed(() => {
+  const map = {
+    PENDIENTE: {
+      label: 'Pendiente',
+      color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+      icon: Clock,
+    },
+    EN_PROCESO: {
+      label: 'En Proceso',
+      color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+      icon: Wrench,
+    },
+    FINALIZADA: {
+      label: 'Finalizada',
+      color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+      icon: CheckCircle2,
+    },
+  };
+  return map[estadoInspeccion.value];
+});
 
 const PRIORIDADES = [
   { value: 'ALTA', label: 'Alta' },
@@ -76,6 +136,13 @@ const fotosInspeccion = reactive({ items: [] });
 const fotosEliminadas = ref([]);
 const fotosError = ref('');
 const fotoZoom = reactive({ visible: false, src: '', scale: 1 });
+
+watch(fotosInspeccion.items, (items) => {
+  items.forEach((foto) => {
+    const clean = sanitizeObservaciones(foto.descripcion || '').slice(0, 255);
+    if (clean !== foto.descripcion) foto.descripcion = clean;
+  });
+}, { deep: true });
 
 function abrirFotoZoom(foto) {
   const src = foto.preview || foto.url;
@@ -109,41 +176,91 @@ function toggleZoom() {
 
 const catalogoServicios = ref([]);
 const catalogoRepuestos = ref([]);
-const servicioPickerSearch = ref('');
-const repuestoPickerSearch = ref('');
-const showServicioPicker = ref(false);
-const showRepuestoPicker = ref(false);
 
-function toggleServicioPicker() {
-  showServicioPicker.value = !showServicioPicker.value;
-  if (showServicioPicker.value) showRepuestoPicker.value = false;
+function formatearItem(codigo, nombre) {
+  if (!codigo) return nombre;
+  const codigoTexto = String(codigo).trim();
+  return codigoTexto && !nombre.startsWith(codigoTexto)
+    ? `${codigoTexto} - ${nombre}`
+    : nombre;
 }
 
-function toggleRepuestoPicker() {
-  showRepuestoPicker.value = !showRepuestoPicker.value;
-  if (showRepuestoPicker.value) showServicioPicker.value = false;
+function focusInput(id) {
+  requestAnimationFrame(() => {
+    const el = document.getElementById(id);
+    if (el) el.focus();
+  });
 }
 
-function cerrarPickers() {
-  showServicioPicker.value = false;
-  showRepuestoPicker.value = false;
+function nuevaFilaServicio() {
+  return {
+    id: null,
+    sufijo: Date.now() + Math.random(),
+    servicio: null,
+    servicio_codigo: '',
+    servicio_nombre: '',
+    descripcion: '',
+    horas_estimadas: '1.00',
+    precio_referencial: '0.00',
+    es_sugerido: false,
+    prioridad: 'MEDIA',
+    error: '',
+  };
 }
 
-const serviciosFiltrados = computed(() => {
-  const term = servicioPickerSearch.value.trim().toLowerCase();
-  if (!term) return catalogoServicios.value;
-  return catalogoServicios.value.filter((s) =>
-    [s.codigo, s.nombre, s.marca].filter(Boolean).join(' ').toLowerCase().includes(term)
-  );
-});
+function nuevaFilaRepuesto() {
+  return {
+    id: null,
+    sufijo: Date.now() + Math.random(),
+    repuesto: null,
+    repuesto_codigo: '',
+    repuesto_nombre: '',
+    descripcion: '',
+    cantidad: '1.00',
+    precio_referencial: '0.00',
+    es_sugerido: false,
+    prioridad: 'MEDIA',
+    error: '',
+  };
+}
 
-const repuestosFiltrados = computed(() => {
-  const term = repuestoPickerSearch.value.trim().toLowerCase();
-  if (!term) return catalogoRepuestos.value;
-  return catalogoRepuestos.value.filter((r) =>
-    [r.codigo, r.nombre, r.marca].filter(Boolean).join(' ').toLowerCase().includes(term)
-  );
-});
+function agregarServicioVacio() {
+  const fila = nuevaFilaServicio();
+  serviciosDetectados.value.push(fila);
+  focusInput(`svc-desc-${fila.sufijo}`);
+}
+
+function agregarRepuestoVacio() {
+  const fila = nuevaFilaRepuesto();
+  repuestosSugeridos.value.push(fila);
+  focusInput(`rpt-desc-${fila.sufijo}`);
+}
+
+function seleccionarServicio(item, fila) {
+  fila.servicio = item.id;
+  fila.servicio_codigo = item.codigo || '';
+  fila.servicio_nombre = item.nombre || '';
+  fila.descripcion = formatearItem(item.codigo, item.nombre);
+  fila.horas_estimadas = '1.00';
+  fila.precio_referencial = String(item.precio_referencial ?? '0.00');
+  fila.es_sugerido = false;
+  fila.prioridad = 'MEDIA';
+  fila.error = '';
+  focusInput(`svc-horas-${fila.sufijo}`);
+}
+
+function seleccionarRepuesto(item, fila) {
+  fila.repuesto = item.id;
+  fila.repuesto_codigo = item.codigo || '';
+  fila.repuesto_nombre = item.nombre || '';
+  fila.descripcion = formatearItem(item.codigo, item.nombre);
+  fila.cantidad = '1.00';
+  fila.precio_referencial = String(item.precio_venta ?? '0.00');
+  fila.es_sugerido = false;
+  fila.prioridad = 'MEDIA';
+  fila.error = '';
+  focusInput(`rpt-cant-${fila.sufijo}`);
+}
 
 function loadCatalogo() {
   request('/api/servicios/opciones/').then((data) => {
@@ -161,51 +278,11 @@ async function loadDetalles() {
       request(`/api/ordenes/inspeccion-servicios/?inspeccion=${inspeccionId}`),
       request(`/api/ordenes/inspeccion-repuestos/?inspeccion=${inspeccionId}`),
     ]);
-    serviciosDetectados.value = Array.isArray(servData) ? servData : (servData.results || []);
-    repuestosSugeridos.value = Array.isArray(repData) ? repData : (repData.results || []);
+    serviciosDetectados.value = (Array.isArray(servData) ? servData : (servData.results || [])).map((s) => ({ ...s, sufijo: Date.now() + Math.random(), error: '' }));
+    repuestosSugeridos.value = (Array.isArray(repData) ? repData : (repData.results || [])).map((r) => ({ ...r, sufijo: Date.now() + Math.random(), error: '' }));
   } catch (error) {
     console.error('No se pudieron cargar los detalles de inspección:', error);
   }
-}
-
-function agregarServicio(item) {
-  const nuevo = {
-    id: null,
-    sufijo: Date.now(),
-    servicio: item.id,
-    servicio_codigo: item.codigo,
-    servicio_nombre: item.nombre,
-    descripcion: item.nombre,
-    horas_estimadas: '1.00',
-    precio_referencial: item.precio_referencial || '0.00',
-    es_sugerido: false,
-    prioridad: 'MEDIA',
-  };
-  if (!serviciosDetectados.value.some((s) => s.servicio === item.id)) {
-    serviciosDetectados.value.push(nuevo);
-  }
-  showServicioPicker.value = false;
-  servicioPickerSearch.value = '';
-}
-
-function agregarRepuesto(item) {
-  const nuevo = {
-    id: null,
-    sufijo: Date.now(),
-    repuesto: item.id,
-    repuesto_codigo: item.codigo,
-    repuesto_nombre: item.nombre,
-    descripcion: item.nombre,
-    cantidad: '1.00',
-    precio_referencial: item.precio_venta || '0.00',
-    es_sugerido: false,
-    prioridad: 'MEDIA',
-  };
-  if (!repuestosSugeridos.value.some((r) => r.repuesto === item.id)) {
-    repuestosSugeridos.value.push(nuevo);
-  }
-  showRepuestoPicker.value = false;
-  repuestoPickerSearch.value = '';
 }
 
 function quitarServicio(index) {
@@ -227,9 +304,9 @@ async function guardarDetalles(idInspeccion) {
   async function guardarServicio(s) {
     const payload = {
       servicio: s.servicio || null,
-      descripcion: s.descripcion || s.servicio_nombre || '',
-      horas_estimadas: String(s.horas_estimadas ?? '1.00'),
-      precio_referencial: String(s.precio_referencial ?? '0.00'),
+      descripcion: sanitizeObservaciones(String(s.descripcion || s.servicio_nombre || '')).slice(0, 255) || '',
+      horas_estimadas: normalizarDecimal(s.horas_estimadas, 0, 999.99, '1.00'),
+      precio_referencial: normalizarDecimal(s.precio_referencial, 0, 99999999.99, '0.00'),
       es_sugerido: Boolean(s.es_sugerido),
       prioridad: s.prioridad || 'MEDIA',
     };
@@ -251,9 +328,9 @@ async function guardarDetalles(idInspeccion) {
   async function guardarRepuesto(r) {
     const payload = {
       repuesto: r.repuesto || null,
-      descripcion: r.descripcion || r.repuesto_nombre || '',
-      cantidad: String(r.cantidad ?? '1.00'),
-      precio_referencial: String(r.precio_referencial ?? '0.00'),
+      descripcion: sanitizeObservaciones(String(r.descripcion || r.repuesto_nombre || '')).slice(0, 255) || '',
+      cantidad: normalizarDecimal(r.cantidad, 0, 9999.99, '1.00'),
+      precio_referencial: normalizarDecimal(r.precio_referencial, 0, 99999999.99, '0.00'),
       es_sugerido: Boolean(r.es_sugerido),
       prioridad: r.prioridad || 'MEDIA',
     };
@@ -410,10 +487,6 @@ function showError(error) {
   errorMessage.value = error.message || 'No fue posible completar la operación.';
 }
 
-function crearCotizacion() {
-  window.location.assign(`/crud/cotizaciones/nuevo/?inspeccion=${encodeURIComponent(inspeccionId)}`);
-}
-
 function validateForm() {
   formErrors.value = {};
   const errors = {};
@@ -432,6 +505,30 @@ function validateForm() {
 
   formErrors.value = errors;
   return Object.keys(errors).length === 0;
+}
+
+function validarDetalles() {
+  const incidencias = [];
+
+  serviciosDetectados.value.forEach((s, index) => {
+    const sinDescripcion = !s.descripcion || !String(s.descripcion).trim();
+    const horas = Number(s.horas_estimadas);
+    s.error = sinDescripcion ? 'La descripción es obligatoria.' : '';
+    if (sinDescripcion || Number.isNaN(horas) || horas < 0 || horas > 999.99) {
+      incidencias.push(`«${traducirErrorItem(s.descripcion, `Servicio ${index + 1}`)}»${sinDescripcion ? ' sin descripción' : ': horas fuera de rango (0 - 999.99)'}`);
+    }
+  });
+
+  repuestosSugeridos.value.forEach((r, index) => {
+    const sinDescripcion = !r.descripcion || !String(r.descripcion).trim();
+    const cantidad = Number(r.cantidad);
+    r.error = sinDescripcion ? 'La descripción es obligatoria.' : '';
+    if (sinDescripcion || Number.isNaN(cantidad) || cantidad < 0 || cantidad > 9999.99) {
+      incidencias.push(`«${traducirErrorItem(r.descripcion, `Repuesto ${index + 1}`)}»${sinDescripcion ? ' sin descripción' : ': cantidad fuera de rango (0 - 9999.99)'}`);
+    }
+  });
+
+  return incidencias.join('; ');
 }
 
 async function loadRecepcion() {
@@ -465,8 +562,6 @@ async function loadInspeccion() {
   try {
     const data = await inspeccionesService.getById(inspeccionId);
     estadoInspeccion.value = data.estado || '';
-    tieneOrdenTrabajo.value = Boolean(data.tiene_orden_trabajo);
-    tieneCotizacionActiva.value = Boolean(data.tiene_cotizacion_activa);
     const recepcionIdVal = data.recepcion && typeof data.recepcion === 'object' ? data.recepcion.id : data.recepcion;
     Object.assign(form, {
       recepcion: recepcionIdVal,
@@ -490,7 +585,6 @@ async function loadInspeccion() {
 }
 
 async function submit() {
-  if (estaCongelada.value) return;
   errorMessage.value = '';
   successMessage.value = '';
   formErrors.value = {};
@@ -504,14 +598,23 @@ async function submit() {
       return;
     }
 
+    const detalleError = validarDetalles();
+    if (detalleError) {
+      errorMessage.value = `Revisa los siguientes ítems: ${detalleError}`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      isSaving.value = false;
+      return;
+    }
+
     const payload = {
+      ...testigoPayload(form),
       recepcion: form.recepcion && typeof form.recepcion === 'object' ? form.recepcion.id : form.recepcion,
       tipo_inspeccion: form.tipo_inspeccion,
-      motivo_ingreso: form.motivo_ingreso?.trim() || '',
-      codigos_dtc: form.codigos_dtc?.trim() || '',
-      diagnostico_tecnico: form.diagnostico_tecnico.trim(),
-      recomendaciones: form.recomendaciones?.trim() || '',
-      ...testigoPayload(form),
+      motivo_ingreso: sanitizeObservaciones(form.motivo_ingreso || '').slice(0, 500).trim(),
+      codigos_dtc: sanitizeDtc(form.codigos_dtc, 255),
+      diagnostico_tecnico: sanitizeObservaciones(form.diagnostico_tecnico || '').slice(0, 1000).trim(),
+      recomendaciones: sanitizeObservaciones(form.recomendaciones || '').slice(0, 1000).trim(),
+      otros_testigos_observaciones: sanitizeObservaciones(String(form.otros_testigos_observaciones || '')).slice(0, 255),
     };
 
     if (isEditMode) {
@@ -560,11 +663,6 @@ onMounted(() => {
   loadInspeccion();
   loadDetalles();
   loadFotos();
-  document.addEventListener('click', cerrarPickers);
-});
-
-onBeforeUnmount(() => {
-  document.removeEventListener('click', cerrarPickers);
 });
 </script>
 
@@ -574,31 +672,48 @@ onBeforeUnmount(() => {
       <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
         <li><a href="/" class="text-gray-700 hover:text-primary-600 dark:text-gray-300">Inicio</a></li>
         <li class="text-gray-400">/ <a href="/crud/inspecciones/" class="hover:text-primary-600">Inspecciones</a></li>
-        <li v-if="recepcion" class="text-gray-400">/ <a :href="`/crud/recepciones/ver/?id=${recepcion.id}`" class="hover:text-primary-600">Recepción #{{ recepcion.id }}</a></li>
+        <li v-if="recepcion" class="text-gray-400">/ 
+          <a :href="`/crud/recepciones/ver/?id=${recepcion.id}`" class="hover:text-primary-600">Recepción #{{ recepcion.numero_recepcion || recepcion.id }}</a>
+        </li>
         <li class="text-gray-400">/ {{ isEditMode ? 'Editar' : 'Nueva' }} Inspección</li>
       </ol>
     </nav>
     <div class="flex items-center gap-3 flex-wrap">
       <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-        {{ isEditMode ? 'Editar Inspección' : 'Nueva Inspección' }}
+        {{ isEditMode ? (form.numero_inspeccion ? `Editar Inspección ${form.numero_inspeccion}` : 'Editar Inspección') : 'Nueva Inspección' }}
       </h1>
       <span
-        v-if="isEditMode"
-        class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+        v-if="isEditMode && estadoBadge"
+        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium"
+        :class="estadoBadge.color"
       >
-        N° {{ form.numero_inspeccion || 'Sin asignar' }}
+        <component :is="estadoBadge.icon" class="w-4 h-4" aria-hidden="true" />
+        {{ estadoBadge.label }}
       </span>
-      <button
-        v-if="isEditMode && estadoInspeccion === 'PENDIENTE'"
-        type="button"
-        :disabled="tieneCotizacionActiva"
-        :title="tieneCotizacionActiva ? 'Ya existe una cotización abierta para esta inspección. Edita la vigente.' : 'Generar una cotización desde este diagnóstico'"
-        class="inline-flex items-center px-4 py-2 ml-auto text-sm font-medium text-white rounded-lg bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed"
-        @click="crearCotizacion"
-      >
-        <FilePlus2 class="w-4 h-4 mr-2" />
-        Crear cotización
-      </button>
+      <div v-if="isEditMode" class="flex items-center gap-2 ml-auto flex-wrap">
+        <button
+          v-if="estadoInspeccion === 'PENDIENTE'"
+          type="button"
+          :disabled="transicionEstado"
+          title="Marcar la inspección como en proceso"
+          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 rounded-lg border border-blue-700 hover:bg-blue-50 focus:ring-4 focus:ring-blue-300 dark:text-blue-400 dark:border-blue-400 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          @click="cambiarEstado('EN_PROCESO')"
+        >
+          <IconPlayerPlayFilled class="w-4 h-4" />
+          Iniciar inspección
+        </button>
+        <button
+          v-if="estadoInspeccion === 'EN_PROCESO'"
+          type="button"
+          :disabled="transicionEstado"
+          title="Cerrar el diagnóstico de la inspección"
+          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 dark:bg-blue-700 dark:hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          @click="solicitarFinalizacion"
+        >
+          <IconChecklist class="w-4 h-4" />
+          Finalizar inspección
+        </button>
+      </div>
     </div>
   </div>
 
@@ -651,22 +766,15 @@ onBeforeUnmount(() => {
       <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando inspección...</div>
 
       <form class="grid grid-cols-1 gap-8" novalidate @submit.prevent="submit">
-        <Alert
-          v-if="estaCongelada"
-          type="warning"
-          title="Inspección en solo lectura"
-          message="Esta inspección ya se convirtió en orden de trabajo y no puede modificarse."
-        />
-        <fieldset :disabled="estaCongelada" class="grid grid-cols-1 gap-8">
         <div class="col-span-1 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="col-span-1">
             <label for="tipo_inspeccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de Inspección</label>
             <select id="tipo_inspeccion" v-model="form.tipo_inspeccion" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
               <option value="PREVENTIVO">Mantenimiento Preventivo</option>
-              <option value="CORRECTIVO">Reparación Correctiva</option>
-              <option value="DIAGNOSTICO">Solo Diagnóstico / Escaneo</option>
-              <option value="ESTETICA">Enderezada, Pintura o Detailing</option>
-              <option value="GARANTIA">Garantía / Retorno</option>
+              <option value="CORRECTIVO">Revisión Correctiva</option>
+              <option value="DIAGNOSTICO">Diagnóstico</option>
+              <option value="ESTETICA">Evaluación Estética</option>
+              <option value="GARANTIA">Revisión por Garantía</option>
             </select>
           </div>
           <div class="col-span-1">
@@ -701,7 +809,7 @@ onBeforeUnmount(() => {
                 {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
               </button>
             </div>
-            <textarea id="diagnostico_tecnico" v-model="form.diagnostico_tecnico" rows="4" maxlength="500" placeholder="Describe el diagnóstico realizado por el mecánico..." :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.diagnostico_tecnico ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
+            <textarea id="diagnostico_tecnico" v-model="form.diagnostico_tecnico" rows="4" maxlength="1000" placeholder="Describe el diagnóstico realizado por el mecánico..." :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.diagnostico_tecnico ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
             <p v-if="formErrors.diagnostico_tecnico" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.diagnostico_tecnico }}</p>
             <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error }}</p>
             <div v-if="mejorado && !error" class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
@@ -734,7 +842,7 @@ onBeforeUnmount(() => {
                 {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
               </button>
             </div>
-            <textarea id="recomendaciones" v-model="form.recomendaciones" rows="3" maxlength="500" placeholder="Describe las recomendaciones y plan de acción sugerido..." :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.recomendaciones ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
+            <textarea id="recomendaciones" v-model="form.recomendaciones" rows="3" maxlength="1000" placeholder="Describe las recomendaciones y plan de acción sugerido..." :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.recomendaciones ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
             <p v-if="formErrors.recomendaciones" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.recomendaciones }}</p>
             <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error }}</p>
             <div v-if="mejorado && !error" class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
@@ -790,6 +898,7 @@ onBeforeUnmount(() => {
               </div>
               <input
                 v-model="foto.descripcion"
+                maxlength="255"
                 placeholder="Descripción (opcional)"
                 class="mt-2 block w-full p-2 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-800 dark:text-white dark:border-gray-600"
               >
@@ -863,31 +972,7 @@ onBeforeUnmount(() => {
 
         <div class="col-span-1">
           <h5 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Servicios Detectados / Recomendados</h5>
-          <div class="relative mb-3">
-            <div class="flex gap-2">
-              <input v-model="servicioPickerSearch" type="search" placeholder="Buscar servicio del catálogo..." class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
-              <button
-                type="button"
-                class="inline-flex items-center justify-center w-9 h-9 text-lg leading-none font-medium text-primary-blue-700 rounded-lg border border-primary-blue-700 hover:bg-primary-blue-50 focus:ring-4 focus:ring-primary-blue-300 dark:border-primary-blue-400 dark:text-primary-blue-300 dark:hover:bg-gray-700"
-                @click.stop="toggleServicioPicker"
-              >
-                <ListPlus class="w-5 h-5" />
-              </button>
-            </div>
-            <div v-if="showServicioPicker" @click.stop class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto dark:bg-gray-700 dark:border-gray-600">
-              <button
-                v-for="item in serviciosFiltrados"
-                :key="item.id"
-                type="button"
-                class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600"
-                @click.stop="agregarServicio(item)"
-              >
-                <span class="font-medium">{{ item.codigo }}</span> - {{ item.nombre }}
-              </button>
-              <p v-if="!serviciosFiltrados.length" class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">Sin resultados. Registra servicios en Inventario → Servicios.</p>
-            </div>
-          </div>
-          <div v-if="serviciosDetectados.length" class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
+          <div class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-x-visible">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
               <thead class="bg-gray-100 dark:bg-gray-900">
                 <tr>
@@ -899,12 +984,24 @@ onBeforeUnmount(() => {
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                <tr v-if="!serviciosDetectados.length">
+                  <td colspan="5" class="p-4 text-sm text-center text-gray-500 dark:text-gray-400">No hay servicios detectados.</td>
+                </tr>
                 <tr v-for="(s, index) in serviciosDetectados" :key="s.id || s.sufijo">
                   <td class="p-2">
-                    <input v-model="s.descripcion" class="block w-full p-2 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                    <CatalogoSelect
+                      :input-id="`svc-desc-${s.sufijo}`"
+                      v-model="s.descripcion"
+                      :catalogo="catalogoServicios"
+                      placeholder="Busca y selecciona..."
+                      mensaje-sin-resultados="Sin coincidencias. Puedes escribir un servicio libre."
+                      :error="!!s.error"
+                      :error-message="s.error"
+                      @select="(item) => seleccionarServicio(item, s)"
+                    />
                   </td>
                   <td class="p-2">
-                    <input v-model="s.horas_estimadas" type="number" step="0.25" min="0" class="block w-20 p-2 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                    <input :id="`svc-horas-${s.sufijo}`" v-model="s.horas_estimadas" type="number" step="0.25" min="0" max="999.99" class="block w-20 p-2 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
                   </td>
                   <td class="p-2">
                     <select v-model="s.prioridad" class="block w-24 p-2 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
@@ -923,36 +1020,23 @@ onBeforeUnmount(() => {
               </tbody>
             </table>
           </div>
+          <div class="flex justify-end mt-3">
+            <button
+              type="button"
+              title="Añadir servicio detectado"
+              aria-label="Añadir servicio"
+              class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-blue-700 hover:bg-primary-blue-800 focus:ring-4 focus:ring-primary-blue-300 dark:bg-primary-blue-600 dark:hover:bg-primary-blue-700"
+              @click="agregarServicioVacio"
+            >
+              <Plus class="w-4 h-4" />
+              Añadir
+            </button>
+          </div>
         </div>
 
         <div class="col-span-1">
           <h5 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Repuestos Sugeridos</h5>
-          <div class="relative mb-3">
-            <div class="flex gap-2">
-              <input v-model="repuestoPickerSearch" type="search" placeholder="Buscar repuesto del catálogo..." class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
-              <button
-                type="button"
-                class="inline-flex items-center justify-center w-10 h-10 text-lg leading-none font-medium text-primary-blue-700 rounded-lg border border-primary-blue-700 hover:bg-primary-blue-50 focus:ring-4 focus:ring-primary-blue-300 dark:border-primary-blue-400 dark:text-primary-blue-300 dark:hover:bg-gray-700"
-                @click.stop="toggleRepuestoPicker"
-              >
-                <ListPlus class="w-5 h-5" />
-              </button>
-            </div>
-            <div v-if="showRepuestoPicker" @click.stop class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto dark:bg-gray-700 dark:border-gray-600">
-              <button
-                v-for="item in repuestosFiltrados"
-                :key="item.id"
-                type="button"
-                class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600"
-                @click.stop="agregarRepuesto(item)"
-              >
-                <span class="font-medium">{{ item.codigo }}</span> - {{ item.nombre }}
-                <span class="text-gray-400 text-xs">(stock {{ item.stock_actual }})</span>
-              </button>
-              <p v-if="!repuestosFiltrados.length" class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">Sin resultados. Registra repuestos en Inventario → Repuestos.</p>
-            </div>
-          </div>
-          <div v-if="repuestosSugeridos.length" class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
+          <div class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-x-visible">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
               <thead class="bg-gray-100 dark:bg-gray-900">
                 <tr>
@@ -964,12 +1048,25 @@ onBeforeUnmount(() => {
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                <tr v-if="!repuestosSugeridos.length">
+                  <td colspan="5" class="p-4 text-sm text-center text-gray-500 dark:text-gray-400">No hay repuestos sugeridos.</td>
+                </tr>
                 <tr v-for="(r, index) in repuestosSugeridos" :key="r.id || r.sufijo">
                   <td class="p-2">
-                    <input v-model="r.descripcion" class="block w-full p-2 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                    <CatalogoSelect
+                      :input-id="`rpt-desc-${r.sufijo}`"
+                      v-model="r.descripcion"
+                      :catalogo="catalogoRepuestos"
+                      placeholder="Busca y selecciona..."
+                      mostrar-stock
+                      mensaje-sin-resultados="Sin coincidencias. Puedes escribir un repuesto libre."
+                      :error="!!r.error"
+                      :error-message="r.error"
+                      @select="(item) => seleccionarRepuesto(item, r)"
+                    />
                   </td>
                   <td class="p-2">
-                    <input v-model="r.cantidad" type="number" step="0.5" min="0" class="block w-20 p-2 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                    <input :id="`rpt-cant-${r.sufijo}`" v-model="r.cantidad" type="number" step="0.5" min="0" max="9999.99" class="block w-20 p-2 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
                   </td>
                   <td class="p-2">
                     <select v-model="r.prioridad" class="block w-24 p-2 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
@@ -988,9 +1085,21 @@ onBeforeUnmount(() => {
               </tbody>
             </table>
           </div>
+          <div class="flex justify-end mt-3">
+            <button
+              type="button"
+              title="Añadir repuesto sugerido"
+              aria-label="Añadir repuesto"
+              class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-blue-700 hover:bg-primary-blue-800 focus:ring-4 focus:ring-primary-blue-300 dark:bg-primary-blue-600 dark:hover:bg-primary-blue-700"
+              @click="agregarRepuestoVacio"
+            >
+              <Plus class="w-4 h-4" />
+              Añadir
+            </button>
+          </div>
         </div>
 
-        <div v-if="!estaCongelada" class="col-span-1">
+        <div class="col-span-1">
           <FormSaveActions
             :is-loading="isSaving"
             :is-edit-mode="isEditMode"
@@ -998,8 +1107,21 @@ onBeforeUnmount(() => {
             :on-submit="submit"
           />
         </div>
-      </fieldset>
       </form>
     </div>
   </div>
+
+  <ConfirmModal
+    v-model="showFinalizarModal"
+    title="Finalizar inspección"
+    :message="'Al finalizar la inspección el diagnóstico queda cerrado. Podrás reabrirla desde el detalle si necesitas hacer cambios. ¿Deseas continuar?'"
+    :icon="CheckCircle2"
+    icon-class="text-primary-600 dark:text-primary-400"
+    confirm-text="Sí, finalizar"
+    confirming-text="Finalizando..."
+    variant="primary"
+    :is-deleting="transicionEstado"
+    @confirm="confirmarFinalizar"
+    @cancel="showFinalizarModal = false"
+  />
 </template>

@@ -1,17 +1,22 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { ArrowLeft, Car, FileText, Image as ImageIcon, SquarePen, TriangleAlert, X } from 'lucide-vue-next';
+import { IconFileInvoice, IconRefresh } from '@tabler/icons-vue';
 import { request } from '../../../shared/services/httpClient';
 import { inspeccionesService } from '../services/inspeccionesService';
 import MdiIcon from '../../../shared/components/MdiIcon.vue';
 import { TESTIGOS } from '../../../shared/config/testigos';
 import Alert from '../../../shared/components/Alert.vue';
+import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 
 const inspeccion = ref(null);
 const loading = ref(true);
 const error = ref('');
+const successMessage = ref('');
 const previewImg = ref('');
 const showImageModal = ref(false);
+const showReabrirModal = ref(false);
+const isReopening = ref(false);
 
 const params = new URLSearchParams(window.location.search);
 const inspeccionId = Number(params.get('id'));
@@ -91,7 +96,40 @@ function cerrarFoto() {
   previewImg.value = '';
 }
 
+function crearCotizacion() {
+  window.location.assign(`/crud/cotizaciones/nuevo/?inspeccion=${encodeURIComponent(inspeccionId)}`);
+}
+
+function solicitarReabrir() {
+  if (isReopening.value) return;
+  showReabrirModal.value = true;
+}
+
+async function confirmarReabrir() {
+  if (isReopening.value) return;
+  isReopening.value = true;
+  try {
+    await inspeccionesService.update(inspeccionId, { estado: 'EN_PROCESO' });
+    if (inspeccion.value) {
+      inspeccion.value = { ...inspeccion.value, estado: 'EN_PROCESO', estado_display: 'En proceso' };
+    }
+    showReabrirModal.value = false;
+    successMessage.value = 'Inspección reabierta. Ahora está en proceso.';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (fetchError) {
+    error.value = fetchError.message || 'No se pudo reabrir la inspección.';
+  } finally {
+    isReopening.value = false;
+  }
+}
+
 onMounted(async () => {
+  if (params.get('finalizada')) {
+    successMessage.value = 'Inspección finalizada correctamente.';
+    params.delete('finalizada');
+    const cleanUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}${window.location.hash}`;
+    window.history.replaceState({}, '', cleanUrl);
+  }
   if (!inspeccionId) {
     error.value = 'Falta el identificador de la inspección.';
     loading.value = false;
@@ -157,6 +195,27 @@ onMounted(async () => {
           <SquarePen class="w-4 h-4" />
           Editar
         </a>
+        <template v-if="estaFinalizada">
+          <button
+            type="button"
+            :disabled="isReopening"
+            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-amber-700 rounded-lg border border-amber-600 hover:bg-amber-50 focus:ring-4 focus:ring-amber-300 dark:text-amber-400 dark:border-amber-400 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="solicitarReabrir"
+          >
+            <IconRefresh class="w-4 h-4" />
+            Reabrir inspección
+          </button>
+          <button
+            type="button"
+            :disabled="tieneCotizacionActiva"
+            :title="tieneCotizacionActiva ? 'Ya existe una cotización activa para esta inspección.' : 'Generar una cotización desde este diagnóstico'"
+            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded-lg bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="crearCotizacion"
+          >
+            <IconFileInvoice class="w-4 h-4" />
+            Generar cotización
+          </button>
+        </template>
       </div>
     </template>
   </div>
@@ -170,6 +229,15 @@ onMounted(async () => {
         message=""
         dismissible
         @dismiss="error = ''"
+      />
+
+      <Alert
+        v-if="successMessage"
+        type="success"
+        :title="successMessage"
+        message=""
+        dismissible
+        @dismiss="successMessage = ''"
       />
 
       <div v-if="loading" class="p-6 text-center text-gray-500 dark:text-gray-400">
@@ -432,4 +500,18 @@ onMounted(async () => {
       <img :src="previewImg" class="max-h-[90vh] max-w-[90vw] object-contain" alt="Imagen ampliada" />
     </div>
   </div>
+
+  <ConfirmModal
+    v-model="showReabrirModal"
+    title="Reabrir inspección"
+    :message="'Se reabrirá la inspección para poder modificar el diagnóstico y volver a generar la cotización. El cliente deberá aceptar nuevamente la cotización antes de modificar la orden de trabajo. ¿Deseas continuar?'"
+    :icon="IconRefresh"
+    icon-class="text-amber-600 dark:text-amber-400"
+    confirm-text="Sí, reabrir"
+    confirming-text="Reabriendo..."
+    variant="primary"
+    :is-deleting="isReopening"
+    @confirm="confirmarReabrir"
+    @cancel="showReabrirModal = false"
+  />
 </template>

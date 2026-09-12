@@ -2,7 +2,7 @@
 import { onMounted, ref, watch, onUnmounted, computed } from 'vue';
 import { CalendarDays, Pencil, Trash2, Clock, Car, User, ArrowRightLeft, Search } from 'lucide-vue-next';
 import { useCitas } from '../composables/useCitas';
-import ConfirmDeleteModal from '../../../shared/components/ConfirmDeleteModal.vue';
+import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
 import CitaModal from './CitaModal.vue';
@@ -346,7 +346,7 @@ onUnmounted(() => {
     </template>
   </EntityTable>
 
-  <ConfirmDeleteModal
+  <ConfirmModal
     v-model="showDeleteModal"
     entity-name="cita"
     :item-name="citaToDelete ? `${citaToDelete.fecha_cita} ${citaToDelete.hora_cita}` : ''"

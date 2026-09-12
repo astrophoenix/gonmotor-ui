@@ -46,9 +46,12 @@ export function sanitizeEmail(value) {
   return (value == null ? '' : String(value)).replace(/\s+/g, '').trim();
 }
 
-/** Deja únicamente dígitos. */
-export function sanitizeTelefono(value) {
-  return (value == null ? '' : String(value)).replace(/\D/g, '');
+/**
+ * Deja únicamente dígitos y limita la longitud (15 por defecto:
+ * celular EC 10 dígitos + código de país, con margen).
+ */
+export function sanitizeTelefono(value, max = 15) {
+  return (value == null ? '' : String(value)).replace(/\D/g, '').slice(0, max);
 }
 
 /**
@@ -134,6 +137,24 @@ export function getItemKey(item, uidField = '_uid') {
 }
 
 /**
+ * Valida un teléfono. Devuelve '' si es válido o un mensaje de error.
+ * Reglas: obligatorio, solo dígitos, entre 7 y 15 dígitos.
+ */
+export function validateTelefono(value, min = 7, max = 15) {
+  const digitos = (value == null ? '' : String(value)).replace(/\D/g, '');
+  if (digitos === '') {
+    return 'El teléfono es obligatorio.';
+  }
+  if (digitos.length < min) {
+    return `El teléfono debe tener al menos ${min} dígitos.`;
+  }
+  if (digitos.length > max) {
+    return `El teléfono no puede superar los ${max} dígitos.`;
+  }
+  return '';
+}
+
+/**
  * Valida el kilometraje. Devuelve '' si es válido o un mensaje de error.
  * Reglas: obligatorio, número entero mayor a 0.
  */
@@ -171,4 +192,26 @@ export function validateAnio(value, currentYear = new Date().getFullYear() + 1) 
     return `El año debe estar entre 1900 y ${currentYear}.`;
   }
   return '';
+}
+
+/**
+ * Códigos de falla DTC OBD2: letras y dígitos en mayúsculas, separadores de
+ * lista (coma, punto y coma, espacio, punto, guion, slash). Máximo 255.
+ */
+export function sanitizeDtc(value, max = 255) {
+  return (value == null ? '' : String(value))
+    .toUpperCase()
+    .replace(/[^A-Z0-9,\s.;/-]/g, '')
+    .slice(0, max);
+}
+
+/**
+ * Redondea/clampa un valor decimal a un rango y a 2 decimales.
+ * Devuelve el valor por defecto si no es numérico.
+ */
+export function normalizarDecimal(value, min, max, def = '0.00') {
+  const num = Number(value);
+  if (Number.isNaN(num)) return def;
+  const clamped = Math.min(max, Math.max(min, num));
+  return clamped.toFixed(2);
 }

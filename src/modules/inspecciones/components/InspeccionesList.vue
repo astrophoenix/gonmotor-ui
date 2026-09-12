@@ -3,7 +3,7 @@ import { onMounted, ref, watch, onUnmounted } from 'vue';
 import { FileSearchCorner, Plus, SquarePen, FilePlus2, Trash2 } from 'lucide-vue-next';
 import { useInspecciones } from '../composables/useInspecciones';
 import { talleresService } from '../../configuracion/services/talleresService';
-import ConfirmDeleteModal from '../../../shared/components/ConfirmDeleteModal.vue';
+import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
 
@@ -62,8 +62,12 @@ const showDeleteModal = ref(false);
 const inspeccionToDelete = ref(null);
 let searchTimer;
 
-function handleEditar(id) {
-  window.location.assign(`/crud/inspecciones/editar/?id=${encodeURIComponent(id)}`);
+function handleEditar(inspeccion) {
+  if (inspeccion.estado === 'FINALIZADA') {
+    window.location.assign(`/crud/inspecciones/ver/?id=${encodeURIComponent(inspeccion.id)}`);
+    return;
+  }
+  window.location.assign(`/crud/inspecciones/editar/?id=${encodeURIComponent(inspeccion.id)}`);
 }
 
 function handleCrearCotizacion(id) {
@@ -226,7 +230,7 @@ onUnmounted(() => {
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ formatDate(item.created_at) }}</td>
         <td class="p-4 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <button type="button" title="Editar inspección" aria-label="Editar inspección" class="inline-flex items-center p-2 text-yellow-600 rounded-lg hover:bg-yellow-100 dark:text-yellow-400 dark:hover:bg-gray-700" @click="handleEditar(item.id)">
+            <button type="button" :title="item.estado === 'FINALIZADA' ? 'Ver inspección' : 'Editar inspección'" :aria-label="item.estado === 'FINALIZADA' ? 'Ver inspección' : 'Editar inspección'" class="inline-flex items-center p-2 text-yellow-600 rounded-lg hover:bg-yellow-100 dark:text-yellow-400 dark:hover:bg-gray-700" @click="handleEditar(item)">
               <SquarePen class="w-5 h-5" />
             </button>
             <button v-if="item.estado === 'PENDIENTE'" type="button" title="Crear cotización" aria-label="Crear cotización" class="inline-flex items-center p-2 text-green-600 rounded-lg hover:bg-green-100 dark:text-green-400 dark:hover:bg-gray-700" @click="handleCrearCotizacion(item.id)">
@@ -243,7 +247,7 @@ onUnmounted(() => {
     </template>
   </EntityTable>
 
-  <ConfirmDeleteModal
+  <ConfirmModal
     v-model="showDeleteModal"
     entity-name="inspección"
     :item-name="`#${inspeccionToDelete?.id || ''}`"

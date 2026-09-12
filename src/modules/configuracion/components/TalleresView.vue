@@ -4,7 +4,7 @@ import { Pencil, Trash2 } from 'lucide-vue-next';
 import { talleresService } from '../services/talleresService';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
-import ConfirmDeleteModal from '../../../shared/components/ConfirmDeleteModal.vue';
+import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import TallerModal from './TallerModal.vue';
 
@@ -172,7 +172,7 @@ onMounted(loadTalleres);
       </EntityTable>
     </div>
 
-    <ConfirmDeleteModal
+    <ConfirmModal
       v-model="showDeleteModal"
       entity-name="taller"
       :item-name="tallerToDelete?.nombre"
