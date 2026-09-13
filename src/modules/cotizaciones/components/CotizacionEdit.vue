@@ -767,42 +767,93 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Información desplegada cuando ya existe -->
-        <div v-if="isEditModeFlag && cotizacion" class="mb-6 p-5 bg-gray-50 rounded-lg border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
-          <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div v-if="isEditModeFlag && cotizacion" class="mb-8">
+          <h3 class="text-lg font-semibold text-gray-900 mb-1 dark:text-white">Información General</h3>
+          <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">
+            Datos del cliente, del vehículo y del origen de la cotización.
+          </p>
+
+          <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Cliente</h5>
+          <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <p class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Cliente</p>
-              <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.cliente_nombre || '-' }}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">{{ cotizacion.cliente_identificacion || '' }} {{ cotizacion.cliente_telefono ? `· ${cotizacion.cliente_telefono}` : '' }}</p>
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Nombre</dt>
+              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.cliente_nombre || '—' }}</dd>
             </div>
             <div>
-              <p class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Vehículo</p>
-              <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_placa || '-' }}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">{{ cotizacion.vehiculo_marca || '' }} {{ cotizacion.vehiculo_modelo || '' }}</p>
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Identificación</dt>
+              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.cliente_identificacion || '—' }}</dd>
             </div>
             <div>
-              <p class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Taller</p>
-              <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ sucursalNombre || '-' }}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">Emitida: {{ formatDate(createdAt) }}</p>
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Teléfono</dt>
+              <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ cotizacion.cliente_telefono || '—' }}</dd>
             </div>
-            <div v-if="inspeccionOrigen">
-              <p class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Origen</p>
-              <a :href="`/crud/inspecciones/editar/?id=${inspeccionOrigen}`" class="text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
-                Inspección {{ inspeccionTipo || '' }}
-              </a>
-              <p v-if="ordenTrabajoNumero" class="text-xs text-gray-500 dark:text-gray-400">OT: {{ ordenTrabajoNumero }}</p>
+            <div>
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Correo</dt>
+              <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ cotizacion.cliente_email || '—' }}</dd>
             </div>
-            <div v-if="recepcionOrigen">
-              <p class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Recepción</p>
-              <a :href="`/crud/recepciones/ver/?id=${recepcionOrigen}`" class="text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
-                Recepción #{{ recepcionOrigen }}
-              </a>
+          </dl>
+
+          <h5 class="mt-8 mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Vehículo</h5>
+          <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Placa</dt>
+              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_placa || '—' }}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Marca</dt>
+              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_marca || '—' }}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Modelo</dt>
+              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_modelo || '—' }}</dd>
+            </div>
+          </dl>
+
+          <h5 class="mt-8 mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Origen y Emisión</h5>
+          <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div v-if="cotizacion.inspeccion_origen">
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° Inspección</dt>
+              <dd class="mt-1 text-sm font-semibold">
+                <a :href="`/crud/inspecciones/editar/?id=${encodeURIComponent(cotizacion.inspeccion_origen)}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
+                  {{ cotizacion.inspeccion_numero || `#${cotizacion.inspeccion_origen}` }}
+                </a>
+                <span v-if="cotizacion.inspeccion_tipo" class="ml-2 text-xs font-medium text-gray-500 dark:text-gray-400">{{ cotizacion.inspeccion_tipo }}</span>
+              </dd>
+            </div>
+            <div v-if="cotizacion.recepcion_origen">
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° Recepción</dt>
+              <dd class="mt-1 text-sm font-semibold">
+                <a :href="`/crud/recepciones/ver/?id=${encodeURIComponent(cotizacion.recepcion_origen)}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
+                  {{ cotizacion.recepcion_numero || `#${cotizacion.recepcion_origen}` }}
+                </a>
+              </dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Taller</dt>
+              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ sucursalNombre || '—' }}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Emitida</dt>
+              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(createdAt) }}</dd>
+            </div>
+            <div v-if="ordenGeneradaNumero">
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Orden de trabajo generada</dt>
+              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ ordenGeneradaNumero }}</dd>
+            </div>
+          </dl>
+
+          <h5 class="mt-8 mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Validez y Aceptación</h5>
+          <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Validez de la oferta</dt>
+              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.validez_dias || '—' }} días</dd>
             </div>
             <div v-if="fechaAceptacion">
-              <p class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Aceptada</p>
-              <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(fechaAceptacion) }}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">{{ (METODOS_ACEPTACION.find((m) => m.value === metodoAceptacion) || {}).label || metodoAceptacion }}</p>
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Aceptada</dt>
+              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(fechaAceptacion) }}</dd>
+              <dd class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ (METODOS_ACEPTACION.find((m) => m.value === metodoAceptacion) || {}).label || metodoAceptacion }}</dd>
             </div>
-          </div>
+          </dl>
         </div>
 
         <fieldset :disabled="!esEditable" class="grid grid-cols-1 gap-8">

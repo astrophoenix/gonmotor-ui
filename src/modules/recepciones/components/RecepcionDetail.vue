@@ -4,7 +4,7 @@ import {
   Pencil,
   Plus,
   FileText,
-  FileDown,
+  FolderInput,
   FileCheck,
   FileSearch,
   TriangleAlert,
@@ -288,7 +288,7 @@ function irAInspeccion(recepcion) {
           <a href="/" class="inline-flex items-center text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Inicio</a>
         </li>
         <li class="text-gray-400">/ <a href="/crud/recepciones/" class="hover:text-primary-600">Recepciones</a></li>
-        <li class="text-gray-400">/ Detalle recepción / {{ numeroRecepcion }}</li>
+        <li class="text-gray-400">/ Recepción / {{ numeroRecepcion }}</li>
       </ol>
     </nav>
     <div class="flex items-center gap-3 flex-wrap">
@@ -427,7 +427,7 @@ function irAInspeccion(recepcion) {
 
         <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
-            <FileDown class="w-6 h-6 text-gray-800 dark:text-white" />
+            <FolderInput class="w-6 h-6 text-gray-800 dark:text-white" />
             Información de Ingreso
           </span>
         </h4>
@@ -454,7 +454,7 @@ function irAInspeccion(recepcion) {
             <dd class="mt-1 text-sm font-semibold">
               <a
                 :href="`/crud/inspecciones/ver/?id=${recepcion.inspecciones[0]?.id}`"
-                class="text-purple-600 hover:underline dark:text-purple-400"
+                class="text-blue-600 hover:underline dark:text-blue-400"
               >
                 {{ recepcion.inspecciones[0]?.numero_inspeccion || `#${recepcion.inspecciones[0]?.id}` }}
               </a>

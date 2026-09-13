@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { ArrowLeft, Car, FileText, Image as ImageIcon, SquarePen, TriangleAlert, X } from 'lucide-vue-next';
+import { ArrowLeft, FolderInput, FileText, Image as ImageIcon, SquarePen, TriangleAlert, WrenchIcon, X, Toolbox } from 'lucide-vue-next';
 import { IconFileInvoice, IconRefresh } from '@tabler/icons-vue';
 import { request } from '../../../shared/services/httpClient';
 import { inspeccionesService } from '../services/inspeccionesService';
@@ -30,11 +30,11 @@ const ESTADO_BADGES = {
 };
 
 const TIPO_BADGES = {
-  PREVENTIVO: { label: 'Preventivo', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
-  CORRECTIVO: { label: 'Correctivo', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' },
-  DIAGNOSTICO: { label: 'Diagnóstico / Escaneo', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300' },
-  ESTETICA: { label: 'Estética', color: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300' },
-  GARANTIA: { label: 'Garantía', color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300' },
+  PREVENTIVO: { label: 'Mantenimiento Preventivo', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
+  CORRECTIVO: { label: 'Revisión Correctiva', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' },
+  DIAGNOSTICO: { label: 'Diagnóstico', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300' },
+  ESTETICA: { label: 'Evaluación Estética', color: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300' },
+  GARANTIA: { label: 'Revisión por Garantía', color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300' },
 };
 
 const estadoBadge = computed(() => ESTADO_BADGES[inspeccion.value?.estado] || { label: inspeccion.value?.estado || '-', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' });
@@ -96,8 +96,28 @@ function cerrarFoto() {
   previewImg.value = '';
 }
 
-function crearCotizacion() {
-  window.location.assign(`/crud/cotizaciones/nuevo/?inspeccion=${encodeURIComponent(inspeccionId)}`);
+const isSyncingCotizacion = ref(false);
+
+async function crearCotizacion() {
+  if (isSyncingCotizacion.value) return;
+  const cotizacionId = inspeccion.value?.cotizacion_activa_id;
+  if (!cotizacionId) {
+    window.location.assign(`/crud/cotizaciones/nuevo/?inspeccion=${encodeURIComponent(inspeccionId)}`);
+    return;
+  }
+  isSyncingCotizacion.value = true;
+  try {
+    await request(`/api/cotizaciones/${encodeURIComponent(cotizacionId)}/sincronizar_inspeccion/`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  } catch (syncError) {
+    error.value = syncError.message || 'No se pudo actualizar la cotización con los cambios de la inspección.';
+    isSyncingCotizacion.value = false;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+  window.location.assign(`/crud/cotizaciones/editar/?id=${encodeURIComponent(cotizacionId)}`);
 }
 
 function solicitarReabrir() {
@@ -122,6 +142,10 @@ async function confirmarReabrir() {
     isReopening.value = false;
   }
 }
+
+const numeroInspeccion = computed(
+  () => inspeccion.value?.numero_inspeccion || `#${inspeccion.value?.id}`
+);
 
 onMounted(async () => {
   if (params.get('finalizada')) {
@@ -165,7 +189,7 @@ onMounted(async () => {
         <li class="inline-flex items-center">
           <a href="/crud/inspecciones/" class="text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Inspecciones</a>
         </li>
-        <li class="text-gray-400 dark:text-gray-500" aria-current="page">/ Ver</li>
+        <li class="text-gray-400">/ Inspección / {{ numeroInspeccion }}</li>
       </ol>
     </nav>
 
@@ -207,13 +231,13 @@ onMounted(async () => {
           </button>
           <button
             type="button"
-            :disabled="tieneCotizacionActiva"
-            :title="tieneCotizacionActiva ? 'Ya existe una cotización activa para esta inspección.' : 'Generar una cotización desde este diagnóstico'"
+            :disabled="isSyncingCotizacion"
+            :title="tieneCotizacionActiva ? 'Actualizar la cotización existente para reflejar los cambios de la inspección.' : 'Generar una cotización desde este diagnóstico'"
             class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded-lg bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed"
             @click="crearCotizacion"
           >
             <IconFileInvoice class="w-4 h-4" />
-            Generar cotización
+            {{ isSyncingCotizacion ? 'Sincronizando...' : (tieneCotizacionActiva ? 'Actualizar cotización' : 'Generar cotización') }}
           </button>
         </template>
       </div>
@@ -253,30 +277,26 @@ onMounted(async () => {
         </h4>
         <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Estado</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ inspeccion.estado_display || estadoBadge.label }}</dd>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° inspección</dt>
+            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ inspeccion.numero_inspeccion || '-' }}</dd>
           </div>
           <div>
             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Tipo de inspección</dt>
             <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ inspeccion.tipo_inspeccion_display || tipoBadge.label }}</dd>
           </div>
           <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° inspección</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ inspeccion.numero_inspeccion || '-' }}</dd>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Estado</dt>
+            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ inspeccion.estado_display || estadoBadge.label }}</dd>
           </div>
           <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Códigos de falla (DTC)</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ inspeccion.codigos_dtc || '—' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Recepción de origen</dt>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Cotización</dt>
             <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
               <a
-                v-if="recepcion"
-                :href="`/crud/recepciones/ver/?id=${recepcion.id}`"
+                v-if="tieneCotizacionActiva && inspeccion.cotizacion_activa_id"
+                :href="`/crud/cotizaciones/editar/?id=${encodeURIComponent(inspeccion.cotizacion_activa_id)}`"
                 class="text-blue-600 hover:underline dark:text-blue-400"
               >
-                {{ recepcion.numero_recepcion || `#${recepcion.id}` }}
+                {{ inspeccion.numero_cotizacion || `#${inspeccion.cotizacion_activa_id}` }}
               </a>
               <span v-else>—</span>
             </dd>
@@ -285,6 +305,25 @@ onMounted(async () => {
             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de registro</dt>
             <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(inspeccion.created_at) }}</dd>
           </div>
+
+          <div>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Códigos de falla (DTC)</dt>
+            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ inspeccion.codigos_dtc || '—' }}</dd>
+          </div>
+          <div class="sm:col-span-1 lg:col-span-2">
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Motivo de ingreso</dt>
+            <dd class="mt-1 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ inspeccion.motivo_ingreso || '—' }}</dd>
+          </div>
+
+          <div class="sm:col-span-2 lg:col-span-3">
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Diagnóstico</dt>
+            <dd class="mt-1 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ inspeccion.diagnostico_tecnico || '—' }}</dd>
+          </div>
+          <div class="sm:col-span-2 lg:col-span-3">
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Recomendaciones</dt>
+            <dd class="mt-1 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ inspeccion.recomendaciones || '—' }}</dd>
+          </div>
+
           <div v-if="tieneOrdenTrabajo" class="sm:col-span-2 lg:col-span-1">
             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Orden de trabajo</dt>
             <dd class="mt-1 text-sm font-semibold">
@@ -298,68 +337,73 @@ onMounted(async () => {
               <span v-else class="text-emerald-700 dark:text-emerald-400">{{ inspeccion.orden_trabajo_numero || '—' }}</span>
             </dd>
           </div>
-          <div v-if="tieneCotizacionActiva" class="sm:col-span-2 lg:col-span-1">
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Cotización</dt>
-            <dd class="mt-1 text-sm font-semibold">
-              <a
-                v-if="inspeccion.cotizacion_activa_id"
-                :href="`/crud/cotizaciones/editar/?id=${encodeURIComponent(inspeccion.cotizacion_activa_id)}`"
-                class="text-blue-600 hover:underline dark:text-blue-400"
-              >
-                Cotización activa
-              </a>
-              <span v-else class="text-blue-700 dark:text-blue-400">Cotización activa</span>
-            </dd>
-          </div>
         </dl>
-
-        <div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Motivo de ingreso</dt>
-            <dd class="mt-1 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ inspeccion.motivo_ingreso || '—' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Diagnóstico</dt>
-            <dd class="mt-1 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ inspeccion.diagnostico_tecnico || '—' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Recomendaciones</dt>
-            <dd class="mt-1 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ inspeccion.recomendaciones || '—' }}</dd>
-          </div>
-        </div>
 
         <div v-if="recepcion" class="mt-10">
           <h4 class="mb-4 text-xl font-semibold dark:text-white">
             <span class="inline-flex items-center gap-2">
-              <Car class="w-6 h-6 text-gray-800 dark:text-white" />
+              <FolderInput class="w-6 h-6 text-gray-800 dark:text-white" />
               Recepción asociada
             </span>
           </h4>
-          <div class="grid grid-cols-1 gap-6 text-sm md:grid-cols-3">
+          <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Vehículo</h5>
+          <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <p class="mb-2 text-xs font-semibold text-gray-500 uppercase dark:text-gray-400">Vehículo</p>
-              <div class="p-3 bg-white rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-600">
-                <p class="font-semibold text-gray-900 dark:text-white">{{ recepcion.vehiculo?.placa || recepcion.placa || '-' }}</p>
-                <p class="mt-1 text-gray-600 dark:text-gray-300">{{ recepcion.vehiculo?.marca || recepcion.marca }} {{ recepcion.vehiculo?.modelo || recepcion.modelo }}</p>
-                <p v-if="recepcion.vehiculo?.color || recepcion.color" class="mt-1 text-gray-500 dark:text-gray-400">Color: {{ recepcion.vehiculo?.color || recepcion.color }}</p>
-              </div>
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Placa</dt>
+              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ recepcion.vehiculo?.placa || recepcion.placa || '—' }}</dd>
             </div>
             <div>
-              <p class="mb-2 text-xs font-semibold text-gray-500 uppercase dark:text-gray-400">Cliente</p>
-              <div class="p-3 bg-white rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-600">
-                <p class="font-semibold text-gray-900 dark:text-white">{{ recepcion.cliente?.nombre || recepcion.cliente_nombre || '-' }}</p>
-                <p class="mt-1 text-gray-600 dark:text-gray-300">{{ recepcion.cliente?.identificacion || '-' }}</p>
-                <p class="mt-1 text-gray-600 dark:text-gray-300">{{ recepcion.cliente?.telefono || '-' }}</p>
-              </div>
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Marca</dt>
+              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ recepcion.vehiculo?.marca || recepcion.marca || '—' }}</dd>
             </div>
             <div>
-              <p class="mb-2 text-xs font-semibold text-gray-500 uppercase dark:text-gray-400">Ingreso</p>
-              <div class="p-3 bg-white rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-600">
-                <p class="text-gray-900 dark:text-white">{{ formatDate(recepcion.created_at) }}</p>
-                <p class="mt-1 text-gray-500 dark:text-gray-400">Recepción #{{ recepcion.numero_recepcion || recepcion.id }}</p>
-              </div>
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Modelo</dt>
+              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ recepcion.vehiculo?.modelo || recepcion.modelo || '—' }}</dd>
             </div>
-          </div>
+            <div v-if="recepcion.vehiculo?.color || recepcion.color">
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Color</dt>
+              <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ recepcion.vehiculo?.color || recepcion.color }}</dd>
+            </div>
+          </dl>
+
+          <h5 class="mt-8 mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Cliente</h5>
+          <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Nombre</dt>
+              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ recepcion.cliente?.nombre || recepcion.cliente_nombre || '—' }}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Identificación</dt>
+              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ recepcion.cliente?.identificacion || '—' }}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Teléfono</dt>
+              <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ recepcion.cliente?.telefono || '—' }}</dd>
+            </div>
+            <div v-if="recepcion.cliente?.email">
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Correo</dt>
+              <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ recepcion.cliente.email }}</dd>
+            </div>
+          </dl>
+
+          <h5 class="mt-8 mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos de Ingreso</h5>
+          <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de ingreso</dt>
+              <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ formatDate(recepcion.created_at) }}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° recepción</dt>
+              <dd class="mt-1 text-sm font-semibold">
+                <a
+                  :href="`/crud/recepciones/ver/?id=${recepcion.id}`"
+                  class="text-blue-600 hover:underline dark:text-blue-400"
+                >
+                  {{ recepcion.numero_recepcion || recepcion.id }}
+                </a>
+              </dd>
+            </div>
+          </dl>
         </div>
 
         <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
@@ -392,7 +436,7 @@ onMounted(async () => {
         <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
             <ImageIcon class="w-6 h-6 text-gray-800 dark:text-white" />
-            Fotos de la Inspección ({{ inspeccion.fotos?.length || 0 }})
+            Fotos de la Inspección
           </span>
         </h4>
         <div v-if="!inspeccion.fotos?.length" class="p-4 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
@@ -422,8 +466,8 @@ onMounted(async () => {
 
         <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
-            <FileText class="w-6 h-6 text-gray-800 dark:text-white" />
-            Servicios Detectados ({{ inspeccion.servicios_detectados?.length || 0 }})
+            <Toolbox class="w-6 h-6 text-gray-800 dark:text-white" />
+            Servicios / Mano de Obra
           </span>
         </h4>
         <div v-if="!inspeccion.servicios_detectados?.length" class="p-4 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
@@ -452,8 +496,8 @@ onMounted(async () => {
 
         <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
-            <Car class="w-6 h-6 text-gray-800 dark:text-white" />
-            Repuestos Sugeridos ({{ inspeccion.repuestos_sugeridos?.length || 0 }})
+            <WrenchIcon class="w-6 h-6 text-gray-800 dark:text-white" />
+            Repuestos
           </span>
         </h4>
         <div v-if="!inspeccion.repuestos_sugeridos?.length" class="p-4 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">

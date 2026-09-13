@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue';
-import { Camera, CheckCircle2, Clock, FileText, Loader2, Plus, Trash2, Wand2, Wrench, X, ZoomIn, ZoomOut } from 'lucide-vue-next';
+import { Camera, Toolbox, WrenchIcon, ImageIcon, TriangleAlert, CheckCircle2, Clock, FileText, Loader2, Plus, Trash2, Wand2, Wrench, X, ZoomIn, ZoomOut } from 'lucide-vue-next';
 import { IconChecklist, IconPlayerPlayFilled } from '@tabler/icons-vue';
 import { request } from '../../../shared/services/httpClient';
 import CatalogoSelect from '../../../shared/components/CatalogoSelect.vue';
@@ -856,12 +856,25 @@ onMounted(() => {
         </div>
 
         <div class="col-span-1">
-          <h5 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Testigos luminosos</h5>
+          <h4 class="mb-4 text-xl font-semibold dark:text-white">
+            <span class="inline-flex items-center gap-2">
+              <TriangleAlert class="w-6 h-6 text-gray-800 dark:text-white" />
+              Testigos luminosos
+            </span>
+          </h4>
+
+          
+
           <TestigosTablero v-model="testigos" />
         </div>
 
         <div class="col-span-1">
-          <h5 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Fotos de la Inspección</h5>
+          <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
+            <span class="inline-flex items-center gap-2">
+              <ImageIcon class="w-6 h-6 text-gray-800 dark:text-white" />
+              Fotos de la Inspección
+            </span>
+          </h4>
           <p class="mb-3 text-sm text-gray-500 dark:text-gray-400">
             Opcional: hasta {{ FOTO_MAX }} fotos de evidencia de los hallazgos (DTC en pantalla, desgastes, fugas, testigos encendidos).
             JPG, PNG o WebP de máximo 5 MB.
@@ -971,7 +984,12 @@ onMounted(() => {
         </div>
 
         <div class="col-span-1">
-          <h5 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Servicios Detectados / Recomendados</h5>
+          <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
+            <span class="inline-flex items-center gap-2">
+              <Toolbox class="w-6 h-6 text-gray-800 dark:text-white" />
+              Servicios / Mano de Obra
+            </span>
+          </h4>
           <div class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-x-visible">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
               <thead class="bg-gray-100 dark:bg-gray-900">
@@ -1035,7 +1053,12 @@ onMounted(() => {
         </div>
 
         <div class="col-span-1">
-          <h5 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Repuestos Sugeridos</h5>
+          <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
+            <span class="inline-flex items-center gap-2">
+              <WrenchIcon class="w-6 h-6 text-gray-800 dark:text-white" />
+              Repuestos
+            </span>
+          </h4>
           <div class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-x-visible">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
               <thead class="bg-gray-100 dark:bg-gray-900">
