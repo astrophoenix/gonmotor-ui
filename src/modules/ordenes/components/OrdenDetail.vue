@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { ArrowLeft, User, Car, ClipboardList, ReceiptText, CircleDollarSign, Wrench, Package, SquarePen } from 'lucide-vue-next';
+import { ArrowLeft, User, Car, ClipboardList, ReceiptText, CircleDollarSign, Wrench, Package, SquarePen, Camera, X } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
 import { ordenesService } from '../services/ordenesService';
 import Alert from '../../../shared/components/Alert.vue';
@@ -8,6 +8,7 @@ import Alert from '../../../shared/components/Alert.vue';
 const orden = ref(null);
 const loading = ref(true);
 const error = ref('');
+const previewFoto = ref(null);
 const ordenId = computed(() => {
   const params = new URLSearchParams(window.location.search);
   return params.get('id');
@@ -15,6 +16,22 @@ const ordenId = computed(() => {
 
 const cliente = computed(() => orden.value?.cliente || null);
 const vehiculo = computed(() => orden.value?.vehiculo || null);
+
+const fotosOrden = computed(() => orden.value?.fotos || []);
+const inspeccionInfo = computed(() => orden.value?.inspeccion || null);
+const fotosInspeccion = computed(() => inspeccionInfo.value?.fotos || []);
+const recepcionesConFotos = computed(() =>
+  (orden.value?.recepciones || []).filter((r) => r.fotos && r.fotos.length)
+);
+
+function abrirFoto(url) {
+  if (!url) return;
+  previewFoto.value = url;
+}
+
+function cerrarFoto() {
+  previewFoto.value = null;
+}
 
 const estadoBadge = computed(() => {
   const map = {
@@ -357,7 +374,74 @@ onMounted(async () => {
         <div v-else class="p-4 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
           Sin repuestos registrados.
         </div>
+
+        <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
+          <span class="inline-flex items-center gap-2">
+            <Camera class="w-6 h-6 text-gray-800 dark:text-white" />
+            Fotos y Evidencias
+          </span>
+        </h4>
+
+        <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Evidencia de la Orden</h5>
+        <div v-if="fotosOrden.length" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <figure v-for="foto in fotosOrden" :key="foto.id" class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
+            <button type="button" class="block w-full" @click="abrirFoto(foto.imagen)">
+              <img :src="foto.imagen" :alt="foto.descripcion || `Foto ${foto.id}`" class="w-full h-40 object-cover hover:opacity-90" />
+            </button>
+            <figcaption v-if="foto.descripcion" class="px-3 py-2 text-xs text-gray-600 dark:text-gray-300">{{ foto.descripcion }}</figcaption>
+          </figure>
+        </div>
+        <div v-else class="p-4 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
+          Sin fotos registradas en la orden de trabajo.
+        </div>
+
+        <h5 class="mt-8 mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Recepción del Vehículo</h5>
+        <template v-if="recepcionesConFotos.length">
+          <div v-for="recepcion in recepcionesConFotos" :key="recepcion.id" class="mb-6 last:mb-0">
+            <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">{{ recepcion.numero_recepcion || `Recepción #${recepcion.id}` }}</p>
+            <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+              <figure v-for="foto in recepcion.fotos" :key="foto.id || foto.tipo_vista" class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
+                <button type="button" class="block w-full" @click="abrirFoto(foto.imagen)">
+                  <img :src="foto.imagen" :alt="foto.tipo_vista_display" class="w-full h-32 object-cover hover:opacity-90" />
+                </button>
+                <figcaption class="px-2 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300">{{ foto.tipo_vista_display || foto.tipo_vista }}</figcaption>
+              </figure>
+            </div>
+          </div>
+        </template>
+        <div v-else class="p-4 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
+          Sin fotos de recepción asociadas.
+        </div>
+
+        <h5 class="mt-8 mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Inspección</h5>
+        <div v-if="fotosInspeccion.length" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <figure v-for="foto in fotosInspeccion" :key="foto.id" class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
+            <button type="button" class="block w-full" @click="abrirFoto(foto.imagen)">
+              <img :src="foto.imagen" :alt="foto.descripcion || `Foto ${foto.id}`" class="w-full h-40 object-cover hover:opacity-90" />
+            </button>
+            <figcaption v-if="foto.descripcion" class="px-3 py-2 text-xs text-gray-600 dark:text-gray-300">{{ foto.descripcion }}</figcaption>
+          </figure>
+        </div>
+        <div v-else class="p-4 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
+          Sin fotos de inspección asociadas.
+        </div>
       </template>
+    </div>
+  </div>
+
+  <!-- Zoom de foto -->
+  <div v-if="previewFoto" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/70" @click.self="cerrarFoto">
+    <div class="relative max-w-4xl w-full bg-white rounded-lg shadow-xl dark:bg-gray-800">
+      <button
+        type="button"
+        title="Cerrar"
+        aria-label="Cerrar foto ampliada"
+        class="absolute top-2 right-2 z-10 inline-flex items-center justify-center p-2 text-white bg-gray-900/60 rounded-full hover:bg-gray-900/80"
+        @click="cerrarFoto"
+      >
+        <X class="w-5 h-5" />
+      </button>
+      <img :src="previewFoto" alt="Foto ampliada" class="w-full max-h-[85vh] object-contain rounded-lg" />
     </div>
   </div>
 </template>
