@@ -148,7 +148,7 @@ async function exportExcel() {
     <button
       v-if="showAdd"
       type="button"
-      class="inline-flex items-center px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300 disabled:opacity-50"
+      class="inline-flex items-center px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-500 hover:bg-primary-600 focus:ring-4 focus:ring-primary-300 disabled:opacity-50"
       @click="goToAdd"
     >
       <Plus class="w-5 h-5 mr-1.5 -ml-1 text-white" />

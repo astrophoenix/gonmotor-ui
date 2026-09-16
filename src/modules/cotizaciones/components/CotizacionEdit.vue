@@ -694,7 +694,7 @@ onBeforeUnmount(() => {
         <button
           v-if="estado === 'RECHAZADA'"
           type="button"
-          class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 dark:bg-blue-700 dark:hover:bg-blue-800"
+          class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 dark:bg-primary-700 dark:hover:bg-primary-800"
           @click="abrirModal('REENVIAR')"
         >
           <Send class="w-4 h-4 mr-2" />

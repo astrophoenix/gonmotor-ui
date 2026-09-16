@@ -261,7 +261,7 @@ onMounted(async () => {
                 v-for="recepcion in orden.recepciones"
                 :key="recepcion.id"
                 :href="`/crud/recepciones/ver/?id=${recepcion.id}`"
-                class="text-blue-600 hover:underline dark:text-blue-400"
+                class="text-primary-600 hover:underline dark:text-primary-400"
               >
                 {{ recepcion.numero_recepcion || `#${recepcion.id}` }}
                 <span v-if="recepcion !== orden.recepciones[orden.recepciones.length - 1]" class="text-gray-400">, </span>

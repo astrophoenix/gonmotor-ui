@@ -1,9 +1,8 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch, nextTick } from 'vue';
-import { IconClipboardSearch } from '@tabler/icons-vue';
-
 import {
   FileText,
+  SquareArrowRightEnter,
   FileCheck,
   TriangleAlert,
   FileSearch,
@@ -16,32 +15,9 @@ import {
   Wand2,
   Loader2,
   X,
-  CreditCard,
-  Phone,
-  Mail,
-  CalendarDays,
-  Info,
-  Eye,
-  Lock,
-  Gauge,
-  Fuel,
-  Car,
-  Tag,
-  Users,
-  ClipboardList,
-  Search,
-  IdCardIcon,
-  TagIcon,
-  EvCharger,
-  Shapes,
-  PaintBucket,
-  NotebookPen,
-  Notebook
 } from 'lucide-vue-next';
-import { IconEngine, IconManualGearbox, IconAutomaticGearbox, IconGasStation } from '@tabler/icons-vue';
 import { recepcionesService } from '../services/recepcionesService';
 import { request } from '../../../shared/services/httpClient';
-import { API_BASE_URL } from '../../../shared/config/env';
 import { sanitizeObservaciones } from '../../../shared/utils/sanitize';
 import { testigoDefaults, testigoFromData, testigoPayload } from '../../../shared/config/testigos';
 import Alert from '../../../shared/components/Alert.vue';
@@ -51,7 +27,6 @@ import PhotoSlotGrid from '../../../shared/components/PhotoSlotGrid.vue';
 import ClientModal from '../../clientes/components/ClientModal.vue';
 import TextImprover from '../../../shared/components/TextImprover.vue';
 import ClienteSearchSelect from '../../../shared/components/ClienteSearchSelect.vue';
-import VehiculoSearchSelect from '../../../shared/components/VehiculoSearchSelect.vue';
 
 const recepcionId = new URLSearchParams(window.location.search).get('id');
 const isEditMode = Boolean(recepcionId);
@@ -152,19 +127,23 @@ const MAX_DETALLES_CARROCERIA = 20;
 
 const clienteSearch = ref('');
 const vehiculoSearch = ref('');
+const vehiculoSearchDisplay = ref('');
+const vehiculoOptions = ref([]);
+const showVehiculoDropdown = ref(false);
 const showClientCreateModal = ref(false);
+const vehiculoActiveIndex = ref(-1);
 const empleadoActiveIndex = ref(-1);
 const blueprintImageUrl = ref('');
 const marcas = ref([]);
 const detallesSyncVersion = ref(0);
 const blueprintError = ref('');
 const detallesErrors = ref({});
-const activeTab = ref('informacion');
 
 const empleados = ref([]);
 const recibidoPorSearch = ref('');
 const showEmpleadoDropdown = ref(false);
 const empleadoOptions = ref([]);
+const vehiculoDropdownRef = ref(null);
 const empleadoDropdownRef = ref(null);
 
 const firmaReceptorData = ref(null);
@@ -177,100 +156,6 @@ const clienteNoFirma = ref(false);
 const showContradiccionModal = ref(false);
 
 const esNoAceptada = computed(() => clienteNoFirma.value || (form.motivo_no_recepcion || '').trim() !== '');
-
-const tipoRecepcionLabel = computed(() => {
-  const map = {
-    MANTENIMIENTO: 'Mantenimiento',
-    'REPARACIÓN': 'Reparación',
-    DIAGNOSTICO: 'Diagnóstico',
-    ESTETICA: 'Estética',
-    GARANTIA: 'Garantía',
-    SINISTRO: 'Siniestro',
-    OTRO: 'Otro',
-  };
-  return map[form.tipo_recepcion] || form.tipo_recepcion || '—';
-});
-
-const FUEL_LEVELS = [
-  { value: 'VACIO', label: 'Vacío', fill: 0, icon: 'text-red-600 dark:text-red-500' },
-  { value: 'RESERVA', label: 'Reserva', fill: 1, icon: 'text-red-500 dark:text-red-400' },
-  { value: '1/4', label: '1/4', fill: 2, icon: 'text-orange-500' },
-  { value: '1/2', label: '1/2', fill: 3, icon: 'text-amber-500' },
-  { value: '3/4', label: '3/4', fill: 5, icon: 'text-lime-600' },
-  { value: 'LLENO', label: 'Lleno', fill: 6, icon: 'text-emerald-600' },
-];
-
-const SEGMENT_COLORS = [
-  'bg-gradient-to-t from-red-500 to-red-400 dark:from-red-700 dark:to-red-500',
-  'bg-gradient-to-t from-orange-500 to-orange-400 dark:from-orange-700 dark:to-orange-500',
-  'bg-gradient-to-t from-amber-500 to-amber-400 dark:from-amber-700 dark:to-amber-400',
-  'bg-gradient-to-t from-yellow-500 to-yellow-400 dark:from-yellow-700 dark:to-yellow-400',
-  'bg-gradient-to-t from-lime-500 to-lime-400 dark:from-lime-700 dark:to-lime-400',
-  'bg-gradient-to-t from-emerald-500 to-emerald-400 dark:from-emerald-700 dark:to-emerald-500',
-];
-
-const fuelFill = computed(() => {
-  const nivel = FUEL_LEVELS.find((l) => l.value === form.nivel_combustible);
-  return nivel ? nivel.fill : 0;
-});
-
-const fuelLabel = computed(() => {
-  const nivel = FUEL_LEVELS.find((l) => l.value === form.nivel_combustible);
-  return nivel ? nivel.label : form.nivel_combustible || '—';
-});
-
-const fuelIcon = computed(() => {
-  const nivel = FUEL_LEVELS.find((l) => l.value === form.nivel_combustible);
-  return nivel ? nivel.icon : 'text-gray-400';
-});
-
-function onFuelKeydown(event, index) {
-  if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(event.key)) return;
-  event.preventDefault();
-  let next = index;
-  if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = Math.min(FUEL_LEVELS.length - 1, index + 1);
-  if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = Math.max(0, index - 1);
-  if (next !== index) {
-    form.nivel_combustible = FUEL_LEVELS[next].value;
-  }
-}
-
-const transmisionLabel = computed(() => {
-  const map = { M: 'Manual / Mecánica', A: 'Automática', C: 'CVT' };
-  const value = form.vehiculo?.transmision || '';
-  return map[value] || value || '';
-});
-
-const transmisionIcon = computed(() => {
-  const type = form.vehiculo?.transmision || '';
-  if (type === 'M') return IconManualGearbox;
-  return IconAutomaticGearbox;
-});
-
-const combustibleLabel = computed(() => {
-  const map = {
-    GAS: 'Gasolina', DIE: 'Diésel', HIB: 'Híbrido', ELE: 'Eléctrico', GNV: 'Gas Natural Vehicular (GNV)',
-  };
-  const value = form.vehiculo?.combustible || form.vehiculo?.combustible || '';
-  return map[value] || value || '';
-});
-
-function resolveMediaUrl(url) {
-  if (!url) return '';
-  if (/^https?:\/\//i.test(url)) return url;
-  return `${API_BASE_URL.replace(/\/$/, '')}${url.startsWith('/') ? url : `/${url}`}`;
-}
-
-const vehiculoImagenSrc = computed(() => resolveMediaUrl(form.vehiculo?.imagen));
-
-const estadoRecepcionBadge = computed(() => {
-  const map = {
-    ACEPTADA: { label: 'Aceptada', classes: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
-    NO_ACEPTADA: { label: 'No Aceptada', classes: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' },
-    PENDIENTE: { label: 'Pendiente', classes: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
-  };
-  return map[form.estado] || map.PENDIENTE;
-});
 
 const FOTO_VISTAS = [
   { key: 'FRONTAL', label: 'Vista Frontal' },
@@ -558,11 +443,13 @@ async function loadRecepcion() {
       }
       if (data.vehiculo) {
         form.vehiculo_color = data.vehiculo.color || '';
-        vehiculoSearch.value = formatPlaca(data.vehiculo.placa);
+        vehiculoSearch.value = data.vehiculo.placa;
+        vehiculoSearchDisplay.value = formatPlaca(data.vehiculo.placa);
         await cargarBlueprint(data.vehiculo.grupo_blueprint);
       } else {
         form.vehiculo_color = '';
         vehiculoSearch.value = '';
+        vehiculoSearchDisplay.value = '';
       }
       Object.assign(testigos, testigoFromData(data));
       if (Array.isArray(data.fotos)) {
@@ -657,6 +544,25 @@ function onBlueprintClick(event) {
   marcas.value = [...marcas.value, { id: Date.now(), x: Math.round(x), y: Math.round(y), descripcion: '' }];
 }
 
+async function searchVehiculos() {
+  const term = vehiculoSearch.value.trim();
+  const params = new URLSearchParams({ ordering: 'placa', page: '1' });
+  if (term) params.set('search', term);
+  if (form.cliente?.id) params.set('cliente', String(form.cliente.id));
+
+  if (!term && !form.cliente?.id) {
+    vehiculoOptions.value = [];
+    return;
+  }
+
+  try {
+    const data = await request(`/api/vehiculos/?${params.toString()}`);
+    vehiculoOptions.value = Array.isArray(data?.results) ? data.results : [];
+  } catch (error) {
+    console.error('No se pudieron buscar vehículos:', error);
+  }
+}
+
 function selectCliente(cliente) {
   form.cliente = cliente;
   form.cliente_identificacion = cliente.identificacion || '';
@@ -666,12 +572,19 @@ function selectCliente(cliente) {
   form.vehiculo = null;
   form.vehiculo_color = '';
   vehiculoSearch.value = '';
+  vehiculoSearchDisplay.value = '';
+  searchVehiculos();
+  if (vehiculoOptions.value.length === 1) {
+    selectVehiculo(vehiculoOptions.value[0]);
+  }
 }
 
 function selectVehiculo(vehiculo) {
   form.vehiculo = vehiculo;
   form.vehiculo_color = vehiculo.color || '';
-  vehiculoSearch.value = formatPlaca(vehiculo.placa);
+  vehiculoSearch.value = vehiculo.placa;
+  vehiculoSearchDisplay.value = formatPlaca(vehiculo.placa);
+  showVehiculoDropdown.value = false;
   marcas.value = [];
   cargarBlueprint(vehiculo.grupo_blueprint);
 }
@@ -713,6 +626,8 @@ function clearVehiculo() {
   form.vehiculo = null;
   form.vehiculo_color = '';
   vehiculoSearch.value = '';
+  vehiculoSearchDisplay.value = '';
+  vehiculoOptions.value = [];
 }
 
 function moveActiveIndex(activeIndex, listLength, direction) {
@@ -725,6 +640,29 @@ function scrollActiveIntoView(containerRef, activeIndex) {
   if (!container) return;
   const el = container.querySelector(`[data-option-index="${activeIndex}"]`);
   if (el) el.scrollIntoView({ block: 'nearest' });
+}
+
+function onVehiculoKeydown(event) {
+  if (!vehiculoOptions.value.length) return;
+  if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    showVehiculoDropdown.value = true;
+    vehiculoActiveIndex.value = moveActiveIndex(vehiculoActiveIndex.value, vehiculoOptions.value.length, 1);
+    scrollActiveIntoView(vehiculoDropdownRef, vehiculoActiveIndex.value);
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault();
+    showVehiculoDropdown.value = true;
+    vehiculoActiveIndex.value = moveActiveIndex(vehiculoActiveIndex.value, vehiculoOptions.value.length, -1);
+    scrollActiveIntoView(vehiculoDropdownRef, vehiculoActiveIndex.value);
+  } else if (event.key === 'Enter') {
+    const item = vehiculoOptions.value[vehiculoActiveIndex.value];
+    if (item) {
+      event.preventDefault();
+      selectVehiculo(item);
+    }
+  } else if (event.key === 'Escape') {
+    showVehiculoDropdown.value = false;
+  }
 }
 
 function onEmpleadoKeydown(event) {
@@ -1011,7 +949,12 @@ async function ejecutarGuardado() {
   }
 }
 
+watch(vehiculoOptions, () => { vehiculoActiveIndex.value = -1; });
 watch(empleadoOptions, () => { empleadoActiveIndex.value = -1; });
+
+watch(() => vehiculoSearch.value, () => {
+  searchVehiculos();
+});
 
 watch(() => recibidoPorSearch.value, () => {
   if (!recibidoPorSearch.value.trim()) {
@@ -1063,45 +1006,24 @@ onMounted(() => {
       {{ isEditMode ? 'Editar recepción' : 'Nueva recepción' }}
     </h1>
   </div>
-  <div class="relative mx-auto max-w-6xl p-4 rounded-lg">
-    <ol class="flex items-center w-full text-sm font-medium text-center text-gray-500 dark:text-gray-400 sm:text-base">
-      <li class="flex md:w-full items-center after:content-[''] after:w-full after:h-1 after:bg-primary-600 after:inline-block after:mx-6 xl:after:mx-10 dark:after:bg-primary-500">
-          <span class="flex items-center">
-              <span class="me-2 inline-flex flex-none items-center justify-center w-6 h-6 rounded-full bg-primary-600 dark:bg-primary-500 text-white text-xs font-semibold whitespace-nowrap">1</span>
-              <span class="whitespace-nowrap">Recepción</span>
-          </span>
-      </li>
-      <li class="flex md:w-full items-center after:content-[''] after:w-full after:h-1 after:bg-gray-200 after:inline-block after:mx-6 xl:after:mx-10 dark:after:bg-gray-700">
-          <span class="flex items-center">
-              <span class="me-2 inline-flex flex-none items-center justify-center w-6 h-6 rounded-full bg-gray-400 dark:bg-gray-600 text-white text-xs font-semibold whitespace-nowrap">2</span>
-              <span class="whitespace-nowrap">Inspección</span>
-          </span>
-      </li>
-      <li class="flex md:w-full items-center after:content-[''] after:w-full after:h-1 after:bg-gray-200 after:inline-block after:mx-6 xl:after:mx-10 dark:after:bg-gray-700">
-          <span class="flex items-center">
-              <span class="me-2 inline-flex flex-none items-center justify-center w-6 h-6 rounded-full bg-gray-400 dark:bg-gray-600 text-white text-xs font-semibold whitespace-nowrap">3</span>
-              <span class="whitespace-nowrap">Cotización</span>
-          </span>
-      </li>
-      <li class="flex flex-none items-center">
-          <span class="flex items-center whitespace-nowrap">
-              <span class="me-2 inline-flex flex-none items-center justify-center w-6 h-6 rounded-full bg-gray-400 dark:bg-gray-600 text-white text-xs font-semibold whitespace-nowrap">4</span>
-              <span class="whitespace-nowrap">Orden de Trabajo</span>
-          </span>
-      </li>
-    </ol>
-  </div>
 
-  <div class="px-4 pt-4">
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
-      <div class="lg:col-span-3 space-y-4">
-      <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">
-        <div class="flex items-center gap-2 mb-4">
-          <FileText class="w-5 h-5 text-primary-blue-600 dark:text-primary-blue-400" />
-          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Cliente y Vehículo</h3>
-        </div>
-        <div class="grid grid-cols-5 gap-4">
-          <div class="col-span-3">
+  <div class="p-4">
+    <div class="relative mx-auto max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
+      <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
+      <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
+
+      <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando recepción...</div>
+      <form v-else-if="!savedError" class="space-y-6" novalidate @submit.prevent="submit">
+        <h4 class="mb-4 text-xl font-semibold dark:text-white">
+          <span class="inline-flex items-center gap-2">
+            <FileText class="w-6 h-6 text-gray-800 dark:text-white" />
+            Información General
+          </span>
+        </h4>
+
+        <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Cliente</h5>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div class="relative col-span-1">
             <label for="cliente" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente</label>
             <ClienteSearchSelect
               id="cliente"
@@ -1113,287 +1035,265 @@ onMounted(() => {
               @clear="clearCliente"
               @create="showClientCreateModal = true"
             />
-            <div class="mt-3 space-y-1.5">
-              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                <IdCardIcon class="w-3.5 h-3.5 shrink-0" /> Identificación: 
-                <span class="truncate font-bold text-gray-900 dark:text-white">{{ form.cliente_identificacion || '—' }}</span>
-              </div>
-              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono: 
-                <span class="truncate font-bold text-gray-900 dark:text-white">{{ form.cliente_telefono || '—' }}</span>
-              </div>
-              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                <Mail class="w-3.5 h-3.5 shrink-0" /> Correo: 
-                <span class="truncate font-bold text-gray-900 dark:text-white">{{ form.cliente_email || '—' }}</span>
-              </div>
-            </div>
           </div>
 
-          <div class="relative col-span-2">
-            <label for="vehiculo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo</label>
-            <VehiculoSearchSelect
-              id="vehiculo"
-              v-model="vehiculoSearch"
-              :cliente-id="form.cliente?.id || null"
-              :disabled="!form.cliente"
-              :placeholder="form.cliente ? 'Buscar placa...' : 'Selecciona un cliente primero'"
-              class="relative"
-              @select="selectVehiculo"
+          <div class="col-span-1">
+            <label for="cliente_identificacion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Identificación</label>
+            <input
+              id="cliente_identificacion"
+              :value="form.cliente_identificacion"
+              type="text"
+              disabled
+              class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400"
             />
-            <div class="mt-3 space-y-1.5">
-              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                <TagIcon class="w-3.5 h-3.5 shrink-0" />
-                Marca:
-                <span class="truncate font-bold text-gray-900 dark:text-white">{{ form.vehiculo ? form.vehiculo.marca : '—' }}</span>
-              </div>
-              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                <Shapes class="w-3.5 h-3.5 shrink-0" />
-                Modelo:
-                <span class="truncate font-bold text-gray-900 dark:text-white">{{ form.vehiculo ? form.vehiculo.modelo : '—' }}</span>
-              </div>
-              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                <PaintBucket class="w-3.5 h-3.5 shrink-0" />
-                Color:
-                <span class="truncate font-bold text-gray-900 dark:text-white">{{ form.vehiculo_color || '—' }}</span>
-                {{ form.kilometraje_actual ? `(${form.vehiculo.kilometraje_actual} km)` : '' }}
-              </div>
-            </div>
+          </div>
+
+          <div class="col-span-1">
+            <label for="cliente_telefono" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Teléfono</label>
+            <input
+              id="cliente_telefono"
+              :value="form.cliente_telefono"
+              type="text"
+              disabled
+              class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400"
+            />
+          </div>
+
+          <div class="col-span-1">
+            <label for="cliente_email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Correo</label>
+            <input
+              id="cliente_email"
+              :value="form.cliente_email"
+              type="text"
+              disabled
+              class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400"
+            />
           </div>
         </div>
-      </div>
-    <div class="relative p-6 bg-white rounded-lg shadow dark:bg-gray-800">
-      <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
-      <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
-      <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando recepción...</div>
-      <form v-else-if="!savedError" class="space-y-6" novalidate @submit.prevent="submit">
-        <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700">
-          <div class="border-b border-gray-200 dark:border-gray-700">
-            <nav class="flex flex-wrap -mb-px">
-              <button
-                type="button"
-                class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
-                :class="activeTab === 'informacion' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-                @click="activeTab = 'informacion'"
-              >
-                <Notebook class="w-4 h-4" />
-                Información Ingreso
-              </button>
-              <button
-                type="button"
-                class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
-                :class="activeTab === 'inspeccion' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-                @click="activeTab = 'inspeccion'"
-              >
-                <IconClipboardSearch class="w-4 h-4" />
-                Inspección visual
-              </button>
-              <button
-                type="button"
-                class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
-                :class="activeTab === 'evidencias' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-                @click="activeTab = 'evidencias'"
-              >
-                <Camera class="w-4 h-4" />
-                Evidencias
-              </button>
-              <button
-                type="button"
-                class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
-                :class="activeTab === 'autorizacion' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-                @click="activeTab = 'autorizacion'"
-              >
-                <NotebookPen class="w-4 h-4" />
-                Autorización
-              </button>
-            </nav>
-          </div>
-          <div>
-            <div v-show="activeTab === 'informacion'" class="p-4 space-y-4">
-              <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label for="fecha_ingreso" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Fecha Ingreso *</label>
-                    <input
-                      id="fecha_ingreso"
-                      v-model="form.fecha_ingreso"
-                      type="datetime-local"
-                      :class="['block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.fecha_ingreso ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']"
-                    />
-                    <p v-if="formErrors.fecha_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.fecha_ingreso }}</p>
-                  </div>
-                  <div>
-                    <label for="fecha_salida" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Fecha de Salida</label>
-                    <input
-                      id="fecha_salida"
-                      v-model="form.fecha_salida"
-                      type="datetime-local"
-                      :class="['block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.fecha_salida ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']"
-                    />
-                    <p v-if="formErrors.fecha_salida" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.fecha_salida }}</p>
-                  </div>
-                  <div>
-                      <label for="recibido_por" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Asesor *</label>
-                      <input
-                        id="recibido_por"
-                        v-model="recibidoPorSearch"
-                        autocomplete="off"
-                        placeholder="Buscar empleado..."
-                        :class="['block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.recibido_por ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']"
-                         @focus="showEmpleadoDropdown = true"
-                         @blur="async () => { await wait(150); showEmpleadoDropdown = false; }"
-                         @keydown="onEmpleadoKeydown"
-                      />
-                      <p v-if="formErrors.recibido_por" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.recibido_por }}</p>
-                      <div ref="empleadoDropdownRef" v-if="showEmpleadoDropdown && empleadoOptions.length" class="absolute z-10 w-full mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
-                        <button
-                          v-for="(item, index) in empleadoOptions"
-                          :key="item.id"
-                          :data-option-index="index"
-                          type="button"
-                          class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600"
-                          :class="index === empleadoActiveIndex ? 'bg-primary-blue-50 dark:bg-gray-600' : ''"
-                          @mouseenter="empleadoActiveIndex = index"
-                          @mousedown="selectEmpleado(item)"
-                        >
-                          {{ item.user?.first_name }} {{ item.user?.last_name }} - {{ item.rol_display || item.rol }}
-                        </button>
-                      </div>
-                    </div>
-                </div>
-              </div>
-              <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4">
-                  
-                  <div class="space-y-4">
-                    <TextImprover
-                      v-model="form.motivo_ingreso"
-                      contexto="motivo de ingreso"
-                      v-slot="{ mejorar, restaurar, mejorando, error, mejorado, tieneOriginal }"
-                    >
-                      <div class="flex items-center justify-between gap-2 mb-2">
-                        <label for="motivo_ingreso" class="block text-sm font-medium text-gray-900 dark:text-white">Motivo de Ingreso</label>
-                        <button
-                          type="button"
-                          title="Mejorar el texto con IA"
-                          :disabled="mejorando"
-                          class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-primary-blue-700 text-primary-blue-700 hover:bg-primary-blue-50 focus:ring-4 focus:ring-primary-blue-300 dark:border-primary-blue-400 dark:text-primary-blue-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                          @click="mejorar"
-                        >
-                          <Wand2 v-if="!mejorando" class="w-4 h-4" />
-                          <Loader2 v-else class="w-4 h-4 animate-spin" />
-                          {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
-                        </button>
-                      </div>
-                      <textarea id="motivo_ingreso" v-model="form.motivo_ingreso" rows="4" maxlength="500" placeholder="Describe la razón por la que el cliente trae el vehículo..." :class="['block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.motivo_ingreso ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']"></textarea>
-                      <p v-if="formErrors.motivo_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.motivo_ingreso }}</p>
-                      <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error }}</p>
-                      <div v-if="mejorado && !error" class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
-                        <CheckCircle2 class="w-5 h-5 shrink-0" />
-                        <div class="flex flex-wrap items-center gap-x-2">
-                          <p>Texto mejorado. Revisa antes de guardar.</p>
-                          <button v-if="tieneOriginal" type="button" class="text-sm font-medium underline hover:no-underline" @click="restaurar">Restaurar original</button>
-                        </div>
-                      </div>
-                    </TextImprover>
-                    <div>
-                      <label for="tipo_recepcion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de Recepción</label>
-                      <select id="tipo_recepcion" v-model="form.tipo_recepcion" :class="['block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.tipo_recepcion ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']">
-                        <option value="MANTENIMIENTO">Mantenimiento</option>
-                        <option value="REPARACIÓN">Reparación</option>
-                        <option value="DIAGNOSTICO">Diagnóstico</option>
-                        <option value="ESTETICA">Estética</option>
-                        <option value="GARANTIA">Garantía</option>
-                        <option value="SINISTRO">Siniestro</option>
-                        <option value="OTRO">Otro</option>
-                      </select>
-                      <p v-if="formErrors.tipo_recepcion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.tipo_recepcion }}</p>
-                    </div>
-                  </div>
-                </div>
 
-                <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4">
-                  <div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div class="space-y-4">
-                        <div>
-                          <label for="kilometraje_ingreso" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kilometraje</label>
-                          <input
-                            id="kilometraje_ingreso"
-                            v-model="form.kilometraje_ingreso"
-                            type="number"
-                            min="1"
-                            :class="['block w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.kilometraje_ingreso ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']"
-                          />
-                          <p v-if="formErrors.kilometraje_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.kilometraje_ingreso }}</p>
-                        </div>
-                        <div class="flex items-center gap-2 mt-10">
-                          <label class="relative inline-flex items-center cursor-pointer">
-                            <input v-model="form.ingreso_en_grua" type="checkbox" class="sr-only peer">
-                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-                            <span class="ml-3 text-sm font-medium text-gray-900 dark:text-white">¿Ingresó en grúa?</span>
-                          </label>
-                        </div>
-                      </div>
-                      <div class="space-y-4">
-                        <div>
-                          <label id="nivel_combustible_label" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nivel de Combustible</label>
-                          <div
-                            id="nivel_combustible"
-                            role="radiogroup"
-                            aria-labelledby="nivel_combustible_label"
-                            class="flex flex-col gap-2"
-                          >
-                            <div class="flex w-full gap-1 p-1 rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-800 dark:border-gray-600">
-                              <button
-                                v-for="(opcion, index) in FUEL_LEVELS"
-                                :key="opcion.value"
-                                type="button"
-                                role="radio"
-                                :aria-checked="form.nivel_combustible === opcion.value"
-                                :title="opcion.label"
-                                class="h-7 flex-1 rounded-md transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
-                                :class="opcion.fill <= fuelFill && fuelFill > 0
-                                  ? `${SEGMENT_COLORS[index]} shadow-inner`
-                                  : 'bg-white dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'"
-                                @click="form.nivel_combustible = opcion.value"
-                                @keydown="onFuelKeydown($event, index)"
-                              ></button>
-                            </div>
-                            <span class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white">
-                              <Fuel class="w-4 h-4 transition-colors duration-300" :class="fuelIcon" />
-                              {{ fuelLabel }}
-                            </span>
-                          </div>
-                        </div>
-                        <div v-if="form.ingreso_en_grua">
-                          <label for="datos_grua" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Datos de la grúa / Chófer</label>
-                          <textarea
-                            id="datos_grua"
-                            :value="form.datos_grua"
-                            @input="sanitizeDatosGrua($event.target.value)"
-                            placeholder="Datos Grúa / chófer"
-                            maxlength="80"
-                            rows="3"
-                            :class="['block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.datos_grua ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']"
-                          ></textarea>
-                          <p v-if="formErrors.datos_grua" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.datos_grua }}</p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                  </div>
-                </div>
-              </div>
+        <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Vehículo</h5>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div class="relative col-span-1">
+            <label for="vehiculo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Placa</label>
+            <input
+              id="vehiculo"
+              v-model="vehiculoSearchDisplay"
+              autocomplete="off"
+              placeholder="Buscar placa..."
+              :class="['block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.vehiculo ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']"
+               @focus="showVehiculoDropdown = true; vehiculoSearchDisplay = vehiculoSearch"
+               @blur="async () => { await wait(150); showVehiculoDropdown = false; vehiculoSearch = vehiculoSearchDisplay.replace(/-/g, '').toUpperCase(); vehiculoSearchDisplay = formatPlaca(vehiculoSearch); }"
+               @keydown="onVehiculoKeydown"
+            />
+            <p v-if="formErrors.vehiculo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.vehiculo }}</p>
+            <div ref="vehiculoDropdownRef" v-if="showVehiculoDropdown && vehiculoOptions.length" class="absolute z-10 w-full mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
+              <button
+                v-for="(item, index) in vehiculoOptions"
+                :key="item.id"
+                :data-option-index="index"
+                type="button"
+                class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600"
+                :class="index === vehiculoActiveIndex ? 'bg-primary-blue-50 dark:bg-gray-600' : ''"
+                @mouseenter="vehiculoActiveIndex = index"
+                @mousedown="selectVehiculo(item)"
+              >
+                {{ formatPlaca(item.placa) }}
+              </button>
             </div>
+          </div>
 
-            <div v-show="activeTab === 'inspeccion'" class="p-4">
+          <div class="col-span-1">
+            <label for="vehiculo_marca" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Marca</label>
+            <input
+              id="vehiculo_marca"
+              :value="form.vehiculo ? form.vehiculo.marca : ''"
+              type="text"
+              disabled
+              class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400"
+            />
+          </div>
 
-        <h5 class="mb-4 font-semibold dark:text-white">
+          <div class="col-span-1">
+            <label for="vehiculo_modelo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Modelo</label>
+            <input
+              id="vehiculo_modelo"
+              :value="form.vehiculo ? form.vehiculo.modelo : ''"
+              type="text"
+              disabled
+              class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400"
+            />
+          </div>
+
+          <div class="col-span-1">
+            <label for="vehiculo_color" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Color</label>
+            <input
+              id="vehiculo_color"
+              v-model="form.vehiculo_color"
+              type="text"
+              disabled
+              class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400"
+            />
+          </div>
+        </div>
+
+        <h4 class="mb-4 text-xl font-semibold dark:text-white">
+          <span class="inline-flex items-center gap-2">
+            <SquareArrowRightEnter class="w-6 h-6 text-gray-800 dark:text-white" />
+            Información de Ingreso
+          </span>
+        </h4>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div class="col-span-1">
+            <label for="fecha_ingreso" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Fecha de Ingreso</label>
+            <input
+              id="fecha_ingreso"
+              v-model="form.fecha_ingreso"
+              type="datetime-local"
+              :class="['block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.fecha_ingreso ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']"
+            />
+            <p v-if="formErrors.fecha_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.fecha_ingreso }}</p>
+          </div>
+
+          <div class="col-span-1">
+            <label for="fecha_salida" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Fecha de Salida (estimada)</label>
+            <input
+              id="fecha_salida"
+              v-model="form.fecha_salida"
+              type="datetime-local"
+              :class="['block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.fecha_salida ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']"
+            />
+            <p v-if="formErrors.fecha_salida" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.fecha_salida }}</p>
+          </div>
+
+           <div class="col-span-1">
+            <label for="tipo_recepcion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de Recepción</label>
+            <select id="tipo_recepcion" v-model="form.tipo_recepcion" :class="['block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.tipo_recepcion ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']">
+              <option value="MANTENIMIENTO">Mantenimiento</option>
+              <option value="REPARACIÓN">Reparación</option>
+              <option value="DIAGNOSTICO">Diagnóstico</option>
+              <option value="ESTETICA">Estética</option>
+              <option value="GARANTIA">Garantía</option>
+              <option value="SINISTRO">Siniestro</option>
+              <option value="OTRO">Otro</option>
+            </select>
+            <p v-if="formErrors.tipo_recepcion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.tipo_recepcion }}</p>
+          </div>
+
+          <div class="relative col-span-1">
+            <label for="recibido_por" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Recibido por</label>
+            <input
+              id="recibido_por"
+              v-model="recibidoPorSearch"
+              autocomplete="off"
+              placeholder="Buscar empleado..."
+              :class="['block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.recibido_por ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']"
+               @focus="showEmpleadoDropdown = true"
+               @blur="async () => { await wait(150); showEmpleadoDropdown = false; }"
+               @keydown="onEmpleadoKeydown"
+            />
+            <p v-if="formErrors.recibido_por" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.recibido_por }}</p>
+            <div ref="empleadoDropdownRef" v-if="showEmpleadoDropdown && empleadoOptions.length" class="absolute z-10 w-full mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
+              <button
+                v-for="(item, index) in empleadoOptions"
+                :key="item.id"
+                :data-option-index="index"
+                type="button"
+                class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600"
+                :class="index === empleadoActiveIndex ? 'bg-primary-blue-50 dark:bg-gray-600' : ''"
+                @mouseenter="empleadoActiveIndex = index"
+                @mousedown="selectEmpleado(item)"
+              >
+                {{ item.user?.first_name }} {{ item.user?.last_name }} - {{ item.rol_display || item.rol }}
+              </button>
+            </div>
+          </div>
+
+          <div class="col-span-1">
+            <label for="kilometraje_ingreso" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kilometraje de Ingreso</label>
+            <input
+              id="kilometraje_ingreso"
+              v-model="form.kilometraje_ingreso"
+              type="number"
+              min="1"
+              :class="['block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.kilometraje_ingreso ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']"
+            />
+            <p v-if="formErrors.kilometraje_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.kilometraje_ingreso }}</p>
+          </div>
+
+          <div class="col-span-1">
+            <label for="nivel_combustible" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nivel de Combustible</label>
+            <select id="nivel_combustible" v-model="form.nivel_combustible" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+              <option value="VACIO">Vacío</option>
+              <option value="RESERVA">Reserva</option>
+              <option value="1/4">1/4</option>
+              <option value="1/2">1/2</option>
+              <option value="3/4">3/4</option>
+              <option value="LLENO">Lleno</option>
+            </select>
+          </div>
+
+          <div class="col-span-1 flex items-center mt-6">
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input v-model="form.ingreso_en_grua" type="checkbox" class="sr-only peer">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+              <span class="ml-3 text-sm font-medium text-gray-900 dark:text-white">¿Ingresó en grúa?</span>
+            </label>
+          </div>
+
+          <div v-if="form.ingreso_en_grua" class="col-span-1">
+            <label for="datos_grua" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Datos de la grúa / Chófer</label>
+            <input
+              id="datos_grua"
+              :value="form.datos_grua"
+              @input="sanitizeDatosGrua($event.target.value)"
+              placeholder="Datos Grúa / chófer"
+              maxlength="80"
+              :class="['block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.datos_grua ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']"
+            />
+            <p v-if="formErrors.datos_grua" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.datos_grua }}</p>
+          </div>
+
+          <div class="col-span-1 col-span-4 md:col-span-4">
+            <TextImprover
+              v-model="form.motivo_ingreso"
+              contexto="motivo de ingreso"
+              v-slot="{ mejorar, restaurar, mejorando, error, mejorado, tieneOriginal }"
+            >
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <label for="motivo_ingreso" class="block text-sm font-medium text-gray-900 dark:text-white">Motivo de Ingreso</label>
+                <button
+                  type="button"
+                  title="Mejorar el texto con IA"
+                  :disabled="mejorando"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-primary-blue-700 text-primary-blue-700 hover:bg-primary-blue-50 focus:ring-4 focus:ring-primary-blue-300 dark:border-primary-blue-400 dark:text-primary-blue-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  @click="mejorar"
+                >
+                  <Wand2 v-if="!mejorando" class="w-4 h-4" />
+                  <Loader2 v-else class="w-4 h-4 animate-spin" />
+                  {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
+                </button>
+              </div>
+              <textarea id="motivo_ingreso" v-model="form.motivo_ingreso" rows="3" maxlength="500" placeholder="Describe la razón por la que el cliente trae el vehículo..." :class="['block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white', formErrors.motivo_ingreso ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '']"></textarea>
+              <p v-if="formErrors.motivo_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.motivo_ingreso }}</p>
+              <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error }}</p>
+              <div v-if="mejorado && !error" class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
+                <CheckCircle2 class="w-5 h-5 shrink-0" />
+                <div class="flex flex-wrap items-center gap-x-2">
+                  <p>Texto mejorado. Revisa antes de guardar.</p>
+                  <button v-if="tieneOriginal" type="button" class="text-sm font-medium underline hover:no-underline" @click="restaurar">Restaurar original</button>
+                </div>
+              </div>
+            </TextImprover>
+          </div>
+        </div>
+
+        <h4 class="mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
             <FileCheck class="w-6 h-6 text-gray-800 dark:text-white" />
             Inventario del Vehículo
           </span>
-        </h5>
+        </h4>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
@@ -1449,25 +1349,22 @@ onMounted(() => {
             </div>
           </div>
         </div>
-        
-        <hr class="my-6 border-gray-200 dark:border-gray-700" />
-        
-        <h5 class="mb-4 font-semibold dark:text-white">
+
+        <h4 class="mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
             <TriangleAlert class="w-6 h-6 text-gray-800 dark:text-white" />
             Testigos luminosos
           </span>
-        </h5>
+        </h4>
+
         <TestigosTablero v-model="testigos" />
-        
-        <hr class="my-6 border-gray-200 dark:border-gray-700" />
-        
-        <h5 class="mb-4 mt-4 font-semibold dark:text-white">
+
+        <h4 class="mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
             <FileSearch class="w-6 h-6 text-gray-800 dark:text-white" />
             Inspección Física / Carrocería
           </span>
-        </h5>
+        </h4>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="col-span-1">
@@ -1531,42 +1428,37 @@ onMounted(() => {
           </div>
         </div>
 
+        <h4 class="mb-1 text-xl font-semibold dark:text-white">
+          <span class="inline-flex items-center gap-2">
+            <Camera class="w-6 h-6 text-gray-800 dark:text-white" />     
+            Evidencia Fotográfica del Vehículo
+          </span>
+        </h4>
+        <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+          Debes adjuntar las 5 vistas obligatorias del estado del vehículo en el momento de la recepción.
+        </p>
+
+        <div v-if="formErrors.fotos" class="mb-4">
+          <Alert type="error" :message="formErrors.fotos" />
         </div>
 
-        <div v-show="activeTab === 'evidencias'" class="p-4">
-          <h5 class="mb-1 font-semibold dark:text-white">
-            <span class="inline-flex items-center gap-2">
-              <Camera class="w-6 h-6 text-gray-800 dark:text-white" />
-              Evidencia Fotográfica del Vehículo
-            </span>
-          </h5>
-          <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
-            Debes adjuntar las 5 vistas obligatorias del estado del vehículo en el momento de la recepción.
-          </p>
-
-          <div v-if="formErrors.fotos" class="mb-4">
-            <Alert type="error" :message="formErrors.fotos" />
-          </div>
-
-          <div class="mb-8">
-            <PhotoSlotGrid
-              ref="fotoGridRef"
-              :slots="FOTO_VISTAS"
-              :existing="fotosExisting"
-              :errors="fotoErrors"
-              previewable
-              @change="onFotosChange"
-            />
-          </div>
+        <div class="mb-8">
+          <PhotoSlotGrid
+            ref="fotoGridRef"
+            :slots="FOTO_VISTAS"
+            :existing="fotosExisting"
+            :errors="fotoErrors"
+            previewable
+            @change="onFotosChange"
+          />
         </div>
 
-        <div v-show="activeTab === 'autorizacion'" class="p-4">
-        <h5 class="mb-4 font-semibold dark:text-white">
+        <h4 class="mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
             <Signature class="w-6 h-6 text-gray-800 dark:text-white" />
             Firma y Aceptación
           </span>
-        </h5>
+        </h4>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="col-span-1">
@@ -1591,7 +1483,7 @@ onMounted(() => {
                 <BrushCleaning class="w-5 h-5 text-red-700 dark:text-red-400" />
                 Borrar firma receptor
               </button>
-              
+              <span class="text-xs text-gray-500 dark:text-gray-400">Firme del receptor</span>
             </div>
           </div>
 
@@ -1617,6 +1509,7 @@ onMounted(() => {
                 <BrushCleaning class="w-5 h-5 text-red-700 dark:text-red-400" />
                 Borrar firma cliente
               </button>
+              <span class="text-xs text-gray-500 dark:text-gray-400">Firma del cliente</span>
             </div>
           </div>
         </div>
@@ -1654,9 +1547,6 @@ onMounted(() => {
             <p v-if="formErrors.motivo_no_recepcion" class="mt-2 text-sm text-yellow-600 dark:text-yellow-500">{{ formErrors.motivo_no_recepcion }}</p>
           </div>
         </div>
-            </div>
-          </div>
-        </div>
 
         <div class="col-span-1 md:col-span-4">
           <FormSaveActions
@@ -1668,83 +1558,7 @@ onMounted(() => {
         </div>
       </form>
     </div>
-      </div>
-      <div class="lg:col-span-1 space-y-4">
-        <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">
-          <div class="flex items-center gap-2 mb-3">
-            <ClipboardList class="w-4 h-4 text-primary-blue-600 dark:text-primary-blue-400" />
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Resumen de recepción</h3>
-          </div>
-          <dl class="space-y-2 text-xs text-gray-600 dark:text-gray-400">
-            <div>
-              <dt class="font-medium text-gray-500 dark:text-gray-500">Cliente</dt>
-              <dd>{{ form.cliente?.nombre || '—' }}</dd>
-            </div>
-            <div>
-              <dt class="font-medium text-gray-500 dark:text-gray-500">Vehículo</dt>
-              <dd>{{ formatPlaca(form.vehiculo?.placa) || '—' }}</dd>
-            </div>
-            <div>
-              <dt class="font-medium text-gray-500 dark:text-gray-500">Tipo</dt>
-              <dd>{{ tipoRecepcionLabel }}</dd>
-            </div>
-            <div>
-              <dt class="font-medium text-gray-500 dark:text-gray-500">Estado</dt>
-              <dd><span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium" :class="estadoRecepcionBadge.classes">{{ estadoRecepcionBadge.label }}</span></dd>
-            </div>
-          </dl>
-        </div>
-
-        <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">
-          <div class="flex items-center gap-2 mb-3">
-            <Car class="w-4 h-4 text-primary-blue-600 dark:text-primary-blue-400" />
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Vehículo</h3>
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div v-if="vehiculoImagenSrc" class="h-full min-h-40 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-700">
-              <img :src="vehiculoImagenSrc" alt="Foto del vehículo" class="h-full w-full object-contain" />
-            </div>
-            <div v-else class="h-full min-h-40 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-xs text-gray-400 dark:bg-gray-700 dark:border-gray-600">
-              <div class="flex flex-col items-center gap-1.5 text-center">
-                <Camera class="w-6 h-6" />
-                <span>Foto del vehículo</span>
-              </div>
-            </div>
-            <dl class="space-y-2 text-xs text-gray-600 dark:text-gray-400">
-              <div>
-                <dt class="font-medium text-gray-700 dark:text-gray-300">
-                  <span class="inline-flex items-center gap-1.5">
-                    <IconEngine class="w-5 h-5 shrink-0 text-gray-700 dark:text-gray-400" stroke-width="1.8" />
-                    N° Motor:
-                  </span>
-                </dt>
-                <dd class="font-medium text-sm text-black dark:text-white">{{ form.vehiculo?.numero_motor || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="font-medium text-gray-700 dark:text-gray-300">
-                  <span class="inline-flex items-center gap-1.5">
-                    <component :is="transmisionIcon" class="w-5 h-5 shrink-0 text-gray-700 dark:text-gray-400" stroke-width="1.8" />
-                    Transmisión:
-                  </span>
-                </dt>
-                <dd class="font-medium text-sm text-black dark:text-white">{{ transmisionLabel || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="font-medium text-gray-700 dark:text-gray-300">
-                  <span class="inline-flex items-center gap-1.5">
-                    <IconGasStation class="w-5 h-5 shrink-0 text-gray-700 dark:text-gray-400" stroke-width="1.8" />
-                    Combustible:
-                  </span>
-                </dt>
-                <dd class="font-medium text-sm text-black dark:text-white">{{ combustibleLabel || '—' }}</dd>
-              </div>
-            </dl>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
-
 
   <div v-if="showContradiccionModal" class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 p-4">
     <div class="relative w-full max-w-md rounded-lg bg-white shadow-xl dark:bg-gray-800">

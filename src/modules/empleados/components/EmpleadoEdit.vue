@@ -286,7 +286,7 @@ onBeforeUnmount(() => {
 
         <div class="col-span-6 sm:col-span-3" v-if="isEditMode">
           <div class="flex items-center">
-            <input id="is_active" v-model="form.is_active" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+            <input id="is_active" v-model="form.is_active" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500">
             <label for="is_active" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Acceso activo</label>
           </div>
         </div>

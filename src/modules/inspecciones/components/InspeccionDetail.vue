@@ -294,7 +294,7 @@ onMounted(async () => {
               <a
                 v-if="tieneCotizacionActiva && inspeccion.cotizacion_activa_id"
                 :href="`/crud/cotizaciones/editar/?id=${encodeURIComponent(inspeccion.cotizacion_activa_id)}`"
-                class="text-blue-600 hover:underline dark:text-blue-400"
+                class="text-primary-600 hover:underline dark:text-primary-400"
               >
                 {{ inspeccion.numero_cotizacion || `#${inspeccion.cotizacion_activa_id}` }}
               </a>
@@ -397,7 +397,7 @@ onMounted(async () => {
               <dd class="mt-1 text-sm font-semibold">
                 <a
                   :href="`/crud/recepciones/ver/?id=${recepcion.id}`"
-                  class="text-blue-600 hover:underline dark:text-blue-400"
+                  class="text-primary-600 hover:underline dark:text-primary-400"
                 >
                   {{ recepcion.numero_recepcion || recepcion.id }}
                 </a>

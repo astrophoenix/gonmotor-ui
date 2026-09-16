@@ -454,7 +454,7 @@ function irAInspeccion(recepcion) {
             <dd class="mt-1 text-sm font-semibold">
               <a
                 :href="`/crud/inspecciones/ver/?id=${recepcion.inspecciones[0]?.id}`"
-                class="text-blue-600 hover:underline dark:text-blue-400"
+                class="text-primary-600 hover:underline dark:text-primary-400"
               >
                 {{ recepcion.inspecciones[0]?.numero_inspeccion || `#${recepcion.inspecciones[0]?.id}` }}
               </a>

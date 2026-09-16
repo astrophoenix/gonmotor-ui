@@ -56,6 +56,7 @@ watch(() => props.modelValue, (val) => {
     return;
   }
   searchTimer = setTimeout(searchClientes, 250);
+  showDropdown.value = true;
 });
 
 function selectCliente(cliente) {

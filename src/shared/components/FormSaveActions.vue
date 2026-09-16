@@ -39,7 +39,7 @@ function handleSubmit() {
       type="button"
       :disabled="isLoading"
       @click="handleSubmit"
-      class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300 disabled:opacity-50"
+      class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded-lg bg-primary-500 hover:bg-primary-600 focus:ring-4 focus:ring-primary-300 disabled:opacity-50"
     >
       <Save class="w-5 h-5 mr-1.5 -ml-1 text-white" />
       {{ isLoading ? 'Guardando...' : 'Guardar' }}

@@ -157,7 +157,7 @@ onUnmounted(() => {
         <td class="p-4 whitespace-nowrap">
           <a
             :href="`/crud/cotizaciones/editar/?id=${encodeURIComponent(item.id)}`"
-            class="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            class="font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
           >
             {{ item.numero_cotizacion }}
           </a>

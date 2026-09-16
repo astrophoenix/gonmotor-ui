@@ -7,27 +7,28 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-    --color-primary-50: #f2f5f7;
-    --color-primary-100: #e1e7eb;
-    --color-primary-200: #c5d1d9;
-    --color-primary-300: #9fb5c2;
-    --color-primary-400: #6b8b9b;
-    --color-primary-500: #2B4352;
-    --color-primary-600: #213440;
-    --color-primary-700: #192630;
-    --color-primary-800: #121920;
-    --color-primary-900: #0c1014;
-    
-    --color-primary-blue-50: #f0f5fb;
-    --color-primary-blue-100: #dce6f6;
-    --color-primary-blue-200: #b8ccec;
-    --color-primary-blue-300: #8eb3e2;
-    --color-primary-blue-400: #6499d8;
-    --color-primary-blue-500: #2461bf;
-    --color-primary-blue-600: #1d4f9f;
-    --color-primary-blue-700: #173d80;
-    --color-primary-blue-800: #112b61;
-    --color-primary-blue-900: #0a1942;
+    --color-primary-50: #EFF6FF;
+    --color-primary-100: #DBEAFE;
+    --color-primary-200: #BFDBFE;
+    --color-primary-300: #93C5FD;
+    --color-primary-400: #60A5FA;
+    --color-primary-500: #2563EB;
+    --color-primary-600: #1D4ED8;
+    --color-primary-700: #1E40AF;
+    --color-primary-800: #1E3A8A;
+    --color-primary-900: #172554;
+
+    /* Alias temporal: primary-blue-* apunta a la misma escala primaria azul */
+    --color-primary-blue-50: #EFF6FF;
+    --color-primary-blue-100: #DBEAFE;
+    --color-primary-blue-200: #BFDBFE;
+    --color-primary-blue-300: #93C5FD;
+    --color-primary-blue-400: #60A5FA;
+    --color-primary-blue-500: #2563EB;
+    --color-primary-blue-600: #1D4ED8;
+    --color-primary-blue-700: #1E40AF;
+    --color-primary-blue-800: #1E3A8A;
+    --color-primary-blue-900: #172554;
     
     --color-gray-workshop: #C6CCD4;
     --color-brand-50: #f2f5f7;

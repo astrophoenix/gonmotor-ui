@@ -175,7 +175,7 @@ onUnmounted(() => {
         <td class="p-4 whitespace-nowrap">
           <a
             :href="`/crud/ordenes/ver/?id=${encodeURIComponent(item.id)}`"
-            class="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            class="font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
           >
             {{ item.numero_orden || `#${item.id}` }}
           </a>
@@ -205,7 +205,7 @@ onUnmounted(() => {
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ formatDate(item.created_at) }}</td>
         <td class="p-4 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <button type="button" title="Ver orden" aria-label="Ver orden" class="inline-flex items-center p-2 text-blue-600 rounded-lg hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-gray-700" @click="handleVer(item.id)">
+            <button type="button" title="Ver orden" aria-label="Ver orden" class="inline-flex items-center p-2 text-primary-600 rounded-lg hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700" @click="handleVer(item.id)">
               <Eye class="w-5 h-5" />
             </button>
             <button type="button" title="Editar orden" aria-label="Editar orden" class="inline-flex items-center p-2 text-yellow-600 rounded-lg hover:bg-yellow-100 dark:text-yellow-400 dark:hover:bg-gray-700" @click="handleEditar(item.id)">

@@ -573,7 +573,7 @@ onMounted(() => {
           type="button"
           :disabled="transicionEstado"
           title="Marcar la inspección como en proceso"
-          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 rounded-lg border border-blue-700 hover:bg-blue-50 focus:ring-4 focus:ring-blue-300 dark:text-blue-400 dark:border-blue-400 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-700 rounded-lg border border-primary-700 hover:bg-primary-50 focus:ring-4 focus:ring-primary-300 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="cambiarEstado('EN_PROCESO')"
         >
           <IconPlayerPlayFilled class="w-4 h-4" />
@@ -584,7 +584,7 @@ onMounted(() => {
           type="button"
           :disabled="transicionEstado"
           title="Cerrar el diagnóstico de la inspección"
-          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 dark:bg-blue-700 dark:hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 dark:bg-primary-700 dark:hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="solicitarFinalizacion"
         >
           <IconChecklist class="w-4 h-4" />
