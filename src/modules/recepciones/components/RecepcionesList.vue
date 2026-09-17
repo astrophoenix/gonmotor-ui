@@ -1,8 +1,9 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted } from 'vue';
-import { ClipboardList, Pencil, FileText } from 'lucide-vue-next';
+import { ClipboardList, Pencil, FileText, Loader2 } from 'lucide-vue-next';
 import { useRecepciones } from '../composables/useRecepciones';
 import { talleresService } from '../../configuracion/services/talleresService';
+import { inspeccionesService } from '../../inspecciones/services/inspeccionesService';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
@@ -10,6 +11,7 @@ import EntityTable from '../../../shared/components/EntityTable.vue';
 const { recepciones, loading, error, loadRecepciones, currentPage, nextUrl, previousUrl, rangeLabel } = useRecepciones();
 
 const prefijoRecepcionBySucursal = ref({});
+const creandoId = ref(null);
 
 async function loadPrefijosRecepcion() {
   try {
@@ -97,16 +99,26 @@ function handleEditar(id) {
   window.location.assign(`/crud/recepciones/editar/?id=${encodeURIComponent(id)}`);
 }
 
-function handleCrearDiagnostico(id) {
-  window.location.assign(`/crud/inspecciones/nuevo/?recepcion=${id}`);
+async function crearDiagnostico(item) {
+  if (creandoId.value || !item?.id) return;
+  creandoId.value = item.id;
+  hideAlert();
+  try {
+    const inspeccion = await inspeccionesService.crearDesdeRecepcion(item.id);
+    if (inspeccion?.id) {
+      window.location.assign(`/crud/inspecciones/editar/?id=${inspeccion.id}&creada=1`);
+    }
+  } catch (err) {
+    showAlert('error', '', err?.message || 'No se pudo crear la inspección.');
+  } finally {
+    creandoId.value = null;
+  }
 }
 
 function handleVerDiagnostico(recepcion) {
-  if (recepcion.inspecciones?.length > 0) {
-    const diagnosticoId = recepcion.inspecciones[0].id;
+  const diagnosticoId = recepcion.inspecciones?.[0]?.id;
+  if (diagnosticoId) {
     window.location.assign(`/crud/inspecciones/editar/?id=${diagnosticoId}`);
-  } else {
-    handleCrearDiagnostico(recepcion.id);
   }
 }
 
@@ -237,8 +249,9 @@ onUnmounted(() => {
             <button v-if="item.estado === 'PENDIENTE'" type="button" title="Editar recepción" aria-label="Editar recepción" class="inline-flex items-center p-2 text-primary-600 rounded-lg hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700" @click="handleEditar(item.id)">
               <Pencil class="w-5 h-5" />
             </button>
-            <button v-if="item.estado === 'ACEPTADA'" type="button" :title="item.inspecciones?.length > 0 ? 'Ver Diagnóstico' : 'Crear Diagnóstico'" :aria-label="item.inspecciones?.length > 0 ? 'Ver Diagnóstico' : 'Crear Diagnóstico'" class="inline-flex items-center p-2 text-purple-600 rounded-lg hover:bg-purple-100 dark:text-purple-400 dark:hover:bg-gray-700" @click="handleVerDiagnostico(item)">
-              <FileText class="w-5 h-5" />
+            <button v-if="item.estado === 'ACEPTADA'" type="button" :disabled="creandoId === item.id" :title="item.inspecciones?.length > 0 ? 'Ver Diagnóstico' : 'Crear Diagnóstico'" :aria-label="item.inspecciones?.length > 0 ? 'Ver Diagnóstico' : 'Crear Diagnóstico'" class="inline-flex items-center p-2 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed dark:text-purple-400 dark:hover:bg-gray-700" @click="item.inspecciones?.length > 0 ? handleVerDiagnostico(item) : crearDiagnostico(item)">
+              <Loader2 v-if="creandoId === item.id" class="w-5 h-5 animate-spin" />
+              <FileText v-else class="w-5 h-5" />
             </button>
           </div>
         </td>

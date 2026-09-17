@@ -3,9 +3,17 @@ import { TESTIGOS } from '../config/testigos';
 import MdiIcon from './MdiIcon.vue';
 import { sanitizeObservaciones } from '../utils/sanitize';
 
+const props = defineProps({
+  disabled: {
+    type: Boolean,
+    default: false,
+  },
+});
+
 const modelValue = defineModel({ type: Object, required: true });
 
 function toggleTestigo(key) {
+  if (props.disabled) return;
   modelValue.value[key] = !modelValue.value[key];
 }
 
@@ -24,7 +32,8 @@ function getIconClasses(testigo) {
 
 function getCardClasses(testigo) {
   const isActive = modelValue.value[testigo.key];
-  const baseClass = 'flex flex-col items-center justify-center p-3 rounded-xl border-2 cursor-pointer transition-all duration-200 hover:scale-105';
+  const baseClass = 'flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all duration-200'
+    + (props.disabled ? ' cursor-default' : ' cursor-pointer hover:scale-105');
   if (!isActive) return `${baseClass} bg-gray-50 border-gray-200 dark:bg-gray-700 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500`;
   if (testigo.color === 'red') return `${baseClass} bg-red-50 border-red-300 dark:bg-red-900/20 dark:border-red-500 hover:border-red-400`;
   if (testigo.color === 'green') return `${baseClass} bg-green-50 border-green-300 dark:bg-green-900/20 dark:border-green-500 hover:border-green-400`;
@@ -56,6 +65,7 @@ function getCardClasses(testigo) {
         :value="modelValue.otros_testigos_observaciones"
         maxlength="255"
         placeholder="Otros testigos o notas adicionales..."
+        :disabled="disabled"
         class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600"
         @input="updateObservaciones($event.target.value)"
       />

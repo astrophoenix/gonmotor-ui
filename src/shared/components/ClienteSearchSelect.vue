@@ -22,7 +22,7 @@ const dropdownRef = ref(null);
 const inputRef = ref(null);
 
 let searchTimer = null;
-let suppressNextSearch = false;
+let changedByUser = false;
 
 function closeSoon() {
   window.setTimeout(() => { showDropdown.value = false; }, 150);
@@ -45,16 +45,15 @@ async function searchClientes() {
 
 watch(() => props.modelValue, (val) => {
   clearTimeout(searchTimer);
-  if (suppressNextSearch) {
-    suppressNextSearch = false;
-    return;
-  }
   if (!(val || '').trim()) {
     options.value = [];
     showDropdown.value = false;
+    changedByUser = false;
     emit('clear');
     return;
   }
+  if (!changedByUser) return;
+  changedByUser = false;
   searchTimer = setTimeout(searchClientes, 250);
   showDropdown.value = true;
 });
@@ -63,9 +62,13 @@ function selectCliente(cliente) {
   options.value = [];
   showDropdown.value = false;
   activeIndex.value = -1;
-  suppressNextSearch = true;
   emit('select', cliente);
   emit('update:modelValue', cliente.nombre || '');
+}
+
+function onTyping(event) {
+  changedByUser = true;
+  emit('update:modelValue', event.target.value);
 }
 
 function onKeydown(event) {
@@ -107,8 +110,13 @@ function focusInput() {
   inputRef.value?.focus();
 }
 
+function onFocus() {
+  showDropdown.value = true;
+  clearTimeout(searchTimer);
+  if ((props.modelValue || '').trim()) searchClientes();
+}
+
 function clearAll() {
-  suppressNextSearch = true;
   emit('update:modelValue', '');
   options.value = [];
   showDropdown.value = false;
@@ -133,8 +141,8 @@ defineExpose({ focusInput, clearAll });
           showCreate ? 'pr-16' : 'pr-3',
           error ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '',
         ]"
-        @input="emit('update:modelValue', $event.target.value)"
-        @focus="showDropdown = true"
+        @input="onTyping"
+        @focus="onFocus"
         @blur="closeSoon"
         @keydown="onKeydown"
       />

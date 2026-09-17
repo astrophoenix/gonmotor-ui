@@ -23,21 +23,21 @@ const dropdownRef = ref(null);
 const inputRef = ref(null);
 
 let searchTimer = null;
-let skipNextSearch = false;
-
-function suppressNextSearch() {
-  skipNextSearch = true;
-}
+let changedByUser = false;
 
 function focusInput() {
   inputRef.value?.focus();
 }
 
 function clearAll() {
-  skipNextSearch = true;
   emit('update:modelValue', '');
   options.value = [];
   showDropdown.value = false;
+}
+
+function onTyping(event) {
+  changedByUser = true;
+  emit('update:modelValue', event.target.value);
 }
 
 function closeSoon() {
@@ -99,16 +99,15 @@ watch(
   () => props.modelValue,
   (val) => {
     clearTimeout(searchTimer);
-    if (skipNextSearch) {
-      skipNextSearch = false;
-      return;
-    }
     if (!(val || '').trim()) {
       options.value = [];
       showDropdown.value = false;
+      changedByUser = false;
       emit('clear');
       return;
     }
+    if (!changedByUser) return;
+    changedByUser = false;
     searchTimer = setTimeout(searchVehiculos, 250);
     showDropdown.value = true;
   }
@@ -118,7 +117,6 @@ function selectVehiculo(vehiculo) {
   options.value = [];
   showDropdown.value = false;
   activeIndex.value = -1;
-  skipNextSearch = true;
   emit('select', vehiculo);
   emit('update:modelValue', formatPlaca(vehiculo.placa));
 }
@@ -177,7 +175,7 @@ defineExpose({ focusInput, clearAll });
           showCreate ? 'pr-16' : 'pr-3',
           error ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '',
         ]"
-        @input="emit('update:modelValue', $event.target.value)"
+        @input="onTyping"
         @focus="onFocus"
         @blur="closeSoon"
         @keydown="onKeydown"

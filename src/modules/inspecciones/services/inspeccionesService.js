@@ -41,6 +41,13 @@ export const inspeccionesService = {
     return request(`${ENDPOINT}?recepcion=${encodeURIComponent(recepcionId)}`);
   },
 
+  crearDesdeRecepcion(recepcionId) {
+    return request(
+      `/api/recepciones/${encodeURIComponent(recepcionId)}/crear-inspeccion/`,
+      { method: 'POST' }
+    );
+  },
+
   listFotos(inspeccionId) {
     return request(`/api/ordenes/inspeccion-fotos/?inspeccion=${encodeURIComponent(inspeccionId)}`);
   },

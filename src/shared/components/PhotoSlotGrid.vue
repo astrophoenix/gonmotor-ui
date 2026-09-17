@@ -27,6 +27,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  disabled: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits(['update:files', 'change']);
@@ -188,7 +192,7 @@ function hasAllFiles() {
         <span v-if="!files[s.key].previewUrl && !files[s.key].existingUrl" class="text-xs text-gray-500 dark:text-gray-400">Sin foto</span>
 
         <button
-          v-if="files[s.key].previewUrl || files[s.key].existingUrl"
+          v-if="!disabled && (files[s.key].previewUrl || files[s.key].existingUrl)"
           type="button"
           class="absolute top-1 right-1 inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-600 text-white hover:bg-red-700"
           aria-label="Eliminar foto"
@@ -198,7 +202,7 @@ function hasAllFiles() {
         </button>
       </div>
 
-      <label class="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-600">
+      <label v-if="!disabled" class="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-600">
         <Plus class="w-5 h-5" />
         {{ files[s.key].file || files[s.key].existingUrl ? 'Reemplazar' : 'Subir foto' }}
         <input

@@ -1,10 +1,14 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue';
-import { Toolbox, WrenchIcon, ImageIcon, TriangleAlert, CheckCircle2, Clock, FileText, Loader2, Plus, Trash2, Wand2, Wrench } from 'lucide-vue-next';
-import { IconChecklist, IconPlayerPlayFilled } from '@tabler/icons-vue';
+import { Toolbox, WrenchIcon, ImageIcon, TriangleAlert, CheckCircle2, Clock, FileText, Loader2, Plus, Trash2, Wand2, Wrench, ClipboardList, IdCardIcon, TagIcon, Shapes, PaintBucket, Phone, Mail, CameraIcon, Car, Camera } from 'lucide-vue-next';
+import { IconChecklist, IconPlayerPlayFilled, IconEngine, IconManualGearbox, IconAutomaticGearbox, IconGasStation } from '@tabler/icons-vue';
 import { request } from '../../../shared/services/httpClient';
+import { API_BASE_URL } from '../../../shared/config/env';
 import CatalogoSelect from '../../../shared/components/CatalogoSelect.vue';
 import PhotoUploadGrid from '../../../shared/components/PhotoUploadGrid.vue';
+import ClienteSearchSelect from '../../../shared/components/ClienteSearchSelect.vue';
+import VehiculoSearchSelect from '../../../shared/components/VehiculoSearchSelect.vue';
+import ClientModal from '../../clientes/components/ClientModal.vue';
 import { inspeccionesService } from '../services/inspeccionesService';
 import { TESTIGO_KEYS, testigoDefaults, testigoPayload } from '../../../shared/config/testigos';
 import Alert from '../../../shared/components/Alert.vue';
@@ -68,6 +72,175 @@ const estadoInspeccion = ref('');
 
 const transicionEstado = ref(false);
 const showFinalizarModal = ref(false);
+
+const activeTab = ref('informacion');
+const TAB_ORDER = ['informacion', 'testigos', 'fotos', 'servicios'];
+const activeTabIndex = computed(() => TAB_ORDER.indexOf(activeTab.value));
+
+function goToTab(direction) {
+  const next = activeTabIndex.value + direction;
+  if (next >= 0 && next < TAB_ORDER.length) {
+    activeTab.value = TAB_ORDER[next];
+  }
+}
+
+const TAB_ERROR_MAP = {
+  motivo_ingreso: 'Inspección',
+  diagnostico_tecnico: 'Inspección',
+  recomendaciones: 'Inspección',
+  cliente: 'Información General',
+  vehiculo: 'Información General',
+};
+
+const TAB_ORDER_LABELS = [
+  'Información General',
+  'Inspección',
+  'Testigos luminosos',
+  'Evidencia',
+  'Servicios & Repuestos',
+];
+
+const seccionesConErrores = computed(() => {
+  const encontradas = new Set();
+  Object.entries(TAB_ERROR_MAP).forEach(([campo, seccion]) => {
+    if (formErrors.value[campo]) encontradas.add(seccion);
+  });
+  return TAB_ORDER_LABELS.filter((seccion) => encontradas.has(seccion));
+});
+
+const mensajeErroresValidacion = computed(() => {
+  const secciones = seccionesConErrores.value;
+  if (secciones.length === 0) {
+    return 'Completa correctamente los campos obligatorios.';
+  }
+  return `Completa correctamente los campos obligatorios en: ${secciones.join(', ')}.`;
+});
+
+const clienteSearch = ref('');
+const vehiculoSearch = ref('');
+const showClientCreateModal = ref(false);
+const clienteSeleccionado = ref(null);
+const vehiculoSeleccionado = ref(null);
+
+function formatPlaca(placa) {
+  if (!placa) return '';
+  const cleaned = String(placa).replace(/-/g, '').toUpperCase();
+  if (cleaned.length <= 3) return cleaned;
+  return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}`;
+}
+
+function selectCliente(cliente) {
+  clienteSeleccionado.value = cliente;
+  clienteSearch.value = cliente.nombre || '';
+  clearVehiculo();
+}
+
+function clearCliente() {
+  clienteSeleccionado.value = null;
+  clienteSearch.value = '';
+  clearVehiculo();
+}
+
+function onClientCreated(cliente) {
+  showClientCreateModal.value = false;
+  if (cliente && cliente.id) {
+    selectCliente(cliente);
+    const nombre = cliente.nombre || 'el cliente';
+    successMessage.value = `Cliente "${nombre}" creado correctamente. Continúa con la inspección.`;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function selectVehiculo(vehiculo) {
+  vehiculoSeleccionado.value = vehiculo;
+  vehiculoSearch.value = formatPlaca(vehiculo.placa || '');
+}
+
+function clearVehiculo() {
+  vehiculoSeleccionado.value = null;
+  vehiculoSearch.value = '';
+}
+
+const clienteInfo = computed(() => {
+  if (recepcion.value) {
+    const cli = recepcion.value.cliente;
+    if (cli) return cli;
+    if (recepcion.value.cliente_nombre) {
+      return { nombre: recepcion.value.cliente_nombre, identificacion: '', telefono: '', email: '' };
+    }
+    return null;
+  }
+  return clienteSeleccionado.value || null;
+});
+
+const vehiculoInfo = computed(() => {
+  if (recepcion.value) return recepcion.value.vehiculo || null;
+  return vehiculoSeleccionado.value || null;
+});
+
+const tipoInspeccionLabel = computed(() => {
+  const map = {
+    PREVENTIVO: 'Mantenimiento Preventivo',
+    CORRECTIVO: 'Revisión Correctiva',
+    DIAGNOSTICO: 'Diagnóstico',
+    ESTETICA: 'Evaluación Estética',
+    GARANTIA: 'Revisión por Garantía',
+  };
+  return map[form.tipo_inspeccion] || form.tipo_inspeccion || '—';
+});
+
+const transmisionLabel = computed(() => {
+  const map = { M: 'Manual / Mecánica', A: 'Automática', C: 'CVT' };
+  const value = vehiculoInfo.value?.transmision || '';
+  return map[value] || value || '';
+});
+
+const transmisionIcon = computed(() => {
+  const type = vehiculoInfo.value?.transmision || '';
+  if (type === 'M') return IconManualGearbox;
+  return IconAutomaticGearbox;
+});
+
+const combustibleLabel = computed(() => {
+  const map = {
+    GAS: 'Gasolina',
+    DIE: 'Diésel',
+    HIB: 'Híbrido',
+    ELE: 'Eléctrico',
+    GNV: 'Gas Natural Vehicular (GNV)',
+  };
+  const value = vehiculoInfo.value?.combustible || '';
+  return map[value] || value || '';
+});
+
+function resolveMediaUrl(url) {
+  if (!url) return '';
+  if (/^https?:\/\//i.test(url)) return url;
+  return `${API_BASE_URL.replace(/\/$/, '')}${url.startsWith('/') ? url : `/${url}`}`;
+}
+
+const vehiculoImagenSrc = computed(() => resolveMediaUrl(vehiculoInfo.value?.imagen));
+
+const estadoResumenBadge = computed(() => {
+  const map = {
+    PENDIENTE: {
+      label: 'Pendiente',
+      classes: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900 dark:text-yellow-200 dark:border-yellow-700',
+      dot: 'bg-yellow-600 dark:bg-yellow-400',
+    },
+    EN_PROCESO: {
+      label: 'En Proceso',
+      classes: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700',
+      dot: 'bg-blue-600 dark:bg-blue-400',
+    },
+    FINALIZADA: {
+      label: 'Finalizada',
+      classes: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-700',
+      dot: 'bg-green-600 dark:bg-green-400',
+    },
+  };
+  return map[estadoInspeccion.value] || map.PENDIENTE;
+});
 
 function solicitarFinalizacion() {
   if (transicionEstado.value) return;
@@ -256,6 +429,10 @@ function quitarRepuesto(index) {
   if (removed && removed.id) repuestosEliminados.value.push(removed.id);
 }
 
+function traducirErrorItem(descripcion, fallback) {
+  return String(descripcion || fallback);
+}
+
 async function guardarDetalles(idInspeccion) {
   const inspeccionRef = Number(idInspeccion);
   if (!inspeccionRef) return;
@@ -379,6 +556,15 @@ function validateForm() {
     errors.recomendaciones = 'Las recomendaciones son obligatorias.';
   }
 
+  if (!recepcion.value) {
+    if (!clienteSeleccionado.value) {
+      errors.cliente = 'El cliente es obligatorio.';
+    }
+    if (!vehiculoSeleccionado.value) {
+      errors.vehiculo = 'El vehículo / placa es obligatorio.';
+    }
+  }
+
   formErrors.value = errors;
   return Object.keys(errors).length === 0;
 }
@@ -452,6 +638,15 @@ async function loadInspeccion() {
     syncTestigosDesdeForm();
     if (data.recepcion) {
       recepcion.value = data.recepcion;
+    } else {
+      if (data.cliente) {
+        clienteSeleccionado.value = data.cliente;
+        clienteSearch.value = data.cliente.nombre || '';
+      }
+      if (data.vehiculo) {
+        vehiculoSeleccionado.value = data.vehiculo;
+        vehiculoSearch.value = formatPlaca(data.vehiculo.placa);
+      }
     }
   } catch (error) {
     showError(error);
@@ -468,7 +663,7 @@ async function submit() {
 
   try {
     if (!validateForm()) {
-      errorMessage.value = 'Completa correctamente los campos obligatorios.';
+      errorMessage.value = mensajeErroresValidacion.value;
       window.scrollTo({ top: 0, behavior: 'smooth' });
       isSaving.value = false;
       return;
@@ -476,7 +671,8 @@ async function submit() {
 
     const detalleError = validarDetalles();
     if (detalleError) {
-      errorMessage.value = `Revisa los siguientes ítems: ${detalleError}`;
+      errorMessage.value = `Revisa los siguientes ítems en la pestaña "Servicios & Repuestos": ${detalleError}`;
+      activeTab.value = 'servicios';
       window.scrollTo({ top: 0, behavior: 'smooth' });
       isSaving.value = false;
       return;
@@ -485,6 +681,10 @@ async function submit() {
     const payload = {
       ...testigoPayload(form),
       recepcion: form.recepcion && typeof form.recepcion === 'object' ? form.recepcion.id : form.recepcion,
+      ...(!recepcion.value ? {
+        cliente: clienteSeleccionado.value?.id || null,
+        vehiculo: vehiculoSeleccionado.value?.id || null,
+      } : {}),
       tipo_inspeccion: form.tipo_inspeccion,
       motivo_ingreso: sanitizeObservaciones(form.motivo_ingreso || '').slice(0, 500).trim(),
       codigos_dtc: sanitizeDtc(form.codigos_dtc, 255),
@@ -555,7 +755,7 @@ onMounted(() => {
         <li class="text-gray-400">/ {{ isEditMode ? 'Editar' : 'Nueva' }} Inspección</li>
       </ol>
     </nav>
-    <div class="flex items-center gap-3 flex-wrap">
+    <div class="flex flex-wrap items-center justify-between gap-3">
       <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
         {{ isEditMode ? (form.numero_inspeccion ? `Editar Inspección ${form.numero_inspeccion}` : 'Editar Inspección') : 'Nueva Inspección' }}
       </h1>
@@ -590,336 +790,613 @@ onMounted(() => {
           <IconChecklist class="w-4 h-4" />
           Finalizar inspección
         </button>
+          <FormSaveActions
+          :is-loading="isSaving"
+          :is-edit-mode="isEditMode"
+          cancel-href="/crud/inspecciones/"
+          :on-submit="submit"
+        />
       </div>
     </div>
   </div>
 
-  <div class="p-4">
-    <div class="relative mx-auto max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
-      <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
-      <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
-
-      <!--div v-if="recepcion" class="p-5 mb-6 bg-gray-50 rounded-lg border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
-        <div class="flex items-center mb-4">
-          <svg class="w-5 h-5 mr-2 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16h1a1 1 0 0 0 1-1V9.5H5V15a1 1 0 0 0 1 1h1m10 0v.5A1.5 1.5 0 0 1 15.5 18h-1A1.5 1.5 0 0 1 13 16.5V16m4 0h-4m-6 0v.5A1.5 1.5 0 0 1 7.5 18h-1A1.5 1.5 0 0 1 5 16.5V16m0-6.5h14M8 4h8l2.5 5.5H11.5l-1-2H9l-1 2H5.5L8 4Z"/>
-          </svg>
-          <h4 class="text-base font-semibold text-gray-900 dark:text-white">Recepción asociada</h4>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
-          <div>
-            <p class="mb-2 text-xs font-semibold text-gray-500 uppercase dark:text-gray-400">Vehículo</p>
-            <div class="p-3 bg-white rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-600">
-              <p class="font-semibold text-gray-900 dark:text-white">{{ recepcion.vehiculo?.placa || recepcion.placa || '-' }}</p>
-              <p class="mt-1 text-gray-600 dark:text-gray-300">{{ recepcion.vehiculo?.marca || recepcion.marca }} {{ recepcion.vehiculo?.modelo || recepcion.modelo }}</p>
-              <p v-if="recepcion.vehiculo?.color || recepcion.color" class="mt-1 text-gray-500 dark:text-gray-400">Color: {{ recepcion.vehiculo?.color || recepcion.color }}</p>
-            </div>
-          </div>
-          <div>
-            <p class="mb-2 text-xs font-semibold text-gray-500 uppercase dark:text-gray-400">Cliente</p>
-            <div class="p-3 bg-white rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-600">
-              <p class="font-semibold text-gray-900 dark:text-white">{{ recepcion.cliente?.nombre || recepcion.cliente_nombre || '-' }}</p>
-              <p class="mt-1 text-gray-600 dark:text-gray-300">{{ recepcion.cliente?.identificacion || '-' }}</p>
-              <p class="mt-1 text-gray-600 dark:text-gray-300">{{ recepcion.cliente?.telefono || '-' }}</p>
-            </div>
-          </div>
-          <div>
-            <p class="mb-2 text-xs font-semibold text-gray-500 uppercase dark:text-gray-400">Ingreso</p>
-            <div class="p-3 bg-white rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-600">
-              <p class="text-gray-900 dark:text-white">{{ new Date(recepcion.created_at).toLocaleString('es-EC') }}</p>
-              <p class="mt-1 text-gray-500 dark:text-gray-400">#{{ recepcion.id }}</p>
-            </div>
-          </div>
-        </div>
-      </div-->
-
-      <h4 class="mb-4 text-xl font-semibold dark:text-white">
-        <span class="inline-flex items-center gap-2">
-          <FileText class="w-6 h-6 text-gray-800 dark:text-white" />
-          Información de la Inspección
+  <div v-if="recepcion" class="relative mx-auto max-w-6xl px-4 pt-4 rounded-lg">
+    <ol class="flex items-center w-full text-sm font-medium text-center text-gray-500 dark:text-gray-400 sm:text-base">
+      <li
+        class="flex md:w-full items-center after:content-[''] after:w-full after:h-1 after:bg-primary-600 after:inline-block after:mx-6 xl:after:mx-10 dark:after:bg-primary-500"
+      >
+        <span class="flex items-center">
+          <span
+            class="me-2 inline-flex flex-none items-center justify-center w-6 h-6 rounded-full bg-primary-600 dark:bg-primary-500 text-white text-xs font-semibold whitespace-nowrap"
+            >1</span
+          >
+          <span
+            class="whitespace-nowrap text-primary-blue-600 dark:text-primary-blue-400"
+            >Recepción</span
+          >
         </span>
-      </h4>
-
-      <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando inspección...</div>
-
-      <form class="grid grid-cols-1 gap-8" novalidate @submit.prevent="submit">
-        <div class="col-span-1 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="col-span-1">
-            <label for="tipo_inspeccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de Inspección</label>
-            <select id="tipo_inspeccion" v-model="form.tipo_inspeccion" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-              <option value="PREVENTIVO">Mantenimiento Preventivo</option>
-              <option value="CORRECTIVO">Revisión Correctiva</option>
-              <option value="DIAGNOSTICO">Diagnóstico</option>
-              <option value="ESTETICA">Evaluación Estética</option>
-              <option value="GARANTIA">Revisión por Garantía</option>
-            </select>
-          </div>
-          <div class="col-span-1">
-            <label for="codigos_dtc" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Códigos de Falla (DTC OBD2)</label>
-            <input id="codigos_dtc" v-model="form.codigos_dtc" maxlength="255" placeholder="Ej: P0300, P0171..." class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
-          </div>
-        </div>
-
-        <div class="col-span-1">
-          <label for="motivo_ingreso" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Motivo de Ingreso </label>
-          <textarea id="motivo_ingreso" v-model="form.motivo_ingreso" rows="3" maxlength="500" placeholder="Razón por la cual el cliente trae el vehículo o falla reportada..." :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.motivo_ingreso ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
-          <p v-if="formErrors.motivo_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.motivo_ingreso }}</p>
-        </div>
-
-        <div class="col-span-1">
-          <TextImprover
-            v-model="form.diagnostico_tecnico"
-            contexto="diagnóstico técnico de una inspección vehicular"
-            v-slot="{ mejorar, restaurar, mejorando, error, mejorado, tieneOriginal }"
+      </li>
+      <li
+        class="flex md:w-full items-center after:content-[''] after:w-full after:h-1 after:bg-primary-600 after:inline-block after:mx-6 xl:after:mx-10 dark:after:bg-primary-500"
+      >
+        <span class="flex items-center">
+          <span
+            class="me-2 inline-flex flex-none items-center justify-center w-6 h-6 rounded-full bg-primary-600 dark:bg-primary-500 text-white text-xs font-semibold whitespace-nowrap"
+            >2</span
           >
-            <div class="flex items-center justify-between gap-2 mb-2">
-              <label for="diagnostico_tecnico" class="block text-sm font-medium text-gray-900 dark:text-white">Diagnóstico</label>
-              <button
-                type="button"
-                title="Mejorar el texto con IA"
-                :disabled="mejorando"
-                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-primary-blue-700 text-primary-blue-700 hover:bg-primary-blue-50 focus:ring-4 focus:ring-primary-blue-300 dark:border-primary-blue-400 dark:text-primary-blue-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                @click="mejorar"
-              >
-                <Wand2 v-if="!mejorando" class="w-4 h-4" />
-                <Loader2 v-else class="w-4 h-4 animate-spin" />
-                {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
-              </button>
+          <span
+            class="whitespace-nowrap text-primary-blue-600 dark:text-primary-blue-400"
+            >Inspección</span
+          >
+        </span>
+      </li>
+      <li
+        class="flex md:w-full items-center after:content-[''] after:w-full after:h-1 after:bg-gray-200 after:inline-block after:mx-6 xl:after:mx-10 dark:after:bg-gray-700"
+      >
+        <span class="flex items-center">
+          <span
+            class="me-2 inline-flex flex-none items-center justify-center w-6 h-6 rounded-full bg-gray-400 dark:bg-gray-600 text-white text-xs font-semibold whitespace-nowrap"
+            >3</span
+          >
+          <span class="whitespace-nowrap">Cotización</span>
+        </span>
+      </li>
+      <li class="flex flex-none items-center">
+        <span class="flex items-center whitespace-nowrap">
+          <span
+            class="me-2 inline-flex flex-none items-center justify-center w-6 h-6 rounded-full bg-gray-400 dark:bg-gray-600 text-white text-xs font-semibold whitespace-nowrap"
+            >4</span
+          >
+          <span class="whitespace-nowrap">Orden de Trabajo</span>
+        </span>
+      </li>
+    </ol>
+  </div>
+
+  <div class="px-4 pt-4">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+      <div class="lg:col-span-3 space-y-4">
+        <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
+        <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
+
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">
+        <div class="flex items-center gap-2 mb-4">
+          <FileText class="w-5 h-5 text-gray-900 dark:text-gray-900" />
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Información General</h3>
+          <span v-if="recepcion" class="ml-auto text-xs font-medium text-gray-500 dark:text-gray-400">
+            Recepción #{{ recepcion.numero_recepcion || recepcion.id }}
+          </span>
+        </div>
+
+        <div v-if="recepcion" class="grid grid-cols-5 gap-4">
+          <div class="col-span-3">
+            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente</label>
+            <div class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+              {{ clienteInfo?.nombre || '—' }}
             </div>
-            <textarea id="diagnostico_tecnico" v-model="form.diagnostico_tecnico" rows="4" maxlength="1000" placeholder="Describe el diagnóstico realizado por el mecánico..." :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.diagnostico_tecnico ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
-            <p v-if="formErrors.diagnostico_tecnico" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.diagnostico_tecnico }}</p>
-            <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error }}</p>
-            <div v-if="mejorado && !error" class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
-              <CheckCircle2 class="w-5 h-5 shrink-0" />
-              <div class="flex flex-wrap items-center gap-x-2">
-                <p>Texto mejorado. Revisa antes de guardar.</p>
-                <button v-if="tieneOriginal" type="button" class="text-sm font-medium underline hover:no-underline" @click="restaurar">Restaurar original</button>
+            <div class="mt-3 space-y-1.5">
+              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                <IdCardIcon class="w-3.5 h-3.5 shrink-0" /> Identificación:
+                <span class="truncate font-bold text-gray-900 dark:text-white">{{ clienteInfo?.identificacion || '—' }}</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono:
+                <span class="truncate font-bold text-gray-900 dark:text-white">{{ clienteInfo?.telefono || '—' }}</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                <Mail class="w-3.5 h-3.5 shrink-0" /> Correo:
+                <span class="truncate font-bold text-gray-900 dark:text-white">{{ clienteInfo?.email || '—' }}</span>
               </div>
             </div>
-          </TextImprover>
-        </div>
+          </div>
 
-        <div class="col-span-1">
-          <TextImprover
-            v-model="form.recomendaciones"
-            contexto="recomendaciones y plan de acción de una inspección vehicular"
-            v-slot="{ mejorar, restaurar, mejorando, error, mejorado, tieneOriginal }"
-          >
-            <div class="flex items-center justify-between gap-2 mb-2">
-              <label for="recomendaciones" class="block text-sm font-medium text-gray-900 dark:text-white">Recomendaciones</label>
-              <button
-                type="button"
-                title="Mejorar el texto con IA"
-                :disabled="mejorando"
-                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-primary-blue-700 text-primary-blue-700 hover:bg-primary-blue-50 focus:ring-4 focus:ring-primary-blue-300 dark:border-primary-blue-400 dark:text-primary-blue-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                @click="mejorar"
-              >
-                <Wand2 v-if="!mejorando" class="w-4 h-4" />
-                <Loader2 v-else class="w-4 h-4 animate-spin" />
-                {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
-              </button>
+          <div class="col-span-2">
+            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo</label>
+            <div class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+              {{ vehiculoInfo?.placa || '—' }}
             </div>
-            <textarea id="recomendaciones" v-model="form.recomendaciones" rows="3" maxlength="1000" placeholder="Describe las recomendaciones y plan de acción sugerido..." :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.recomendaciones ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
-            <p v-if="formErrors.recomendaciones" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.recomendaciones }}</p>
-            <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error }}</p>
-            <div v-if="mejorado && !error" class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
-              <CheckCircle2 class="w-5 h-5 shrink-0" />
-              <div class="flex flex-wrap items-center gap-x-2">
-                <p>Texto mejorado. Revisa antes de guardar.</p>
-                <button v-if="tieneOriginal" type="button" class="text-sm font-medium underline hover:no-underline" @click="restaurar">Restaurar original</button>
+            <div class="mt-3 space-y-1.5">
+              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                <TagIcon class="w-3.5 h-3.5 shrink-0" /> Marca:
+                <span class="truncate font-bold text-gray-900 dark:text-white">{{ vehiculoInfo?.marca || '—' }}</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                <Shapes class="w-3.5 h-3.5 shrink-0" /> Modelo:
+                <span class="truncate font-bold text-gray-900 dark:text-white">{{ vehiculoInfo?.modelo || '—' }}</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                <PaintBucket class="w-3.5 h-3.5 shrink-0" /> Color:
+                <span class="truncate font-bold text-gray-900 dark:text-white">{{ vehiculoInfo?.color || '—' }}</span>
               </div>
             </div>
-          </TextImprover>
+          </div>
         </div>
 
-        <div class="col-span-1">
-          <h4 class="mb-4 text-xl font-semibold dark:text-white">
-            <span class="inline-flex items-center gap-2">
-              <TriangleAlert class="w-6 h-6 text-gray-800 dark:text-white" />
-              Testigos luminosos
-            </span>
-          </h4>
+        <div v-else class="grid grid-cols-5 gap-4">
+          <div class="col-span-3">
+            <label for="cliente" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente</label>
+            <ClienteSearchSelect
+              id="cliente"
+              v-model="clienteSearch"
+              :error="Boolean(formErrors.cliente)"
+              :error-message="formErrors.cliente"
+              :show-create="true"
+              @select="selectCliente"
+              @clear="clearCliente"
+              @create="showClientCreateModal = true"
+            />
+            <div class="mt-3 space-y-1.5">
+              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                <IdCardIcon class="w-3.5 h-3.5 shrink-0" /> Identificación:
+                <span class="truncate font-bold text-gray-900 dark:text-white">{{ clienteSeleccionado?.identificacion || '—' }}</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono:
+                <span class="truncate font-bold text-gray-900 dark:text-white">{{ clienteSeleccionado?.telefono || '—' }}</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                <Mail class="w-3.5 h-3.5 shrink-0" /> Correo:
+                <span class="truncate font-bold text-gray-900 dark:text-white">{{ clienteSeleccionado?.email || '—' }}</span>
+              </div>
+            </div>
+          </div>
 
-          
-
-          <TestigosTablero v-model="testigos" />
+          <div class="relative col-span-2">
+            <label for="vehiculo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo</label>
+            <VehiculoSearchSelect
+              id="vehiculo"
+              v-model="vehiculoSearch"
+              :cliente-id="clienteSeleccionado?.id || null"
+              :disabled="!clienteSeleccionado"
+              :placeholder="clienteSeleccionado ? 'Buscar placa...' : 'Selecciona un cliente primero'"
+              class="relative"
+              @select="selectVehiculo"
+            />
+            <p v-if="formErrors.vehiculo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.vehiculo }}</p>
+            <div class="mt-3 space-y-1.5">
+              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                <TagIcon class="w-3.5 h-3.5 shrink-0" /> Marca:
+                <span class="truncate font-bold text-gray-900 dark:text-white">{{ vehiculoSeleccionado?.marca || '—' }}</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                <Shapes class="w-3.5 h-3.5 shrink-0" /> Modelo:
+                <span class="truncate font-bold text-gray-900 dark:text-white">{{ vehiculoSeleccionado?.modelo || '—' }}</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                <PaintBucket class="w-3.5 h-3.5 shrink-0" /> Color:
+                <span class="truncate font-bold text-gray-900 dark:text-white">{{ vehiculoSeleccionado?.color || '—' }}</span>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div class="col-span-1">
-          <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
-            <span class="inline-flex items-center gap-2">
-              <ImageIcon class="w-6 h-6 text-gray-800 dark:text-white" />
-              Fotos de la Inspección
-            </span>
-          </h4>
-          <p class="mb-3 text-sm text-gray-500 dark:text-gray-400">
-            Opcional: hasta {{ FOTO_MAX }} fotos de evidencia de los hallazgos (DTC en pantalla, desgastes, fugas, testigos encendidos).
-            JPG, PNG o WebP de máximo 5 MB.
-          </p>
+      <div class="relative p-6 bg-white rounded-lg shadow dark:bg-gray-800">
+        <div v-if="isLoading" class="p-4 text-sm text-gray-500 dark:text-gray-400">Cargando inspección...</div>
 
-          <PhotoUploadGrid
-            ref="photosGrid"
-            v-model="fotosInspeccion"
-            :entity-id="fotosEntityId"
-            entity-field="inspeccion"
-            :service="inspeccionesService"
-            :max="FOTO_MAX"
-            entity-label="inspección"
-            :disabled="isEditMode && estadoInspeccion === 'FINALIZADA'"
-            disabled-message="La inspección está finalizada; reábrela para poder modificar las fotos."
-          />
-        </div>
+        <template v-else>
+          <div class="border-b border-gray-200 dark:border-gray-700">
+            <nav class="flex flex-wrap -mb-px">
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
+                :class="activeTab === 'informacion' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+                @click="activeTab = 'informacion'"
+              >
+                <ClipboardList class="w-4 h-4" />
+                1. Inspección
+              </button>
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
+                :class="activeTab === 'testigos' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+                @click="activeTab = 'testigos'"
+              >
+                <TriangleAlert class="w-4 h-4" />
+                2. Testigos luminosos
+              </button>
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
+                :class="activeTab === 'fotos' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+                @click="activeTab = 'fotos'"
+              >
+                <CameraIcon class="w-4 h-4" />
+                3. Evidencia
+              </button>
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
+                :class="activeTab === 'servicios' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+                @click="activeTab = 'servicios'"
+              >
+                <Toolbox class="w-4 h-4" />
+                4. Servicios &amp; Repuestos
+              </button>
+            </nav>
+          </div>
 
-        <div class="col-span-1">
-          <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
-            <span class="inline-flex items-center gap-2">
-              <Toolbox class="w-6 h-6 text-gray-800 dark:text-white" />
-              Servicios / Mano de Obra
-            </span>
-          </h4>
-          <div class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-x-visible">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-              <thead class="bg-gray-100 dark:bg-gray-900">
-                <tr>
-                  <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Servicio</th>
-                  <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Horas</th>
-                  <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Prioridad</th>
-                  <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Opcional</th>
-                  <th class="p-2"></th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-                <tr v-if="!serviciosDetectados.length">
-                  <td colspan="5" class="p-4 text-sm text-center text-gray-500 dark:text-gray-400">No hay servicios detectados.</td>
-                </tr>
-                <tr v-for="(s, index) in serviciosDetectados" :key="s.id || s.sufijo">
-                  <td class="p-2">
-                    <CatalogoSelect
-                      :input-id="`svc-desc-${s.sufijo}`"
-                      v-model="s.descripcion"
-                      :catalogo="catalogoServicios"
-                      placeholder="Busca y selecciona..."
-                      mensaje-sin-resultados="Sin coincidencias. Puedes escribir un servicio libre."
-                      :error="!!s.error"
-                      :error-message="s.error"
-                      @select="(item) => seleccionarServicio(item, s)"
-                    />
-                  </td>
-                  <td class="p-2">
-                    <input :id="`svc-horas-${s.sufijo}`" v-model="s.horas_estimadas" type="number" step="0.25" min="0" max="999.99" class="block w-20 p-2 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-                  </td>
-                  <td class="p-2">
-                    <select v-model="s.prioridad" class="block w-24 p-2 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-                      <option v-for="p in PRIORIDADES" :key="p.value" :value="p.value">{{ p.label }}</option>
-                    </select>
-                  </td>
-                  <td class="p-2 text-center">
-                    <input v-model="s.es_sugerido" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600">
-                  </td>
-                  <td class="p-2 text-right">
-                    <button type="button" title="Quitar servicio" aria-label="Quitar servicio" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarServicio(index)">
-                      <Trash2 class="w-4 h-4" />
+          <form class="p-4 space-y-6" novalidate @submit.prevent="submit">
+            <div v-show="activeTab === 'informacion'" class="col-span-1 space-y-4">
+              <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4">
+                <h5 class="mb-4 font-semibold text-gray-900 dark:text-white">Clasificación</h5>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="col-span-1">
+                  <label for="tipo_inspeccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de Inspección</label>
+                  <select id="tipo_inspeccion" v-model="form.tipo_inspeccion" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                    <option value="PREVENTIVO">Mantenimiento Preventivo</option>
+                    <option value="CORRECTIVO">Revisión Correctiva</option>
+                    <option value="DIAGNOSTICO">Diagnóstico</option>
+                    <option value="ESTETICA">Evaluación Estética</option>
+                    <option value="GARANTIA">Revisión por Garantía</option>
+                  </select>
+                </div>
+                <div class="col-span-1">
+                  <label for="codigos_dtc" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Códigos de Falla (DTC OBD2)</label>
+                  <input id="codigos_dtc" v-model="form.codigos_dtc" maxlength="255" placeholder="Ej: P0300, P0171..." class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                </div>
+                </div>
+              </div>
+
+              <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4">
+                <label for="motivo_ingreso" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Motivo * </label>
+                <textarea id="motivo_ingreso" v-model="form.motivo_ingreso" rows="3" maxlength="500" placeholder="Razón por la cual el cliente trae el vehículo o falla reportada..." :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.motivo_ingreso ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
+                <p v-if="formErrors.motivo_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.motivo_ingreso }}</p>
+              </div>
+
+              <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4">
+                <TextImprover
+                  v-model="form.diagnostico_tecnico"
+                  contexto="diagnóstico técnico de una inspección vehicular"
+                  v-slot="{ mejorar, restaurar, mejorando, error, mejorado, tieneOriginal }"
+                >
+                  <div class="flex items-center justify-between gap-2 mb-2">
+                    <label for="diagnostico_tecnico" class="block text-sm font-medium text-gray-900 dark:text-white">Diagnóstico *</label>
+                    <button
+                      type="button"
+                      title="Mejorar el texto con IA"
+                      :disabled="mejorando"
+                      class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-primary-blue-700 text-primary-blue-700 hover:bg-primary-blue-50 focus:ring-4 focus:ring-primary-blue-300 dark:border-primary-blue-400 dark:text-primary-blue-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      @click="mejorar"
+                    >
+                      <Wand2 v-if="!mejorando" class="w-4 h-4" />
+                      <Loader2 v-else class="w-4 h-4 animate-spin" />
+                      {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
                     </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="flex justify-end mt-3">
-            <button
-              type="button"
-              title="Añadir servicio detectado"
-              aria-label="Añadir servicio"
-              class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-blue-700 hover:bg-primary-blue-800 focus:ring-4 focus:ring-primary-blue-300 dark:bg-primary-blue-600 dark:hover:bg-primary-blue-700"
-              @click="agregarServicioVacio"
-            >
-              <Plus class="w-4 h-4" />
-              Añadir
-            </button>
-          </div>
-        </div>
+                  </div>
+                  <textarea id="diagnostico_tecnico" v-model="form.diagnostico_tecnico" rows="4" maxlength="1000" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.diagnostico_tecnico ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
+                  <p v-if="formErrors.diagnostico_tecnico" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.diagnostico_tecnico }}</p>
+                  <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error }}</p>
+                  <div v-if="mejorado && !error" class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
+                    <CheckCircle2 class="w-5 h-5 shrink-0" />
+                    <div class="flex flex-wrap items-center gap-x-2">
+                      <p>Texto mejorado. Revisa antes de guardar.</p>
+                      <button v-if="tieneOriginal" type="button" class="text-sm font-medium underline hover:no-underline" @click="restaurar">Restaurar original</button>
+                    </div>
+                  </div>
+                </TextImprover>
+              </div>
 
-        <div class="col-span-1">
-          <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
-            <span class="inline-flex items-center gap-2">
-              <WrenchIcon class="w-6 h-6 text-gray-800 dark:text-white" />
-              Repuestos
-            </span>
-          </h4>
-          <div class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-x-visible">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-              <thead class="bg-gray-100 dark:bg-gray-900">
-                <tr>
-                  <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Repuesto</th>
-                  <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Cant.</th>
-                  <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Prioridad</th>
-                  <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Opcional</th>
-                  <th class="p-2"></th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-                <tr v-if="!repuestosSugeridos.length">
-                  <td colspan="5" class="p-4 text-sm text-center text-gray-500 dark:text-gray-400">No hay repuestos sugeridos.</td>
-                </tr>
-                <tr v-for="(r, index) in repuestosSugeridos" :key="r.id || r.sufijo">
-                  <td class="p-2">
-                    <CatalogoSelect
-                      :input-id="`rpt-desc-${r.sufijo}`"
-                      v-model="r.descripcion"
-                      :catalogo="catalogoRepuestos"
-                      placeholder="Busca y selecciona..."
-                      mostrar-stock
-                      mensaje-sin-resultados="Sin coincidencias. Puedes escribir un repuesto libre."
-                      :error="!!r.error"
-                      :error-message="r.error"
-                      @select="(item) => seleccionarRepuesto(item, r)"
-                    />
-                  </td>
-                  <td class="p-2">
-                    <input :id="`rpt-cant-${r.sufijo}`" v-model="r.cantidad" type="number" step="0.5" min="0" max="9999.99" class="block w-20 p-2 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-                  </td>
-                  <td class="p-2">
-                    <select v-model="r.prioridad" class="block w-24 p-2 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-                      <option v-for="p in PRIORIDADES" :key="p.value" :value="p.value">{{ p.label }}</option>
-                    </select>
-                  </td>
-                  <td class="p-2 text-center">
-                    <input v-model="r.es_sugerido" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600">
-                  </td>
-                  <td class="p-2 text-right">
-                    <button type="button" title="Quitar repuesto" aria-label="Quitar repuesto" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarRepuesto(index)">
-                      <Trash2 class="w-4 h-4" />
+              <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4">
+                <TextImprover
+                  v-model="form.recomendaciones"
+                  contexto="recomendaciones y plan de acción de una inspección vehicular"
+                  v-slot="{ mejorar, restaurar, mejorando, error, mejorado, tieneOriginal }"
+                >
+                  <div class="flex items-center justify-between gap-2 mb-2">
+                    <label for="recomendaciones" class="block text-sm font-medium text-gray-900 dark:text-white">Recomendaciones *</label>
+                    <button
+                      type="button"
+                      title="Mejorar el texto con IA"
+                      :disabled="mejorando"
+                      class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-primary-blue-700 text-primary-blue-700 hover:bg-primary-blue-50 focus:ring-4 focus:ring-primary-blue-300 dark:border-primary-blue-400 dark:text-primary-blue-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      @click="mejorar"
+                    >
+                      <Wand2 v-if="!mejorando" class="w-4 h-4" />
+                      <Loader2 v-else class="w-4 h-4 animate-spin" />
+                      {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
                     </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                  </div>
+                  <textarea id="recomendaciones" v-model="form.recomendaciones" rows="3" maxlength="1000" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.recomendaciones ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
+                  <p v-if="formErrors.recomendaciones" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.recomendaciones }}</p>
+                  <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error }}</p>
+                  <div v-if="mejorado && !error" class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
+                    <CheckCircle2 class="w-5 h-5 shrink-0" />
+                    <div class="flex flex-wrap items-center gap-x-2">
+                      <p>Texto mejorado. Revisa antes de guardar.</p>
+                      <button v-if="tieneOriginal" type="button" class="text-sm font-medium underline hover:no-underline" @click="restaurar">Restaurar original</button>
+                    </div>
+                  </div>
+                </TextImprover>
+              </div>
+            </div>
+
+            <div v-show="activeTab === 'testigos'" class="col-span-1">
+              <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4">
+                <TestigosTablero v-model="testigos" />
+              </div>
+            </div>
+
+            <div v-show="activeTab === 'fotos'" class="col-span-1">
+              <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4">
+                <p class="mb-3 text-sm text-gray-500 dark:text-gray-400">
+                  Opcional: hasta {{ FOTO_MAX }} fotos de evidencia de los hallazgos (DTC en pantalla, desgastes, fugas, testigos encendidos).
+                  JPG, PNG o WebP de máximo 5 MB.
+                </p>
+
+                <PhotoUploadGrid
+                  ref="photosGrid"
+                  v-model="fotosInspeccion"
+                  :entity-id="fotosEntityId"
+                  entity-field="inspeccion"
+                  :service="inspeccionesService"
+                  :max="FOTO_MAX"
+                  entity-label="inspección"
+                  :disabled="isEditMode && estadoInspeccion === 'FINALIZADA'"
+                  disabled-message="La inspección está finalizada; reábrela para poder modificar las fotos."
+                />
+              </div>
+            </div>
+
+            <div v-show="activeTab === 'servicios'" class="col-span-1 space-y-4">
+              <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4">
+                <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">
+                  <span class="inline-flex items-center gap-2">
+                    <Toolbox class="w-5 h-5 text-gray-800 dark:text-white" />
+                    Servicios / Mano de Obra
+                  </span>
+                </h5>
+                <div class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-x-visible">
+                  <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+                    <thead class="bg-gray-100 dark:bg-gray-900">
+                      <tr>
+                        <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Servicio</th>
+                        <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Horas</th>
+                        <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Prioridad</th>
+                        <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Opcional</th>
+                        <th class="p-2"></th>
+                      </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                      <tr v-if="!serviciosDetectados.length">
+                        <td colspan="5" class="p-4 text-sm text-center text-gray-500 dark:text-gray-400">No hay servicios detectados.</td>
+                      </tr>
+                      <tr v-for="(s, index) in serviciosDetectados" :key="s.id || s.sufijo">
+                        <td class="p-2">
+                          <CatalogoSelect
+                            :input-id="`svc-desc-${s.sufijo}`"
+                            v-model="s.descripcion"
+                            :catalogo="catalogoServicios"
+                            placeholder="Busca y selecciona..."
+                            mensaje-sin-resultados="Sin coincidencias. Puedes escribir un servicio libre."
+                            :error="!!s.error"
+                            :error-message="s.error"
+                            @select="(item) => seleccionarServicio(item, s)"
+                          />
+                        </td>
+                        <td class="p-2">
+                          <input :id="`svc-horas-${s.sufijo}`" v-model="s.horas_estimadas" type="number" step="0.25" min="0" max="999.99" class="block w-20 p-2 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                        </td>
+                        <td class="p-2">
+                          <select v-model="s.prioridad" class="block w-24 p-2 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                            <option v-for="p in PRIORIDADES" :key="p.value" :value="p.value">{{ p.label }}</option>
+                          </select>
+                        </td>
+                        <td class="p-2 text-center">
+                          <input v-model="s.es_sugerido" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600">
+                        </td>
+                        <td class="p-2 text-right">
+                          <button type="button" title="Quitar servicio" aria-label="Quitar servicio" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarServicio(index)">
+                            <Trash2 class="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="flex justify-end mt-3">
+                  <button
+                    type="button"
+                    title="Añadir servicio detectado"
+                    aria-label="Añadir servicio"
+                    class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-blue-700 hover:bg-primary-blue-800 focus:ring-4 focus:ring-primary-blue-300 dark:bg-primary-blue-600 dark:hover:bg-primary-blue-700"
+                    @click="agregarServicioVacio"
+                  >
+                    <Plus class="w-4 h-4" />
+                    Añadir
+                  </button>
+                </div>
+              </div>
+
+              <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4">
+                <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">
+                  <span class="inline-flex items-center gap-2">
+                    <WrenchIcon class="w-5 h-5 text-gray-800 dark:text-white" />
+                    Repuestos
+                  </span>
+                </h5>
+                <div class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-x-visible">
+                  <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+                    <thead class="bg-gray-100 dark:bg-gray-900">
+                      <tr>
+                        <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Repuesto</th>
+                        <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Cant.</th>
+                        <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Prioridad</th>
+                        <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Opcional</th>
+                        <th class="p-2"></th>
+                      </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                      <tr v-if="!repuestosSugeridos.length">
+                        <td colspan="5" class="p-4 text-sm text-center text-gray-500 dark:text-gray-400">No hay repuestos sugeridos.</td>
+                      </tr>
+                      <tr v-for="(r, index) in repuestosSugeridos" :key="r.id || r.sufijo">
+                        <td class="p-2">
+                          <CatalogoSelect
+                            :input-id="`rpt-desc-${r.sufijo}`"
+                            v-model="r.descripcion"
+                            :catalogo="catalogoRepuestos"
+                            placeholder="Busca y selecciona..."
+                            mostrar-stock
+                            mensaje-sin-resultados="Sin coincidencias. Puedes escribir un repuesto libre."
+                            :error="!!r.error"
+                            :error-message="r.error"
+                            @select="(item) => seleccionarRepuesto(item, r)"
+                          />
+                        </td>
+                        <td class="p-2">
+                          <input :id="`rpt-cant-${r.sufijo}`" v-model="r.cantidad" type="number" step="0.5" min="0" max="9999.99" class="block w-20 p-2 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                        </td>
+                        <td class="p-2">
+                          <select v-model="r.prioridad" class="block w-24 p-2 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                            <option v-for="p in PRIORIDADES" :key="p.value" :value="p.value">{{ p.label }}</option>
+                          </select>
+                        </td>
+                        <td class="p-2 text-center">
+                          <input v-model="r.es_sugerido" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600">
+                        </td>
+                        <td class="p-2 text-right">
+                          <button type="button" title="Quitar repuesto" aria-label="Quitar repuesto" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarRepuesto(index)">
+                            <Trash2 class="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="flex justify-end mt-3">
+                  <button
+                    type="button"
+                    title="Añadir repuesto sugerido"
+                    aria-label="Añadir repuesto"
+                    class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-blue-700 hover:bg-primary-blue-800 focus:ring-4 focus:ring-primary-blue-300 dark:bg-primary-blue-600 dark:hover:bg-primary-blue-700"
+                    @click="agregarRepuestoVacio"
+                  >
+                    <Plus class="w-4 h-4" />
+                    Añadir
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                type="button"
+                class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="activeTabIndex <= 0"
+                @click="goToTab(-1)"
+              >
+                <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12l4-4m-4 4 4 4"/>
+                </svg>
+                Anterior
+              </button>
+              <button
+                type="button"
+                class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="activeTabIndex >= TAB_ORDER.length - 1"
+                @click="goToTab(1)"
+              >
+                Siguiente
+                <svg class="w-6 h-6 text-gray-800 dark:text-white ml-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12H5m14 0-4 4m4-4-4-4"/>
+                </svg>
+              </button>
+            </div>
+          </form>
+        </template>
+      </div>
+      </div>
+      <div class="lg:col-span-1 space-y-4">
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">
+          <div class="flex items-center gap-2 mb-3">
+            <ClipboardList class="w-5 h-5 text-gray-900 dark:text-gray-900" />
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Resumen de la inspección</h2>
           </div>
-          <div class="flex justify-end mt-3">
-            <button
-              type="button"
-              title="Añadir repuesto sugerido"
-              aria-label="Añadir repuesto"
-              class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-blue-700 hover:bg-primary-blue-800 focus:ring-4 focus:ring-primary-blue-300 dark:bg-primary-blue-600 dark:hover:bg-primary-blue-700"
-              @click="agregarRepuestoVacio"
-            >
-              <Plus class="w-4 h-4" />
-              Añadir
-            </button>
-          </div>
+          <dl class="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+            <div v-if="form.numero_inspeccion">
+              <dt class="font-medium text-gray-700 dark:text-gray-300">N° Inspección</dt>
+              <dd class="font-medium text-sm text-black dark:text-white">{{ form.numero_inspeccion }}</dd>
+            </div>
+            <div>
+              <dt class="font-medium text-gray-700 dark:text-gray-300">Cliente</dt>
+              <dd class="font-medium text-sm text-black dark:text-white">{{ clienteInfo?.nombre || '—' }}</dd>
+            </div>
+            <div>
+              <dt class="font-medium text-gray-700 dark:text-gray-300">Vehículo</dt>
+              <dd class="font-medium text-sm text-black dark:text-white">{{ formatPlaca(vehiculoInfo?.placa) || '—' }}</dd>
+            </div>
+            <div>
+              <dt class="font-medium text-gray-700 dark:text-gray-300">Tipo</dt>
+              <dd class="font-medium text-sm text-black dark:text-white">{{ tipoInspeccionLabel }}</dd>
+            </div>
+            <div>
+              <dt class="font-medium text-gray-700 dark:text-gray-300">Estado</dt>
+              <dd>
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border" :class="estadoResumenBadge.classes">
+                  <span class="w-2 h-2 rounded-full" :class="estadoResumenBadge.dot"></span>
+                  {{ estadoResumenBadge.label }}
+                </span>
+              </dd>
+            </div>
+          </dl>
         </div>
 
-        <div class="col-span-1">
-          <FormSaveActions
-            :is-loading="isSaving"
-            :is-edit-mode="isEditMode"
-            cancel-href="/crud/inspecciones/"
-            :on-submit="submit"
-          />
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">
+          <div class="flex items-center gap-2 mb-3">
+            <Car class="w-4 h-4 text-primary-blue-600 dark:text-primary-blue-400" />
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Vehículo</h3>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div v-if="vehiculoImagenSrc" class="h-full min-h-40 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-700">
+              <img :src="vehiculoImagenSrc" alt="Foto del vehículo" class="h-full w-full object-contain" />
+            </div>
+            <div v-else class="h-full min-h-40 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-xs text-gray-400 dark:bg-gray-700 dark:border-gray-600">
+              <div class="flex flex-col items-center gap-1.5 text-center">
+                <Camera class="w-6 h-6" />
+                <span>Foto del vehículo</span>
+              </div>
+            </div>
+            <dl class="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+              <div>
+                <dt class="font-medium text-gray-700 dark:text-gray-300">
+                  <span class="inline-flex items-center gap-1.5">
+                    <IconEngine class="w-5 h-5 shrink-0 text-gray-700 dark:text-gray-400" stroke-width="1.8" />
+                    N° Motor:
+                  </span>
+                </dt>
+                <dd class="font-medium text-sm text-black dark:text-white">{{ vehiculoInfo?.numero_motor || '—' }}</dd>
+              </div>
+              <div>
+                <dt class="font-medium text-gray-700 dark:text-gray-300">
+                  <span class="inline-flex items-center gap-1.5">
+                    <component :is="transmisionIcon" class="w-5 h-5 shrink-0 text-gray-700 dark:text-gray-400" stroke-width="1.8" />
+                    Transmisión:
+                  </span>
+                </dt>
+                <dd class="font-medium text-sm text-black dark:text-white">{{ transmisionLabel || '—' }}</dd>
+              </div>
+              <div>
+                <dt class="font-medium text-gray-700 dark:text-gray-300">
+                  <span class="inline-flex items-center gap-1.5">
+                    <IconGasStation class="w-5 h-5 shrink-0 text-gray-700 dark:text-gray-400" stroke-width="1.8" />
+                    Combustible:
+                  </span>
+                </dt>
+                <dd class="font-medium text-sm text-black dark:text-white">{{ combustibleLabel || '—' }}</dd>
+              </div>
+            </dl>
+          </div>
         </div>
-      </form>
+      </div>
     </div>
   </div>
+
+  <ClientModal
+    v-model="showClientCreateModal"
+    @created="onClientCreated"
+    @reactivated="onClientCreated"
+  />
 
   <ConfirmModal
     v-model="showFinalizarModal"
