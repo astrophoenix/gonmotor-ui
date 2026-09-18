@@ -671,7 +671,7 @@ async function handleSubmit() {
             type="button"
             :class="[mostrarServicios ? 'pb-2 text-sm font-medium border-b-2 border-primary-blue-700 text-primary-blue-700 dark:border-primary-blue-400 dark:text-primary-blue-400' : 'pb-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white']"
             @click="mostrarServicios = true"
-          >Servicios / Mano de obra</button>
+          >Servicios</button>
           <button
             type="button"
             :class="[!mostrarServicios ? 'pb-2 text-sm font-medium border-b-2 border-primary-blue-700 text-primary-blue-700 dark:border-primary-blue-400 dark:text-primary-blue-400' : 'pb-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white']"
@@ -681,7 +681,7 @@ async function handleSubmit() {
 
         <!-- Servicios -->
         <div v-show="mostrarServicios">
-          <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Servicios / Mano de Obra</h5>
+          <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Servicios</h5>
           <div class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-x-visible">
             <table class="w-full text-sm text-left text-gray-900 dark:text-white">
               <thead class="text-xs uppercase bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300">

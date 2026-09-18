@@ -1,13 +1,14 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue';
-import { Toolbox, WrenchIcon, ImageIcon, TriangleAlert, CheckCircle2, Clock, FileText, Loader2, Plus, Trash2, Wand2, Wrench, ClipboardList, IdCardIcon, TagIcon, Shapes, PaintBucket, Phone, Mail, CameraIcon, Car, Camera } from 'lucide-vue-next';
-import { IconChecklist, IconPlayerPlayFilled, IconEngine, IconManualGearbox, IconAutomaticGearbox, IconGasStation } from '@tabler/icons-vue';
+import { Toolbox, WrenchIcon, TriangleAlert, CheckCircle2, Clock, FileText, Loader2, Plus, Trash2, Wand2, Wrench, ClipboardList, IdCardIcon, TagIcon, Shapes, PaintBucket, Phone, Mail, CameraIcon, Car, Camera } from 'lucide-vue-next';
+import { IconClockCheck, IconClockPlay, IconEngine, IconManualGearbox, IconAutomaticGearbox, IconGasStation } from '@tabler/icons-vue';
 import { request } from '../../../shared/services/httpClient';
 import { API_BASE_URL } from '../../../shared/config/env';
 import CatalogoSelect from '../../../shared/components/CatalogoSelect.vue';
 import PhotoUploadGrid from '../../../shared/components/PhotoUploadGrid.vue';
 import ClienteSearchSelect from '../../../shared/components/ClienteSearchSelect.vue';
 import VehiculoSearchSelect from '../../../shared/components/VehiculoSearchSelect.vue';
+import EmpleadoSearchSelect from '../../../shared/components/EmpleadoSearchSelect.vue';
 import ClientModal from '../../clientes/components/ClientModal.vue';
 import { inspeccionesService } from '../services/inspeccionesService';
 import { TESTIGO_KEYS, testigoDefaults, testigoPayload } from '../../../shared/config/testigos';
@@ -37,6 +38,7 @@ const form = reactive({
   codigos_dtc: '',
   diagnostico_tecnico: '',
   recomendaciones: '',
+  responsable: null,
   ...testigoDefaults(),
 });
 
@@ -121,6 +123,32 @@ const vehiculoSearch = ref('');
 const showClientCreateModal = ref(false);
 const clienteSeleccionado = ref(null);
 const vehiculoSeleccionado = ref(null);
+const responsableSearch = ref('');
+const responsableSeleccionado = ref(null);
+const empleadosOpciones = ref([]);
+
+function nombreEmpleado(empleado) {
+  const user = empleado?.user || empleado || {};
+  return `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.name || user.username || user.email || `#${empleado?.id || ''}`;
+}
+
+watch([empleadosOpciones, () => form.responsable], ([ops, respId]) => {
+  if (!respId) return;
+  const emp = ops.find((e) => (e.user?.id || e.id) === respId);
+  if (emp && responsableSearch.value !== nombreEmpleado(emp)) {
+    responsableSeleccionado.value = emp;
+    responsableSearch.value = nombreEmpleado(emp);
+  }
+});
+
+async function loadEmpleados() {
+  try {
+    const data = await request('/api/auth/empleados/?page=1&page_size=100');
+    empleadosOpciones.value = Array.isArray(data?.results) ? data.results : [];
+  } catch (error) {
+    empleadosOpciones.value = [];
+  }
+}
 
 function formatPlaca(placa) {
   if (!placa) return '';
@@ -139,6 +167,18 @@ function clearCliente() {
   clienteSeleccionado.value = null;
   clienteSearch.value = '';
   clearVehiculo();
+}
+
+function selectResponsable(empleado) {
+  responsableSeleccionado.value = empleado;
+  form.responsable = empleado?.user?.id || null;
+  responsableSearch.value = nombreEmpleado(empleado);
+}
+
+function clearResponsable() {
+  responsableSeleccionado.value = null;
+  form.responsable = null;
+  responsableSearch.value = '';
 }
 
 function onClientCreated(cliente) {
@@ -240,6 +280,17 @@ const estadoResumenBadge = computed(() => {
     },
   };
   return map[estadoInspeccion.value] || map.PENDIENTE;
+});
+
+const responsableNombre = computed(() => {
+  if (responsableSeleccionado.value) {
+    const emp = responsableSeleccionado.value;
+    return `${nombreEmpleado(emp)}${emp.rol_display ? ` — ${emp.rol_display}` : ''}`.trim();
+  }
+  const empleado = empleadosOpciones.value.find(
+    (emp) => (emp.user?.id || emp.id) === form.responsable
+  );
+  return empleado ? `${nombreEmpleado(empleado)} — ${empleado.rol_display || ''}`.trim().replace(/— $/, '') : (form.responsable ? '—' : 'Sin asignar');
 });
 
 function solicitarFinalizacion() {
@@ -633,6 +684,7 @@ async function loadInspeccion() {
       codigos_dtc: data.codigos_dtc || '',
       diagnostico_tecnico: data.diagnostico_tecnico || '',
       recomendaciones: data.recomendaciones || '',
+      responsable: data.responsable || null,
       ...testigoPayload(data),
     });
     syncTestigosDesdeForm();
@@ -685,6 +737,7 @@ async function submit() {
         cliente: clienteSeleccionado.value?.id || null,
         vehiculo: vehiculoSeleccionado.value?.id || null,
       } : {}),
+      responsable: form.responsable || null,
       tipo_inspeccion: form.tipo_inspeccion,
       motivo_ingreso: sanitizeObservaciones(form.motivo_ingreso || '').slice(0, 500).trim(),
       codigos_dtc: sanitizeDtc(form.codigos_dtc, 255),
@@ -736,6 +789,7 @@ async function submit() {
 
 onMounted(() => {
   loadCatalogo();
+  loadEmpleados();
   loadRecepcion();
   loadInspeccion();
   loadDetalles();
@@ -773,22 +827,22 @@ onMounted(() => {
           type="button"
           :disabled="transicionEstado"
           title="Marcar la inspección como en proceso"
-          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-700 rounded-lg border border-primary-700 hover:bg-primary-50 focus:ring-4 focus:ring-primary-300 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-primary-700 rounded-lg border border-primary-700 hover:bg-primary-50 focus:ring-4 focus:ring-primary-300 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="cambiarEstado('EN_PROCESO')"
         >
-          <IconPlayerPlayFilled class="w-4 h-4" />
-          Iniciar inspección
+          <IconClockPlay class="w-5 h-5" />
+          Iniciar
         </button>
         <button
           v-if="estadoInspeccion === 'EN_PROCESO'"
           type="button"
           :disabled="transicionEstado"
           title="Cerrar el diagnóstico de la inspección"
-          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 dark:bg-primary-700 dark:hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-green-700 rounded-lg border border-green-700 hover:bg-green-50 focus:ring-4 focus:ring-green-300 dark:text-green-400 dark:border-green-400 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="solicitarFinalizacion"
         >
-          <IconChecklist class="w-4 h-4" />
-          Finalizar inspección
+          <IconClockCheck class="w-5 h-5" />
+          Finalizar
         </button>
           <FormSaveActions
           :is-loading="isSaving"
@@ -969,6 +1023,17 @@ onMounted(() => {
             </div>
           </div>
         </div>
+
+        <div class="mt-4">
+          <label for="responsable" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Responsable de la inspección</label>
+          <EmpleadoSearchSelect
+            id="responsable"
+            v-model="responsableSearch"
+            placeholder="Buscar responsable por nombre o cédula..."
+            @select="selectResponsable"
+            @clear="clearResponsable"
+          />
+        </div>
       </div>
 
       <div class="relative p-6 bg-white rounded-lg shadow dark:bg-gray-800">
@@ -1143,7 +1208,7 @@ onMounted(() => {
                 <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">
                   <span class="inline-flex items-center gap-2">
                     <Toolbox class="w-5 h-5 text-gray-800 dark:text-white" />
-                    Servicios / Mano de Obra
+                    Servicios
                   </span>
                 </h5>
                 <div class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-x-visible">
@@ -1327,6 +1392,10 @@ onMounted(() => {
               <dd class="font-medium text-sm text-black dark:text-white">{{ formatPlaca(vehiculoInfo?.placa) || '—' }}</dd>
             </div>
             <div>
+              <dt class="font-medium text-gray-700 dark:text-gray-300">Responsable</dt>
+              <dd class="font-medium text-sm text-black dark:text-white">{{ responsableNombre }}</dd>
+            </div>
+            <div>
               <dt class="font-medium text-gray-700 dark:text-gray-300">Tipo</dt>
               <dd class="font-medium text-sm text-black dark:text-white">{{ tipoInspeccionLabel }}</dd>
             </div>
@@ -1344,8 +1413,8 @@ onMounted(() => {
 
         <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">
           <div class="flex items-center gap-2 mb-3">
-            <Car class="w-4 h-4 text-primary-blue-600 dark:text-primary-blue-400" />
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Vehículo</h3>
+            <Car class="w-5 h-5 text-gray-900 dark:text-gray-900" />
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Vehículo</h2>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div v-if="vehiculoImagenSrc" class="h-full min-h-40 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-700">

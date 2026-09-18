@@ -21,6 +21,7 @@ import {
 } from 'lucide-vue-next';
 import Alert from '../../../shared/components/Alert.vue';
 import MdiIcon from '../../../shared/components/MdiIcon.vue';
+import FlowSteps from '../../../shared/components/FlowSteps.vue';
 import { TESTIGOS } from '../../../shared/config/testigos';
 import { useRecepciones } from '../composables/useRecepciones';
 import { inspeccionesService } from '../../inspecciones/services/inspeccionesService';
@@ -189,6 +190,13 @@ const puedeEditar = computed(() => {
   if (r.estado === 'NO_ACEPTADA') return false;
   return !(r.aceptacion_condiciones && r.fecha_firma_cliente);
 });
+
+const pasosFlujo = computed(() => [
+  { label: 'Recepción', completed: Boolean(recepcion.value) },
+  { label: 'Inspección', completed: tieneInspeccion.value },
+  { label: 'Cotización', completed: (recepcion.value?.cotizaciones_generadas?.length ?? 0) > 0 },
+  { label: 'Orden de Trabajo', completed: Boolean(recepcion.value?.orden_trabajo) },
+]);
 
 const estadoBadge = computed(() => {
   const estado = recepcion.value?.estado || 'PENDIENTE';
@@ -378,7 +386,7 @@ function irAInspeccion(recepcion) {
             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12H5m14 0-4 4m4-4-4-4"/>
           </svg>
         </button>
-        <template v-if="tieneInspeccion && recepcion.estado === 'ACEPTADA'">
+        <!--template v-if="tieneInspeccion && recepcion.estado === 'ACEPTADA'">
           <a
             v-if="recepcion.inspecciones[0]?.tiene_orden_trabajo || recepcion.inspecciones[0]?.estado === 'FINALIZADA'"
             :href="`/crud/inspecciones/ver/?id=${recepcion.inspecciones[0].id}`"
@@ -388,7 +396,6 @@ function irAInspeccion(recepcion) {
             Ver Inspección
           </a>
           <button
-            v-else
             type="button"
             title="Ver / Editar Inspección"
             class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-amber-700 rounded-lg border border-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:border-amber-400 dark:hover:bg-gray-800"
@@ -397,7 +404,7 @@ function irAInspeccion(recepcion) {
             <Pencil class="w-4 h-4" />
             Ver / Editar Inspección
           </button>
-        </template>
+        </template-->
         <button
           v-if="recepcion.cotizaciones_generadas?.length"
           type="button"
@@ -419,6 +426,9 @@ function irAInspeccion(recepcion) {
   </div>
 
   <div class="p-4">
+    <div v-if="recepcion" class="relative mx-auto max-w-6xl mb-5">
+      <FlowSteps :steps="pasosFlujo" />
+    </div>
     <div class="relative mx-auto max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
       <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
       <Alert v-if="errorCrearInspeccion" type="error" :message="errorCrearInspeccion" dismissible @dismiss="errorCrearInspeccion = ''" />
@@ -469,24 +479,40 @@ function irAInspeccion(recepcion) {
 
             <div>
               <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Vehículo</h5>
-              <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Placa</dt>
-                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.placa || recepcion.placa || '—' }}</dd>
+              <div class="flex flex-col gap-4 sm:flex-row">
+                <dl class="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Placa</dt>
+                    <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.placa || recepcion.placa || '—' }}</dd>
+                  </div>
+                  <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Marca</dt>
+                    <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.marca || '—' }}</dd>
+                  </div>
+                  <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Modelo</dt>
+                    <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.modelo || '—' }}</dd>
+                  </div>
+                  <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Color</dt>
+                    <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.color || '—' }}</dd>
+                  </div>
+                </dl>
+                <div class="w-full shrink-0 sm:w-36">
+                  <button
+                    v-if="vehiculo?.imagen"
+                    type="button"
+                    title="Ver foto del vehículo"
+                    class="block w-full overflow-hidden rounded-lg border border-gray-200 cursor-zoom-in dark:border-gray-600"
+                    @click="abrirFoto(vehiculo.imagen)"
+                  >
+                    <img :src="vehiculo.imagen" alt="Foto del vehículo" class="h-28 w-full object-cover" />
+                  </button>
+                  <div v-else class="flex h-28 w-full items-center justify-center rounded-lg border border-dashed border-gray-300 text-xs text-gray-500 dark:border-gray-600 dark:text-gray-400">
+                    Sin foto
+                  </div>
                 </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Marca</dt>
-                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.marca || '—' }}</dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Modelo</dt>
-                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.modelo || '—' }}</dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Color</dt>
-                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ vehiculo?.color || '—' }}</dd>
-                </div>
-              </dl>
+              </div>
             </div>
           </div>
         </div>

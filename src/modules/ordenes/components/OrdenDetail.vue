@@ -310,7 +310,7 @@ onMounted(async () => {
         <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
             <Wrench class="w-6 h-6 text-gray-800 dark:text-white" />
-            Servicios / Mano de Obra
+            Servicios
           </span>
         </h4>
         <div v-if="orden.servicios?.length" class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">

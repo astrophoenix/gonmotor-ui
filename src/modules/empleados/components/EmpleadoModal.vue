@@ -1,6 +1,6 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
-import { X, Building2, MessageSquare, MapPin, Phone, ChevronDown, Search, Save } from 'lucide-vue-next';
+import { X, Building2, MessageSquare, MapPin, Phone, ChevronDown, Search, Save, UserPlus, UserPen } from 'lucide-vue-next';
 import { empleadosService } from '../services/empleadosService';
 import { request } from '../../../shared/services/httpClient';
 import Alert from '../../../shared/components/Alert.vue';
@@ -24,6 +24,8 @@ const form = reactive({
   last_name: '',
   email: '',
   telefono: '',
+  identificacion: '',
+  direccion: '',
   rol: 'MECANICO',
   talleres: [],
   is_active: true,
@@ -55,6 +57,8 @@ function getComparableState() {
     last_name: form.last_name,
     email: form.email,
     telefono: form.telefono,
+    identificacion: form.identificacion,
+    direccion: form.direccion,
     rol: form.rol,
     talleres: [...form.talleres],
     is_active: form.is_active,
@@ -122,6 +126,8 @@ function resetForm() {
   form.last_name = '';
   form.email = '';
   form.telefono = '';
+  form.identificacion = '';
+  form.direccion = '';
   form.rol = 'MECANICO';
   form.talleres = [];
   form.is_active = true;
@@ -160,6 +166,8 @@ function applyBackendErrors(data) {
     last_name: 'last_name',
     email: 'email',
     telefono: 'telefono',
+    identificacion: 'identificacion',
+    direccion: 'direccion',
     rol: 'rol',
   };
   const newErrors = { ...empleadoErrors.value };
@@ -188,6 +196,8 @@ async function open() {
         last_name: data.user?.last_name || '',
         email: data.user?.email || '',
         telefono: data.user?.telefono || '',
+        identificacion: data.user?.identificacion || '',
+        direccion: data.user?.direccion || '',
         rol: data.rol || 'MECANICO',
         talleres: (data.talleres || []).map((t) => t.id),
         is_active: data.is_active,
@@ -219,6 +229,8 @@ async function submit() {
       last_name: form.last_name.trim(),
       email: form.email.trim().toLowerCase(),
       telefono: form.telefono.trim(),
+      identificacion: form.identificacion.trim(),
+      direccion: form.direccion.trim(),
       rol: form.rol,
       talleres: form.talleres,
       is_active: form.is_active,
@@ -289,6 +301,8 @@ onBeforeUnmount(() => {
     <div class="relative block w-full max-w-2xl rounded-lg bg-white shadow-xl dark:bg-gray-800 my-auto">
       <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <UserPlus v-if="!isEditMode" class="w-5 h-5 inline-block me-2" />
+          <UserPen v-if="isEditMode" class="w-5 h-5 inline-block me-2" />
           {{ isEditMode ? 'Editar empleado' : 'Nuevo empleado' }}
         </h3>
         <button
@@ -314,40 +328,59 @@ onBeforeUnmount(() => {
 
         <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando empleado...</div>
         <template v-else>
-          <div class="grid grid-cols-6 gap-4">
-            <div class="col-span-6 sm:col-span-3">
-              <label for="modal_first_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombres</label>
-              <input id="modal_first_name" v-model="form.first_name" required maxlength="150" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', empleadoErrors.first_name ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-              <p v-if="empleadoErrors.first_name" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ empleadoErrors.first_name }}</p>
-            </div>
-            <div class="col-span-6 sm:col-span-3">
-              <label for="modal_last_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Apellidos</label>
-              <input id="modal_last_name" v-model="form.last_name" required maxlength="150" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', empleadoErrors.last_name ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-              <p v-if="empleadoErrors.last_name" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ empleadoErrors.last_name }}</p>
-            </div>
-            <div class="col-span-6 sm:col-span-3">
-              <label for="modal_email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Correo electrónico</label>
-              <input id="modal_email" v-model="form.email" type="email" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', empleadoErrors.email ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-              <p v-if="empleadoErrors.email" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ empleadoErrors.email }}</p>
-            </div>
-            <div class="col-span-6 sm:col-span-3">
-              <label for="modal_telefono" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Teléfono</label>
-              <input id="modal_telefono" v-model="form.telefono" maxlength="20" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-            </div>
-            <div class="col-span-6 sm:col-span-3">
-              <label for="modal_rol" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Rol</label>
-              <select id="modal_rol" v-model="form.rol" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-                <option v-for="item in roles" :key="item.value" :value="item.value">{{ item.label }}</option>
-              </select>
-            </div>
-            <div class="col-span-6 sm:col-span-3" v-if="isEditMode">
-              <div class="flex items-center pt-6">
-                <input id="modal_is_active" v-model="form.is_active" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500">
-                <label for="modal_is_active" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Acceso activo</label>
+          <div class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="modal_identificacion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Identificación</label>
+                <input id="modal_identificacion" autocomplete="off" v-model="form.identificacion" maxlength="13" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', empleadoErrors.identificacion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <p v-if="empleadoErrors.identificacion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ empleadoErrors.identificacion }}</p>
+              </div>
+              <div>
+                <label class="block mb-2 text-sm font-medium text-transparent select-none" aria-hidden="true">Estado</label>
+                <div class="flex items-center h-[42px]">
+                  <input id="modal_is_active" v-model="form.is_active" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500">
+                  <label for="modal_is_active" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Activo</label>
+                </div>
               </div>
             </div>
 
-            <div class="col-span-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+              <div>
+                <label for="modal_first_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombres</label>
+                <input id="modal_first_name" autocomplete="off" v-model="form.first_name" required maxlength="150" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', empleadoErrors.first_name ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <p v-if="empleadoErrors.first_name" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ empleadoErrors.first_name }}</p>
+              </div>
+              <div>
+                <label for="modal_last_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Apellidos</label>
+                <input id="modal_last_name" autocomplete="off" v-model="form.last_name" required maxlength="150" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', empleadoErrors.last_name ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <p v-if="empleadoErrors.last_name" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ empleadoErrors.last_name }}</p>
+              </div>
+              <div>
+                <label for="modal_email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Correo electrónico</label>
+                <input id="modal_email" autocomplete="off" v-model="form.email" type="email" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', empleadoErrors.email ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <p v-if="empleadoErrors.email" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ empleadoErrors.email }}</p>
+              </div>
+              <div>
+                <label for="modal_telefono" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Teléfono</label>
+                <input id="modal_telefono" autocomplete="off" v-model="form.telefono" maxlength="20" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="modal_rol" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Rol</label>
+                <select id="modal_rol" v-model="form.rol" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                  <option v-for="item in roles" :key="item.value" :value="item.value">{{ item.label }}</option>
+                </select>
+              </div>
+              <div>
+                <label for="modal_direccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Dirección</label>
+                <input id="modal_direccion" autocomplete="off" v-model="form.direccion" maxlength="255" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', empleadoErrors.direccion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <p v-if="empleadoErrors.direccion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ empleadoErrors.direccion }}</p>
+              </div>
+            </div>
+
+            <div>
               <span class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Talleres Asignados</span>
               <div v-if="isLoadingTalleres" class="text-sm text-gray-500 dark:text-gray-400">Cargando talleres...</div>
               <div v-else-if="!talleres.length" class="text-sm text-gray-500 dark:text-gray-400">No hay talleres disponibles.</div>
@@ -462,7 +495,7 @@ onBeforeUnmount(() => {
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          {{ isSaving ? 'Guardando...' : (isEditMode ? 'Guardar cambios' : 'Crear empleado') }}
+          {{ isSaving ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Guardar') }}
         </button>
       </div>
     </div>

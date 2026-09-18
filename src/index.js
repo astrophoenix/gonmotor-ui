@@ -11,7 +11,7 @@ import { mountInspecciones, mountInspeccionEdit, mountInspeccionDetail } from '.
 import { mountCotizaciones, mountCotizacionEdit } from './modules/cotizaciones';
 import { mountOrdenes, mountOrdenDetail, mountOrdenEdit } from './modules/ordenes';
 import { mountCitas } from './modules/citas';
-import { mountEmpleados, mountEmpleadoEdit } from './modules/empleados';
+import { mountEmpleados, mountEmpleadoDetail } from './modules/empleados';
 import { mountRepuestos } from './modules/inventario/repuestos';
 import { mountServicios } from './modules/inventario/servicios';
 import { mountProfileEdit } from './modules/auth';
@@ -165,10 +165,10 @@ if (empleadosApp) {
     mountEmpleados(empleadosApp, pinia);
 }
 
-const empleadoEditApp = document.getElementById('empleado-edit-app');
+const empleadoDetailApp = document.getElementById('empleado-detail-app');
 
-if (empleadoEditApp) {
-    mountEmpleadoEdit(empleadoEditApp, pinia);
+if (empleadoDetailApp) {
+    mountEmpleadoDetail(empleadoDetailApp, pinia);
 }
 
 const empresaConfigApp = document.getElementById('empresa-config-app');

@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted } from 'vue';
-import { IdCard, Pencil, Trash2 } from 'lucide-vue-next';
+import { IdCard, Pencil, Trash2, Users } from 'lucide-vue-next';
 import { useEmpleados } from '../composables/useEmpleados';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
@@ -130,7 +130,7 @@ onUnmounted(() => {
           </ol>
         </nav>
         <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-          <IdCard class="w-6 h-6 inline-block text-gray-900 dark:text-gray-400" />
+          <Users class="w-6 h-6 inline-block text-gray-900 dark:text-gray-400" />
           Empleados
         </h1>
       </div>
@@ -160,12 +160,12 @@ onUnmounted(() => {
   </div>
 
   <EntityTable
-    :columns="['Empleado', 'Correo', 'Rol', 'Talleres', 'Estado', 'Acciones']"
+    :columns="['Identificación', 'Empleado', 'Correo', 'Rol', 'Talleres', 'Estado', 'Acciones']"
     :items="empleados"
     :loading="isLoading"
     loading-text="Cargando empleados..."
     empty-text="No se encontraron empleados."
-    :empty-colspan="7"
+    :empty-colspan="8"
     :show-pagination="true"
     :previous-url="previousUrl"
     :next-url="nextUrl"
@@ -175,6 +175,15 @@ onUnmounted(() => {
   >
     <template #row="{ item }">
       <tr class="hover:bg-gray-100 dark:hover:bg-gray-700">
+        <td class="p-4 whitespace-nowrap">
+          <a
+            :href="`/crud/empleados/ver/?id=${encodeURIComponent(item.id)}`"
+            class="inline-flex items-center gap-1.5 font-medium text-primary-600 hover:text-primary-800 hover:underline dark:text-primary-400"
+          >
+            <IdCard class="w-4 h-4 shrink-0" />
+            {{ item.user?.identificacion || '—' }}
+          </a>
+        </td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">
           {{ item.user?.first_name }} {{ item.user?.last_name }}
         </td>

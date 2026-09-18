@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted } from 'vue';
-import { Users, Download, Phone, Mail, Car, Pencil, Trash2 } from 'lucide-vue-next';
+import { UsersRound, Upload, Phone, Mail, Car, Pencil, Trash2, IdCard } from 'lucide-vue-next';
 import { useClients } from '../composables/useClients';
 // import { useToast } from '../../../shared/composables/useToast';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
@@ -183,7 +183,7 @@ onUnmounted(() => {
           </ol>
         </nav>
         <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-          <Users class="w-6 h-6 inline-block text-gray-900 dark:text-gray-400" />
+          <UsersRound class="w-6 h-6 inline-block text-gray-900 dark:text-gray-400" />
           Clientes
         </h1>
       </div>
@@ -207,7 +207,7 @@ onUnmounted(() => {
             class="inline-flex items-center px-3 py-2 text-sm font-medium text-white rounded-lg bg-emerald-600 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-300 dark:focus:ring-emerald-800"
             @click="openImportModal"
           >
-            <Download class="w-5 h-5 mr-1" />
+            <Upload class="w-5 h-5 mr-1.5 -ml-1 text-white" />
             Importar
           </button>
           <EntityActionButtons 
@@ -239,9 +239,10 @@ onUnmounted(() => {
         <td class="p-4 whitespace-nowrap">
           <a
             :href="`/crud/clientes/ver/?id=${encodeURIComponent(item.id)}`"
-            class="font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+            class="inline-flex items-center gap-1.5 font-medium text-primary-600 hover:text-primary-800 hover:underline dark:text-primary-400"
           >
-            {{ item.identificacion }}
+          <IdCard class="w-4 h-4 shrink-0" />  
+          {{ item.identificacion }}
           </a>
         </td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.nombre }}</td>

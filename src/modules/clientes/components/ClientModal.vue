@@ -1,6 +1,6 @@
 <script setup>
 import { computed, nextTick, reactive, ref, watch } from 'vue';
-import { X, Trash2, Save, FileText, Car, UserRound } from 'lucide-vue-next';
+import { X, Trash2, Save, FileText, Car, UserRoundPlus, UserRoundPen } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
 import { sanitizeIdentificacion, sanitizeNombreUpper, sanitizeEmail, sanitizeTelefono, formatPlaca, sanitizeVin, sanitizeText, sanitizeColor, sanitizeMotor, sanitizeObservaciones, getItemKey as getVehicleKey, validatePlaca, validateTelefono } from '../../../shared/utils/sanitize';
 import Alert from '../../../shared/components/Alert.vue';
@@ -398,7 +398,8 @@ watch(vehiculos, (list) => {
       <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
           <span class="inline-flex items-center gap-2">
-            <UserRound class="w-5 h-5 text-gray-800 dark:text-white" />
+            <UserRoundPlus v-if="!isEditMode" class="w-5 h-5 inline-block me-2" />
+            <UserRoundPen v-if="isEditMode" class="w-5 h-5 inline-block me-2" />
             {{ isEditMode ? 'Editar cliente' : 'Nuevo cliente' }}
           </span>
         </h3>
@@ -462,7 +463,7 @@ watch(vehiculos, (list) => {
             </div>
             <div class="col-span-6 sm:col-span-3">
               <label for="modal_direccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Dirección</label>
-              <textarea id="modal_direccion" v-model="form.direccion" rows="1" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.direccion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
+              <textarea id="modal_direccion" v-model="form.direccion" rows="2" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.direccion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
               <p v-if="clientErrors.direccion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.direccion }}</p>
             </div>
           </div>
@@ -598,7 +599,7 @@ watch(vehiculos, (list) => {
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          {{ isSaving ? 'Guardando...' : (isEditMode ? 'Guardar cambios' : 'Crear cliente') }}
+          {{ isSaving ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Crear') }}
         </button>
       </div>
     </div>

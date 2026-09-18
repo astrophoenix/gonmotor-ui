@@ -1,13 +1,14 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { ArrowLeft, FolderInput, FileText, Image as ImageIcon, SquarePen, TriangleAlert, WrenchIcon, X, Toolbox } from 'lucide-vue-next';
-import { IconFileInvoice, IconRefresh } from '@tabler/icons-vue';
+import { ArrowLeft, CheckCircle2, Clock, FolderInput, FileText, Image as ImageIcon, SquarePen, TriangleAlert, WrenchIcon, X, Toolbox } from 'lucide-vue-next';
+import { IconFileInvoice, IconLockOpen2 } from '@tabler/icons-vue';
 import { request } from '../../../shared/services/httpClient';
 import { inspeccionesService } from '../services/inspeccionesService';
 import MdiIcon from '../../../shared/components/MdiIcon.vue';
 import { TESTIGOS } from '../../../shared/config/testigos';
 import Alert from '../../../shared/components/Alert.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
+import FlowSteps from '../../../shared/components/FlowSteps.vue';
 
 const inspeccion = ref(null);
 const loading = ref(true);
@@ -21,12 +22,23 @@ const isReopening = ref(false);
 const params = new URLSearchParams(window.location.search);
 const inspeccionId = Number(params.get('id'));
 
+const activeTab = ref('informacion');
+const TAB_ORDER = ['informacion', 'testigos', 'evidencias', 'servicios'];
+const activeTabIndex = computed(() => TAB_ORDER.indexOf(activeTab.value));
+
+function goToTab(direction) {
+  const next = activeTabIndex.value + direction;
+  if (next >= 0 && next < TAB_ORDER.length) {
+    activeTab.value = TAB_ORDER[next];
+  }
+}
+
 const PRIORIDADES = { ALTA: 'Alta', MEDIA: 'Media', BAJA: 'Baja' };
 
 const ESTADO_BADGES = {
-  PENDIENTE: { label: 'Pendiente', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' },
-  EN_PROCESO: { label: 'En proceso', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
-  FINALIZADA: { label: 'Finalizada', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' },
+  PENDIENTE: { label: 'Pendiente', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300', dot: 'bg-yellow-500', icon: Clock },
+  EN_PROCESO: { label: 'En proceso', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300', dot: 'bg-blue-500', icon: WrenchIcon },
+  FINALIZADA: { label: 'Finalizada', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300', dot: 'bg-green-500', icon: CheckCircle2 },
 };
 
 const TIPO_BADGES = {
@@ -37,10 +49,22 @@ const TIPO_BADGES = {
   GARANTIA: { label: 'Revisión por Garantía', color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300' },
 };
 
-const estadoBadge = computed(() => ESTADO_BADGES[inspeccion.value?.estado] || { label: inspeccion.value?.estado || '-', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' });
+const estadoBadge = computed(() => ESTADO_BADGES[inspeccion.value?.estado] || { label: inspeccion.value?.estado || '-', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', dot: 'bg-gray-500', icon: TriangleAlert });
 const tipoBadge = computed(() => TIPO_BADGES[inspeccion.value?.tipo_inspeccion] || { label: inspeccion.value?.tipo_inspeccion || '-', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' });
 
 const recepcion = computed(() => inspeccion.value?.recepcion || null);
+
+const clienteInfo = computed(() => {
+  const r = recepcion.value;
+  if (!r) return inspeccion.value?.cliente || null;
+  return r.cliente || (r.cliente_nombre ? { nombre: r.cliente_nombre, identificacion: '', telefono: '', email: '' } : null);
+});
+
+const vehiculoInfo = computed(() => {
+  const r = recepcion.value;
+  if (!r) return inspeccion.value?.vehiculo || null;
+  return r.vehiculo || { placa: r.placa, marca: r.marca, modelo: r.modelo, color: r.color };
+});
 
 const testigosMeta = TESTIGOS;
 
@@ -67,6 +91,13 @@ function getTestigoIconClasses(testigo) {
 const tieneOrdenTrabajo = computed(() => Boolean(inspeccion.value?.tiene_orden_trabajo));
 const tieneCotizacionActiva = computed(() => Boolean(inspeccion.value?.tiene_cotizacion_activa));
 const estaFinalizada = computed(() => inspeccion.value?.estado === 'FINALIZADA');
+
+const pasosFlujo = computed(() => [
+  { label: 'Recepción', completed: Boolean(inspeccion.value?.recepcion) },
+  { label: 'Inspección', completed: estaFinalizada.value },
+  { label: 'Cotización', completed: tieneCotizacionActiva.value },
+  { label: 'Orden de Trabajo', completed: tieneOrdenTrabajo.value },
+]);
 
 function formatDate(dateString) {
   if (!dateString) return '-';
@@ -198,38 +229,41 @@ onMounted(async () => {
         <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
           Inspección {{ inspeccion.numero_inspeccion || `#${inspeccion.id}` }}
         </h1>
-        <span :class="['inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium', tipoBadge.color]">
+        <!--span :class="['inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium', tipoBadge.color]">
           {{ tipoBadge.label }}
-        </span>
-        <span :class="['inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium', estadoBadge.color]">
+        </span-->
+        <span :class="['inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium', estadoBadge.color]">
+          <component :is="estadoBadge.icon" class="w-4 h-4" aria-hidden="true" />
           {{ estadoBadge.label }}
         </span>
-        <a
-          href="/crud/inspecciones/"
-          class="inline-flex items-center gap-2 px-3 py-2 ml-auto text-sm font-medium text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
-        >
-          <ArrowLeft class="w-4 h-4" />
-          Volver a la lista
-        </a>
-        <a
-          v-if="!estaFinalizada"
-          :href="`/crud/inspecciones/editar/?id=${encodeURIComponent(inspeccion.id)}`"
-          class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700"
-        >
-          <SquarePen class="w-4 h-4" />
-          Editar
-        </a>
-        <template v-if="estaFinalizada">
+        <div class="flex items-center gap-2 ml-auto flex-wrap">
+          <!--a
+            href="/crud/inspecciones/"
+            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+          >
+            <ArrowLeft class="w-4 h-4" />
+            Inspecciones
+          </a-->
+          <a
+            v-if="!estaFinalizada"
+            :href="`/crud/inspecciones/editar/?id=${encodeURIComponent(inspeccion.id)}`"
+            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 rounded-lg border border-primary-700 hover:bg-primary-50 focus:ring-4 focus:ring-primary-300 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800"
+          >
+            <SquarePen class="w-4 h-4" />
+            Editar
+          </a>
           <button
+            v-if="estaFinalizada"
             type="button"
             :disabled="isReopening"
-            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-amber-700 rounded-lg border border-amber-600 hover:bg-amber-50 focus:ring-4 focus:ring-amber-300 dark:text-amber-400 dark:border-amber-400 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-700 rounded-lg border border-red-600 hover:bg-red-50 focus:ring-4 focus:ring-red-300 dark:text-red-400 dark:border-red-400 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
             @click="solicitarReabrir"
           >
-            <IconRefresh class="w-4 h-4" />
-            Reabrir inspección
+            <IconLockOpen2 class="w-4 h-4" />
+            Reabrir
           </button>
           <button
+            v-if="estaFinalizada"
             type="button"
             :disabled="isSyncingCotizacion"
             :title="tieneCotizacionActiva ? 'Actualizar la cotización existente para reflejar los cambios de la inspección.' : 'Generar una cotización desde este diagnóstico'"
@@ -239,12 +273,15 @@ onMounted(async () => {
             <IconFileInvoice class="w-4 h-4" />
             {{ isSyncingCotizacion ? 'Sincronizando...' : (tieneCotizacionActiva ? 'Actualizar cotización' : 'Generar cotización') }}
           </button>
-        </template>
+        </div>
       </div>
     </template>
   </div>
 
   <div class="p-4">
+    <div v-if="inspeccion" class="relative mx-auto max-w-6xl mb-5">
+      <FlowSteps :steps="pasosFlujo" />
+    </div>
     <div class="relative mx-auto max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
       <Alert
         v-if="error"
@@ -269,259 +306,378 @@ onMounted(async () => {
       </div>
 
       <template v-else-if="inspeccion">
-        <h4 class="mb-4 text-xl font-semibold dark:text-white">
-          <span class="inline-flex items-center gap-2">
-            <FileText class="w-6 h-6 text-gray-800 dark:text-white" />
-            Información de la Inspección
-          </span>
-        </h4>
-        <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° inspección</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ inspeccion.numero_inspeccion || '-' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Tipo de inspección</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ inspeccion.tipo_inspeccion_display || tipoBadge.label }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Estado</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ inspeccion.estado_display || estadoBadge.label }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Cotización</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
-              <a
-                v-if="tieneCotizacionActiva && inspeccion.cotizacion_activa_id"
-                :href="`/crud/cotizaciones/editar/?id=${encodeURIComponent(inspeccion.cotizacion_activa_id)}`"
-                class="text-primary-600 hover:underline dark:text-primary-400"
-              >
-                {{ inspeccion.numero_cotizacion || `#${inspeccion.cotizacion_activa_id}` }}
-              </a>
-              <span v-else>—</span>
-            </dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de registro</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(inspeccion.created_at) }}</dd>
-          </div>
-
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Códigos de falla (DTC)</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ inspeccion.codigos_dtc || '—' }}</dd>
-          </div>
-          <div class="sm:col-span-1 lg:col-span-2">
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Motivo de ingreso</dt>
-            <dd class="mt-1 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ inspeccion.motivo_ingreso || '—' }}</dd>
-          </div>
-
-          <div class="sm:col-span-2 lg:col-span-3">
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Diagnóstico</dt>
-            <dd class="mt-1 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ inspeccion.diagnostico_tecnico || '—' }}</dd>
-          </div>
-          <div class="sm:col-span-2 lg:col-span-3">
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Recomendaciones</dt>
-            <dd class="mt-1 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ inspeccion.recomendaciones || '—' }}</dd>
-          </div>
-
-          <div v-if="tieneOrdenTrabajo" class="sm:col-span-2 lg:col-span-1">
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Orden de trabajo</dt>
-            <dd class="mt-1 text-sm font-semibold">
-              <a
-                v-if="inspeccion.orden_trabajo"
-                :href="`/crud/ordenes/ver/${inspeccion.orden_trabajo}/`"
-                class="text-emerald-600 hover:underline dark:text-emerald-400"
-              >
-                {{ inspeccion.orden_trabajo_numero || inspeccion.orden_trabajo }}
-              </a>
-              <span v-else class="text-emerald-700 dark:text-emerald-400">{{ inspeccion.orden_trabajo_numero || '—' }}</span>
-            </dd>
-          </div>
-        </dl>
-
-        <div v-if="recepcion" class="mt-10">
-          <h4 class="mb-4 text-xl font-semibold dark:text-white">
+        <div class="mb-4">
+          <h4 class="mb-3 text-lg font-semibold dark:text-white">
             <span class="inline-flex items-center gap-2">
-              <FolderInput class="w-6 h-6 text-gray-800 dark:text-white" />
-              Recepción asociada
+              <FileText class="w-5 h-5 text-gray-900 dark:text-gray-900" />
+              Información General
             </span>
           </h4>
-          <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Vehículo</h5>
-          <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-5 rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-700/40 dark:border-gray-600/60">
             <div>
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Placa</dt>
-              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ recepcion.vehiculo?.placa || recepcion.placa || '—' }}</dd>
+              <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Cliente</h5>
+              <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Cliente</dt>
+                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ clienteInfo?.nombre || '—' }}</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Identificación</dt>
+                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ clienteInfo?.identificacion || '—' }}</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Teléfono</dt>
+                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ clienteInfo?.telefono || '—' }}</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Correo</dt>
+                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ clienteInfo?.email || '—' }}</dd>
+                </div>
+              </dl>
             </div>
-            <div>
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Marca</dt>
-              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ recepcion.vehiculo?.marca || recepcion.marca || '—' }}</dd>
-            </div>
-            <div>
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Modelo</dt>
-              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ recepcion.vehiculo?.modelo || recepcion.modelo || '—' }}</dd>
-            </div>
-            <div v-if="recepcion.vehiculo?.color || recepcion.color">
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Color</dt>
-              <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ recepcion.vehiculo?.color || recepcion.color }}</dd>
-            </div>
-          </dl>
 
-          <h5 class="mt-8 mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Cliente</h5>
-          <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Nombre</dt>
-              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ recepcion.cliente?.nombre || recepcion.cliente_nombre || '—' }}</dd>
+              <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Vehículo</h5>
+              <div class="flex flex-col gap-4 sm:flex-row">
+                <dl class="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Placa</dt>
+                    <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculoInfo?.placa || '—' }}</dd>
+                  </div>
+                  <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Marca</dt>
+                    <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculoInfo?.marca || '—' }}</dd>
+                  </div>
+                  <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Modelo</dt>
+                    <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculoInfo?.modelo || '—' }}</dd>
+                  </div>
+                  <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Color</dt>
+                    <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ vehiculoInfo?.color || '—' }}</dd>
+                  </div>
+                </dl>
+                <div class="w-full shrink-0 sm:w-36">
+                  <button
+                    v-if="vehiculoInfo?.imagen"
+                    type="button"
+                    title="Ver foto del vehículo"
+                    class="block w-full overflow-hidden rounded-lg border border-gray-200 cursor-zoom-in dark:border-gray-600"
+                    @click="abrirFoto(vehiculoInfo.imagen)"
+                  >
+                    <img :src="vehiculoInfo.imagen" alt="Foto del vehículo" class="h-28 w-full object-cover" />
+                  </button>
+                  <div v-else class="flex h-28 w-full items-center justify-center rounded-lg border border-dashed border-gray-300 text-xs text-gray-500 dark:border-gray-600 dark:text-gray-400">
+                    Sin foto
+                  </div>
+                </div>
+              </div>
             </div>
-            <div>
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Identificación</dt>
-              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ recepcion.cliente?.identificacion || '—' }}</dd>
-            </div>
-            <div>
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Teléfono</dt>
-              <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ recepcion.cliente?.telefono || '—' }}</dd>
-            </div>
-            <div v-if="recepcion.cliente?.email">
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Correo</dt>
-              <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ recepcion.cliente.email }}</dd>
-            </div>
-          </dl>
-
-          <h5 class="mt-8 mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos de Ingreso</h5>
-          <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div>
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de ingreso</dt>
-              <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ formatDate(recepcion.created_at) }}</dd>
-            </div>
-            <div>
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° recepción</dt>
-              <dd class="mt-1 text-sm font-semibold">
-                <a
-                  :href="`/crud/recepciones/ver/?id=${recepcion.id}`"
-                  class="text-primary-600 hover:underline dark:text-primary-400"
-                >
-                  {{ recepcion.numero_recepcion || recepcion.id }}
-                </a>
-              </dd>
-            </div>
-          </dl>
+          </div>
         </div>
 
-        <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
-          <span class="inline-flex items-center gap-2">
-            <TriangleAlert class="w-6 h-6 text-gray-800 dark:text-white" />
-            Testigos luminosos
-          </span>
-        </h4>
-        <div class="space-y-4">
-          <div class="grid grid-cols-5 lg:grid-cols-10 gap-2 lg:gap-3">
-            <div
-              v-for="testigo in testigosMeta"
-              :key="testigo.key"
-              :class="getTestigoCardClasses(testigo)"
+        <div class="border-b border-gray-200 dark:border-gray-700">
+          <nav class="flex flex-wrap -mb-px">
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
+              :class="activeTab === 'informacion' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+              @click="activeTab = 'informacion'"
             >
-              <MdiIcon :path="testigo.path" :class="getTestigoIconClasses(testigo)" />
-              <span class="mt-2 text-xs font-medium text-center text-gray-700 dark:text-gray-300">
-                {{ testigo.label }}
+              <FileText class="w-4 h-4" />
+              1. Diagnóstico
+            </button>
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
+              :class="activeTab === 'testigos' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+              @click="activeTab = 'testigos'"
+            >
+              <TriangleAlert class="w-4 h-4" />
+              2. Testigos
+            </button>
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
+              :class="activeTab === 'evidencias' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+              @click="activeTab = 'evidencias'"
+            >
+              <ImageIcon class="w-4 h-4" />
+              3. Evidencias
+            </button>
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
+              :class="activeTab === 'servicios' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+              @click="activeTab = 'servicios'"
+            >
+              <Toolbox class="w-4 h-4" />
+              4. Servicios &amp; Repuestos
+            </button>
+          </nav>
+        </div>
+
+        <div v-show="activeTab === 'informacion'" class="p-4 space-y-6">
+          <div>
+            <h4 class="mb-3 text-lg font-semibold dark:text-white">
+              <span class="inline-flex items-center gap-2">
+                <FileText class="w-5 h-5 text-gray-800 dark:text-white" />
+                Detalles del diagnóstico
               </span>
-            </div>
+            </h4>
+            <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° inspección</dt>
+                <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ inspeccion.numero_inspeccion || '-' }}</dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Tipo de inspección</dt>
+                <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ inspeccion.tipo_inspeccion_display || tipoBadge.label }}</dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Estado</dt>
+                <dd class="mt-1">
+                  <span :class="['inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium', estadoBadge.color]">
+                    <span :class="['w-2 h-2 rounded-full', estadoBadge.dot]" aria-hidden="true"></span>
+                    {{ inspeccion.estado_display || estadoBadge.label }}
+                  </span>
+                </dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Responsable</dt>
+                <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ inspeccion.responsable_nombre || '—' }}</dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de registro</dt>
+                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ formatDate(inspeccion.created_at) }}</dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Cotización</dt>
+                <dd class="mt-0.5 text-sm font-semibold">
+                  <a
+                    v-if="tieneCotizacionActiva && inspeccion.cotizacion_activa_id"
+                    :href="`/crud/cotizaciones/editar/?id=${encodeURIComponent(inspeccion.cotizacion_activa_id)}`"
+                    class="text-primary-600 hover:underline dark:text-primary-400"
+                  >
+                    {{ inspeccion.numero_cotizacion || `#${inspeccion.cotizacion_activa_id}` }}
+                  </a>
+                  <span v-else>—</span>
+                </dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Códigos de falla (DTC)</dt>
+                <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ inspeccion.codigos_dtc || '—' }}</dd>
+              </div>
+              <div class="sm:col-span-2 lg:col-span-2">
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Motivo de ingreso</dt>
+                <dd class="mt-0.5 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ inspeccion.motivo_ingreso || '—' }}</dd>
+              </div>
+              <div class="sm:col-span-2 lg:col-span-3">
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Diagnóstico</dt>
+                <dd class="mt-0.5 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ inspeccion.diagnostico_tecnico || '—' }}</dd>
+              </div>
+              <div class="sm:col-span-2 lg:col-span-3">
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Recomendaciones</dt>
+                <dd class="mt-0.5 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ inspeccion.recomendaciones || '—' }}</dd>
+              </div>
+            </dl>
           </div>
-          <div class="col-span-1">
-            <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Otros Testigos u Observaciones del Tablero</p>
-            <div class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
-              {{ inspeccion.otros_testigos_observaciones || '-' }}
+
+          <hr class="border-gray-200 dark:border-gray-700" />
+
+          <div v-if="recepcion || tieneOrdenTrabajo">
+            <h4 class="mb-3 text-lg font-semibold dark:text-white">
+              <span class="inline-flex items-center gap-2">
+                <FolderInput class="w-5 h-5 text-gray-800 dark:text-white" />
+                Flujo de atención
+              </span>
+            </h4>
+            <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div v-if="recepcion">
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Recepción asociada</dt>
+                <dd class="mt-0.5 text-sm font-semibold">
+                  <a
+                    :href="`/crud/recepciones/ver/?id=${recepcion.id}`"
+                    class="text-primary-600 hover:underline dark:text-primary-400"
+                  >
+                    {{ recepcion.numero_recepcion || recepcion.id }}
+                  </a>
+                </dd>
+              </div>
+              <div v-if="recepcion">
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de ingreso</dt>
+                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ formatDate(recepcion.fecha_ingreso || recepcion.created_at) }}</dd>
+              </div>
+              <div v-if="tieneOrdenTrabajo">
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Orden de trabajo</dt>
+                <dd class="mt-0.5 text-sm font-semibold">
+                  <a
+                    v-if="inspeccion.orden_trabajo"
+                    :href="`/crud/ordenes/ver/${inspeccion.orden_trabajo}/`"
+                    class="text-emerald-600 hover:underline dark:text-emerald-400"
+                  >
+                    {{ inspeccion.orden_trabajo_numero || inspeccion.orden_trabajo }}
+                  </a>
+                  <span v-else class="text-emerald-700 dark:text-emerald-400">{{ inspeccion.orden_trabajo_numero || '—' }}</span>
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+
+        <div v-show="activeTab === 'testigos'" class="p-4 space-y-6">
+          <div>
+            <h4 class="mb-3 text-lg font-semibold dark:text-white">
+              <span class="inline-flex items-center gap-2">
+                <TriangleAlert class="w-5 h-5 text-gray-800 dark:text-white" />
+                Testigos luminosos
+              </span>
+            </h4>
+            <div class="space-y-4">
+              <div class="grid grid-cols-5 lg:grid-cols-10 gap-2 lg:gap-3">
+                <div
+                  v-for="testigo in testigosMeta"
+                  :key="testigo.key"
+                  :class="getTestigoCardClasses(testigo)"
+                >
+                  <MdiIcon :path="testigo.path" :class="getTestigoIconClasses(testigo)" />
+                  <span class="mt-2 text-xs font-medium text-center text-gray-700 dark:text-gray-300">
+                    {{ testigo.label }}
+                  </span>
+                </div>
+              </div>
+              <div class="col-span-1">
+                <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Otros Testigos u Observaciones del Tablero</p>
+                <div class="block w-full p-2.5 text-sm rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
+                  {{ inspeccion.otros_testigos_observaciones || '-' }}
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
-          <span class="inline-flex items-center gap-2">
-            <ImageIcon class="w-6 h-6 text-gray-800 dark:text-white" />
-            Fotos de la Inspección
-          </span>
-        </h4>
-        <div v-if="!inspeccion.fotos?.length" class="p-4 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
-          No se registraron fotos de evidencia.
-        </div>
-        <div v-else class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-          <div
-            v-for="(foto, index) in inspeccion.fotos"
-            :key="foto.id || foto.url || index"
-            class="border border-gray-200 rounded-lg p-3 dark:border-gray-600 bg-gray-50 dark:bg-gray-700"
-          >
+        <div v-show="activeTab === 'evidencias'" class="p-4 space-y-4">
+          <h4 class="mb-4 text-lg font-semibold dark:text-white">
+            <span class="inline-flex items-center gap-2">
+              <ImageIcon class="w-5 h-5 text-gray-800 dark:text-white" />
+              Fotos de la Inspección
+            </span>
+          </h4>
+          <div v-if="!inspeccion.fotos?.length" class="p-4 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
+            No se registraron fotos de evidencia.
+          </div>
+          <div v-else class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
             <div
-              class="relative flex aspect-square w-full cursor-zoom-in items-center justify-center overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-800"
-              @click="abrirFoto(foto.url || foto.imagen)"
+              v-for="(foto, index) in inspeccion.fotos"
+              :key="foto.id || foto.url || index"
+              class="border border-gray-200 rounded-lg p-3 dark:border-gray-600 bg-gray-50 dark:bg-gray-700"
             >
-              <img
-                v-if="foto.url || foto.imagen"
-                :src="foto.url || foto.imagen"
-                :alt="`Foto ${index + 1}`"
-                class="h-full w-full object-cover"
-              />
-              <span v-else class="text-xs text-gray-500 dark:text-gray-400">Sin imagen</span>
+              <div
+                class="relative flex aspect-square w-full cursor-zoom-in items-center justify-center overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-800"
+                @click="abrirFoto(foto.url || foto.imagen)"
+              >
+                <img
+                  v-if="foto.url || foto.imagen"
+                  :src="foto.url || foto.imagen"
+                  :alt="`Foto ${index + 1}`"
+                  class="h-full w-full object-cover"
+                />
+                <span v-else class="text-xs text-gray-500 dark:text-gray-400">Sin imagen</span>
+              </div>
+              <p v-if="foto.descripcion" class="mt-2 text-xs text-gray-600 dark:text-gray-300">{{ foto.descripcion }}</p>
             </div>
-            <p v-if="foto.descripcion" class="mt-2 text-xs text-gray-600 dark:text-gray-300">{{ foto.descripcion }}</p>
           </div>
         </div>
 
-        <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
-          <span class="inline-flex items-center gap-2">
-            <Toolbox class="w-6 h-6 text-gray-800 dark:text-white" />
-            Servicios / Mano de Obra
-          </span>
-        </h4>
-        <div v-if="!inspeccion.servicios_detectados?.length" class="p-4 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
-          No se registraron servicios detectados.
-        </div>
-        <div v-else class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
-          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-            <thead class="bg-gray-100 dark:bg-gray-900">
-              <tr>
-                <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Servicio</th>
-                <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Horas</th>
-                <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Prioridad</th>
-                <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Opcional</th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-              <tr v-for="(s, index) in inspeccion.servicios_detectados" :key="s.id || index">
-                <td class="p-3 text-sm text-gray-900 dark:text-white">{{ s.descripcion || '—' }}</td>
-                <td class="p-3 text-sm text-gray-900 dark:text-white">{{ formatoHoras(s.horas_estimadas) }}</td>
-                <td class="p-3 text-sm text-gray-900 dark:text-white">{{ PRIORIDADES[s.prioridad] || s.prioridad || '—' }}</td>
-                <td class="p-3 text-sm text-gray-900 dark:text-white">{{ s.es_sugerido ? 'Sí' : 'No' }}</td>
-              </tr>
-            </tbody>
-          </table>
+        <div v-show="activeTab === 'servicios'" class="p-4 space-y-8">
+          <div>
+            <h4 class="mb-4 text-lg font-semibold dark:text-white">
+              <span class="inline-flex items-center gap-2">
+                <Toolbox class="w-5 h-5 text-gray-800 dark:text-white" />
+                Servicios
+              </span>
+            </h4>
+            <div v-if="!inspeccion.servicios_detectados?.length" class="p-4 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
+              No se registraron servicios detectados.
+            </div>
+            <div v-else class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
+              <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+                <thead class="bg-gray-100 dark:bg-gray-900">
+                  <tr>
+                    <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Servicio</th>
+                    <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Horas</th>
+                    <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Prioridad</th>
+                    <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Opcional</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                  <tr v-for="(s, index) in inspeccion.servicios_detectados" :key="s.id || index">
+                    <td class="p-3 text-sm text-gray-900 dark:text-white">{{ s.descripcion || '—' }}</td>
+                    <td class="p-3 text-sm text-gray-900 dark:text-white">{{ formatoHoras(s.horas_estimadas) }}</td>
+                    <td class="p-3 text-sm text-gray-900 dark:text-white">{{ PRIORIDADES[s.prioridad] || s.prioridad || '—' }}</td>
+                    <td class="p-3 text-sm text-gray-900 dark:text-white">{{ s.es_sugerido ? 'Sí' : 'No' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <h4 class="mb-4 text-lg font-semibold dark:text-white">
+              <span class="inline-flex items-center gap-2">
+                <WrenchIcon class="w-5 h-5 text-gray-800 dark:text-white" />
+                Repuestos
+              </span>
+            </h4>
+            <div v-if="!inspeccion.repuestos_sugeridos?.length" class="p-4 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
+              No se registraron repuestos sugeridos.
+            </div>
+            <div v-else class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
+              <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+                <thead class="bg-gray-100 dark:bg-gray-900">
+                  <tr>
+                    <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Repuesto</th>
+                    <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Cant.</th>
+                    <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Prioridad</th>
+                    <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Opcional</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                  <tr v-for="(r, index) in inspeccion.repuestos_sugeridos" :key="r.id || index">
+                    <td class="p-3 text-sm text-gray-900 dark:text-white">{{ r.descripcion || '—' }}</td>
+                    <td class="p-3 text-sm text-gray-900 dark:text-white">{{ formatNumber(r.cantidad) }}</td>
+                    <td class="p-3 text-sm text-gray-900 dark:text-white">{{ PRIORIDADES[r.prioridad] || r.prioridad || '—' }}</td>
+                    <td class="p-3 text-sm text-gray-900 dark:text-white">{{ r.es_sugerido ? 'Sí' : 'No' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
-        <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
-          <span class="inline-flex items-center gap-2">
-            <WrenchIcon class="w-6 h-6 text-gray-800 dark:text-white" />
-            Repuestos
-          </span>
-        </h4>
-        <div v-if="!inspeccion.repuestos_sugeridos?.length" class="p-4 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
-          No se registraron repuestos sugeridos.
-        </div>
-        <div v-else class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
-          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-            <thead class="bg-gray-100 dark:bg-gray-900">
-              <tr>
-                <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Repuesto</th>
-                <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Cant.</th>
-                <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Prioridad</th>
-                <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Opcional</th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-              <tr v-for="(r, index) in inspeccion.repuestos_sugeridos" :key="r.id || index">
-                <td class="p-3 text-sm text-gray-900 dark:text-white">{{ r.descripcion || '—' }}</td>
-                <td class="p-3 text-sm text-gray-900 dark:text-white">{{ formatNumber(r.cantidad) }}</td>
-                <td class="p-3 text-sm text-gray-900 dark:text-white">{{ PRIORIDADES[r.prioridad] || r.prioridad || '—' }}</td>
-                <td class="p-3 text-sm text-gray-900 dark:text-white">{{ r.es_sugerido ? 'Sí' : 'No' }}</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <button
+            type="button"
+            class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="activeTabIndex <= 0"
+            @click="goToTab(-1)"
+          >
+            <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12l4-4m-4 4 4 4"/>
+            </svg>
+            Anterior
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="activeTabIndex >= TAB_ORDER.length - 1"
+            @click="goToTab(1)"
+          >
+            Siguiente
+            <svg class="w-6 h-6 text-gray-800 dark:text-white ml-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12H5m14 0-4 4m4-4-4-4"/>
+            </svg>
+          </button>
         </div>
       </template>
     </div>
@@ -549,11 +705,11 @@ onMounted(async () => {
     v-model="showReabrirModal"
     title="Reabrir inspección"
     :message="'Se reabrirá la inspección para poder modificar el diagnóstico y volver a generar la cotización. El cliente deberá aceptar nuevamente la cotización antes de modificar la orden de trabajo. ¿Deseas continuar?'"
-    :icon="IconRefresh"
-    icon-class="text-amber-600 dark:text-amber-400"
+    :icon="IconLockOpen2"
+    icon-class="text-red-600 dark:text-red-400"
     confirm-text="Sí, reabrir"
     confirming-text="Reabriendo..."
-    variant="primary"
+    variant="red"
     :is-deleting="isReopening"
     @confirm="confirmarReabrir"
     @cancel="showReabrirModal = false"

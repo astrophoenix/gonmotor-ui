@@ -1,11 +1,12 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue';
-import { ArrowLeft, IdCard, Car, Image as ImageIcon, X } from 'lucide-vue-next';
+import { ArrowLeft, IdCard, Pencil, Car, Image as ImageIcon, X } from 'lucide-vue-next';
 import { clientsService } from '../services/clientesService';
 import { vehiclesService } from '../../vehiculos/services/vehiclesService';
 import { request } from '../../../shared/services/httpClient';
 import { formatPlate } from '../../../shared/utils/formatPlate';
 import Alert from '../../../shared/components/Alert.vue';
+import ClientModal from './ClientModal.vue';
 
 const client = ref(null);
 const vehicles = ref([]);
@@ -13,6 +14,8 @@ const loading = ref(true);
 const error = ref('');
 const previewImg = ref('');
 const showImageModal = ref(false);
+const showClientModal = ref(false);
+const clientModalId = ref(null);
 const tipos = ref([]);
 const paises = ref([]);
 
@@ -55,6 +58,26 @@ function abrirFoto(url) {
 function cerrarFoto() {
   showImageModal.value = false;
   previewImg.value = '';
+}
+
+function abrirEditar() {
+  if (!client.value) return;
+  clientModalId.value = client.value.id;
+  showClientModal.value = true;
+}
+
+async function onClientUpdated() {
+  showClientModal.value = false;
+  loading.value = true;
+  try {
+    const data = await clientsService.getById(clientId);
+    client.value = data;
+    error.value = '';
+  } catch (fetchError) {
+    error.value = fetchError.message || 'No se pudo recargar el cliente.';
+  } finally {
+    loading.value = false;
+  }
 }
 
 onMounted(async () => {
@@ -113,8 +136,16 @@ onMounted(async () => {
           class="inline-flex items-center gap-2 px-3 py-2 ml-auto text-sm font-medium text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
         >
           <ArrowLeft class="w-4 h-4" />
-          Volver a la lista
+          Volver
         </a>
+        <button
+            type="button"
+            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300"
+            @click="abrirEditar"
+          >
+            <Pencil class="w-4 h-4" />
+            Editar
+          </button>
       </div>
     </template>
   </div>
@@ -138,7 +169,7 @@ onMounted(async () => {
       <h4 class="mb-4 text-xl font-semibold dark:text-white">
         <span class="inline-flex items-center gap-2">
           <IdCard class="w-6 h-6 text-gray-800 dark:text-white" />
-          Información del Cliente
+          Información General
         </span>
       </h4>
         <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -161,10 +192,6 @@ onMounted(async () => {
           <div class="sm:col-span-2 lg:col-span-1">
             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Dirección</dt>
             <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ client.direccion || '—' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">ID de integración Contífico</dt>
-            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ client.contifico_id || '—' }}</dd>
           </div>
           <div>
             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de registro</dt>
@@ -299,4 +326,10 @@ onMounted(async () => {
       <img :src="previewImg" class="max-h-[90vh] max-w-[90vw] object-contain" alt="Imagen ampliada del vehículo" />
     </div>
   </div>
+
+  <ClientModal
+    v-model="showClientModal"
+    :client-id="clientModalId"
+    @updated="onClientUpdated"
+  />
 </template>

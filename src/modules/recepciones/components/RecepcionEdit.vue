@@ -2784,12 +2784,8 @@ onMounted(() => {
           class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4"
         >
           <div class="flex items-center gap-2 mb-3">
-            <Car
-              class="w-4 h-4 text-primary-blue-600 dark:text-primary-blue-400"
-            />
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
-              Vehículo
-            </h3>
+            <Car class="w-5 h-5 text-gray-900 dark:text-gray-900" />
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Vehículo</h2>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div
