@@ -1,6 +1,9 @@
 <script setup>
 import { onMounted, onUnmounted, ref, watch } from 'vue';
-import { FileText, SquarePen, Trash2 } from 'lucide-vue-next';
+import { Pencil, Trash2 } from 'lucide-vue-next';
+import { QuoteIcon } from 'gonmotor-icons';
+import { Icon } from '@iconify/vue';
+import filePdfIcon from '@iconify-icons/fa6-regular/file-pdf';
 import { useCotizaciones } from '../composables/useCotizaciones';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
@@ -115,7 +118,7 @@ onUnmounted(() => {
           </ol>
         </nav>
         <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-          <FileText class="w-6 h-6 inline-block text-gray-900 dark:text-gray-400" />
+          <QuoteIcon class="w-6 h-6 inline-block text-gray-900 dark:text-gray-400" />
           Cotizaciones
         </h1>
       </div>
@@ -162,14 +165,24 @@ onUnmounted(() => {
             {{ item.numero_cotizacion }}
           </a>
         </td>
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">
-          <span class="font-medium">{{ item.cliente_nombre || '-' }}</span>
+        <td class="p-4 whitespace-nowrap">
+          <a
+            v-if="item.cliente"
+            :href="`/crud/clientes/ver/?id=${encodeURIComponent(item.cliente)}`"
+            class="font-medium text-gray-800 hover:text-primary-600 dark:text-white dark:hover:text-primary-400"
+          >{{ item.cliente_nombre || '-' }}</a>
+          <span v-else class="font-medium text-gray-800 dark:text-white">{{ item.cliente_nombre || '-' }}</span>
           <span v-if="item.cliente_telefono" class="block text-xs text-gray-500 dark:text-gray-400">
             {{ item.cliente_telefono }}
           </span>
         </td>
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">
-          {{ item.vehiculo_placa || '-' }}
+        <td class="p-4 whitespace-nowrap">
+          <a
+            v-if="item.vehiculo"
+            :href="`/crud/vehiculos/ver/?id=${encodeURIComponent(item.vehiculo)}`"
+            class="font-medium text-gray-800 hover:text-primary-600 dark:text-white dark:hover:text-primary-400"
+          >{{ item.vehiculo_placa || '-' }}</a>
+          <span v-else class="font-medium text-gray-800 dark:text-white">{{ item.vehiculo_placa || '-' }}</span>
           <span class="block text-xs text-gray-500 dark:text-gray-400">
             {{ item.vehiculo_marca || '' }} {{ item.vehiculo_modelo || '' }}
           </span>
@@ -183,11 +196,14 @@ onUnmounted(() => {
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ formatDate(item.created_at) }}</td>
         <td class="p-4 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <button type="button" title="Editar cotización" aria-label="Editar cotización" class="inline-flex items-center p-2 text-yellow-600 rounded-lg hover:bg-yellow-100 dark:text-yellow-400 dark:hover:bg-gray-700" @click="handleEditar(item.id)">
-              <SquarePen class="w-5 h-5" />
+            <button type="button" title="Editar cotización" aria-label="Editar cotización" class="inline-flex items-center p-2 text-primary-600 rounded-lg hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700" @click="handleEditar(item.id)">
+              <Pencil class="w-5 h-5" />
             </button>
             <button type="button" title="Eliminar cotización" aria-label="Eliminar cotización" :disabled="isDeleting" class="inline-flex items-center p-2 text-red-600 rounded-lg hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
               <Trash2 class="w-5 h-5" />
+            </button>
+            <button type="button" title="Descargar PDF" aria-label="Descargar PDF" class="inline-flex items-center p-2 text-gray-900 rounded-lg hover:bg-primary-100 hover:text-primary-600 dark:text-gray-100 dark:hover:bg-gray-700 dark:hover:text-primary-400">
+              <Icon :icon="filePdfIcon" class="w-5 h-5" />
             </button>
           </div>
         </td>

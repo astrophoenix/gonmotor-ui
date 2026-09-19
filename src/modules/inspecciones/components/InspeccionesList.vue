@@ -1,8 +1,14 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted } from 'vue';
-import { FileSearchCorner, Plus, SquarePen, FilePlus2, Trash2 } from 'lucide-vue-next';
+import { FileSearchCorner, Pencil, Trash2 } from 'lucide-vue-next';
+import { IconLockOpen2 } from '@tabler/icons-vue';
+import { QuoteIcon } from 'gonmotor-icons';
+import { Icon } from '@iconify/vue';
+import filePdfIcon from '@iconify-icons/fa6-regular/file-pdf';
 import { useInspecciones } from '../composables/useInspecciones';
+import { inspeccionesService } from '../services/inspeccionesService';
 import { talleresService } from '../../configuracion/services/talleresService';
+import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
@@ -58,24 +64,61 @@ function numeroDisplay(item) {
   return `#${prefijo}${item.id}`;
 }
 
+function vehiculoUrl(item) {
+  const id = item?.vehiculo?.id || item?.recepcion?.vehiculo?.id;
+  return id ? `/crud/vehiculos/ver/?id=${encodeURIComponent(id)}` : null;
+}
+
+function clienteUrl(item) {
+  const id = item?.cliente?.id || item?.recepcion?.cliente?.id;
+  return id ? `/crud/clientes/ver/?id=${encodeURIComponent(id)}` : null;
+}
+
 const showDeleteModal = ref(false);
 const inspeccionToDelete = ref(null);
+
+const showReabrirModal = ref(false);
+const inspeccionToReabrir = ref(null);
+const isReopening = ref(false);
 let searchTimer;
 
 function handleEditar(inspeccion) {
-  if (inspeccion.estado === 'FINALIZADA') {
-    window.location.assign(`/crud/inspecciones/ver/?id=${encodeURIComponent(inspeccion.id)}`);
-    return;
-  }
   window.location.assign(`/crud/inspecciones/editar/?id=${encodeURIComponent(inspeccion.id)}`);
+}
+
+function solicitarReabrir(inspeccion) {
+  inspeccionToReabrir.value = inspeccion;
+  showReabrirModal.value = true;
+}
+
+async function confirmarReabrir() {
+  if (!inspeccionToReabrir.value || isReopening.value) return;
+  isReopening.value = true;
+  const numero = numeroDisplay(inspeccionToReabrir.value);
+  try {
+    await inspeccionesService.update(inspeccionToReabrir.value.id, { estado: 'EN_PROCESO' });
+    inspeccionToReabrir.value = null;
+    showReabrirModal.value = false;
+    showAlert('success', '', `Inspección ${numero} reabierta. Ahora está en proceso.`);
+    await loadInspecciones(currentPage.value);
+  } catch (error) {
+    showAlert('error', '', error.message || 'No se pudo reabrir la inspección.');
+    showReabrirModal.value = false;
+  } finally {
+    isReopening.value = false;
+  }
 }
 
 function handleCrearCotizacion(id) {
   window.location.assign(`/crud/cotizaciones/nuevo/?inspeccion=${encodeURIComponent(id)}`);
 }
 
-function handleNueva() {
-  window.location.assign('/crud/inspecciones/agregar/');
+function handlePdfError(message) {
+  showAlert('error', 'Error al exportar PDF', message);
+}
+
+function handleExcelError(message) {
+  showAlert('error', 'Error al exportar Excel', message);
 }
 
 function openDeleteModal(inspeccion) {
@@ -176,10 +219,11 @@ onUnmounted(() => {
           </form>
         </div>
         <div class="flex items-center ml-auto space-x-2 sm:space-x-3">
-          <button type="button" class="inline-flex items-center px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700" @click="handleNueva">
-            <Plus class="w-4 h-4 mr-2" />
-            Nueva
-          </button>
+          <EntityActionButtons
+            entity="inspecciones"
+            @pdfExportError="handlePdfError"
+            @excelExportError="handleExcelError"
+          />
         </div>
       </div>
     </div>
@@ -210,13 +254,25 @@ onUnmounted(() => {
             {{ numeroDisplay(item) }}
           </a>
         </td>
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">
-          <span class="font-medium">{{ item.recepcion?.placa || '-' }}</span>
+        <td class="p-4 whitespace-nowrap">
+          <a
+            v-if="vehiculoUrl(item)"
+            :href="vehiculoUrl(item)"
+            class="font-medium text-gray-800 hover:text-primary-600 dark:text-white dark:hover:text-primary-400"
+          >{{ item.recepcion?.placa || '-' }}</a>
+          <span v-else class="font-medium text-gray-800 dark:text-white">{{ item.recepcion?.placa || '-' }}</span>
           <span class="block text-xs text-gray-500 dark:text-gray-400">
             {{ item.recepcion?.marca || '' }} {{ item.recepcion?.modelo || '' }}
           </span>
         </td>
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.recepcion?.cliente_nombre || '-' }}</td>
+        <td class="p-4 whitespace-nowrap">
+          <a
+            v-if="clienteUrl(item)"
+            :href="clienteUrl(item)"
+            class="font-medium text-gray-800 hover:text-primary-600 dark:text-white dark:hover:text-primary-400"
+          >{{ item.recepcion?.cliente_nombre || '-' }}</a>
+          <span v-else class="font-medium text-gray-800 dark:text-white">{{ item.recepcion?.cliente_nombre || '-' }}</span>
+        </td>
         <td class="p-4 whitespace-nowrap">
           <span :class="['px-2 py-1 rounded-full text-xs font-medium', tipoBadge(item.tipo_inspeccion).color]">
             {{ tipoBadge(item.tipo_inspeccion).label }}
@@ -230,16 +286,22 @@ onUnmounted(() => {
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ formatDate(item.created_at) }}</td>
         <td class="p-4 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <button type="button" :title="item.estado === 'FINALIZADA' ? 'Ver inspección' : 'Editar inspección'" :aria-label="item.estado === 'FINALIZADA' ? 'Ver inspección' : 'Editar inspección'" class="inline-flex items-center p-2 text-yellow-600 rounded-lg hover:bg-yellow-100 dark:text-yellow-400 dark:hover:bg-gray-700" @click="handleEditar(item)">
-              <SquarePen class="w-5 h-5" />
+            <button v-if="item.estado !== 'FINALIZADA'" type="button" title="Editar inspección" aria-label="Editar inspección" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded-lg border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="handleEditar(item)">
+              <Pencil class="w-5 h-5" />
             </button>
-            <button v-if="item.estado === 'PENDIENTE'" type="button" title="Crear cotización" aria-label="Crear cotización" class="inline-flex items-center p-2 text-green-600 rounded-lg hover:bg-green-100 dark:text-green-400 dark:hover:bg-gray-700" @click="handleCrearCotizacion(item.id)">
-              <FilePlus2 class="w-5 h-5 text-gray-800 dark:text-white" />
+            <button v-if="item.estado === 'FINALIZADA'" type="button" title="Reabrir inspección" aria-label="Reabrir inspección" :disabled="isReopening" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded-lg border border-primary-200 hover:bg-primary-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="solicitarReabrir(item)">
+              <IconLockOpen2 class="w-5 h-5" />
+            </button>
+            <button v-if="item.estado === 'PENDIENTE'" type="button" title="Crear cotización" aria-label="Crear cotización" class="px-1.5 py-1.5 inline-flex items-center p-2 text-gray-900 rounded-lg border border-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-primary-400" @click="handleCrearCotizacion(item.id)">
+              <QuoteIcon class="w-5 h-5" />
             </button>
 
 
-            <button type="button" title="Eliminar inspección" aria-label="Eliminar inspección" :disabled="isDeleting" class="inline-flex items-center p-2 text-red-600 rounded-lg hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
+            <button type="button" title="Eliminar inspección" aria-label="Eliminar inspección" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded-lg border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
               <Trash2 class="w-5 h-5" />
+            </button>
+            <button type="button" title="Descargar PDF" aria-label="Descargar PDF" class="px-1.5 py-1.5 inline-flex items-center p-2 text-gray-900 rounded-lg border border-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-primary-400">
+              <Icon :icon="filePdfIcon" class="w-5 h-5" />
             </button>
           </div>
         </td>
@@ -254,5 +316,19 @@ onUnmounted(() => {
     :is-deleting="isDeleting"
     @confirm="confirmDelete"
     @cancel="inspeccionToDelete = null"
+  />
+
+  <ConfirmModal
+    v-model="showReabrirModal"
+    title="Reabrir inspección"
+    :message="'Se reabrirá la inspección para poder modificar el diagnóstico y volver a generar la cotización. El cliente deberá aceptar nuevamente la cotización antes de modificar la orden de trabajo. ¿Deseas continuar?'"
+    :icon="IconLockOpen2"
+    icon-class="text-primary-600 dark:text-primary-400"
+    confirm-text="Sí, reabrir"
+    confirming-text="Reabriendo..."
+    variant="primary"
+    :is-deleting="isReopening"
+    @confirm="confirmarReabrir"
+    @cancel="showReabrirModal = false"
   />
 </template>

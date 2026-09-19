@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, reactive, ref, watch } from 'vue';
-import { X, Save, FileText, Car } from 'lucide-vue-next';
+import { X, Save, FileText } from 'lucide-vue-next';
+import { CarChassisIcon } from 'gonmotor-icons';
 import { request } from '../../../shared/services/httpClient';
 import {
   formatPlaca,
@@ -393,7 +394,7 @@ watch(() => form.observaciones, (val) => {
       <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
           <span class="inline-flex items-center gap-2">
-            <Car class="w-5 h-5 text-gray-800 dark:text-white" />
+            <CarChassisIcon class="w-5 h-5 text-gray-800 dark:text-white" />
             {{ isEditMode ? 'Editar vehículo' : 'Nuevo vehículo' }}
           </span>
         </h3>

@@ -29,7 +29,7 @@ const props = defineProps({
   },
   iconClass: {
     type: String,
-    default: 'text-gray-400 dark:text-gray-600'
+    default: ''
   },
   confirmText: {
     type: String,
@@ -63,7 +63,17 @@ const variantClasses = {
   success: 'bg-green-600 hover:bg-green-700 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800',
 };
 
+const variantIconClasses = {
+  danger: 'text-red-600 dark:text-red-400',
+  primary: 'text-primary-600 dark:text-primary-400',
+  success: 'text-green-600 dark:text-green-400',
+};
+
 const confirmButtonClass = computed(() => props.confirmClass || variantClasses[props.variant] || variantClasses.danger);
+
+const effectiveIconClass = computed(
+  () => props.iconClass || variantIconClasses[props.variant] || variantIconClasses.danger
+);
 
 const displayMessage = computed(() => {
   if (props.message) return props.message;
@@ -113,7 +123,7 @@ watch(
         </button>
 
         <div class="p-4 md:p-5 text-center">
-          <component :is="icon || CircleAlert" :class="['mx-auto mb-4 w-12 h-12', iconClass]" />
+          <component :is="icon || CircleAlert" :class="['mx-auto mb-4 w-12 h-12', effectiveIconClass]" />
           <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">{{ title }}</h3>
           <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">{{ displayMessage }}</p>
           <div class="flex items-center space-x-4 justify-center">

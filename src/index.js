@@ -5,7 +5,7 @@ import './charts';
 import './dark-mode';
 import { mountLogin, mountRegister } from './modules/auth';
 import { mountClients, mountClientEdit, mountClientDetail } from './modules/clientes';
-import { mountVehicles, mountVehicleEdit } from './modules/vehiculos';
+import { mountVehicles, mountVehicleEdit, mountVehicleDetail } from './modules/vehiculos';
 import { mountRecepciones, mountRecepcionDetail, mountRecepcionEdit } from './modules/recepciones';
 import { mountInspecciones, mountInspeccionEdit, mountInspeccionDetail } from './modules/inspecciones';
 import { mountCotizaciones, mountCotizacionEdit } from './modules/cotizaciones';
@@ -73,6 +73,12 @@ const vehicleEditApp = document.getElementById('vehicle-edit-app');
 
 if (vehicleEditApp) {
   mountVehicleEdit(vehicleEditApp, pinia);
+}
+
+const vehicleDetailApp = document.getElementById('vehicle-ver-app');
+
+if (vehicleDetailApp) {
+  mountVehicleDetail(vehicleDetailApp, pinia);
 }
 
 const recepcionesApp = document.getElementById('recepciones-app');

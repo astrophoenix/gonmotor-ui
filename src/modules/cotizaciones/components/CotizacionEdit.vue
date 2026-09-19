@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import {
   CheckCircle2,
+  FileText,
   Loader2,
   Send,
   Wand2,
@@ -66,6 +67,8 @@ const recepcionOrigen = ref(null);
 const ordenTrabajoNumero = ref('');
 const ordenGeneradaNumero = ref('');
 const inspeccionTipo = ref('');
+const previewImg = ref('');
+const showImageModal = ref(false);
 
 const cotizacion = ref(null);
 
@@ -125,6 +128,17 @@ function formatDate(dateString) {
   if (!dateString) return '-';
   const date = new Date(dateString);
   return date.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function abrirFoto(url) {
+  if (!url) return;
+  previewImg.value = url;
+  showImageModal.value = true;
+}
+
+function cerrarFoto() {
+  showImageModal.value = false;
+  previewImg.value = '';
 }
 
 function showError(error) {
@@ -654,7 +668,15 @@ onBeforeUnmount(() => {
       <span :class="['inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium', estadoInfo.color]">
         {{ estadoInfo.label }}
       </span>
-      <div v-if="isEditModeFlag && cotizacionId" class="flex items-center ml-auto gap-2 flex-wrap">
+      <div class="flex items-center ml-auto gap-2 flex-wrap">
+        <template v-if="isEditModeFlag && cotizacionId">
+        <FormSaveActions
+          v-if="esEditable"
+          :is-loading="isSaving"
+          :is-edit-mode="isEditModeFlag"
+          cancel-href="/crud/cotizaciones/"
+          :on-submit="submit"
+        />
         <button
           v-if="estado === 'ENVIADA'"
           type="button"
@@ -700,6 +722,13 @@ onBeforeUnmount(() => {
           <Send class="w-4 h-4 mr-2" />
           Reenviar al cliente
         </button>
+        </template>
+        <FormSaveActions
+          v-if="!isEditModeFlag && !inspeccionOrigen"
+          :is-loading="isCreando"
+          cancel-href="/crud/cotizaciones/"
+          :on-submit="crearCotizacionIndependiente"
+        />
       </div>
     </div>
   </div>
@@ -768,92 +797,117 @@ onBeforeUnmount(() => {
 
         <!-- Información desplegada cuando ya existe -->
         <div v-if="isEditModeFlag && cotizacion" class="mb-8">
-          <h3 class="text-lg font-semibold text-gray-900 mb-1 dark:text-white">Información General</h3>
-          <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">
-            Datos del cliente, del vehículo y del origen de la cotización.
-          </p>
+          <h4 class="mb-4 text-lg font-semibold dark:text-white">
+            <span class="inline-flex items-center gap-2">
+              <FileText class="w-5 h-5 text-gray-800 dark:text-white" />
+              Información General
+            </span>
+          </h4>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-5 rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-700/40 dark:border-gray-600/60">
+            <div>
+              <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Cliente</h5>
+              <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Cliente</dt>
+                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.cliente_nombre || '—' }}</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Identificación</dt>
+                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.cliente_identificacion || '—' }}</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Teléfono</dt>
+                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ cotizacion.cliente_telefono || '—' }}</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Correo</dt>
+                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ cotizacion.cliente_email || '—' }}</dd>
+                </div>
+              </dl>
+            </div>
 
-          <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Cliente</h5>
-          <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Nombre</dt>
-              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.cliente_nombre || '—' }}</dd>
+              <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Vehículo</h5>
+              <div class="flex flex-col gap-4 sm:flex-row">
+                <dl class="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Placa</dt>
+                    <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_placa || '—' }}</dd>
+                  </div>
+                  <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Marca</dt>
+                    <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_marca || '—' }}</dd>
+                  </div>
+                  <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Modelo</dt>
+                    <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_modelo || '—' }}</dd>
+                  </div>
+                  <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Color</dt>
+                    <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ cotizacion.vehiculo_color || '—' }}</dd>
+                  </div>
+                </dl>
+                <div class="w-full shrink-0 sm:w-36">
+                  <button
+                    v-if="cotizacion.vehiculo_imagen"
+                    type="button"
+                    title="Ver foto del vehículo"
+                    class="block w-full overflow-hidden rounded-lg border border-gray-200 cursor-zoom-in dark:border-gray-600"
+                    @click="abrirFoto(cotizacion.vehiculo_imagen)"
+                  >
+                    <img :src="cotizacion.vehiculo_imagen" alt="Foto del vehículo" class="h-28 w-full object-cover" />
+                  </button>
+                  <div v-else class="flex h-28 w-full items-center justify-center rounded-lg border border-dashed border-gray-300 text-xs text-gray-500 dark:border-gray-600 dark:text-gray-400">
+                    Sin foto
+                  </div>
+                </div>
+              </div>
             </div>
-            <div>
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Identificación</dt>
-              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.cliente_identificacion || '—' }}</dd>
-            </div>
-            <div>
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Teléfono</dt>
-              <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ cotizacion.cliente_telefono || '—' }}</dd>
-            </div>
-            <div>
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Correo</dt>
-              <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ cotizacion.cliente_email || '—' }}</dd>
-            </div>
-          </dl>
 
-          <h5 class="mt-8 mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Vehículo</h5>
-          <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div>
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Placa</dt>
-              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_placa || '—' }}</dd>
+            <div class="sm:col-span-2 lg:col-span-2">
+              <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Origen y Emisión</h5>
+              <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div v-if="cotizacion.inspeccion_origen">
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° Inspección</dt>
+                  <dd class="mt-0.5 text-sm font-semibold">
+                    <a :href="`/crud/inspecciones/editar/?id=${encodeURIComponent(cotizacion.inspeccion_origen)}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
+                      {{ cotizacion.inspeccion_numero || `#${cotizacion.inspeccion_origen}` }}
+                    </a>
+                    <span v-if="cotizacion.inspeccion_tipo" class="ml-2 text-xs font-medium text-gray-500 dark:text-gray-400">{{ cotizacion.inspeccion_tipo }}</span>
+                  </dd>
+                </div>
+                <div v-if="cotizacion.recepcion_origen">
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° Recepción</dt>
+                  <dd class="mt-0.5 text-sm font-semibold">
+                    <a :href="`/crud/recepciones/ver/?id=${encodeURIComponent(cotizacion.recepcion_origen)}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
+                      {{ cotizacion.recepcion_numero || `#${cotizacion.recepcion_origen}` }}
+                    </a>
+                  </dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Taller</dt>
+                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ sucursalNombre || '—' }}</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Emitida</dt>
+                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(createdAt) }}</dd>
+                </div>
+                <div v-if="ordenGeneradaNumero">
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Orden de trabajo generada</dt>
+                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ ordenGeneradaNumero }}</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Validez de la oferta</dt>
+                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.validez_dias || '—' }} días</dd>
+                </div>
+                <div v-if="fechaAceptacion">
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Aceptada</dt>
+                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(fechaAceptacion) }}</dd>
+                  <dd class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ (METODOS_ACEPTACION.find((m) => m.value === metodoAceptacion) || {}).label || metodoAceptacion }}</dd>
+                </div>
+              </dl>
             </div>
-            <div>
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Marca</dt>
-              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_marca || '—' }}</dd>
-            </div>
-            <div>
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Modelo</dt>
-              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_modelo || '—' }}</dd>
-            </div>
-          </dl>
-
-          <h5 class="mt-8 mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Origen y Emisión</h5>
-          <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div v-if="cotizacion.inspeccion_origen">
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° Inspección</dt>
-              <dd class="mt-1 text-sm font-semibold">
-                <a :href="`/crud/inspecciones/editar/?id=${encodeURIComponent(cotizacion.inspeccion_origen)}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
-                  {{ cotizacion.inspeccion_numero || `#${cotizacion.inspeccion_origen}` }}
-                </a>
-                <span v-if="cotizacion.inspeccion_tipo" class="ml-2 text-xs font-medium text-gray-500 dark:text-gray-400">{{ cotizacion.inspeccion_tipo }}</span>
-              </dd>
-            </div>
-            <div v-if="cotizacion.recepcion_origen">
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° Recepción</dt>
-              <dd class="mt-1 text-sm font-semibold">
-                <a :href="`/crud/recepciones/ver/?id=${encodeURIComponent(cotizacion.recepcion_origen)}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
-                  {{ cotizacion.recepcion_numero || `#${cotizacion.recepcion_origen}` }}
-                </a>
-              </dd>
-            </div>
-            <div>
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Taller</dt>
-              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ sucursalNombre || '—' }}</dd>
-            </div>
-            <div>
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Emitida</dt>
-              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(createdAt) }}</dd>
-            </div>
-            <div v-if="ordenGeneradaNumero">
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Orden de trabajo generada</dt>
-              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ ordenGeneradaNumero }}</dd>
-            </div>
-          </dl>
-
-          <h5 class="mt-8 mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Validez y Aceptación</h5>
-          <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div>
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Validez de la oferta</dt>
-              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.validez_dias || '—' }} días</dd>
-            </div>
-            <div v-if="fechaAceptacion">
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Aceptada</dt>
-              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(fechaAceptacion) }}</dd>
-              <dd class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ (METODOS_ACEPTACION.find((m) => m.value === metodoAceptacion) || {}).label || metodoAceptacion }}</dd>
-            </div>
-          </dl>
+          </div>
         </div>
 
         <fieldset :disabled="!esEditable" class="grid grid-cols-1 gap-8">
@@ -1072,20 +1126,6 @@ onBeforeUnmount(() => {
             </div>
           </div>
         </fieldset>
-
-        <FormSaveActions
-          v-if="esEditable && cotizacionId && isEditModeFlag"
-          :is-loading="isSaving"
-          :is-edit-mode="isEditModeFlag"
-          cancel-href="/crud/cotizaciones/"
-          :on-submit="submit"
-        />
-        <FormSaveActions
-          v-if="!isEditModeFlag && !inspeccionOrigen"
-          :is-loading="isCreando"
-          cancel-href="/crud/cotizaciones/"
-          :on-submit="crearCotizacionIndependiente"
-        />
       </template>
     </div>
   </div>
@@ -1153,4 +1193,21 @@ onBeforeUnmount(() => {
     @created="onClientCreated"
     @reactivated="onClientCreated"
   />
+
+  <div
+    v-if="showImageModal"
+    class="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 p-6"
+    role="dialog"
+    aria-label="Foto del vehículo"
+    @click.self="cerrarFoto"
+  >
+    <button
+      type="button"
+      class="absolute top-4 right-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+      @click="cerrarFoto"
+    >
+      <X class="w-6 h-6" />
+    </button>
+    <img :src="previewImg" alt="Foto del vehículo" class="max-h-[90vh] max-w-[90vw] object-contain rounded-lg" />
+  </div>
 </template>

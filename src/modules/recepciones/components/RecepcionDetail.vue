@@ -22,6 +22,7 @@ import {
 import Alert from '../../../shared/components/Alert.vue';
 import MdiIcon from '../../../shared/components/MdiIcon.vue';
 import FlowSteps from '../../../shared/components/FlowSteps.vue';
+import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 import { TESTIGOS } from '../../../shared/config/testigos';
 import { useRecepciones } from '../composables/useRecepciones';
 import { inspeccionesService } from '../../inspecciones/services/inspeccionesService';
@@ -191,12 +192,22 @@ const puedeEditar = computed(() => {
   return !(r.aceptacion_condiciones && r.fecha_firma_cliente);
 });
 
-const pasosFlujo = computed(() => [
-  { label: 'Recepción', completed: Boolean(recepcion.value) },
-  { label: 'Inspección', completed: tieneInspeccion.value },
-  { label: 'Cotización', completed: (recepcion.value?.cotizaciones_generadas?.length ?? 0) > 0 },
-  { label: 'Orden de Trabajo', completed: Boolean(recepcion.value?.orden_trabajo) },
-]);
+const pasosFlujo = computed(() => {
+  const r = recepcion.value || {};
+  const inspec = (r.inspecciones && r.inspecciones[0]) || null;
+  const cotizaciones = r.cotizaciones_generadas || [];
+  const cotizacion = cotizaciones[cotizaciones.length - 1] || null;
+  return buildPasosFlujo([
+    { entidad: 'recepcion', estado: r.estado, estadoDisplay: r.estado_display },
+    { entidad: 'inspeccion', estado: inspec?.estado, estadoDisplay: inspec?.estado_display },
+    {
+      entidad: 'cotizacion',
+      estado: cotizacion?.estado || (cotizacion ? 'BORRADOR' : null),
+      estadoDisplay: cotizacion?.estado_display,
+    },
+    { entidad: 'orden', estado: r.orden_trabajo_estado, estadoDisplay: r.orden_trabajo_estado_display },
+  ]);
+});
 
 const estadoBadge = computed(() => {
   const estado = recepcion.value?.estado || 'PENDIENTE';

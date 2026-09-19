@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue';
-import { Search, UserPlus, IdCard, Gauge, Car } from 'lucide-vue-next';
+import { CarIcon, Search, UserPlus } from 'lucide-vue-next';
 import { request } from '../services/httpClient';
 
 const props = defineProps({
@@ -246,7 +246,7 @@ defineExpose({ focusInput, clearAll });
           v-if="item.marca || item.modelo || item.color"
           class="flex items-center gap-1.5 mt-0.5 text-xs text-gray-500 dark:text-gray-400"
         >
-          <Car class="w-3.5 h-3.5" />
+          <CarIcon class="w-3.5 h-3.5" />
           {{ [item.marca, item.modelo, item.color].filter(Boolean).join('  ') }}
         </span>
       </button>

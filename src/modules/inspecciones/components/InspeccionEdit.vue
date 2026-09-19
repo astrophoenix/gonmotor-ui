@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue';
-import { Toolbox, WrenchIcon, TriangleAlert, CheckCircle2, Clock, FileText, Loader2, Plus, Trash2, Wand2, Wrench, ClipboardList, IdCardIcon, TagIcon, Shapes, PaintBucket, Phone, Mail, CameraIcon, Car, Camera } from 'lucide-vue-next';
+import { Car, Toolbox, WrenchIcon, TriangleAlert, CheckCircle2, Clock, FileText, Loader2, Plus, Trash2, Wand2, Wrench, ClipboardList, IdCardIcon, TagIcon, Shapes, PaintBucket, Phone, Mail, CameraIcon, Camera } from 'lucide-vue-next';
 import { IconClockCheck, IconClockPlay, IconEngine, IconManualGearbox, IconAutomaticGearbox, IconGasStation } from '@tabler/icons-vue';
 import { request } from '../../../shared/services/httpClient';
 import { API_BASE_URL } from '../../../shared/config/env';
@@ -17,6 +17,8 @@ import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TestigosTablero from '../../../shared/components/TestigosTablero.vue';
 import TextImprover from '../../../shared/components/TextImprover.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
+import FlowSteps from '../../../shared/components/FlowSteps.vue';
+import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 import { sanitizeDtc, sanitizeObservaciones, normalizarDecimal } from '../../../shared/utils/sanitize';
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -71,6 +73,7 @@ const CAMPO_MAX_CHARS = {
 
 const recepcion = ref(null);
 const estadoInspeccion = ref('');
+const inspeccionData = ref(null);
 
 const transicionEstado = ref(false);
 const showFinalizarModal = ref(false);
@@ -78,6 +81,18 @@ const showFinalizarModal = ref(false);
 const activeTab = ref('informacion');
 const TAB_ORDER = ['informacion', 'testigos', 'fotos', 'servicios'];
 const activeTabIndex = computed(() => TAB_ORDER.indexOf(activeTab.value));
+
+const pasosFlujo = computed(() => {
+  const rec = recepcion.value || null;
+  const data = inspeccionData.value || {};
+  const estadoCotizacion = data.cotizacion_estado || (data.tiene_cotizacion_activa ? 'BORRADOR' : null);
+  return buildPasosFlujo([
+    { entidad: 'recepcion', estado: rec?.estado, estadoDisplay: rec?.estado_display },
+    { entidad: 'inspeccion', estado: estadoInspeccion.value || 'PENDIENTE' },
+    { entidad: 'cotizacion', estado: estadoCotizacion, estadoDisplay: data.cotizacion_estado_display },
+    { entidad: 'orden', estado: data.orden_trabajo_estado, estadoDisplay: data.orden_trabajo_estado_display },
+  ]);
+});
 
 function goToTab(direction) {
   const next = activeTabIndex.value + direction;
@@ -674,6 +689,7 @@ async function loadInspeccion() {
 
   try {
     const data = await inspeccionesService.getById(inspeccionId);
+    inspeccionData.value = data;
     estadoInspeccion.value = data.estado || '';
     const recepcionIdVal = data.recepcion && typeof data.recepcion === 'object' ? data.recepcion.id : data.recepcion;
     Object.assign(form, {
@@ -855,56 +871,7 @@ onMounted(() => {
   </div>
 
   <div v-if="recepcion" class="relative mx-auto max-w-6xl px-4 pt-4 rounded-lg">
-    <ol class="flex items-center w-full text-sm font-medium text-center text-gray-500 dark:text-gray-400 sm:text-base">
-      <li
-        class="flex md:w-full items-center after:content-[''] after:w-full after:h-1 after:bg-primary-600 after:inline-block after:mx-6 xl:after:mx-10 dark:after:bg-primary-500"
-      >
-        <span class="flex items-center">
-          <span
-            class="me-2 inline-flex flex-none items-center justify-center w-6 h-6 rounded-full bg-primary-600 dark:bg-primary-500 text-white text-xs font-semibold whitespace-nowrap"
-            >1</span
-          >
-          <span
-            class="whitespace-nowrap text-primary-blue-600 dark:text-primary-blue-400"
-            >Recepción</span
-          >
-        </span>
-      </li>
-      <li
-        class="flex md:w-full items-center after:content-[''] after:w-full after:h-1 after:bg-primary-600 after:inline-block after:mx-6 xl:after:mx-10 dark:after:bg-primary-500"
-      >
-        <span class="flex items-center">
-          <span
-            class="me-2 inline-flex flex-none items-center justify-center w-6 h-6 rounded-full bg-primary-600 dark:bg-primary-500 text-white text-xs font-semibold whitespace-nowrap"
-            >2</span
-          >
-          <span
-            class="whitespace-nowrap text-primary-blue-600 dark:text-primary-blue-400"
-            >Inspección</span
-          >
-        </span>
-      </li>
-      <li
-        class="flex md:w-full items-center after:content-[''] after:w-full after:h-1 after:bg-gray-200 after:inline-block after:mx-6 xl:after:mx-10 dark:after:bg-gray-700"
-      >
-        <span class="flex items-center">
-          <span
-            class="me-2 inline-flex flex-none items-center justify-center w-6 h-6 rounded-full bg-gray-400 dark:bg-gray-600 text-white text-xs font-semibold whitespace-nowrap"
-            >3</span
-          >
-          <span class="whitespace-nowrap">Cotización</span>
-        </span>
-      </li>
-      <li class="flex flex-none items-center">
-        <span class="flex items-center whitespace-nowrap">
-          <span
-            class="me-2 inline-flex flex-none items-center justify-center w-6 h-6 rounded-full bg-gray-400 dark:bg-gray-600 text-white text-xs font-semibold whitespace-nowrap"
-            >4</span
-          >
-          <span class="whitespace-nowrap">Orden de Trabajo</span>
-        </span>
-      </li>
-    </ol>
+    <FlowSteps :steps="pasosFlujo" />
   </div>
 
   <div class="px-4 pt-4">
@@ -1024,8 +991,8 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="mt-4">
-          <label for="responsable" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Responsable de la inspección</label>
+        <div class="col-span-2 mt-4">
+          <label for="responsable" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Responsable</label>
           <EmpleadoSearchSelect
             id="responsable"
             v-model="responsableSearch"
@@ -1034,6 +1001,7 @@ onMounted(() => {
             @clear="clearResponsable"
           />
         </div>
+        <div class="relative col-span-2"></div>
       </div>
 
       <div class="relative p-6 bg-white rounded-lg shadow dark:bg-gray-800">

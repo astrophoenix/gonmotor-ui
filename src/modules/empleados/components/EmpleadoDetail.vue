@@ -130,7 +130,7 @@ onMounted(async () => {
         <h4 class="mb-4 text-lg font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
             <IdCard class="w-5 h-5 text-gray-800 dark:text-white" />
-            Información del Empleado
+            Información General
           </span>
         </h4>
         <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

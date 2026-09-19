@@ -25,7 +25,6 @@ import {
   Lock,
   Gauge,
   Fuel,
-  Car,
   Tag,
   Users,
   ClipboardList,
@@ -38,6 +37,7 @@ import {
   NotebookPen,
   Notebook,
   Trash2,
+  Car,
 } from "lucide-vue-next";
 import {
   IconEngine,
@@ -60,6 +60,8 @@ import {
 } from "../../../shared/config/testigos";
 import Alert from "../../../shared/components/Alert.vue";
 import FormSaveActions from "../../../shared/components/FormSaveActions.vue";
+import FlowSteps from "../../../shared/components/FlowSteps.vue";
+import { buildPasosFlujo } from "../../../shared/utils/estadoFlujo";
 import TestigosTablero from "../../../shared/components/TestigosTablero.vue";
 import PhotoSlotGrid from "../../../shared/components/PhotoSlotGrid.vue";
 import ClientModal from "../../clientes/components/ClientModal.vue";
@@ -190,6 +192,16 @@ const detallesErrors = ref({});
 const activeTab = ref("informacion");
 const TAB_ORDER = ["informacion", "inspeccion", "evidencias", "autorizacion"];
 const activeTabIndex = computed(() => TAB_ORDER.indexOf(activeTab.value));
+
+const pasosFlujo = computed(() => {
+  const estado = form.estado || "PENDIENTE";
+  return buildPasosFlujo([
+    { entidad: "recepcion", estado },
+    { entidad: "inspeccion" },
+    { entidad: "cotizacion" },
+    { entidad: "orden" },
+  ]);
+});
 
 function goToTab(direction) {
   const next = activeTabIndex.value + direction;
@@ -1380,55 +1392,7 @@ onMounted(() => {
     </div>
   </div>
   <div class="relative mx-auto max-w-6xl p-4 rounded-lg">
-    <ol
-      class="flex items-center w-full text-sm font-medium text-center text-gray-500 dark:text-gray-400 sm:text-base"
-    >
-      <li
-        class="flex md:w-full items-center after:content-[''] after:w-full after:h-1 after:bg-primary-600 after:inline-block after:mx-6 xl:after:mx-10 dark:after:bg-primary-500"
-      >
-        <span class="flex items-center">
-          <span
-            class="me-2 inline-flex flex-none items-center justify-center w-6 h-6 rounded-full bg-primary-600 dark:bg-primary-500 text-white text-xs font-semibold whitespace-nowrap"
-            >1</span
-          >
-          <span
-            class="whitespace-nowrap text-primary-blue-600 dark:text-primary-blue-400"
-            >Recepción</span
-          >
-        </span>
-      </li>
-      <li
-        class="flex md:w-full items-center after:content-[''] after:w-full after:h-1 after:bg-gray-200 after:inline-block after:mx-6 xl:after:mx-10 dark:after:bg-gray-700"
-      >
-        <span class="flex items-center">
-          <span
-            class="me-2 inline-flex flex-none items-center justify-center w-6 h-6 rounded-full bg-gray-400 dark:bg-gray-600 text-white text-xs font-semibold whitespace-nowrap"
-            >2</span
-          >
-          <span class="whitespace-nowrap">Inspección</span>
-        </span>
-      </li>
-      <li
-        class="flex md:w-full items-center after:content-[''] after:w-full after:h-1 after:bg-gray-200 after:inline-block after:mx-6 xl:after:mx-10 dark:after:bg-gray-700"
-      >
-        <span class="flex items-center">
-          <span
-            class="me-2 inline-flex flex-none items-center justify-center w-6 h-6 rounded-full bg-gray-400 dark:bg-gray-600 text-white text-xs font-semibold whitespace-nowrap"
-            >3</span
-          >
-          <span class="whitespace-nowrap">Cotización</span>
-        </span>
-      </li>
-      <li class="flex flex-none items-center">
-        <span class="flex items-center whitespace-nowrap">
-          <span
-            class="me-2 inline-flex flex-none items-center justify-center w-6 h-6 rounded-full bg-gray-400 dark:bg-gray-600 text-white text-xs font-semibold whitespace-nowrap"
-            >4</span
-          >
-          <span class="whitespace-nowrap">Orden de Trabajo</span>
-        </span>
-      </li>
-    </ol>
+    <FlowSteps :steps="pasosFlujo" />
   </div>
 
   <div class="px-4 pt-4">

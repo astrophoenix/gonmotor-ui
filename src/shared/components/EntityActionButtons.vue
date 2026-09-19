@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import { Plus } from 'lucide-vue-next';
-import { IconFileTypePdf, IconFileTypeXls } from '@tabler/icons-vue';
+import { IconFileTypeXls, IconFileTypePdf } from '@tabler/icons-vue';
 import { API_BASE_URL } from '../config/env';
 import { useToast } from '../composables/useToast';
 import ToastContainer from './ToastContainer.vue';

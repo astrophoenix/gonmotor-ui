@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue';
-import { ArrowLeft, IdCard, Pencil, Car, Image as ImageIcon, X } from 'lucide-vue-next';
+import { ArrowLeft, IdCard, Pencil, Image as ImageIcon, X } from 'lucide-vue-next';
+import { CarChassisIcon } from 'gonmotor-icons';
 import { clientsService } from '../services/clientesService';
 import { vehiclesService } from '../../vehiculos/services/vehiclesService';
 import { request } from '../../../shared/services/httpClient';
@@ -201,7 +202,7 @@ onMounted(async () => {
 
       <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
         <span class="inline-flex items-center gap-2">
-          <Car class="w-6 h-6 text-gray-800 dark:text-white" />
+          <CarChassisIcon class="w-6 h-6 text-gray-800 dark:text-white" />
           Vehículos ({{ vehicles.length }})
         </span>
       </h4>

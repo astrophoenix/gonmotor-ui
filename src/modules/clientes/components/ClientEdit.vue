@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, reactive, ref, watch } from 'vue';
-import { CirclePlus, FileText, Car, Trash2 } from 'lucide-vue-next';
+import { CirclePlus, FileText, Trash2 } from 'lucide-vue-next';
+import { CarChassisIcon } from 'gonmotor-icons';
 import { clientsService } from '../services/clientesService';
 import { request } from '../../../shared/services/httpClient';
 import Alert from '../../../shared/components/Alert.vue';
@@ -439,7 +440,7 @@ onMounted(() => {
         <div class="col-span-6">
           <div class="mb-4">
             <span class="inline-flex items-center gap-2">
-              <Car class="flex-shrink-0 w-6 h-6 text-gray-900 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
+              <CarChassisIcon class="flex-shrink-0 w-6 h-6 text-gray-900 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <h4 class="text-xl font-semibold dark:text-white">Vehículos del Cliente</h4>
             </span>
           </div>

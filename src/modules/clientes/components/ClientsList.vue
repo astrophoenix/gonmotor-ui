@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted } from 'vue';
-import { UsersRound, Upload, Phone, Mail, Car, Pencil, Trash2, IdCard } from 'lucide-vue-next';
+import { UsersRound, Upload, Phone, Mail, Pencil, Trash2, IdCard } from 'lucide-vue-next';
+import { CarChassisIcon } from 'gonmotor-icons';
 import { useClients } from '../composables/useClients';
 // import { useToast } from '../../../shared/composables/useToast';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
@@ -263,13 +264,13 @@ onUnmounted(() => {
             Sin vehículos
           </div>
           <div v-else-if="item.vehiculos.length === 1" class="flex items-center gap-2">
-            <Car class="w-4 h-4 text-gray-800 dark:text-gray-400" />
+            <CarChassisIcon class="w-4 h-4 text-gray-800 dark:text-gray-400" />
 
             <span class="text-sm">{{ formatPlate(item.vehiculos[0].placa) }} → {{ item.vehiculos[0].marca }} {{ item.vehiculos[0].color || '—' }}</span>
           </div>
           <div v-else-if="item.vehiculos.length === 2" class="space-y-1">
             <div v-for="veh in item.vehiculos" :key="veh.id" class="flex items-center gap-2">
-              <Car class="w-4 h-4 text-gray-800 dark:text-gray-400" />
+              <CarChassisIcon class="w-4 h-4 text-gray-800 dark:text-gray-400" />
 
               <span class="text-sm">{{ formatPlate(veh.placa) }} → {{ veh.marca }} {{ veh.color || '—' }}</span>
             </div>
@@ -280,7 +281,7 @@ onUnmounted(() => {
               @click="togglePopover(item.id)"
               class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary-700 rounded-lg border border-primary-700 hover:bg-primary-100 active:bg-primary-200 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800 dark:active:bg-gray-700"
             >
-              <Car class="w-4 h-4 text-gray-800 dark:text-gray-400" />
+              <CarChassisIcon class="w-4 h-4 text-gray-800 dark:text-gray-400" />
 
               mostrar +
               <span class="inline-flex items-center justify-center w-4 h-4 text-xs font-semibold text-blue-800 bg-blue-200 rounded-full">
@@ -297,7 +298,7 @@ onUnmounted(() => {
               <div class="px-3 py-2 max-h-60 overflow-y-auto">
                 <ul class="space-y-2">
                   <li v-for="veh in item.vehiculos" :key="veh.id" class="flex items-center gap-2">
-                    <Car class="w-4 h-4 text-gray-800 dark:text-gray-400" />
+                    <CarChassisIcon class="w-4 h-4 text-gray-800 dark:text-gray-400" />
 
                     <span class="text-sm">{{ formatPlate(veh.placa) }} → {{ veh.marca }} {{ veh.color || '—' }}</span>
                   </li>

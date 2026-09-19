@@ -2,6 +2,7 @@ import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import VehiclesList from './components/VehiclesList.vue';
 import VehicleEdit from './components/VehicleEdit.vue';
+import VehicleDetail from './components/VehicleDetail.vue';
 
 export function mountVehicles(element, pinia = createPinia()) {
   createApp(VehiclesList).use(pinia).mount(element);
@@ -9,4 +10,8 @@ export function mountVehicles(element, pinia = createPinia()) {
 
 export function mountVehicleEdit(element, pinia = createPinia()) {
   createApp(VehicleEdit).use(pinia).mount(element);
+}
+
+export function mountVehicleDetail(element, pinia = createPinia()) {
+  createApp(VehicleDetail).use(pinia).mount(element);
 }

@@ -9,6 +9,7 @@ import { TESTIGOS } from '../../../shared/config/testigos';
 import Alert from '../../../shared/components/Alert.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import FlowSteps from '../../../shared/components/FlowSteps.vue';
+import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 
 const inspeccion = ref(null);
 const loading = ref(true);
@@ -92,12 +93,17 @@ const tieneOrdenTrabajo = computed(() => Boolean(inspeccion.value?.tiene_orden_t
 const tieneCotizacionActiva = computed(() => Boolean(inspeccion.value?.tiene_cotizacion_activa));
 const estaFinalizada = computed(() => inspeccion.value?.estado === 'FINALIZADA');
 
-const pasosFlujo = computed(() => [
-  { label: 'Recepción', completed: Boolean(inspeccion.value?.recepcion) },
-  { label: 'Inspección', completed: estaFinalizada.value },
-  { label: 'Cotización', completed: tieneCotizacionActiva.value },
-  { label: 'Orden de Trabajo', completed: tieneOrdenTrabajo.value },
-]);
+const pasosFlujo = computed(() => {
+  const ins = inspeccion.value || {};
+  const recepcion = ins.recepcion || null;
+  const estadoCotizacion = ins.cotizacion_estado || (ins.tiene_cotizacion_activa ? 'BORRADOR' : null);
+  return buildPasosFlujo([
+    { entidad: 'recepcion', estado: recepcion?.estado, estadoDisplay: recepcion?.estado_display },
+    { entidad: 'inspeccion', estado: ins.estado, estadoDisplay: ins.estado_display },
+    { entidad: 'cotizacion', estado: estadoCotizacion, estadoDisplay: ins.cotizacion_estado_display },
+    { entidad: 'orden', estado: ins.orden_trabajo_estado, estadoDisplay: ins.orden_trabajo_estado_display },
+  ]);
+});
 
 function formatDate(dateString) {
   if (!dateString) return '-';
@@ -256,7 +262,7 @@ onMounted(async () => {
             v-if="estaFinalizada"
             type="button"
             :disabled="isReopening"
-            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-700 rounded-lg border border-red-600 hover:bg-red-50 focus:ring-4 focus:ring-red-300 dark:text-red-400 dark:border-red-400 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 rounded-lg border border-primary-600 hover:bg-primary-50 focus:ring-4 focus:ring-primary-300 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
             @click="solicitarReabrir"
           >
             <IconLockOpen2 class="w-4 h-4" />
@@ -706,10 +712,10 @@ onMounted(async () => {
     title="Reabrir inspección"
     :message="'Se reabrirá la inspección para poder modificar el diagnóstico y volver a generar la cotización. El cliente deberá aceptar nuevamente la cotización antes de modificar la orden de trabajo. ¿Deseas continuar?'"
     :icon="IconLockOpen2"
-    icon-class="text-red-600 dark:text-red-400"
+    icon-class="text-primary-600 dark:text-primary-400"
     confirm-text="Sí, reabrir"
     confirming-text="Reabriendo..."
-    variant="red"
+    variant="primary"
     :is-deleting="isReopening"
     @confirm="confirmarReabrir"
     @cancel="showReabrirModal = false"
