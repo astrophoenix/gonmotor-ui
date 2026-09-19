@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted } from 'vue';
-import { ClipboardList, Pencil, Loader2, Trash2, CircleX, CircleCheck} from 'lucide-vue-next';
+import { ClipboardList, Pencil, Loader2, Trash2, CircleX, CircleCheck, Search} from 'lucide-vue-next';
 import { IconReportSearch } from '@tabler/icons-vue';
 import { Icon } from '@iconify/vue';
 import filePdfIcon from '@iconify-icons/fa6-regular/file-pdf';
@@ -12,8 +12,9 @@ import EntityActionButtons from '../../../shared/components/EntityActionButtons.
 import Alert from '../../../shared/components/Alert.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
+import Pagination from '../../../shared/components/Pagination.vue';
 
-const { recepciones, loading, error, loadRecepciones, currentPage, nextUrl, previousUrl, rangeLabel } = useRecepciones();
+const { recepciones, loading, error, loadRecepciones, currentPage, total, nextUrl, previousUrl } = useRecepciones();
 
 const prefijoRecepcionBySucursal = ref({});
 const creandoId = ref(null);
@@ -221,15 +222,22 @@ onUnmounted(() => {
         dismissible
         @dismiss="hideAlert"
       />
+    </div>
+  </div>
 
-      <div class="sm:flex">
-        <div class="items-center hidden mb-3 sm:flex sm:divide-x sm:divide-gray-100 sm:mb-0 dark:divide-gray-700">
-          <form class="flex items-center mb-3 sm:mb-0 lg:pr-3" @submit.prevent="loadRecepciones(1, search.value)">
+  <div class="px-4 pb-4 sm:px-6 lg:px-8 mt-4">
+    <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+      <div class="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-default-medium">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <form class="relative" @submit.prevent="loadRecepciones(1, search.value)">
             <label for="recepciones-search" class="sr-only">Buscar recepciones</label>
-            <input id="recepciones-search" v-model="search" type="search" placeholder="Buscar por placa, cliente u orden" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full lg:w-64 xl:w-96 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" />
+            <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+              <Search class="w-4 h-4 text-body" />
+            </div>
+            <input id="recepciones-search" v-model="search" type="search" placeholder="Buscar por placa, cliente u orden" class="block w-full sm:w-64 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand" />
           </form>
         </div>
-        <div class="flex items-center ml-auto space-x-2 sm:space-x-3">
+        <div class="flex items-center gap-2">
           <EntityActionButtons
             entity="recepciones"
             @pdfExportError="handlePdfError"
@@ -237,25 +245,17 @@ onUnmounted(() => {
           />
         </div>
       </div>
-    </div>
-  </div>
-
-  <EntityTable
-    :columns="['Nº Recepción', 'Vehículo', 'Cliente', 'Fecha ingreso', 'Grúa', 'Estado', 'Acciones']"
-    :items="recepciones"
-    :loading="loading"
-    loading-text="Cargando recepciones..."
-    empty-text="No hay recepciones registradas."
-    :empty-colspan="8"
-    :show-pagination="true"
-    :previous-url="previousUrl"
-    :next-url="nextUrl"
-    :pagination-disabled="loading"
-    :range-label="rangeLabel"
-    @page-change="(delta) => loadRecepciones(currentPage + delta, search.value)"
-  >
+      <EntityTable
+        :columns="['Nº Recepción', 'Vehículo', 'Cliente', 'Fecha ingreso', 'Grúa', 'Estado', 'Acciones']"
+        :items="recepciones"
+        :loading="loading"
+        loading-text="Cargando recepciones..."
+        empty-text="No hay recepciones registradas."
+        :empty-colspan="8"
+        :wrapper-class="'w-full'"
+      >
     <template #row="{ item, index }">
-      <tr class="hover:bg-gray-100 dark:hover:bg-gray-700">
+      <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
         <td class="p-4 whitespace-nowrap">
           <a
             :href="`/crud/recepciones/ver/?id=${encodeURIComponent(item.id)}`"
@@ -306,24 +306,39 @@ onUnmounted(() => {
         </td>
         <td class="p-4 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <button v-if="item.estado === 'PENDIENTE'" type="button" title="Editar recepción" aria-label="Editar recepción" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded-lg border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="handleEditar(item.id)">
+            <button v-if="item.estado === 'PENDIENTE'" type="button" title="Editar recepción" aria-label="Editar recepción" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="handleEditar(item.id)">
               <Pencil class="w-5 h-5" />
             </button>
-            <button v-if="item.estado === 'PENDIENTE'" type="button" title="Eliminar recepción" aria-label="Eliminar recepción" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded-lg border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
+            <button v-if="item.estado === 'PENDIENTE'" type="button" title="Eliminar recepción" aria-label="Eliminar recepción" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
               <Trash2 class="w-5 h-5" />
             </button>
-            <button v-if="item.estado === 'ACEPTADA' && !item.inspecciones?.length" type="button" title="Crear inspección" aria-label="Crear inspección" :disabled="creandoId === item.id" class="px-1.5 py-1.5 inline-flex items-center p-2 text-gray-900 rounded-lg border border-gray-300 hover:bg-primary-100 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-primary-400" @click="openCrearInspeccionModal(item)">
+            <button v-if="item.estado === 'ACEPTADA' && !item.inspecciones?.length" type="button" title="Crear inspección" aria-label="Crear inspección" :disabled="creandoId === item.id" class="px-1.5 py-1.5 inline-flex items-center p-2 text-gray-900 rounded border border-gray-300 hover:bg-primary-100 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-primary-400" @click="openCrearInspeccionModal(item)">
               <Loader2 v-if="creandoId === item.id" class="w-5 h-5 animate-spin" />
               <IconReportSearch class="w-5.5 h-5.5" />
             </button>
-            <button type="button" title="Descargar PDF" aria-label="Descargar PDF" class="px-1.5 py-1.5 inline-flex items-center p-2 text-gray-900 rounded-lg border border-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-primary-400">
+            <button type="button" title="Descargar PDF" aria-label="Descargar PDF" class="px-1.5 py-1.5 inline-flex items-center p-2 text-gray-900 rounded border border-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-primary-400">
               <Icon :icon="filePdfIcon" class="w-5 h-5" />
             </button>
           </div>
         </td>
       </tr>
     </template>
-  </EntityTable>
+    <template #pagination>
+      <Pagination
+        :total="total"
+        :current-page="currentPage"
+        :next-url="nextUrl"
+        :previous-url="previousUrl"
+        :disabled="loading"
+        item-word="recepción"
+        item-plural="recepciones"
+        empty-text="No hay recepciones registradas."
+        @page="(page) => loadRecepciones(page, search.value)"
+      />
+    </template>
+    </EntityTable>
+    </div>
+  </div>
 
   <ConfirmModal
     v-model="showDeleteModal"

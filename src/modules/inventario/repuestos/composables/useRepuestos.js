@@ -29,6 +29,8 @@ export function useRepuestos() {
     return `Mostrando ${firstItem.value}-${lastItem.value} de ${total.value} repuesto${total.value === 1 ? '' : 's'}`;
   });
 
+  const totalPages = computed(() => Math.ceil(total.value / PAGE_SIZE));
+
   async function fetchRepuestos(page = 1) {
     isLoading.value = true;
     errorMessage.value = '';
@@ -80,6 +82,7 @@ export function useRepuestos() {
     firstItem,
     lastItem,
     rangeLabel,
+    totalPages,
     fetchRepuestos,
     removeRepuesto,
   };

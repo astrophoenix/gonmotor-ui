@@ -1,11 +1,12 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted } from 'vue';
-import { IdCard, Pencil, Trash2, Users } from 'lucide-vue-next';
+import { IdCard, Pencil, Trash2, Users, Search } from 'lucide-vue-next';
 import { useEmpleados } from '../composables/useEmpleados';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
+import Pagination from '../../../shared/components/Pagination.vue';
 import EmpleadoModal from './EmpleadoModal.vue';
 
 const {
@@ -14,9 +15,9 @@ const {
   isDeleting,
   search,
   currentPage,
+  total,
   nextUrl,
   previousUrl,
-  rangeLabel,
   fetchEmpleados,
   removeEmpleado,
 } = useEmpleados();
@@ -141,40 +142,40 @@ onUnmounted(() => {
         dismissible
         @dismiss="hideAlert"
       />
-      <div class="sm:flex">
-        <div class="items-center hidden mb-3 sm:flex sm:divide-x sm:divide-gray-100 sm:mb-0 dark:divide-gray-700">
-          <form class="flex items-center mb-3 sm:mb-0 lg:pr-3" @submit.prevent="fetchEmpleados(1)">
+    </div>
+  </div>
+
+  <div class="px-4 pb-4 sm:px-6 lg:px-8 mt-4">
+    <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+      <div class="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-default-medium">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <form class="relative" @submit.prevent="fetchEmpleados(1)">
             <label for="empleados-search" class="sr-only">Buscar empleados</label>
-            <input id="empleados-search" v-model="search" type="search" placeholder="Buscar empleados" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full lg:w-64 xl:w-96 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+            <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+              <Search class="w-4 h-4 text-body" />
+            </div>
+            <input id="empleados-search" v-model="search" type="search" placeholder="Buscar empleados" class="block w-full sm:w-64 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
           </form>
         </div>
-        <div class="flex items-center ml-auto space-x-2 sm:space-x-3">
-          <EntityActionButtons 
-            entity="empleados" 
+        <div class="flex items-center gap-2">
+          <EntityActionButtons
+            entity="empleados"
             @add="openCreateModal"
             @pdfExportError="handlePdfError"
             @excelExportError="handleExcelError" />
         </div>
       </div>
-    </div>
-  </div>
-
-  <EntityTable
-    :columns="['Identificación', 'Empleado', 'Correo', 'Rol', 'Talleres', 'Estado', 'Acciones']"
-    :items="empleados"
-    :loading="isLoading"
-    loading-text="Cargando empleados..."
-    empty-text="No se encontraron empleados."
-    :empty-colspan="8"
-    :show-pagination="true"
-    :previous-url="previousUrl"
-    :next-url="nextUrl"
-    :pagination-disabled="isLoading"
-    :range-label="rangeLabel"
-    @page-change="(delta) => fetchEmpleados(currentPage + delta)"
-  >
+      <EntityTable
+        :columns="['Identificación', 'Empleado', 'Correo', 'Rol', 'Talleres', 'Estado', 'Acciones']"
+        :items="empleados"
+        :loading="isLoading"
+        loading-text="Cargando empleados..."
+        empty-text="No se encontraron empleados."
+        :empty-colspan="8"
+        :wrapper-class="'w-full'"
+      >
     <template #row="{ item }">
-      <tr class="hover:bg-gray-100 dark:hover:bg-gray-700">
+      <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
         <td class="p-4 whitespace-nowrap">
           <a
             :href="`/crud/empleados/ver/?id=${encodeURIComponent(item.id)}`"
@@ -210,16 +211,32 @@ onUnmounted(() => {
           </span>
         </td>
         <td class="p-4 whitespace-nowrap">
-          <button type="button" title="Editar empleado" aria-label="Editar empleado" class="inline-flex items-center p-2 text-primary-600 rounded-lg hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700" @click="editEmpleado(item.id)">
-            <Pencil class="w-5 h-5" />
-          </button>
-          <button type="button" title="Eliminar empleado" aria-label="Eliminar empleado" :disabled="isDeleting" class="inline-flex items-center p-2 text-red-600 rounded-lg hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
-            <Trash2 class="w-5 h-5" />
-          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" title="Editar empleado" aria-label="Editar empleado" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="editEmpleado(item.id)">
+              <Pencil class="w-5 h-5" />
+            </button>
+            <button type="button" title="Eliminar empleado" aria-label="Eliminar empleado" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
+              <Trash2 class="w-5 h-5" />
+            </button>
+          </div>
         </td>
       </tr>
     </template>
-  </EntityTable>
+    <template #pagination>
+      <Pagination
+        :total="total"
+        :current-page="currentPage"
+        :next-url="nextUrl"
+        :previous-url="previousUrl"
+        :disabled="isLoading"
+        item-word="empleado"
+        empty-text="No se encontraron empleados."
+        @page="fetchEmpleados"
+      />
+    </template>
+    </EntityTable>
+    </div>
+  </div>
 
   <ConfirmModal
     v-model="showDeleteModal"

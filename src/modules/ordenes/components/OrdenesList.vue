@@ -1,12 +1,13 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted } from 'vue';
-import { Eye, Pencil, Trash2, Wrench } from 'lucide-vue-next';
+import { Eye, Pencil, Trash2, Wrench, Search } from 'lucide-vue-next';
 import { Icon } from '@iconify/vue';
 import filePdfIcon from '@iconify-icons/fa6-regular/file-pdf';
 import { useOrdenes } from '../composables/useOrdenes';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
+import Pagination from '../../../shared/components/Pagination.vue';
 
 const {
   ordenes,
@@ -14,9 +15,9 @@ const {
   isDeleting,
   search,
   currentPage,
+  total,
   nextUrl,
   previousUrl,
-  rangeLabel,
   loadOrdenes,
   removeOrden,
 } = useOrdenes();
@@ -144,35 +145,33 @@ onUnmounted(() => {
         dismissible
         @dismiss="hideAlert"
       />
-      <div class="sm:flex">
-        <div class="items-center hidden mb-3 sm:flex sm:divide-x sm:divide-gray-100 sm:mb-0 dark:divide-gray-700">
-          <form class="flex items-center mb-3 sm:mb-0 lg:pr-3" @submit.prevent="loadOrdenes(1)">
-            <label for="ordenes-search" class="sr-only">Buscar órdenes</label>
-            <input id="ordenes-search" v-model="search" type="search" placeholder="Buscar por placa, cliente u orden" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full lg:w-64 xl:w-96 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
-          </form>
-        </div>
-        <div class="flex items-center ml-auto space-x-2 sm:space-x-3">
-        </div>
-      </div>
     </div>
   </div>
 
-  <EntityTable
-    :columns="['#', 'Nº Orden', 'Vehículo', 'Cliente', 'Tipo', 'Prioridad', 'Estado', 'Fecha', 'Acciones']"
-    :items="ordenes"
-    :loading="loading"
-    loading-text="Cargando órdenes de trabajo..."
-    empty-text="No se encontraron órdenes de trabajo."
-    :empty-colspan="9"
-    :show-pagination="true"
-    :previous-url="previousUrl"
-    :next-url="nextUrl"
-    :pagination-disabled="loading"
-    :range-label="rangeLabel"
-    @page-change="(delta) => loadOrdenes(currentPage + delta)"
-  >
+  <div class="px-4 pb-4 sm:px-6 lg:px-8 mt-4">
+    <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+      <div class="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-default-medium">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <form class="relative" @submit.prevent="loadOrdenes(1)">
+            <label for="ordenes-search" class="sr-only">Buscar órdenes</label>
+            <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+              <Search class="w-4 h-4 text-body" />
+            </div>
+            <input id="ordenes-search" v-model="search" type="search" placeholder="Buscar por placa, cliente u orden" class="block w-full sm:w-64 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
+          </form>
+        </div>
+      </div>
+      <EntityTable
+        :columns="['#', 'Nº Orden', 'Vehículo', 'Cliente', 'Tipo', 'Prioridad', 'Estado', 'Fecha', 'Acciones']"
+        :items="ordenes"
+        :loading="loading"
+        loading-text="Cargando órdenes de trabajo..."
+        empty-text="No se encontraron órdenes de trabajo."
+        :empty-colspan="9"
+        :wrapper-class="'w-full'"
+      >
     <template #row="{ item, index }">
-      <tr class="hover:bg-gray-100 dark:hover:bg-gray-700">
+      <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ index + 1 }}</td>
         <td class="p-4 whitespace-nowrap">
           <a
@@ -207,23 +206,38 @@ onUnmounted(() => {
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ formatDate(item.created_at) }}</td>
         <td class="p-4 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <button type="button" title="Ver orden" aria-label="Ver orden" class="inline-flex items-center p-2 text-gray-900 rounded-lg hover:bg-primary-100 hover:text-primary-600 dark:text-gray-100 dark:hover:bg-gray-700 dark:hover:text-primary-400" @click="handleVer(item.id)">
+            <button type="button" title="Ver orden" aria-label="Ver orden" class="inline-flex items-center p-2 text-gray-900 rounded hover:bg-primary-100 hover:text-primary-600 dark:text-gray-100 dark:hover:bg-gray-700 dark:hover:text-primary-400" @click="handleVer(item.id)">
               <Eye class="w-5 h-5" />
             </button>
-            <button type="button" title="Editar orden" aria-label="Editar orden" class="inline-flex items-center p-2 text-primary-600 rounded-lg hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700" @click="handleEditar(item.id)">
+            <button type="button" title="Editar orden" aria-label="Editar orden" class="inline-flex items-center p-2 text-primary-600 rounded hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700" @click="handleEditar(item.id)">
               <Pencil class="w-5 h-5" />
             </button>
-            <button type="button" title="Eliminar orden" aria-label="Eliminar orden" :disabled="isDeleting" class="inline-flex items-center p-2 text-red-600 rounded-lg hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
+            <button type="button" title="Eliminar orden" aria-label="Eliminar orden" :disabled="isDeleting" class="inline-flex items-center p-2 text-red-600 rounded hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
               <Trash2 class="w-5 h-5" />
             </button>
-            <button type="button" title="Descargar PDF" aria-label="Descargar PDF" class="inline-flex items-center p-2 text-gray-900 rounded-lg hover:bg-primary-100 hover:text-primary-600 dark:text-gray-100 dark:hover:bg-gray-700 dark:hover:text-primary-400">
+            <button type="button" title="Descargar PDF" aria-label="Descargar PDF" class="inline-flex items-center p-2 text-gray-900 rounded hover:bg-primary-100 hover:text-primary-600 dark:text-gray-100 dark:hover:bg-gray-700 dark:hover:text-primary-400">
               <Icon :icon="filePdfIcon" class="w-5 h-5" />
             </button>
           </div>
         </td>
       </tr>
     </template>
-  </EntityTable>
+    <template #pagination>
+      <Pagination
+        :total="total"
+        :current-page="currentPage"
+        :next-url="nextUrl"
+        :previous-url="previousUrl"
+        :disabled="loading"
+        item-word="orden de trabajo"
+        item-plural="órdenes de trabajo"
+        empty-text="No se encontraron órdenes de trabajo."
+        @page="loadOrdenes"
+      />
+    </template>
+    </EntityTable>
+    </div>
+  </div>
 
   <ConfirmModal
     v-model="showDeleteModal"

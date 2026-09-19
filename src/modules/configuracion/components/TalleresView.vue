@@ -160,12 +160,14 @@ onMounted(loadTalleres);
               </span>
             </td>
             <td class="p-4 whitespace-nowrap">
-              <button type="button" title="Editar taller" aria-label="Editar taller" class="inline-flex items-center p-2 text-primary-600 rounded-lg hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700" @click="openEditModal(item)">
-                <Pencil class="w-5 h-5" />
-              </button>
-              <button type="button" title="Eliminar taller" aria-label="Eliminar taller" :disabled="isDeleting" class="inline-flex items-center p-2 text-red-600 rounded-lg hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
-                <Trash2 class="w-5 h-5" />
-              </button>
+              <div class="flex items-center gap-2">
+                <button type="button" title="Editar taller" aria-label="Editar taller" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded-lg border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="openEditModal(item)">
+                  <Pencil class="w-5 h-5" />
+                </button>
+                <button type="button" title="Eliminar taller" aria-label="Eliminar taller" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded-lg border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
+                  <Trash2 class="w-5 h-5" />
+                </button>
+              </div>
             </td>
           </tr>
         </template>

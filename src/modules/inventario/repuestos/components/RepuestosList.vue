@@ -1,6 +1,6 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue';
-import { Package, Pencil, Trash2 } from 'lucide-vue-next';
+import { computed, onMounted, ref, watch } from 'vue';
+import { Package, Pencil, Search, Trash2 } from 'lucide-vue-next';
 import { useRepuestos } from '../composables/useRepuestos';
 import ConfirmModal from '../../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../../shared/components/Alert.vue';
@@ -17,12 +17,36 @@ const {
   categoria,
   stockBajo,
   currentPage,
+  total,
+  firstItem,
+  lastItem,
+  totalPages,
   nextUrl,
   previousUrl,
-  rangeLabel,
   fetchRepuestos,
   removeRepuesto,
 } = useRepuestos();
+
+const pageList = computed(() => {
+  const pages = totalPages.value;
+  const current = currentPage.value;
+  if (pages <= 7) {
+    return Array.from({ length: pages }, (_, i) => i + 1);
+  }
+  const candidates = new Set([1, pages, current - 1, current, current + 1]);
+  const sorted = Array.from(candidates)
+    .filter((page) => page >= 1 && page <= pages)
+    .sort((a, b) => a - b);
+  const result = [];
+  let prev = 0;
+  for (const page of sorted) {
+    if (page - prev === 2) result.push(prev + 1);
+    else if (page - prev > 2) result.push('…');
+    result.push(page);
+    prev = page;
+  }
+  return result;
+});
 
 const CATEGORIAS = [
   { value: 'FILTROS', label: 'Filtros' },
@@ -131,8 +155,8 @@ onMounted(() => loadRepuestos());
 <template>
   <div class="p-4 bg-white block sm:flex items-center justify-between border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
     <div class="w-full mb-1">
-      <div class="mb-4">
-        <nav class="flex mb-5" aria-label="Breadcrumb">
+      <div class="mb-1">
+        <nav class="flex mb-2" aria-label="Breadcrumb">
           <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
             <li class="inline-flex items-center">
               <a href="/" class="inline-flex items-center text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Inicio</a>
@@ -152,22 +176,30 @@ onMounted(() => loadRepuestos());
         dismissible
         @dismiss="hideAlert"
       />
-      <div class="sm:flex sm:items-center sm:justify-between">
-        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-          <form class="flex items-center" @submit.prevent="loadRepuestos(1)">
+    </div>
+  </div>
+
+  <div class="px-4 pb-4 sm:px-6 lg:px-8 mt-4">
+    <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+      <div class="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-default-medium">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <form class="relative" @submit.prevent="loadRepuestos(1)">
             <label for="repuestos-search" class="sr-only">Buscar repuestos</label>
-            <input id="repuestos-search" v-model="search" type="search" placeholder="Buscar repuestos" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full lg:w-64 xl:w-72 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+            <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+              <Search class="w-4 h-4 text-body" />
+            </div>
+            <input id="repuestos-search" v-model="search" type="search" placeholder="Buscar repuestos" class="block w-full sm:w-64 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
           </form>
-          <select v-model="categoria" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+          <select v-model="categoria" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs block py-2.5 px-3 focus:ring-brand focus:border-brand">
             <option value="">Todas las categorías</option>
             <option v-for="item in CATEGORIAS" :key="item.value" :value="item.value">{{ item.label }}</option>
           </select>
-          <label class="inline-flex items-center pt-2">
-            <input v-model="stockBajo" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600">
-            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Solo stock bajo</span>
+          <label class="inline-flex items-center gap-2 pt-2 sm:pt-0 text-sm font-normal text-body">
+            <input v-model="stockBajo" type="checkbox" class="w-4 h-4 border border-default-medium rounded-xs bg-neutral-secondary-medium focus:ring-2 focus:ring-brand-soft">
+            Solo stock bajo
           </label>
         </div>
-        <div class="flex items-center space-x-2 sm:space-x-3 mt-2 sm:mt-0">
+        <div class="flex items-center gap-2">
           <EntityActionButtons
             entity="repuestos"
             @add="openCreateModal"
@@ -176,47 +208,89 @@ onMounted(() => loadRepuestos());
           />
         </div>
       </div>
-    </div>
-  </div>
-
-  <EntityTable
-    :columns="['Código', 'Nombre', 'Categoría', 'Marca', 'Stock', 'Precio', 'Acciones']"
-    :items="repuestos"
-    :loading="isLoading"
-    loading-text="Cargando repuestos..."
-    empty-text="No se encontraron repuestos."
-    :empty-colspan="7"
-    :show-pagination="true"
-    :previous-url="previousUrl"
-    :next-url="nextUrl"
-    :pagination-disabled="isLoading"
-    :range-label="rangeLabel"
-    @page-change="(delta) => loadRepuestos(currentPage + delta)"
-  >
+      <EntityTable
+        :columns="['Código', 'Nombre', 'Categoría', 'Marca', 'Stock', 'Precio', 'Acciones']"
+        :items="repuestos"
+        :loading="isLoading"
+        loading-text="Cargando repuestos..."
+        empty-text="No se encontraron repuestos."
+        :empty-colspan="7"
+        :wrapper-class="'w-full'"
+      >
     <template #row="{ item }">
-      <tr class="hover:bg-gray-100 dark:hover:bg-gray-700">
-        <td class="p-4 font-medium text-gray-800 whitespace-nowrap dark:text-white">{{ item.codigo }}</td>
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.nombre }}</td>
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ categoriaLabel(item.categoria) }}</td>
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.marca || '—' }}</td>
+      <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
+        <td class="p-4 font-medium text-heading whitespace-nowrap">{{ item.codigo }}</td>
+        <td class="p-4 text-heading whitespace-nowrap">{{ item.nombre }}</td>
+        <td class="p-4 text-heading whitespace-nowrap">{{ categoriaLabel(item.categoria) }}</td>
+        <td class="p-4 text-heading whitespace-nowrap">{{ item.marca || '—' }}</td>
         <td class="p-4 whitespace-nowrap">
-          <span :class="item.stock_bajo ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-800 dark:text-white'">
+          <span :class="item.stock_bajo ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-heading'">
             {{ item.stock_actual }} {{ item.stock_minimo ? `(mín ${item.stock_minimo})` : '' }}
           </span>
           <span v-if="item.stock_bajo" class="inline-block ml-1 px-2 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">Stock bajo</span>
         </td>
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ formatCurrency(item.precio_venta) }}</td>
+        <td class="p-4 text-heading whitespace-nowrap">{{ formatCurrency(item.precio_venta) }}</td>
         <td class="p-4 whitespace-nowrap">
-          <button type="button" title="Editar repuesto" aria-label="Editar repuesto" class="inline-flex items-center p-2 text-primary-600 rounded-lg hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700" @click="openEditModal(item.id)">
-            <Pencil class="w-5 h-5" />
-          </button>
-          <button type="button" title="Eliminar repuesto" aria-label="Eliminar repuesto" :disabled="isDeleting" class="inline-flex items-center p-2 text-red-600 rounded-lg hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
-            <Trash2 class="w-5 h-5" />
-          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" title="Editar repuesto" aria-label="Editar repuesto" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="openEditModal(item.id)">
+              <Pencil class="w-5 h-5" />
+            </button>
+            <button type="button" title="Eliminar repuesto" aria-label="Eliminar repuesto" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
+              <Trash2 class="w-5 h-5" />
+            </button>
+          </div>
         </td>
       </tr>
     </template>
-  </EntityTable>
+    <template #pagination>
+      <nav class="flex items-center flex-column flex-wrap md:flex-row justify-between p-4 gap-3" aria-label="Table navigation">
+        <span v-if="total" class="text-sm font-normal text-body mb-4 md:mb-0 block w-full md:inline md:w-auto">
+          Mostrando <span class="font-semibold text-heading">{{ firstItem }}-{{ lastItem }}</span> de <span class="font-semibold text-heading">{{ total }}</span> repuesto{{ total === 1 ? '' : 's' }}
+        </span>
+        <span v-else class="text-sm font-normal text-body mb-4 md:mb-0 block w-full md:inline md:w-auto">No se encontraron repuestos.</span>
+        <ul class="flex -space-x-px text-sm flex-wrap">
+          <li>
+            <button
+              type="button"
+              :disabled="!previousUrl || isLoading"
+              class="flex items-center justify-center text-body bg-neutral-secondary-medium box-border border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading font-medium rounded-s-base text-sm px-3 h-9 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+              @click="loadRepuestos(currentPage - 1)"
+            >
+              Previous
+            </button>
+          </li>
+          <template v-for="item in pageList" :key="item">
+            <li v-if="item === '…'">
+              <span class="flex items-center justify-center text-body bg-neutral-secondary-medium box-border border border-default-medium font-medium text-sm px-3 h-9">…</span>
+            </li>
+            <li v-else>
+              <button
+                type="button"
+                :aria-current="item === currentPage ? 'page' : null"
+                class="flex items-center justify-center box-border border font-medium text-sm w-9 h-9 focus:outline-none cursor-pointer"
+                :class="item === currentPage ? 'text-fg-brand bg-brand-softer border-default-medium hover:bg-brand-soft hover:text-fg-brand' : 'text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading'"
+                @click="loadRepuestos(item)"
+              >
+                {{ item }}
+              </button>
+            </li>
+          </template>
+          <li>
+            <button
+              type="button"
+              :disabled="!nextUrl || isLoading"
+              class="flex items-center justify-center text-body bg-neutral-secondary-medium box-border border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading font-medium rounded-e-base text-sm px-3 h-9 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+              @click="loadRepuestos(currentPage + 1)"
+            >
+              Next
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </template>
+    </EntityTable>
+    </div>
+  </div>
 
   <ConfirmModal
     v-model="showDeleteModal"

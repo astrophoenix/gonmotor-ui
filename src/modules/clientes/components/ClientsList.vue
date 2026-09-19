@@ -1,7 +1,6 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted } from 'vue';
-import { UsersRound, Upload, Phone, Mail, Pencil, Trash2, IdCard } from 'lucide-vue-next';
-import { CarChassisIcon } from 'gonmotor-icons';
+import { Car, UsersRound, Upload, Phone, Mail, Pencil, Trash2, IdCard, Search } from 'lucide-vue-next';
 import { useClients } from '../composables/useClients';
 // import { useToast } from '../../../shared/composables/useToast';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
@@ -9,6 +8,7 @@ import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
+import Pagination from '../../../shared/components/Pagination.vue';
 import ImportExcelModal from './ImportExcelModal.vue';
 import ClientModal from './ClientModal.vue';
 import { formatPlate } from '../../../shared/utils/formatPlate';
@@ -19,9 +19,9 @@ const {
   isDeleting,
   search,
   currentPage,
+  total,
   nextUrl,
   previousUrl,
-  rangeLabel,
   fetchClients,
   removeClient,
 } = useClients();
@@ -195,48 +195,48 @@ onUnmounted(() => {
         dismissible
         @dismiss="hideAlert"
       />
-      <div class="sm:flex">
-        <div class="items-center hidden mb-3 sm:flex sm:divide-x sm:divide-gray-100 sm:mb-0 dark:divide-gray-700">
-          <form class="flex items-center mb-3 sm:mb-0 lg:pr-3" @submit.prevent="loadClients(1)">
-          <label for="clients-search" class="sr-only">Buscar clientes</label>
-          <input id="clients-search" v-model="search" type="search" placeholder="Buscar clientes" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full lg:w-64 xl:w-96 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+    </div>
+  </div>
+
+  <div class="px-4 pb-4 sm:px-6 lg:px-8 mt-4">
+    <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+      <div class="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-default-medium">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <form class="relative" @submit.prevent="loadClients(1)">
+            <label for="clients-search" class="sr-only">Buscar clientes</label>
+            <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+              <Search class="w-4 h-4 text-body" />
+            </div>
+            <input id="clients-search" v-model="search" type="search" placeholder="Buscar clientes" class="block w-full sm:w-64 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
           </form>
         </div>
-        <div class="flex items-center ml-auto space-x-2 sm:space-x-3">
+        <div class="flex items-center gap-2">
           <button
             type="button"
-            class="inline-flex items-center px-3 py-2 text-sm font-medium text-white rounded-lg bg-emerald-600 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-300 dark:focus:ring-emerald-800"
+            class="inline-flex items-center px-3 py-2 text-sm font-medium text-white rounded bg-emerald-600 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-300 dark:focus:ring-emerald-800"
             @click="openImportModal"
           >
             <Upload class="w-5 h-5 mr-1.5 -ml-1 text-white" />
             Importar
           </button>
-          <EntityActionButtons 
-            entity="clientes" 
+          <EntityActionButtons
+            entity="clientes"
             @add="openCreateModal"
             @pdfExportError="handlePdfError"
             @excelExportError="handleExcelError" />
         </div>
       </div>
-    </div>
-  </div>
-
-  <EntityTable
-    :columns="['Identificación', 'Nombre / Razón Social', 'Contacto', 'Vehículos', 'Acciones']"
-    :items="clients"
-    :loading="isLoading"
-    loading-text="Cargando clientes..."
-    empty-text="No se encontraron clientes."
-    :empty-colspan="7"
-    :show-pagination="true"
-    :previous-url="previousUrl"
-    :next-url="nextUrl"
-    :pagination-disabled="isLoading"
-    :range-label="rangeLabel"
-    @page-change="(delta) => loadClients(currentPage + delta)"
-  >
+      <EntityTable
+        :columns="['Identificación', 'Nombre / Razón Social', 'Contacto', 'Vehículos', 'Acciones']"
+        :items="clients"
+        :loading="isLoading"
+        loading-text="Cargando clientes..."
+        empty-text="No se encontraron clientes."
+        :empty-colspan="7"
+        :wrapper-class="'w-full'"
+      >
     <template #row="{ item }">
-      <tr class="hover:bg-gray-100 dark:hover:bg-gray-700">
+      <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
         <td class="p-4 whitespace-nowrap">
           <a
             :href="`/crud/clientes/ver/?id=${encodeURIComponent(item.id)}`"
@@ -264,13 +264,13 @@ onUnmounted(() => {
             Sin vehículos
           </div>
           <div v-else-if="item.vehiculos.length === 1" class="flex items-center gap-2">
-            <CarChassisIcon class="w-4 h-4 text-gray-800 dark:text-gray-400" />
+            <Car class="w-4 h-4 text-gray-800 dark:text-gray-400" />
 
             <span class="text-sm">{{ formatPlate(item.vehiculos[0].placa) }} → {{ item.vehiculos[0].marca }} {{ item.vehiculos[0].color || '—' }}</span>
           </div>
           <div v-else-if="item.vehiculos.length === 2" class="space-y-1">
             <div v-for="veh in item.vehiculos" :key="veh.id" class="flex items-center gap-2">
-              <CarChassisIcon class="w-4 h-4 text-gray-800 dark:text-gray-400" />
+              <Car class="w-4 h-4 text-gray-800 dark:text-gray-400" />
 
               <span class="text-sm">{{ formatPlate(veh.placa) }} → {{ veh.marca }} {{ veh.color || '—' }}</span>
             </div>
@@ -281,7 +281,7 @@ onUnmounted(() => {
               @click="togglePopover(item.id)"
               class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary-700 rounded-lg border border-primary-700 hover:bg-primary-100 active:bg-primary-200 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800 dark:active:bg-gray-700"
             >
-              <CarChassisIcon class="w-4 h-4 text-gray-800 dark:text-gray-400" />
+              <Car class="w-4 h-4 text-gray-800 dark:text-gray-400" />
 
               mostrar +
               <span class="inline-flex items-center justify-center w-4 h-4 text-xs font-semibold text-blue-800 bg-blue-200 rounded-full">
@@ -298,7 +298,7 @@ onUnmounted(() => {
               <div class="px-3 py-2 max-h-60 overflow-y-auto">
                 <ul class="space-y-2">
                   <li v-for="veh in item.vehiculos" :key="veh.id" class="flex items-center gap-2">
-                    <CarChassisIcon class="w-4 h-4 text-gray-800 dark:text-gray-400" />
+                    <Car class="w-4 h-4 text-gray-800 dark:text-gray-400" />
 
                     <span class="text-sm">{{ formatPlate(veh.placa) }} → {{ veh.marca }} {{ veh.color || '—' }}</span>
                   </li>
@@ -309,16 +309,32 @@ onUnmounted(() => {
           </div>
         </td>
         <td class="p-4 whitespace-nowrap">
-          <button type="button" title="Editar cliente" aria-label="Editar cliente" class="inline-flex items-center p-2 text-primary-600 rounded-lg hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700" @click="editClient(item.id)">
-            <Pencil class="w-5 h-5" />
-          </button>
-          <button type="button" title="Eliminar cliente" aria-label="Eliminar cliente" :disabled="isDeleting" class="inline-flex items-center p-2 text-red-600 rounded-lg hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
-            <Trash2 class="w-5 h-5" />
-          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" title="Editar cliente" aria-label="Editar cliente" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="editClient(item.id)">
+              <Pencil class="w-5 h-5" />
+            </button>
+            <button type="button" title="Eliminar cliente" aria-label="Eliminar cliente" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
+              <Trash2 class="w-5 h-5" />
+            </button>
+          </div>
         </td>
       </tr>
     </template>
-  </EntityTable>
+    <template #pagination>
+      <Pagination
+        :total="total"
+        :current-page="currentPage"
+        :next-url="nextUrl"
+        :previous-url="previousUrl"
+        :disabled="isLoading"
+        item-word="cliente"
+        empty-text="No se encontraron clientes."
+        @page="loadClients"
+      />
+    </template>
+    </EntityTable>
+    </div>
+  </div>
 
 
   <ConfirmModal

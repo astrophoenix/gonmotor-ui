@@ -1,11 +1,12 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue';
-import { Wrench, Pencil, Trash2 } from 'lucide-vue-next';
+import { Wrench, Pencil, Trash2, Search } from 'lucide-vue-next';
 import { useServicios } from '../composables/useServicios';
 import ConfirmModal from '../../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../../shared/components/Alert.vue';
 import EntityActionButtons from '../../../../shared/components/EntityActionButtons.vue';
 import EntityTable from '../../../../shared/components/EntityTable.vue';
+import Pagination from '../../../../shared/components/Pagination.vue';
 import ServicioModal from './ServicioModal.vue';
 import { formatCurrency } from '../../../../shared/utils/format';
 
@@ -16,9 +17,9 @@ const {
   search,
   categoria,
   currentPage,
+  total,
   nextUrl,
   previousUrl,
-  rangeLabel,
   fetchServicios,
   removeServicio,
 } = useServicios();
@@ -154,18 +155,26 @@ onMounted(() => loadServicios());
         dismissible
         @dismiss="hideAlert"
       />
-      <div class="sm:flex sm:items-center sm:justify-between">
-        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-          <form class="flex items-center" @submit.prevent="loadServicios(1)">
+    </div>
+  </div>
+
+  <div class="px-4 pb-4 sm:px-6 lg:px-8 mt-4">
+    <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+      <div class="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-default-medium">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <form class="relative" @submit.prevent="loadServicios(1)">
             <label for="servicios-search" class="sr-only">Buscar servicios</label>
-            <input id="servicios-search" v-model="search" type="search" placeholder="Buscar servicios" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full lg:w-64 xl:w-72 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+            <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+              <Search class="w-4 h-4 text-body" />
+            </div>
+            <input id="servicios-search" v-model="search" type="search" placeholder="Buscar servicios" class="block w-full sm:w-64 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
           </form>
-          <select v-model="categoria" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+          <select v-model="categoria" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs block py-2.5 px-3 focus:ring-brand focus:border-brand">
             <option value="">Todas las categorías</option>
             <option v-for="item in CATEGORIAS" :key="item.value" :value="item.value">{{ item.label }}</option>
           </select>
         </div>
-        <div class="flex items-center space-x-2 sm:space-x-3 mt-2 sm:mt-0">
+        <div class="flex items-center gap-2">
           <EntityActionButtons
             entity="servicios"
             @add="openCreateModal"
@@ -174,41 +183,49 @@ onMounted(() => loadServicios());
           />
         </div>
       </div>
-    </div>
-  </div>
-
-  <EntityTable
-    :columns="['Código', 'Nombre', 'Categoría', 'Tiempo est.', 'Precio ref.', 'Acciones']"
-    :items="servicios"
-    :loading="isLoading"
-    loading-text="Cargando servicios..."
-    empty-text="No se encontraron servicios."
-    :empty-colspan="6"
-    :show-pagination="true"
-    :previous-url="previousUrl"
-    :next-url="nextUrl"
-    :pagination-disabled="isLoading"
-    :range-label="rangeLabel"
-    @page-change="(delta) => loadServicios(currentPage + delta)"
-  >
+      <EntityTable
+        :columns="['Código', 'Nombre', 'Categoría', 'Tiempo est.', 'Precio ref.', 'Acciones']"
+        :items="servicios"
+        :loading="isLoading"
+        loading-text="Cargando servicios..."
+        empty-text="No se encontraron servicios."
+        :empty-colspan="6"
+        :wrapper-class="'w-full'"
+      >
     <template #row="{ item }">
-      <tr class="hover:bg-gray-100 dark:hover:bg-gray-700">
+      <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
         <td class="p-4 font-medium text-gray-800 whitespace-nowrap dark:text-white">{{ item.codigo }}</td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.nombre }}</td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ categoriaLabel(item.categoria) }}</td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ formatTiempo(item.tiempo_estimado_minutos) }}</td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ formatCurrency(item.precio_referencial) }}</td>
         <td class="p-4 whitespace-nowrap">
-          <button type="button" title="Editar servicio" aria-label="Editar servicio" class="inline-flex items-center p-2 text-primary-600 rounded-lg hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700" @click="openEditModal(item.id)">
-            <Pencil class="w-5 h-5" />
-          </button>
-          <button type="button" title="Eliminar servicio" aria-label="Eliminar servicio" :disabled="isDeleting" class="inline-flex items-center p-2 text-red-600 rounded-lg hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
-            <Trash2 class="w-5 h-5" />
-          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" title="Editar servicio" aria-label="Editar servicio" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="openEditModal(item.id)">
+              <Pencil class="w-5 h-5" />
+            </button>
+            <button type="button" title="Eliminar servicio" aria-label="Eliminar servicio" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
+              <Trash2 class="w-5 h-5" />
+            </button>
+          </div>
         </td>
       </tr>
     </template>
-  </EntityTable>
+    <template #pagination>
+      <Pagination
+        :total="total"
+        :current-page="currentPage"
+        :next-url="nextUrl"
+        :previous-url="previousUrl"
+        :disabled="isLoading"
+        item-word="servicio"
+        empty-text="No se encontraron servicios."
+        @page="loadServicios"
+      />
+    </template>
+    </EntityTable>
+    </div>
+  </div>
 
   <ConfirmModal
     v-model="showDeleteModal"

@@ -50,6 +50,10 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  wrapperClass: {
+    type: String,
+    default: 'overflow-hidden shadow',
+  },
   previousText: {
     type: String,
     default: 'Anterior',
@@ -70,7 +74,7 @@ const colspan = Math.max(props.emptyColspan, props.columns.length);
     <div class="flex flex-col">
       <div class="overflow-x-auto">
         <div class="inline-block min-w-full align-middle">
-          <div class="overflow-hidden shadow">
+          <div :class="wrapperClass">
             <table class="min-w-full divide-y divide-gray-200 table-fixed dark:divide-gray-600">
               <thead class="bg-gray-200 dark:bg-gray-900">
                 <tr>
@@ -107,6 +111,7 @@ const colspan = Math.max(props.emptyColspan, props.columns.length);
                 </template>
               </tbody>
             </table>
+            <slot name="pagination" />
           </div>
         </div>
       </div>

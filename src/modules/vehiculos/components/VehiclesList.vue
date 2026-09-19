@@ -1,12 +1,13 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue';
-import { MessageCircle, Pencil, Trash2 } from 'lucide-vue-next';
+import { MessageCircle, Pencil, Trash2, Search } from 'lucide-vue-next';
 import { CarChassisIcon } from 'gonmotor-icons';
 import { useVehicles } from '../composables/useVehicles';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
+import Pagination from '../../../shared/components/Pagination.vue';
 import VehicleModal from './VehicleModal.vue';
 import EnviarRecordatorioModal from '../../notificaciones/components/EnviarRecordatorioModal.vue';
 import { useToast } from '../../../shared/composables/useToast';
@@ -19,9 +20,9 @@ const {
   isDeleting,
   search,
   currentPage,
+  total,
   nextUrl,
   previousUrl,
-  rangeLabel,
   fetchVehicles,
   removeVehicle,
 } = useVehicles();
@@ -168,59 +169,75 @@ onMounted(() => loadVehicles());
         dismissible
         @dismiss="hideAlert"
       />
-      <div class="sm:flex">
-        <div class="items-center hidden mb-3 sm:flex sm:divide-x sm:divide-gray-100 sm:mb-0 dark:divide-gray-700">
-          <form class="flex items-center mb-3 sm:mb-0 lg:pr-3" @submit.prevent="loadVehicles(1)">
-          <label for="vehicles-search" class="sr-only">Buscar vehículos</label>
-          <input id="vehicles-search" v-model="search" type="search" placeholder="Buscar vehículos" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full lg:w-64 xl:w-96 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+    </div>
+  </div>
+
+  <div class="px-4 pb-4 sm:px-6 lg:px-8 mt-4">
+    <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+      <div class="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-default-medium">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <form class="relative" @submit.prevent="loadVehicles(1)">
+            <label for="vehicles-search" class="sr-only">Buscar vehículos</label>
+            <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+              <Search class="w-4 h-4 text-body" />
+            </div>
+            <input id="vehicles-search" v-model="search" type="search" placeholder="Buscar vehículos" class="block w-full sm:w-64 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
           </form>
         </div>
-<div class="flex items-center ml-auto space-x-2 sm:space-x-3">
-          <EntityActionButtons 
-          entity="vehiculos" 
+        <div class="flex items-center gap-2">
+          <EntityActionButtons
+          entity="vehiculos"
           @add="openCreateModal"
           @pdfExportError="handlePdfError"
           @excelExportError="handleExcelError" />
         </div>
       </div>
-    </div>
-  </div>
-
-  <EntityTable
-    :columns="['Placa', 'Marca', 'Modelo', 'Año', 'Dueño', 'Acciones']"
-    :items="vehicles"
-    :loading="isLoading"
-    loading-text="Cargando vehículos..."
-    empty-text="No se encontraron vehículos."
-    :empty-colspan="6"
-    :show-pagination="true"
-    :previous-url="previousUrl"
-    :next-url="nextUrl"
-    :pagination-disabled="isLoading"
-    :range-label="rangeLabel"
-    @page-change="(delta) => loadVehicles(currentPage + delta)"
-  >
+      <EntityTable
+        :columns="['Placa', 'Marca', 'Modelo', 'Año', 'Dueño', 'Acciones']"
+        :items="vehicles"
+        :loading="isLoading"
+        loading-text="Cargando vehículos..."
+        empty-text="No se encontraron vehículos."
+        :empty-colspan="6"
+        :wrapper-class="'w-full'"
+      >
     <template #row="{ item }">
-      <tr class="hover:bg-gray-100 dark:hover:bg-gray-700">
+      <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ formatPlate(item.placa) }}</td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.marca }}</td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.modelo }}</td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.anio || '—' }}</td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.cliente_nombre || 'Sin dueño' }}</td>
         <td class="p-4 whitespace-nowrap">
-          <button type="button" title="Enviar recordatorio de mantenimiento por WhatsApp" aria-label="Enviar recordatorio por WhatsApp" class="inline-flex items-center p-2 text-green-600 rounded-lg hover:bg-green-100 dark:text-green-400 dark:hover:bg-gray-700" @click="openEnviarRecordatorio(item)">
-            <MessageCircle class="w-5 h-5" />
-          </button>
-          <button type="button" title="Editar vehículo" aria-label="Editar vehículo" class="inline-flex items-center p-2 text-primary-600 rounded-lg hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700" @click="openEditModal(item.id)">
-            <Pencil class="w-5 h-5" />
-          </button>
-          <button type="button" title="Eliminar vehículo" aria-label="Eliminar vehículo" :disabled="isDeleting" class="inline-flex items-center p-2 text-red-600 rounded-lg hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
-            <Trash2 class="w-5 h-5" />
-          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" title="Enviar recordatorio de mantenimiento por WhatsApp" aria-label="Enviar recordatorio por WhatsApp" class="px-1.5 py-1.5 inline-flex items-center p-2 text-green-600 rounded border border-green-200 hover:bg-green-100 dark:text-green-400 dark:border-green-500 dark:hover:bg-gray-700" @click="openEnviarRecordatorio(item)">
+              <MessageCircle class="w-5 h-5" />
+            </button>
+            <button type="button" title="Editar vehículo" aria-label="Editar vehículo" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="openEditModal(item.id)">
+              <Pencil class="w-5 h-5" />
+            </button>
+            <button type="button" title="Eliminar vehículo" aria-label="Eliminar vehículo" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
+              <Trash2 class="w-5 h-5" />
+            </button>
+          </div>
         </td>
       </tr>
     </template>
-  </EntityTable>
+    <template #pagination>
+      <Pagination
+        :total="total"
+        :current-page="currentPage"
+        :next-url="nextUrl"
+        :previous-url="previousUrl"
+        :disabled="isLoading"
+        item-word="vehículo"
+        empty-text="No se encontraron vehículos."
+        @page="loadVehicles"
+      />
+    </template>
+    </EntityTable>
+    </div>
+  </div>
 
   <ConfirmModal
     v-model="showDeleteModal"

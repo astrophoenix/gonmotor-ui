@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted } from 'vue';
-import { FileSearchCorner, Pencil, Trash2 } from 'lucide-vue-next';
+import { FileSearchCorner, Pencil, Trash2, Search } from 'lucide-vue-next';
 import { IconLockOpen2 } from '@tabler/icons-vue';
 import { QuoteIcon } from 'gonmotor-icons';
 import { Icon } from '@iconify/vue';
@@ -12,6 +12,7 @@ import EntityActionButtons from '../../../shared/components/EntityActionButtons.
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
+import Pagination from '../../../shared/components/Pagination.vue';
 
 const {
   inspecciones,
@@ -19,9 +20,9 @@ const {
   isDeleting,
   search,
   currentPage,
+  total,
   nextUrl,
   previousUrl,
-  rangeLabel,
   loadInspecciones,
   removeInspeccion,
 } = useInspecciones();
@@ -211,14 +212,22 @@ onUnmounted(() => {
         dismissible
         @dismiss="hideAlert"
       />
-      <div class="sm:flex">
-        <div class="items-center hidden mb-3 sm:flex sm:divide-x sm:divide-gray-100 sm:mb-0 dark:divide-gray-700">
-          <form class="flex items-center mb-3 sm:mb-0 lg:pr-3" @submit.prevent="loadInspecciones(1)">
+    </div>
+  </div>
+
+  <div class="px-4 pb-4 sm:px-6 lg:px-8 mt-4">
+    <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+      <div class="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-default-medium">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <form class="relative" @submit.prevent="loadInspecciones(1)">
             <label for="inspecciones-search" class="sr-only">Buscar inspecciones</label>
-            <input id="inspecciones-search" v-model="search" type="search" placeholder="Buscar por placa o cliente" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full lg:w-64 xl:w-96 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+            <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+              <Search class="w-4 h-4 text-body" />
+            </div>
+            <input id="inspecciones-search" v-model="search" type="search" placeholder="Buscar por placa o cliente" class="block w-full sm:w-64 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
           </form>
         </div>
-        <div class="flex items-center ml-auto space-x-2 sm:space-x-3">
+        <div class="flex items-center gap-2">
           <EntityActionButtons
             entity="inspecciones"
             @pdfExportError="handlePdfError"
@@ -226,25 +235,17 @@ onUnmounted(() => {
           />
         </div>
       </div>
-    </div>
-  </div>
-
-  <EntityTable
-    :columns="['#', 'Nº Inspección', 'Vehículo', 'Cliente', 'Tipo', 'Estado', 'Fecha', 'Acciones']"
-    :items="inspecciones"
-    :loading="loading"
-    loading-text="Cargando inspecciones..."
-    empty-text="No se encontraron inspecciones."
-    :empty-colspan="8"
-    :show-pagination="true"
-    :previous-url="previousUrl"
-    :next-url="nextUrl"
-    :pagination-disabled="loading"
-    :range-label="rangeLabel"
-    @page-change="(delta) => loadInspecciones(currentPage + delta)"
-  >
+      <EntityTable
+        :columns="['#', 'Nº Inspección', 'Vehículo', 'Cliente', 'Tipo', 'Estado', 'Fecha', 'Acciones']"
+        :items="inspecciones"
+        :loading="loading"
+        loading-text="Cargando inspecciones..."
+        empty-text="No se encontraron inspecciones."
+        :empty-colspan="8"
+        :wrapper-class="'w-full'"
+      >
     <template #row="{ item, index }">
-      <tr class="hover:bg-gray-100 dark:hover:bg-gray-700">
+      <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ index + 1 }}</td>
         <td class="p-4 whitespace-nowrap">
           <a
@@ -286,28 +287,43 @@ onUnmounted(() => {
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ formatDate(item.created_at) }}</td>
         <td class="p-4 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <button v-if="item.estado !== 'FINALIZADA'" type="button" title="Editar inspección" aria-label="Editar inspección" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded-lg border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="handleEditar(item)">
+            <button v-if="item.estado !== 'FINALIZADA'" type="button" title="Editar inspección" aria-label="Editar inspección" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="handleEditar(item)">
               <Pencil class="w-5 h-5" />
             </button>
-            <button v-if="item.estado === 'FINALIZADA'" type="button" title="Reabrir inspección" aria-label="Reabrir inspección" :disabled="isReopening" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded-lg border border-primary-200 hover:bg-primary-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="solicitarReabrir(item)">
+            <button v-if="item.estado === 'FINALIZADA'" type="button" title="Reabrir inspección" aria-label="Reabrir inspección" :disabled="isReopening" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="solicitarReabrir(item)">
               <IconLockOpen2 class="w-5 h-5" />
             </button>
-            <button v-if="item.estado === 'PENDIENTE'" type="button" title="Crear cotización" aria-label="Crear cotización" class="px-1.5 py-1.5 inline-flex items-center p-2 text-gray-900 rounded-lg border border-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-primary-400" @click="handleCrearCotizacion(item.id)">
+            <button v-if="item.estado === 'PENDIENTE'" type="button" title="Crear cotización" aria-label="Crear cotización" class="px-1.5 py-1.5 inline-flex items-center p-2 text-gray-900 rounded border border-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-primary-400" @click="handleCrearCotizacion(item.id)">
               <QuoteIcon class="w-5 h-5" />
             </button>
 
 
-            <button type="button" title="Eliminar inspección" aria-label="Eliminar inspección" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded-lg border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
+            <button type="button" title="Eliminar inspección" aria-label="Eliminar inspección" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
               <Trash2 class="w-5 h-5" />
             </button>
-            <button type="button" title="Descargar PDF" aria-label="Descargar PDF" class="px-1.5 py-1.5 inline-flex items-center p-2 text-gray-900 rounded-lg border border-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-primary-400">
+            <button type="button" title="Descargar PDF" aria-label="Descargar PDF" class="px-1.5 py-1.5 inline-flex items-center p-2 text-gray-900 rounded border border-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-primary-400">
               <Icon :icon="filePdfIcon" class="w-5 h-5" />
             </button>
           </div>
         </td>
       </tr>
     </template>
-  </EntityTable>
+    <template #pagination>
+      <Pagination
+        :total="total"
+        :current-page="currentPage"
+        :next-url="nextUrl"
+        :previous-url="previousUrl"
+        :disabled="loading"
+        item-word="inspección"
+        item-plural="inspecciones"
+        empty-text="No se encontraron inspecciones."
+        @page="loadInspecciones"
+      />
+    </template>
+    </EntityTable>
+    </div>
+  </div>
 
   <ConfirmModal
     v-model="showDeleteModal"
