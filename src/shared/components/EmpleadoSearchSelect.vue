@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue';
 import { Search, IdCard } from 'lucide-vue-next';
 import { request } from '../services/httpClient';
+import { isSearchable } from '../utils/search';
 
 const props = defineProps({
   id: { type: String, default: 'empleado' },
@@ -35,7 +36,7 @@ function closeSoon() {
 
 async function searchEmpleados() {
   const term = (props.modelValue || '').trim();
-  if (!term) {
+  if (!term || !isSearchable(term)) {
     options.value = [];
     return;
   }

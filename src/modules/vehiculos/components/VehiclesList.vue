@@ -1,16 +1,19 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { Car, MessageCircle, Pencil, Trash2, Search } from 'lucide-vue-next';
 import { useVehicles } from '../composables/useVehicles';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
+import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
+import { SEARCH_DEBOUNCE_MS, isSearchable } from '../../../shared/utils/search';
 import EntityTable from '../../../shared/components/EntityTable.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
 import VehicleModal from './VehicleModal.vue';
 import EnviarRecordatorioModal from '../../notificaciones/components/EnviarRecordatorioModal.vue';
 import { useToast } from '../../../shared/composables/useToast';
 import { formatPlate } from '../../../shared/utils/formatPlate';
+import { sanitizeAnio } from '../../../shared/utils/sanitize';
 
 const { showSuccess } = useToast();
 const {
@@ -18,6 +21,8 @@ const {
   isLoading,
   isDeleting,
   search,
+  anio,
+  estado,
   currentPage,
   total,
   nextUrl,
@@ -30,6 +35,13 @@ const alert = ref({
   type: 'default',
   title: '',
   message: '',
+});
+
+const anioInput = computed({
+  get: () => anio.value,
+  set: (value) => {
+    anio.value = sanitizeAnio(value);
+  },
 });
 
 function showAlert(type, title, message) {
@@ -137,11 +149,16 @@ function handleExcelError(message) {
 
 function scheduleSearch() {
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => loadVehicles(1), 300);
+  searchTimer = setTimeout(() => loadVehicles(1), SEARCH_DEBOUNCE_MS);
 }
 
-watch(search, scheduleSearch);
+watch(search, () => {
+  if (isSearchable(search.value)) scheduleSearch();
+});
+watch(anio, scheduleSearch);
+watch(estado, scheduleSearch);
 onMounted(() => loadVehicles());
+onUnmounted(() => clearTimeout(searchTimer));
 </script>
 
 <template>
@@ -180,8 +197,14 @@ onMounted(() => loadVehicles());
             <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
               <Search class="w-4 h-4 text-body" />
             </div>
-            <input id="vehicles-search" v-model="search" type="search" placeholder="Buscar vehículos" class="block w-full sm:w-64 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
+            <input id="vehicles-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="Buscar vehículos" class="block w-full sm:w-64 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
           </form>
+          <input id="vehicles-anio" v-model="anioInput" type="text" inputmode="numeric" maxlength="4" placeholder="Año" class="block w-full sm:w-24 px-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
+          <select id="vehicles-estado" v-model="estado" class="block w-full sm:w-32 px-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand">
+            <option value="">Estado</option>
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+          </select>
         </div>
         <div class="flex items-center gap-2">
           <EntityActionButtons
@@ -192,12 +215,12 @@ onMounted(() => loadVehicles());
         </div>
       </div>
       <EntityTable
-        :columns="['Placa', 'Marca', 'Modelo', 'Año', 'Dueño', 'Acciones']"
+        :columns="['Placa', 'Marca', 'Modelo', 'Año', 'Dueño', 'Estado', 'Acciones']"
         :items="vehicles"
         :loading="isLoading"
         loading-text="Cargando vehículos..."
         empty-text="No se encontraron vehículos."
-        :empty-colspan="6"
+        :empty-colspan="7"
         :wrapper-class="'w-full'"
       >
     <template #row="{ item }">
@@ -207,6 +230,16 @@ onMounted(() => loadVehicles());
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.modelo }}</td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.anio || '—' }}</td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.cliente_nombre || 'Sin dueño' }}</td>
+        <td class="p-4 whitespace-nowrap">
+          <span v-if="item.is_active" class="inline-flex items-center bg-success-soft border border-success-subtle text-fg-success-strong text-xs font-medium px-1 py-0.5 rounded">
+            <span class="h-1.5 w-1.5 bg-fg-success-strong rounded-full me-0.5"></span>
+            Activo
+          </span>
+          <span v-else class="inline-flex items-center bg-danger-soft border border-danger-subtle text-fg-danger-strong text-xs font-medium px-1 py-0.5 rounded">
+            <span class="h-1.5 w-1.5 bg-fg-danger-strong rounded-full me-0.5"></span>
+            Inactivo
+          </span>
+        </td>
         <td class="p-4 whitespace-nowrap">
           <div class="flex items-center gap-2">
             <button type="button" title="Enviar recordatorio de mantenimiento por WhatsApp" aria-label="Enviar recordatorio por WhatsApp" class="px-1.5 py-1.5 inline-flex items-center p-2 text-green-600 rounded border border-green-200 hover:bg-green-100 dark:text-green-400 dark:border-green-500 dark:hover:bg-gray-700" @click="openEnviarRecordatorio(item)">

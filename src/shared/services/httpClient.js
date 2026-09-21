@@ -59,6 +59,10 @@ function getErrorMessage(data) {
   return fieldMessage || 'La solicitud no pudo completarse.';
 }
 
+function isAbortError(error) {
+  return error?.name === 'AbortError';
+}
+
 function isNetworkError(error) {
   return (
     error instanceof TypeError ||
@@ -199,6 +203,9 @@ export async function request(path, options = {}) {
 
         return retryData;
       } catch (refreshError) {
+        if (isAbortError(refreshError)) {
+          throw refreshError;
+        }
         clearSession();
         const sessionError = new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
         sessionError.isSessionExpired = true;
@@ -219,6 +226,10 @@ export async function request(path, options = {}) {
 
     return data;
   } catch (error) {
+    if (isAbortError(error)) {
+      throw error;
+    }
+
     console.log('HTTP Client Error:', error);
     if (isNetworkError(error)) {
       const networkError = new Error(NETWORK_ERROR_MESSAGE);

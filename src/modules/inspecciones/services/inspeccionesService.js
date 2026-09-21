@@ -7,10 +7,10 @@ function buildUrl(id) {
 }
 
 export const inspeccionesService = {
-  list({ page = 1, search = '', ordering = '-created_at' } = {}) {
+  list({ page = 1, search = '', ordering = '-created_at', signal } = {}) {
     const params = new URLSearchParams({ page: String(page), ordering });
     if (search) params.set('search', search);
-    return request(`${ENDPOINT}?${params.toString()}`);
+    return request(`${ENDPOINT}?${params.toString()}`, { signal });
   },
 
   getById(id) {

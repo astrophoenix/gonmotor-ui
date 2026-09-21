@@ -6,6 +6,8 @@ import filePdfIcon from '@iconify-icons/fa6-regular/file-pdf';
 import { useOrdenes } from '../composables/useOrdenes';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
+import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
+import { SEARCH_DEBOUNCE_MS, isSearchable } from '../../../shared/utils/search';
 import EntityTable from '../../../shared/components/EntityTable.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
 
@@ -108,10 +110,12 @@ function estadoBadge(estado) {
 
 function scheduleSearch() {
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => loadOrdenes(1), 300);
+  searchTimer = setTimeout(() => loadOrdenes(1), SEARCH_DEBOUNCE_MS);
 }
 
-watch(search, scheduleSearch);
+watch(search, () => {
+  if (isSearchable(search.value)) scheduleSearch();
+});
 onMounted(() => {
   loadOrdenes();
 });
@@ -157,7 +161,7 @@ onUnmounted(() => {
             <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
               <Search class="w-4 h-4 text-body" />
             </div>
-            <input id="ordenes-search" v-model="search" type="search" placeholder="Buscar por placa, cliente u orden" class="block w-full sm:w-64 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
+            <input id="ordenes-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="Buscar por placa, cliente u orden" class="block w-full sm:w-64 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
           </form>
         </div>
       </div>

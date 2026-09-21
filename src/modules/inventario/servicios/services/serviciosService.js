@@ -7,11 +7,11 @@ function buildUrl(id) {
 }
 
 export const serviciosService = {
-  list({ page = 1, search = '', ordering = 'nombre', categoria = null } = {}) {
+  list({ page = 1, search = '', ordering = 'nombre', categoria = null, signal } = {}) {
     const params = new URLSearchParams({ page: String(page), ordering });
     if (search) params.set('search', search);
     if (categoria) params.set('categoria', categoria);
-    return request(`${ENDPOINT}?${params.toString()}`);
+    return request(`${ENDPOINT}?${params.toString()}`, { signal });
   },
 
   getById(id) {

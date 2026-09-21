@@ -1,5 +1,6 @@
-import { ref } from 'vue';
+import { ref, onScopeDispose } from 'vue';
 import { ordenesService } from '../services/ordenesService';
+import { createLatestRequest, isAbortError } from '../../../shared/utils/search';
 
 export function useOrdenes() {
   const ordenes = ref([]);
@@ -16,7 +17,10 @@ export function useOrdenes() {
   const firstItem = ref(0);
   const rangeLabel = ref('');
 
+  const listRequest = createLatestRequest();
+
   async function loadOrdenes(page = 1) {
+    const { signal, id } = listRequest.begin();
     loading.value = true;
     error.value = null;
     currentPage.value = page;
@@ -26,7 +30,9 @@ export function useOrdenes() {
         page,
         search: search.value,
         ordering: '-created_at',
+        signal,
       });
+      if (!listRequest.isCurrent(id)) return;
       const list = Array.isArray(data) ? data : (data.results || []);
       ordenes.value = list;
       total.value = data.count ?? list.length;
@@ -38,10 +44,11 @@ export function useOrdenes() {
       lastItem.value = page * perPage;
       rangeLabel.value = `Mostrando ${firstItem.value}-${lastItem.value} de ${total.value} órdenes`;
     } catch (err) {
+      if (!listRequest.isCurrent(id) || isAbortError(err)) return;
       error.value = err.message || 'Error al cargar las órdenes de trabajo.';
       throw err;
     } finally {
-      loading.value = false;
+      if (listRequest.isCurrent(id)) loading.value = false;
     }
   }
 
@@ -88,6 +95,8 @@ export function useOrdenes() {
       isDeleting.value = false;
     }
   }
+
+  onScopeDispose(() => listRequest.cancel());
 
   return {
     ordenes,

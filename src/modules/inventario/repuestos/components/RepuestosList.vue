@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { Package, Pencil, Search, Trash2 } from 'lucide-vue-next';
 import { useRepuestos } from '../composables/useRepuestos';
 import ConfirmModal from '../../../../shared/components/ConfirmModal.vue';
@@ -8,6 +8,8 @@ import EntityActionButtons from '../../../../shared/components/EntityActionButto
 import EntityTable from '../../../../shared/components/EntityTable.vue';
 import RepuestoModal from './RepuestoModal.vue';
 import { formatCurrency } from '../../../../shared/utils/format';
+import { vSanitizeSearch } from '../../../../shared/directives/sanitizeSearch';
+import { SEARCH_DEBOUNCE_MS, isSearchable } from '../../../../shared/utils/search';
 
 const {
   repuestos,
@@ -144,12 +146,15 @@ function handleExcelError(message) {
 
 function scheduleSearch() {
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => loadRepuestos(1), 300);
+  searchTimer = setTimeout(() => loadRepuestos(1), SEARCH_DEBOUNCE_MS);
 }
 
-watch(search, scheduleSearch);
+watch(search, () => {
+  if (isSearchable(search.value)) scheduleSearch();
+});
 watch([categoria, stockBajo], scheduleSearch);
 onMounted(() => loadRepuestos());
+onUnmounted(() => clearTimeout(searchTimer));
 </script>
 
 <template>
@@ -188,7 +193,7 @@ onMounted(() => loadRepuestos());
             <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
               <Search class="w-4 h-4 text-body" />
             </div>
-            <input id="repuestos-search" v-model="search" type="search" placeholder="Buscar repuestos" class="block w-full sm:w-64 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
+            <input id="repuestos-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="Buscar repuestos" class="block w-full sm:w-64 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
           </form>
           <select v-model="categoria" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs block py-2.5 px-3 focus:ring-brand focus:border-brand">
             <option value="">Todas las categorías</option>

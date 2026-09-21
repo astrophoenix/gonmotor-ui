@@ -139,7 +139,7 @@ async function searchClients() {
     }
     clientsLoading.value = true;
     try {
-      const data = await request(`${CLIENT_ENDPOINT}?search=${encodeURIComponent(clientSearch.value.trim())}&page=1`);
+      const data = await request(`${CLIENT_ENDPOINT}?search=${encodeURIComponent(clientSearch.value.trim())}&page=1&estado=activo`);
       clientsList.value = Array.isArray(data) ? data : (data.results || []);
       clientsDropped.value = true;
     } catch (error) {

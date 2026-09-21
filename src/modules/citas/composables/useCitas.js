@@ -1,5 +1,6 @@
-import { ref, computed } from 'vue';
+import { ref, computed, onScopeDispose } from 'vue';
 import { citasService } from '../services/citasService';
+import { createLatestRequest, isAbortError } from '../../../shared/utils/search';
 
 export function useCitas() {
   const citas = ref([]);
@@ -34,7 +35,10 @@ export function useCitas() {
     citas.value.filter((cita) => ['PROGRAMADA', 'CONFIRMADA'].includes(cita.estado))
   );
 
+  const listRequest = createLatestRequest();
+
   async function fetchCitas(page = 1) {
+    const { signal, id } = listRequest.begin();
     isLoading.value = true;
     errorMessage.value = '';
     try {
@@ -43,17 +47,20 @@ export function useCitas() {
         search: search.value.trim(),
         estado: estadoFiltro.value,
         fecha: fechaFiltro.value,
+        signal,
       });
+      if (!listRequest.isCurrent(id)) return;
       citas.value = Array.isArray(data) ? data : (data.results || []);
       total.value = Array.isArray(data) ? data.length : data.count;
       nextUrl.value = Array.isArray(data) ? null : data.next;
       previousUrl.value = Array.isArray(data) ? null : data.previous;
       currentPage.value = page;
     } catch (error) {
+      if (!listRequest.isCurrent(id) || isAbortError(error)) return;
       errorMessage.value = error.message;
       throw error;
     } finally {
-      isLoading.value = false;
+      if (listRequest.isCurrent(id)) isLoading.value = false;
     }
   }
 
@@ -90,6 +97,8 @@ export function useCitas() {
     estadoFiltro.value = '';
     fechaFiltro.value = '';
   }
+
+  onScopeDispose(() => listRequest.cancel());
 
   return {
     citas,

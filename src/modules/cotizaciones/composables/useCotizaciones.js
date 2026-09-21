@@ -1,5 +1,6 @@
-import { ref } from 'vue';
+import { ref, onScopeDispose } from 'vue';
 import { cotizacionesService } from '../services/cotizacionesService';
+import { createLatestRequest, isAbortError } from '../../../shared/utils/search';
 
 export function useCotizaciones() {
   const cotizaciones = ref([]);
@@ -14,7 +15,10 @@ export function useCotizaciones() {
 
   const rangeLabel = ref('');
 
+  const listRequest = createLatestRequest();
+
   async function loadCotizaciones(page = 1) {
+    const { signal, id } = listRequest.begin();
     loading.value = true;
     error.value = null;
     currentPage.value = page;
@@ -24,7 +28,9 @@ export function useCotizaciones() {
         page,
         search: search.value,
         ordering: '-created_at',
+        signal,
       });
+      if (!listRequest.isCurrent(id)) return;
       const list = Array.isArray(data) ? data : (data.results || []);
       cotizaciones.value = list;
       total.value = data.count ?? list.length;
@@ -36,10 +42,11 @@ export function useCotizaciones() {
       const lastItem = page * perPage;
       rangeLabel.value = `Mostrando ${firstItem}-${lastItem} de ${total.value} cotizaciones`;
     } catch (err) {
+      if (!listRequest.isCurrent(id) || isAbortError(err)) return;
       error.value = err.message || 'Error al cargar las cotizaciones.';
       throw err;
     } finally {
-      loading.value = false;
+      if (listRequest.isCurrent(id)) loading.value = false;
     }
   }
 
@@ -70,6 +77,8 @@ export function useCotizaciones() {
       isDeleting.value = false;
     }
   }
+
+  onScopeDispose(() => listRequest.cancel());
 
   return {
     cotizaciones,

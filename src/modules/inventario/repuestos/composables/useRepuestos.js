@@ -1,5 +1,6 @@
-import { ref, computed } from 'vue';
+import { ref, computed, onScopeDispose } from 'vue';
 import { repuestosService } from '../services/repuestosService';
+import { createLatestRequest, isAbortError } from '../../../../shared/utils/search';
 
 export function useRepuestos() {
   const repuestos = ref([]);
@@ -31,7 +32,10 @@ export function useRepuestos() {
 
   const totalPages = computed(() => Math.ceil(total.value / PAGE_SIZE));
 
+  const listRequest = createLatestRequest();
+
   async function fetchRepuestos(page = 1) {
+    const { signal, id } = listRequest.begin();
     isLoading.value = true;
     errorMessage.value = '';
     try {
@@ -40,17 +44,20 @@ export function useRepuestos() {
         search: search.value.trim(),
         categoria: categoria.value || null,
         stockBajo: stockBajo.value,
+        signal,
       });
+      if (!listRequest.isCurrent(id)) return;
       repuestos.value = Array.isArray(data) ? data : (data.results || []);
       total.value = Array.isArray(data) ? data.length : data.count;
       nextUrl.value = Array.isArray(data) ? null : data.next;
       previousUrl.value = Array.isArray(data) ? null : data.previous;
       currentPage.value = page;
     } catch (error) {
+      if (!listRequest.isCurrent(id) || isAbortError(error)) return;
       errorMessage.value = error.message;
       throw error;
     } finally {
-      isLoading.value = false;
+      if (listRequest.isCurrent(id)) isLoading.value = false;
     }
   }
 
@@ -66,6 +73,8 @@ export function useRepuestos() {
       isDeleting.value = false;
     }
   }
+
+  onScopeDispose(() => listRequest.cancel());
 
   return {
     repuestos,

@@ -100,6 +100,24 @@ export function sanitizeText(value) {
   return (value == null ? '' : String(value)).replace(ALPHA_NUM_PATTERN, '').trim();
 }
 
+/**
+ * Búsqueda libre de vehículos/clientes: permite letras (con acentos), dígitos,
+ * espacios y los separadores presentes en los campos filtrados (placa, VIN,
+ * motor, marca, modelo, nombre, identificación, razón social, RUC).
+ * Limita a 100 por defecto (longitud del campo más extenso: nombre del dueño).
+ */
+export function sanitizeBusqueda(value, max = 100) {
+  return (value == null ? '' : String(value))
+    .replace(/<[^>]*>/g, '')
+    .replace(/[^a-zA-ZÁÉÍÓÚÜáéíóúüÑñ0-9\s\-._'’]/g, '')
+    .slice(0, max);
+}
+
+/** Año: solo dígitos, máximo 4 (uso en filtros por año). */
+export function sanitizeAnio(value) {
+  return (value == null ? '' : String(value)).replace(/\D/g, '').slice(0, 4);
+}
+
 /** Solo letras, espacios y acentos latinos (color). */
 export function sanitizeColor(value) {
   return (value == null ? '' : String(value)).replace(LATIN_PATTERN, '');

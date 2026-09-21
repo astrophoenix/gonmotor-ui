@@ -7,7 +7,7 @@ function buildUrl(id) {
   return `${ENDPOINT}${encodeURIComponent(id)}/`;
 }
 
-export async function fetchRecepciones(token, empresaId, page = 1, search = '') {
+export async function fetchRecepciones(token, empresaId, page = 1, search = '', signal) {
   const headers = {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(empresaId ? { 'X-Empresa-ID': empresaId } : {}),
@@ -16,7 +16,7 @@ export async function fetchRecepciones(token, empresaId, page = 1, search = '') 
   const params = new URLSearchParams({ page: String(page) });
   if (search) params.set('search', search);
 
-  const response = await fetch(`${API_BASE_URL}/api/recepciones/?${params.toString()}`, { headers });
+  const response = await fetch(`${API_BASE_URL}/api/recepciones/?${params.toString()}`, { headers, signal });
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
     const message = data?.detail || data?.non_field_errors?.[0] || 'No se pudo cargar las recepciones.';
@@ -43,10 +43,10 @@ export async function fetchRecepcion(token, empresaId, id) {
 }
 
 export const recepcionesService = {
-  list({ page = 1, search = '', ordering = '-created_at' } = {}) {
+  list({ page = 1, search = '', ordering = '-created_at', signal } = {}) {
     const params = new URLSearchParams({ page: String(page), ordering });
     if (search) params.set('search', search);
-    return request(`${ENDPOINT}?${params.toString()}`);
+    return request(`${ENDPOINT}?${params.toString()}`, { signal });
   },
 
   getById(id) {

@@ -7,14 +7,14 @@ function buildUrl(id) {
 }
 
 export const citasService = {
-  list({ page = 1, search = '', estado = '', fecha = '', desde = '', hasta = '', ordering = 'fecha_cita' } = {}) {
+  list({ page = 1, search = '', estado = '', fecha = '', desde = '', hasta = '', ordering = 'fecha_cita', signal } = {}) {
     const params = new URLSearchParams({ page: String(page), ordering });
     if (search) params.set('search', search);
     if (estado) params.set('estado', estado);
     if (fecha) params.set('fecha', fecha);
     if (desde) params.set('desde', desde);
     if (hasta) params.set('hasta', hasta);
-    return request(`${ENDPOINT}?${params.toString()}`);
+    return request(`${ENDPOINT}?${params.toString()}`, { signal });
   },
 
   getById(id) {

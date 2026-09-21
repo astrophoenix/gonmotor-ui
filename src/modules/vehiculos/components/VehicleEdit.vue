@@ -109,7 +109,7 @@ async function searchClientes() {
     return;
   }
   try {
-    const params = new URLSearchParams({ search: term, ordering: 'nombre', page: '1' });
+    const params = new URLSearchParams({ search: term, ordering: 'nombre', page: '1', estado: 'activo' });
     const data = await request(`/api/clientes/?${params.toString()}`);
     clienteOptions.value = Array.isArray(data?.results) ? data.results : [];
   } catch (error) {

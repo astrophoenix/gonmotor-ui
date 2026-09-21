@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { Wrench, Pencil, Trash2, Search } from 'lucide-vue-next';
 import { useServicios } from '../composables/useServicios';
 import ConfirmModal from '../../../../shared/components/ConfirmModal.vue';
@@ -9,6 +9,8 @@ import EntityTable from '../../../../shared/components/EntityTable.vue';
 import Pagination from '../../../../shared/components/Pagination.vue';
 import ServicioModal from './ServicioModal.vue';
 import { formatCurrency } from '../../../../shared/utils/format';
+import { vSanitizeSearch } from '../../../../shared/directives/sanitizeSearch';
+import { SEARCH_DEBOUNCE_MS, isSearchable } from '../../../../shared/utils/search';
 
 const {
   servicios,
@@ -123,12 +125,15 @@ function handleExcelError(message) {
 
 function scheduleSearch() {
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => loadServicios(1), 300);
+  searchTimer = setTimeout(() => loadServicios(1), SEARCH_DEBOUNCE_MS);
 }
 
-watch(search, scheduleSearch);
+watch(search, () => {
+  if (isSearchable(search.value)) scheduleSearch();
+});
 watch(categoria, scheduleSearch);
 onMounted(() => loadServicios());
+onUnmounted(() => clearTimeout(searchTimer));
 </script>
 
 <template>
@@ -145,7 +150,7 @@ onMounted(() => loadServicios());
         </nav>
         <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
           <Wrench class="w-6 h-6 inline-block text-gray-900 dark:text-gray-400" />
-          Servicios (Mano de Obra)
+          Servicios
         </h1>
       </div>
       <Alert
@@ -167,7 +172,7 @@ onMounted(() => loadServicios());
             <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
               <Search class="w-4 h-4 text-body" />
             </div>
-            <input id="servicios-search" v-model="search" type="search" placeholder="Buscar servicios" class="block w-full sm:w-64 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
+            <input id="servicios-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="Buscar servicios" class="block w-full sm:w-64 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
           </form>
           <select v-model="categoria" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs block py-2.5 px-3 focus:ring-brand focus:border-brand">
             <option value="">Todas las categorías</option>

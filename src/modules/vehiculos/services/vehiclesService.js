@@ -7,11 +7,13 @@ function buildUrl(id) {
 }
 
 export const vehiclesService = {
-  list({ page = 1, search = '', ordering = 'placa', cliente = null } = {}) {
+  list({ page = 1, search = '', ordering = 'placa', cliente = null, anio = null, estado = '', signal } = {}) {
     const params = new URLSearchParams({ page: String(page), ordering });
     if (search) params.set('search', search);
     if (cliente) params.set('cliente', String(cliente));
-    return request(`${ENDPOINT}?${params.toString()}`);
+    if (anio) params.set('anio', String(anio));
+    if (estado) params.set('estado', estado);
+    return request(`${ENDPOINT}?${params.toString()}`, { signal });
   },
 
   getById(id) {

@@ -5,6 +5,8 @@ import { useCitas } from '../composables/useCitas';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
+import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
+import { SEARCH_DEBOUNCE_MS, isSearchable } from '../../../shared/utils/search';
 import CitaModal from './CitaModal.vue';
 
 const {
@@ -103,10 +105,12 @@ async function loadCitas(page = 1) {
 
 function scheduleSearch() {
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => loadCitas(1), 300);
+  searchTimer = setTimeout(() => loadCitas(1), SEARCH_DEBOUNCE_MS);
 }
 
-watch(search, scheduleSearch);
+watch(search, () => {
+  if (isSearchable(search.value)) scheduleSearch();
+});
 watch(estadoFiltro, () => loadCitas(1));
 watch(fechaFiltro, () => loadCitas(1));
 
@@ -213,7 +217,9 @@ onUnmounted(() => {
               <Search class="absolute w-4 h-4 text-gray-400 left-3 top-3" />
               <input
                 v-model="search"
+                v-sanitize-search
                 type="search"
+                maxlength="100"
                 placeholder="Buscar citas (cliente, placa...)"
                 class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full lg:w-72 p-2.5 pl-9 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
               />

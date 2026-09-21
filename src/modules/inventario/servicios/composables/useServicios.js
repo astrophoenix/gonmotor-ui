@@ -1,5 +1,6 @@
-import { ref, computed } from 'vue';
+import { ref, computed, onScopeDispose } from 'vue';
 import { serviciosService } from '../services/serviciosService';
+import { createLatestRequest, isAbortError } from '../../../../shared/utils/search';
 
 export function useServicios() {
   const servicios = ref([]);
@@ -28,7 +29,10 @@ export function useServicios() {
     return `Mostrando ${firstItem.value}-${lastItem.value} de ${total.value} servicio${total.value === 1 ? '' : 's'}`;
   });
 
+  const listRequest = createLatestRequest();
+
   async function fetchServicios(page = 1) {
+    const { signal, id } = listRequest.begin();
     isLoading.value = true;
     errorMessage.value = '';
     try {
@@ -36,17 +40,20 @@ export function useServicios() {
         page,
         search: search.value.trim(),
         categoria: categoria.value || null,
+        signal,
       });
+      if (!listRequest.isCurrent(id)) return;
       servicios.value = Array.isArray(data) ? data : (data.results || []);
       total.value = Array.isArray(data) ? data.length : data.count;
       nextUrl.value = Array.isArray(data) ? null : data.next;
       previousUrl.value = Array.isArray(data) ? null : data.previous;
       currentPage.value = page;
     } catch (error) {
+      if (!listRequest.isCurrent(id) || isAbortError(error)) return;
       errorMessage.value = error.message;
       throw error;
     } finally {
-      isLoading.value = false;
+      if (listRequest.isCurrent(id)) isLoading.value = false;
     }
   }
 
@@ -62,6 +69,8 @@ export function useServicios() {
       isDeleting.value = false;
     }
   }
+
+  onScopeDispose(() => listRequest.cancel());
 
   return {
     servicios,

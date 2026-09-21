@@ -1,8 +1,10 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { Building2, Search, Pencil, Trash2 } from 'lucide-vue-next';
 import { talleresService } from '../services/talleresService';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
+import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
+import { SEARCH_DEBOUNCE_MS, isSearchable, createLatestRequest, isAbortError } from '../../../shared/utils/search';
 import EntityTable from '../../../shared/components/EntityTable.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
@@ -63,19 +65,24 @@ function onTallerExportError(message) {
   showAlert('error', '', message || 'Ocurrió un error al generar el archivo.');
 }
 
+const listRequest = createLatestRequest();
+
 async function loadTalleres(page = 1) {
+  const { signal, id } = listRequest.begin();
   isLoading.value = true;
   try {
-    const data = await talleresService.listTalleres({ page, search: search.value.trim() });
+    const data = await talleresService.listTalleres({ page, search: search.value.trim(), signal });
+    if (!listRequest.isCurrent(id)) return;
     talleres.value = Array.isArray(data) ? data : data?.results || [];
     total.value = Array.isArray(data) ? data.length : data?.count || 0;
     nextUrl.value = Array.isArray(data) ? null : data?.next || null;
     previousUrl.value = Array.isArray(data) ? null : data?.previous || null;
     currentPage.value = page;
   } catch (error) {
+    if (!listRequest.isCurrent(id) || isAbortError(error)) return;
     showAlert('error', '', error.message || 'No se pudieron cargar los talleres.');
   } finally {
-    isLoading.value = false;
+    if (listRequest.isCurrent(id)) isLoading.value = false;
   }
 }
 
@@ -110,11 +117,17 @@ async function confirmDelete() {
 
 function scheduleSearch() {
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => loadTalleres(1), 300);
+  searchTimer = setTimeout(() => loadTalleres(1), SEARCH_DEBOUNCE_MS);
 }
 
-watch(search, scheduleSearch);
+watch(search, () => {
+  if (isSearchable(search.value)) scheduleSearch();
+});
 onMounted(() => loadTalleres());
+onUnmounted(() => {
+  clearTimeout(searchTimer);
+  listRequest.cancel();
+});
 </script>
 
 <template>
@@ -153,7 +166,7 @@ onMounted(() => loadTalleres());
             <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
               <Search class="w-4 h-4 text-body" />
             </div>
-            <input id="talleres-search" v-model="search" type="search" placeholder="Buscar taller" class="block w-full sm:w-80 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
+            <input id="talleres-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="Buscar taller" class="block w-full sm:w-80 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
           </form>
         </div>
         <div class="flex items-center gap-2">

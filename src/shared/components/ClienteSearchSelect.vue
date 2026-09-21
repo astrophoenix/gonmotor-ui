@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue';
 import { Search, UserPlus, IdCard, Phone } from 'lucide-vue-next';
 import { request } from '../services/httpClient';
+import { isSearchable } from '../utils/search';
 
 const props = defineProps({
   id: { type: String, default: 'cliente' },
@@ -30,12 +31,12 @@ function closeSoon() {
 
 async function searchClientes() {
   const term = (props.modelValue || '').trim();
-  if (!term) {
+  if (!term || !isSearchable(term)) {
     options.value = [];
     return;
   }
   try {
-    const params = new URLSearchParams({ search: term, ordering: 'nombre', page: '1' });
+    const params = new URLSearchParams({ search: term, ordering: 'nombre', page: '1', estado: 'activo' });
     const data = await request(`/api/clientes/?${params.toString()}`);
     options.value = Array.isArray(data?.results) ? data.results : [];
   } catch (error) {

@@ -3,6 +3,7 @@ import { ref, watch } from 'vue';
 import { CarIcon, Search, UserPlus } from 'lucide-vue-next';
 import { CarChassisIcon } from 'gonmotor-icons';
 import { request } from '../services/httpClient';
+import { isSearchable } from '../utils/search';
 
 const props = defineProps({
   id: { type: String, default: 'vehiculo' },
@@ -57,6 +58,10 @@ function formatPlaca(placa) {
 async function searchVehiculos() {
   const term = (props.modelValue || '').trim();
   if (!term && !props.clienteId) {
+    options.value = [];
+    return;
+  }
+  if (term && !isSearchable(term) && !props.clienteId) {
     options.value = [];
     return;
   }

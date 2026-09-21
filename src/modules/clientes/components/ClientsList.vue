@@ -1,12 +1,14 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted } from 'vue';
-import { Car, UsersRound, Upload, Phone, Mail, Pencil, Trash2, IdCard, Search } from 'lucide-vue-next';
+import { Car, UsersRound, Upload, Phone, Mail, Pencil, Trash2, IdCard, Search, RotateCcw } from 'lucide-vue-next';
 import { useClients } from '../composables/useClients';
 // import { useToast } from '../../../shared/composables/useToast';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 // import ToastContainer from '../../../shared/components/ToastContainer.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
+import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
+import { SEARCH_DEBOUNCE_MS, isSearchable } from '../../../shared/utils/search';
 import EntityTable from '../../../shared/components/EntityTable.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
 import ImportExcelModal from './ImportExcelModal.vue';
@@ -17,13 +19,16 @@ const {
   clients,
   isLoading,
   isDeleting,
+  isReactivating,
   search,
+  estado,
   currentPage,
   total,
   nextUrl,
   previousUrl,
   fetchClients,
   removeClient,
+  reactivateClient,
 } = useClients();
 
 // const { showSuccess, showError } = useToast();
@@ -44,6 +49,8 @@ function hideAlert() {
 
 const showDeleteModal = ref(false);
 const clientToDelete = ref(null);
+const showReactivateModal = ref(false);
+const clientToReactivate = ref(null);
 let searchTimer;
 const openPopoverId = ref(null);
 
@@ -153,12 +160,35 @@ function handleExcelError(message) {
   showAlert('error', '', message || 'No se pudo generar el Excel.');
 }
 
-function scheduleSearch() {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => loadClients(1), 300);
+function onReactivateClient(client) {
+  clientToReactivate.value = client;
+  showReactivateModal.value = true;
 }
 
-watch(search, scheduleSearch);
+async function confirmReactivate() {
+  if (!clientToReactivate.value) return;
+
+  try {
+    const response = await reactivateClient(clientToReactivate.value.id);
+    showAlert('success', '', response.message || 'Cliente reactivado correctamente.');
+    await fetchClients(currentPage.value);
+  } catch (error) {
+    showAlert('error', '', error.message || 'No se pudo reactivar el cliente.');
+  } finally {
+    clientToReactivate.value = null;
+    showReactivateModal.value = false;
+  }
+}
+
+function scheduleSearch() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => loadClients(1), SEARCH_DEBOUNCE_MS);
+}
+
+watch(search, () => {
+  if (isSearchable(search.value)) scheduleSearch();
+});
+watch(estado, scheduleSearch);
 onMounted(() => {
   loadClients();
   document.addEventListener('keydown', handleKeydown);
@@ -166,6 +196,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  clearTimeout(searchTimer);
   document.removeEventListener('keydown', handleKeydown);
   document.removeEventListener('click', handleClickOutside);
 });
@@ -207,8 +238,13 @@ onUnmounted(() => {
             <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
               <Search class="w-4 h-4 text-body" />
             </div>
-            <input id="clients-search" v-model="search" type="search" placeholder="Buscar cliente" class="block w-full sm:w-80 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
+            <input id="clients-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="Buscar cliente" class="block w-full sm:w-80 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
           </form>
+          <select id="clients-estado" v-model="estado" class="block w-full sm:w-32 px-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand">
+            <option value="">Todos</option>
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+          </select>
         </div>
         <div class="flex items-center gap-2">
           <button
@@ -227,12 +263,12 @@ onUnmounted(() => {
         </div>
       </div>
       <EntityTable
-        :columns="['Identificación', 'Nombre / Razón Social', 'Contacto', 'Vehículos', 'Acciones']"
+        :columns="['Identificación', 'Nombre / Razón Social', 'Contacto', 'Vehículos', 'Estado', 'Acciones']"
         :items="clients"
         :loading="isLoading"
         loading-text="Cargando clientes..."
         empty-text="No se encontraron clientes."
-        :empty-colspan="7"
+        :empty-colspan="6"
         :wrapper-class="'w-full'"
       >
     <template #row="{ item }">
@@ -281,7 +317,6 @@ onUnmounted(() => {
               class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary-700 rounded-lg border border-primary-700 hover:bg-primary-100 active:bg-primary-200 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800 dark:active:bg-gray-700"
             >
               <Car class="w-4 h-4 text-gray-800 dark:text-gray-400" />
-
               mostrar +
               <span class="inline-flex items-center justify-center w-4 h-4 text-xs font-semibold text-blue-800 bg-blue-200 rounded-full">
                 {{ item.vehiculos_count }}
@@ -298,7 +333,6 @@ onUnmounted(() => {
                 <ul class="space-y-2">
                   <li v-for="veh in item.vehiculos" :key="veh.id" class="flex items-center gap-2">
                     <Car class="w-4 h-4 text-gray-800 dark:text-gray-400" />
-
                     <span class="text-sm">{{ formatPlate(veh.placa) }} → {{ veh.marca }} {{ veh.color || '—' }}</span>
                   </li>
                 </ul>
@@ -308,11 +342,24 @@ onUnmounted(() => {
           </div>
         </td>
         <td class="p-4 whitespace-nowrap">
+          <span v-if="item.is_active" class="inline-flex items-center bg-success-soft border border-success-subtle text-fg-success-strong text-xs font-medium px-1 py-0.5 rounded">
+            <span class="h-1.5 w-1.5 bg-fg-success-strong rounded-full me-0.5"></span>
+            Activo
+          </span>
+          <span v-else class="inline-flex items-center bg-danger-soft border border-danger-subtle text-fg-danger-strong text-xs font-medium px-1 py-0.5 rounded">
+            <span class="h-1.5 w-1.5 bg-fg-danger-strong rounded-full me-0.5"></span>
+            Inactivo
+          </span>
+        </td>
+        <td class="p-4 whitespace-nowrap">
           <div class="flex items-center gap-2">
+            <button v-if="!item.is_active" type="button" title="Reactivar cliente" aria-label="Reactivar cliente" :disabled="isReactivating" class="px-1.5 py-1.5 inline-flex items-center p-2 text-emerald-600 rounded border border-emerald-200 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-400 dark:border-emerald-500 dark:hover:bg-gray-700" @click="onReactivateClient(item)">
+              <RotateCcw class="w-5 h-5" />
+            </button>
             <button type="button" title="Editar cliente" aria-label="Editar cliente" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="editClient(item.id)">
               <Pencil class="w-5 h-5" />
             </button>
-            <button type="button" title="Eliminar cliente" aria-label="Eliminar cliente" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
+            <button v-if="item.is_active" type="button" title="Eliminar cliente" aria-label="Eliminar cliente" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
               <Trash2 class="w-5 h-5" />
             </button>
           </div>
@@ -339,10 +386,26 @@ onUnmounted(() => {
   <ConfirmModal
     v-model="showDeleteModal"
     entity-name="cliente"
+    :icon="Trash2"
     :item-name="clientToDelete?.nombre"
     :is-deleting="isDeleting"
     @confirm="confirmDelete"
     @cancel="clientToDelete = null"
+  />
+
+  <ConfirmModal
+    v-model="showReactivateModal"
+    entity-name="cliente"
+    :icon="RotateCcw"
+    :item-name="clientToReactivate?.nombre"
+    title="Reactivar cliente"
+    :message="`¿Deseas reactivar a ${clientToReactivate?.nombre || 'este cliente'}? Volverá a aparecer como activo en el listado.`"
+    variant="success"
+    confirm-text="Sí, reactivar"
+    confirming-text="Reactivando..."
+    :is-deleting="isReactivating"
+    @confirm="confirmReactivate"
+    @cancel="clientToReactivate = null"
   />
 
   <ImportExcelModal

@@ -27,10 +27,11 @@ function getAuthHeaders() {
 }
 
 export const clientsService = {
-  list({ page = 1, search = '', ordering = 'nombre' } = {}) {
+  list({ page = 1, search = '', ordering = 'nombre', estado = '', signal } = {}) {
     const params = new URLSearchParams({ page: String(page), ordering });
     if (search) params.set('search', search);
-    return request(`${ENDPOINT}?${params.toString()}`);
+    if (estado) params.set('estado', estado);
+    return request(`${ENDPOINT}?${params.toString()}`, { signal });
   },
 
   getById(id) {
@@ -59,6 +60,12 @@ export const clientsService = {
         throw new Error(`No se pudo eliminar '${label}'. ${error.message}`);
       }
       throw error;
+    });
+  },
+
+  reactivar(id) {
+    return request(`${buildUrl(id)}reactivar/`, {
+      method: 'POST',
     });
   },
 

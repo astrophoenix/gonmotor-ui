@@ -1,5 +1,6 @@
-import { ref } from 'vue';
+import { ref, onScopeDispose } from 'vue';
 import { inspeccionesService } from '../services/inspeccionesService';
+import { createLatestRequest, isAbortError } from '../../../shared/utils/search';
 
 export function useInspecciones() {
   const inspecciones = ref([]);
@@ -16,7 +17,10 @@ export function useInspecciones() {
   const firstItem = ref(0);
   const rangeLabel = ref('');
 
+  const listRequest = createLatestRequest();
+
   async function loadInspecciones(page = 1) {
+    const { signal, id } = listRequest.begin();
     loading.value = true;
     error.value = null;
     currentPage.value = page;
@@ -26,7 +30,9 @@ export function useInspecciones() {
         page,
         search: search.value,
         ordering: '-created_at',
+        signal,
       });
+      if (!listRequest.isCurrent(id)) return;
       const list = Array.isArray(data) ? data : (data.results || []);
       inspecciones.value = list;
       total.value = data.count ?? list.length;
@@ -38,10 +44,11 @@ export function useInspecciones() {
       lastItem.value = page * perPage;
       rangeLabel.value = `Mostrando ${firstItem.value}-${lastItem.value} de ${total.value} inspecciones`;
     } catch (err) {
+      if (!listRequest.isCurrent(id) || isAbortError(err)) return;
       error.value = err.message || 'Error al cargar las inspecciones.';
       throw err;
     } finally {
-      loading.value = false;
+      if (listRequest.isCurrent(id)) loading.value = false;
     }
   }
 
@@ -114,6 +121,8 @@ export function useInspecciones() {
       isDeleting.value = false;
     }
   }
+
+  onScopeDispose(() => listRequest.cancel());
 
   return {
     inspecciones,

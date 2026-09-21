@@ -3,10 +3,10 @@ import { request } from '../../../shared/services/httpClient';
 const ENDPOINT = '/api/configuracion/sucursales/';
 
 export const talleresService = {
-  listTalleres({ page = 1, search = '' } = {}) {
+  listTalleres({ page = 1, search = '', signal } = {}) {
     const params = new URLSearchParams({ page: String(page) });
     if (search) params.set('search', search);
-    return request(`${ENDPOINT}?${params.toString()}`);
+    return request(`${ENDPOINT}?${params.toString()}`, { signal });
   },
 
   getTaller(id) {

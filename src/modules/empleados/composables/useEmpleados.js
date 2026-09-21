@@ -1,5 +1,6 @@
-import { ref, computed } from 'vue';
+import { ref, computed, onScopeDispose } from 'vue';
 import { empleadosService } from '../services/empleadosService';
+import { createLatestRequest, isAbortError } from '../../../shared/utils/search';
 
 export function useEmpleados() {
   const empleados = ref([]);
@@ -27,24 +28,30 @@ export function useEmpleados() {
     return `Mostrando ${firstItem.value}-${lastItem.value} de ${total.value} empleado${total.value === 1 ? '' : 's'}`;
   });
 
+  const listRequest = createLatestRequest();
+
   async function fetchEmpleados(page = 1) {
+    const { signal, id } = listRequest.begin();
     isLoading.value = true;
     errorMessage.value = '';
     try {
       const data = await empleadosService.list({
         page,
         search: search.value.trim(),
+        signal,
       });
+      if (!listRequest.isCurrent(id)) return;
       empleados.value = Array.isArray(data) ? data : (data.results || []);
       total.value = Array.isArray(data) ? data.length : data.count;
       nextUrl.value = Array.isArray(data) ? null : data.next;
       previousUrl.value = Array.isArray(data) ? null : data.previous;
       currentPage.value = page;
     } catch (error) {
+      if (!listRequest.isCurrent(id) || isAbortError(error)) return;
       errorMessage.value = error.message;
       throw error;
     } finally {
-      isLoading.value = false;
+      if (listRequest.isCurrent(id)) isLoading.value = false;
     }
   }
 
@@ -61,6 +68,8 @@ export function useEmpleados() {
       isDeleting.value = false;
     }
   }
+
+  onScopeDispose(() => listRequest.cancel());
 
   return {
     empleados,
