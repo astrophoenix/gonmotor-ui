@@ -181,7 +181,6 @@ onUnmounted(() => {
             :href="`/crud/empleados/ver/?id=${encodeURIComponent(item.id)}`"
             class="inline-flex items-center gap-1.5 font-medium text-primary-600 hover:text-primary-800 hover:underline dark:text-primary-400"
           >
-            <IdCard class="w-4 h-4 shrink-0" />
             {{ item.user?.identificacion || '—' }}
           </a>
         </td>
@@ -203,10 +202,12 @@ onUnmounted(() => {
           </div>
         </td>
         <td class="p-4 whitespace-nowrap">
-          <span v-if="item.is_active" class="bg-green-100 text-green-800 font-medium px-2.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300">
+          <span v-if="item.is_active" class="inline-flex items-center bg-success-soft border border-success-subtle text-fg-success-strong text-xs font-medium px-2.5 py-0.5 rounded">
+            <span class="h-1.5 w-1.5 bg-fg-success-strong rounded-full me-0.5"></span>
             Activo
           </span>
-          <span v-else class="bg-red-100 text-red-800 font-medium px-2.5 py-0.5 rounded dark:bg-red-900 dark:text-red-300">
+          <span v-else class="inline-flex items-center bg-danger-soft border border-danger-subtle text-fg-danger-strong text-xs font-medium px-2.5 py-0.5 rounded">
+            <span class="h-1.5 w-1.5 bg-fg-danger-strong rounded-full me-0.5"></span>
             Inactivo
           </span>
         </td>

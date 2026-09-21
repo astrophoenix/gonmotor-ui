@@ -1,7 +1,6 @@
 <script setup>
 import { onMounted, reactive, ref, watch } from 'vue';
-import { CirclePlus, FileText, Trash2 } from 'lucide-vue-next';
-import { CarChassisIcon } from 'gonmotor-icons';
+import { ArrowLeft, Car, CirclePlus, FileText, Trash2 } from 'lucide-vue-next';
 import { clientsService } from '../services/clientesService';
 import { request } from '../../../shared/services/httpClient';
 import Alert from '../../../shared/components/Alert.vue';
@@ -382,7 +381,12 @@ onMounted(() => {
       </ol>
     </nav>
     <div class="flex items-center justify-between">
-      <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">{{ isEditMode ? 'Editar cliente' : 'Nuevo cliente' }}</h1>
+      <div class="flex items-center gap-3">
+        <a href="/crud/clientes/" title="Volver al listado" class="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+          <ArrowLeft class="w-5 h-5" />
+        </a>
+        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">{{ isEditMode ? 'Editar cliente' : 'Nuevo cliente' }}</h1>
+      </div>
       <button
         v-if="isEditMode"
         type="button"
@@ -440,7 +444,7 @@ onMounted(() => {
         <div class="col-span-6">
           <div class="mb-4">
             <span class="inline-flex items-center gap-2">
-              <CarChassisIcon class="flex-shrink-0 w-6 h-6 text-gray-900 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
+              <Car class="flex-shrink-0 w-6 h-6 text-gray-900 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" />
               <h4 class="text-xl font-semibold dark:text-white">Vehículos del Cliente</h4>
             </span>
           </div>

@@ -1,7 +1,6 @@
 <script setup>
 import { computed, nextTick, reactive, ref, watch } from 'vue';
-import { X, Trash2, Save, FileText, UserRoundPlus, UserRoundPen } from 'lucide-vue-next';
-import { CarChassisIcon } from 'gonmotor-icons';
+import { Car, X, Trash2, Save, FileText, UserRoundPlus, UserRoundPen } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
 import { sanitizeIdentificacion, sanitizeNombreUpper, sanitizeEmail, sanitizeTelefono, formatPlaca, sanitizeVin, sanitizeText, sanitizeColor, sanitizeMotor, sanitizeObservaciones, getItemKey as getVehicleKey, validatePlaca, validateTelefono } from '../../../shared/utils/sanitize';
 import Alert from '../../../shared/components/Alert.vue';
@@ -471,7 +470,7 @@ watch(vehiculos, (list) => {
 
           <h4 class="mt-6 mb-4 text-base font-semibold dark:text-white">
             <span class="inline-flex items-center gap-2">
-              <CarChassisIcon class="w-4 h-4 text-gray-800 dark:text-white" />
+              <Car class="w-4 h-4 text-gray-800 dark:text-white" />
               Vehículos del Cliente
             </span>
           </h4>

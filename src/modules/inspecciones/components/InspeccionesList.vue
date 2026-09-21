@@ -236,7 +236,7 @@ onUnmounted(() => {
         </div>
       </div>
       <EntityTable
-        :columns="['#', 'Nº Inspección', 'Vehículo', 'Cliente', 'Tipo', 'Estado', 'Fecha', 'Acciones']"
+        :columns="['Nº Inspección', 'Vehículo', 'Cliente', 'Tipo', 'Estado', 'Fecha', 'Acciones']"
         :items="inspecciones"
         :loading="loading"
         loading-text="Cargando inspecciones..."
@@ -246,7 +246,6 @@ onUnmounted(() => {
       >
     <template #row="{ item, index }">
       <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ index + 1 }}</td>
         <td class="p-4 whitespace-nowrap">
           <a
             :href="`/crud/inspecciones/ver/?id=${encodeURIComponent(item.id)}`"

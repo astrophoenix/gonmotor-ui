@@ -1,7 +1,6 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted, computed } from 'vue';
-import { CalendarDays, Pencil, Trash2, Clock, User, ArrowRightLeft, Search } from 'lucide-vue-next';
-import { CarChassisIcon } from 'gonmotor-icons';
+import { Car, CalendarDays, Pencil, Trash2, Clock, User, ArrowRightLeft, Search } from 'lucide-vue-next';
 import { useCitas } from '../composables/useCitas';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
@@ -286,7 +285,7 @@ onUnmounted(() => {
         </td>
         <td class="p-4 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <CarChassisIcon class="w-4 h-4 text-gray-400 dark:text-gray-500" />
+            <Car class="w-4 h-4 text-gray-400 dark:text-gray-500" />
             <div>
               <p class="text-sm font-medium text-gray-800 dark:text-white">{{ item.vehiculo?.placa || '—' }}</p>
               <p class="text-xs text-gray-500 dark:text-gray-400">

@@ -24,11 +24,11 @@ const props = defineProps({
 const emit = defineEmits(['dismiss']);
 
 const typeClasses = {
-  default: 'text-gray-800 bg-gray-50 dark:bg-gray-800 dark:text-gray-300',
-  info: 'text-blue-800 bg-blue-50 dark:bg-gray-800 dark:text-blue-400',
-  success: 'text-green-800 bg-green-50 dark:bg-gray-800 dark:text-green-400',
-  warning: 'text-yellow-800 bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300',
-  error: 'text-red-800 bg-red-50 dark:bg-gray-800 dark:text-red-400',
+  default: 'text-gray-800 bg-gray-50 border border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700',
+  info: 'text-blue-800 bg-blue-50 border border-blue-200 dark:bg-gray-800 dark:text-blue-400 dark:border-blue-800',
+  success: 'text-green-800 bg-green-50 border border-green-200 dark:bg-gray-800 dark:text-green-400 dark:border-green-800',
+  warning: 'text-yellow-800 bg-yellow-50 border border-yellow-200 dark:bg-gray-800 dark:text-yellow-300 dark:border-yellow-800',
+  error: 'text-red-800 bg-red-50 border border-red-200 dark:bg-gray-800 dark:text-red-400 dark:border-red-800',
 };
 
 const typeIcons = {

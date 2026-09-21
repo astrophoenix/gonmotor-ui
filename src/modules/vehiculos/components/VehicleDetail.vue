@@ -1,7 +1,6 @@
 <script setup>
-import { computed, ref, onMounted } from 'vue';
-import { ArrowLeft, Pencil, Image as ImageIcon, X, UserRound, Gauge, CalendarClock } from 'lucide-vue-next';
-import { CarChassisIcon } from 'gonmotor-icons';
+import { ref, onMounted } from 'vue';
+import { Car, ArrowLeft, Pencil, Image as ImageIcon, X, UserRound, Gauge, CalendarClock } from 'lucide-vue-next';
 import { vehiclesService } from '../services/vehiclesService';
 import { request } from '../../../shared/services/httpClient';
 import { formatPlate } from '../../../shared/utils/formatPlate';
@@ -120,6 +119,9 @@ onMounted(async () => {
 
     <template v-if="vehicle">
       <div class="flex items-center gap-3 flex-wrap">
+        <a href="/crud/vehiculos/" title="Volver al listado" class="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+          <ArrowLeft class="w-5 h-5" />
+        </a>
         <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
           {{ formatPlate(vehicle.placa) }}
         </h1>
@@ -129,13 +131,6 @@ onMounted(async () => {
         >
           Activo
         </span>
-        <a
-          href="/crud/vehiculos/"
-          class="inline-flex items-center gap-2 px-3 py-2 ml-auto text-sm font-medium text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
-        >
-          <ArrowLeft class="w-4 h-4" />
-          Volver
-        </a>
         <button
           type="button"
           class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300"
@@ -187,7 +182,7 @@ onMounted(async () => {
           <div class="lg:col-span-3">
             <h4 class="mb-4 text-xl font-semibold dark:text-white">
               <span class="inline-flex items-center gap-2">
-                <CarChassisIcon class="w-6 h-6 text-gray-800 dark:text-white" />
+                <Car class="w-6 h-6 text-gray-800 dark:text-white" />
                 Información del Vehículo
               </span>
             </h4>

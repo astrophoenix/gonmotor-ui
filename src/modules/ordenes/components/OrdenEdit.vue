@@ -442,9 +442,9 @@ async function handleSubmit() {
     <div class="flex items-center gap-3 flex-wrap">
       <button
         type="button"
-        title="Volver al detalle"
+        title="Volver al listado"
         class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-        @click="goTo(`/crud/ordenes/ver/?id=${ordenId}`)"
+        @click="goTo('/crud/ordenes/')"
       >
         <ArrowLeft class="w-5 h-5" />
       </button>

@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue';
-import { Car, Toolbox, WrenchIcon, TriangleAlert, CheckCircle2, Clock, FileText, Loader2, Plus, Trash2, Wand2, Wrench, ClipboardList, IdCardIcon, TagIcon, Shapes, PaintBucket, Phone, Mail, CameraIcon, Camera } from 'lucide-vue-next';
+import { ArrowLeft, Car, Toolbox, WrenchIcon, TriangleAlert, CheckCircle2, Clock, FileText, Loader2, Plus, Trash2, Wand2, Wrench, ClipboardList, IdCardIcon, TagIcon, Shapes, PaintBucket, Phone, Mail, CameraIcon, Camera } from 'lucide-vue-next';
 import { IconClockCheck, IconClockPlay, IconEngine, IconManualGearbox, IconAutomaticGearbox, IconGasStation } from '@tabler/icons-vue';
 import { request } from '../../../shared/services/httpClient';
 import { API_BASE_URL } from '../../../shared/config/env';
@@ -826,9 +826,14 @@ onMounted(() => {
       </ol>
     </nav>
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-        {{ isEditMode ? (form.numero_inspeccion ? `Editar Inspección ${form.numero_inspeccion}` : 'Editar Inspección') : 'Nueva Inspección' }}
-      </h1>
+      <div class="flex items-center gap-3">
+        <a href="/crud/inspecciones/" title="Volver al listado" class="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+          <ArrowLeft class="w-5 h-5" />
+        </a>
+        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
+          {{ isEditMode ? (form.numero_inspeccion ? `Editar Inspección ${form.numero_inspeccion}` : 'Editar Inspección') : 'Nueva Inspección' }}
+        </h1>
+      </div>
       <span
         v-if="isEditMode && estadoBadge"
         class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium"
@@ -1439,11 +1444,11 @@ onMounted(() => {
     v-model="showFinalizarModal"
     title="Finalizar inspección"
     :message="'Al finalizar la inspección el diagnóstico queda cerrado. Podrás reabrirla desde el detalle si necesitas hacer cambios. ¿Deseas continuar?'"
-    :icon="CheckCircle2"
-    icon-class="text-primary-600 dark:text-primary-400"
+    :icon="IconClockCheck"
+    icon-class="text-green-600 dark:text-green-400"
     confirm-text="Sí, finalizar"
     confirming-text="Finalizando..."
-    variant="primary"
+    variant="success"
     :is-deleting="transicionEstado"
     @confirm="confirmarFinalizar"
     @cancel="showFinalizarModal = false"

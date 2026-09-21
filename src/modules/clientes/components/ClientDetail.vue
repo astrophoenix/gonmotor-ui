@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue';
-import { ArrowLeft, IdCard, Pencil, Image as ImageIcon, X } from 'lucide-vue-next';
-import { CarChassisIcon } from 'gonmotor-icons';
+import { Car, ArrowLeft, IdCard, Pencil, Image as ImageIcon, X } from 'lucide-vue-next';
+
 import { clientsService } from '../services/clientesService';
 import { vehiclesService } from '../../vehiculos/services/vehiclesService';
 import { request } from '../../../shared/services/httpClient';
@@ -19,8 +19,6 @@ const showClientModal = ref(false);
 const clientModalId = ref(null);
 const tipos = ref([]);
 const paises = ref([]);
-
-const TIPO_LABELS = { C: 'Cédula', R: 'RUC', P: 'Pasaporte' };
 
 const TRANSMISION_LABELS = { M: 'Manual / Mecánica', A: 'Automática', C: 'CVT' };
 
@@ -120,33 +118,28 @@ onMounted(async () => {
 
     <template v-if="client">
       <div class="flex items-center gap-3 flex-wrap">
+        <a href="/crud/clientes/" title="Volver al listado" class="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+          <ArrowLeft class="w-5 h-5" />
+        </a>
         <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
           {{ client.nombre }}
         </h1>
-        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
-          {{ TIPO_LABELS[client.tipo_identificacion] || client.tipo_identificacion }}
-        </span>
         <span
           v-if="client.is_active !== false"
           class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
         >
           Activo
         </span>
-        <a
-          href="/crud/clientes/"
-          class="inline-flex items-center gap-2 px-3 py-2 ml-auto text-sm font-medium text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-50 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
-        >
-          <ArrowLeft class="w-4 h-4" />
-          Volver
-        </a>
-        <button
-            type="button"
-            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300"
-            @click="abrirEditar"
-          >
-            <Pencil class="w-4 h-4" />
-            Editar
-          </button>
+        <div class="flex items-center gap-2 ml-auto">
+          <button
+              type="button"
+              class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300"
+              @click="abrirEditar"
+            >
+              <Pencil class="w-4 h-4" />
+              Editar
+            </button>
+        </div>
       </div>
     </template>
   </div>
@@ -202,7 +195,7 @@ onMounted(async () => {
 
       <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
         <span class="inline-flex items-center gap-2">
-          <CarChassisIcon class="w-6 h-6 text-gray-800 dark:text-white" />
+          <Car class="w-6 h-6 text-gray-800 dark:text-white" />
           Vehículos ({{ vehicles.length }})
         </span>
       </h4>

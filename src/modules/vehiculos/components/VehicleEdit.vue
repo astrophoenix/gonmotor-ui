@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, reactive, ref, watch } from 'vue';
-import { CirclePlus, FileText } from 'lucide-vue-next';
+import { ArrowLeft, CirclePlus, FileText } from 'lucide-vue-next';
 import { vehiclesService } from '../services/vehiclesService';
 import { request } from '../../../shared/services/httpClient';
 import Alert from '../../../shared/components/Alert.vue';
@@ -316,7 +316,12 @@ onMounted(() => {
       </ol>
     </nav>
     <div class="flex items-center justify-between">
-      <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">{{ isEditMode ? 'Editar vehículo' : 'Nuevo vehículo' }}</h1>
+      <div class="flex items-center gap-3">
+        <a href="/crud/vehiculos/" title="Volver al listado" class="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+          <ArrowLeft class="w-5 h-5" />
+        </a>
+        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">{{ isEditMode ? 'Editar vehículo' : 'Nuevo vehículo' }}</h1>
+      </div>
       <button
         v-if="isEditMode"
         type="button"

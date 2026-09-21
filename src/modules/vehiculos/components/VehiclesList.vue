@@ -1,7 +1,6 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue';
-import { MessageCircle, Pencil, Trash2, Search } from 'lucide-vue-next';
-import { CarChassisIcon } from 'gonmotor-icons';
+import { Car, MessageCircle, Pencil, Trash2, Search } from 'lucide-vue-next';
 import { useVehicles } from '../composables/useVehicles';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
@@ -158,7 +157,7 @@ onMounted(() => loadVehicles());
           </ol>
         </nav>
         <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-          <CarChassisIcon class="w-6 h-6 inline-block text-gray-900 dark:text-gray-400" />
+          <Car class="w-6 h-6 inline-block text-gray-900 dark:text-gray-400" />
           Vehículos
         </h1>
       </div>

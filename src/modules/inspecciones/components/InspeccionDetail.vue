@@ -18,7 +18,9 @@ const successMessage = ref('');
 const previewImg = ref('');
 const showImageModal = ref(false);
 const showReabrirModal = ref(false);
+const showGenerarCotizacionModal = ref(false);
 const isReopening = ref(false);
+const isGeneratingCotizacion = ref(false);
 
 const params = new URLSearchParams(window.location.search);
 const inspeccionId = Number(params.get('id'));
@@ -135,10 +137,32 @@ function cerrarFoto() {
 
 const isSyncingCotizacion = ref(false);
 
+function solicitarCrearCotizacion() {
+  if (isSyncingCotizacion.value || isGeneratingCotizacion.value) return;
+  showGenerarCotizacionModal.value = true;
+}
+
+const textoConfirmacionCotizacion = computed(() => (
+  tieneCotizacionActiva.value
+    ? 'Se actualizará la cotización con los detalles actuales de servicios y repuestos necesarios para realizar la orden de trabajo.'
+    : 'Se creará una cotización con los detalles de servicios y repuestos necesarios para realizar la orden de trabajo.'
+));
+
+const tituloConfirmacionCotizacion = computed(() => (
+  tieneCotizacionActiva.value ? 'Actualizar cotización' : 'Generar cotización'
+));
+
+const textoConfirmarCotizacion = computed(() => (
+  tieneCotizacionActiva.value ? 'Actualizar cotización' : 'Generar cotización'
+));
+
 async function crearCotizacion() {
-  if (isSyncingCotizacion.value) return;
+  if (isSyncingCotizacion.value || isGeneratingCotizacion.value) return;
+  isGeneratingCotizacion.value = true;
   const cotizacionId = inspeccion.value?.cotizacion_activa_id;
   if (!cotizacionId) {
+    showGenerarCotizacionModal.value = false;
+    isGeneratingCotizacion.value = false;
     window.location.assign(`/crud/cotizaciones/nuevo/?inspeccion=${encodeURIComponent(inspeccionId)}`);
     return;
   }
@@ -151,9 +175,12 @@ async function crearCotizacion() {
   } catch (syncError) {
     error.value = syncError.message || 'No se pudo actualizar la cotización con los cambios de la inspección.';
     isSyncingCotizacion.value = false;
+    isGeneratingCotizacion.value = false;
     window.scrollTo({ top: 0, behavior: 'smooth' });
     return;
   }
+  showGenerarCotizacionModal.value = false;
+  isGeneratingCotizacion.value = false;
   window.location.assign(`/crud/cotizaciones/editar/?id=${encodeURIComponent(cotizacionId)}`);
 }
 
@@ -232,6 +259,9 @@ onMounted(async () => {
 
     <template v-if="inspeccion">
       <div class="flex items-center gap-3 flex-wrap">
+        <a href="/crud/inspecciones/" title="Volver al listado" class="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+          <ArrowLeft class="w-5 h-5" />
+        </a>
         <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
           Inspección {{ inspeccion.numero_inspeccion || `#${inspeccion.id}` }}
         </h1>
@@ -274,7 +304,7 @@ onMounted(async () => {
             :disabled="isSyncingCotizacion"
             :title="tieneCotizacionActiva ? 'Actualizar la cotización existente para reflejar los cambios de la inspección.' : 'Generar una cotización desde este diagnóstico'"
             class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded-lg bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed"
-            @click="crearCotizacion"
+            @click="solicitarCrearCotizacion"
           >
             <IconFileInvoice class="w-4 h-4" />
             {{ isSyncingCotizacion ? 'Sincronizando...' : (tieneCotizacionActiva ? 'Actualizar cotización' : 'Generar cotización') }}
@@ -719,5 +749,20 @@ onMounted(async () => {
     :is-deleting="isReopening"
     @confirm="confirmarReabrir"
     @cancel="showReabrirModal = false"
+  />
+
+  <ConfirmModal
+    v-model="showGenerarCotizacionModal"
+    :title="tituloConfirmacionCotizacion"
+    :message="textoConfirmacionCotizacion"
+    :icon="IconFileInvoice"
+    icon-class="text-green-600 dark:text-green-400"
+    :confirm-text="textoConfirmarCotizacion"
+    confirming-text="Generando..."
+    confirm-class="bg-green-600 hover:bg-green-700 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
+    variant="success"
+    :is-deleting="isGeneratingCotizacion"
+    @confirm="crearCotizacion"
+    @cancel="showGenerarCotizacionModal = false"
   />
 </template>

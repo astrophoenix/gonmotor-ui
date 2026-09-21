@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import {
+  ArrowLeft,
   Pencil,
   Plus,
   FolderInput,
@@ -365,6 +366,9 @@ function irAInspeccion(recepcion) {
       </ol>
     </nav>
     <div class="flex items-center gap-3 flex-wrap">
+      <a href="/crud/recepciones/" title="Volver al listado" class="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+        <ArrowLeft class="w-5 h-5" />
+      </a>
       <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
         Recepción {{ numeroRecepcion }}
       </h1>

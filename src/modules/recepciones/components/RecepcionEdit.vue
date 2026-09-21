@@ -4,6 +4,7 @@ import { IconClipboardSearch } from "@tabler/icons-vue";
 
 import {
   FileText,
+  ArrowLeft,
   FileCheck,
   TriangleAlert,
   FileSearch,
@@ -1377,11 +1378,16 @@ onMounted(() => {
       </ol>
     </nav>
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <h1
-        class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white"
-      >
-        {{ isEditMode ? "Editar recepción" : "Nueva recepción" }}
-      </h1>
+      <div class="flex items-center gap-3">
+        <a href="/crud/recepciones/" title="Volver al listado" class="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+          <ArrowLeft class="w-5 h-5" />
+        </a>
+        <h1
+          class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white"
+        >
+          {{ isEditMode ? "Editar recepción" : "Nueva recepción" }}
+        </h1>
+      </div>
       <FormSaveActions
         :is-loading="isSaving"
         :is-edit-mode="isEditMode"

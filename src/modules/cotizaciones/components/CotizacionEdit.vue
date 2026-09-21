@@ -2,13 +2,13 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import {
   CheckCircle2,
+  ArrowLeft,
   FileText,
   Loader2,
   Send,
   Wand2,
   X,
   Plus,
-  ArrowLeftRight,
 } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
 import { cotizacionesService } from '../services/cotizacionesService';
@@ -16,6 +16,8 @@ import { sanitizeObservaciones } from '../../../shared/utils/sanitize';
 import Alert from '../../../shared/components/Alert.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TextImprover from '../../../shared/components/TextImprover.vue';
+import FlowSteps from '../../../shared/components/FlowSteps.vue';
+import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 import ClientModal from '../../clientes/components/ClientModal.vue';
 import ClienteSearchSelect from '../../../shared/components/ClienteSearchSelect.vue';
 import CatalogoSelect from '../../../shared/components/CatalogoSelect.vue';
@@ -102,13 +104,34 @@ const modal = reactive({
   error: '',
 });
 
-const esEditable = computed(() => estado.value === 'BORRADOR');
+const esEditable = computed(() => ['BORRADOR', 'ENVIADA'].includes(estado.value));
 const estadoInfo = computed(() => ESTADOS[estado.value] || ESTADOS.BORRADOR);
-const estaConvertida = computed(() => estado.value === 'CONVERTIDA');
-const tieneOrdenTrabajo = computed(() => Boolean(ordenGeneradaNumero.value));
-const puedeGenerarOrden = computed(
-  () => !tieneOrdenTrabajo.value && !estaConvertida.value && ['BORRADOR', 'ENVIADA', 'RECHAZADA', 'VENCIDA', 'ACEPTADA'].includes(estado.value)
-);
+
+const pasosFlujo = computed(() => {
+  const cot = cotizacion.value || {};
+  return buildPasosFlujo([
+    {
+      entidad: 'recepcion',
+      estado: cot.recepcion_estado,
+      estadoDisplay: cot.recepcion_estado_display,
+    },
+    {
+      entidad: 'inspeccion',
+      estado: cot.inspeccion_estado,
+      estadoDisplay: cot.inspeccion_estado_display,
+    },
+    {
+      entidad: 'cotizacion',
+      estado: cot.estado,
+      estadoDisplay: cot.estado_display,
+    },
+    {
+      entidad: 'orden',
+      estado: cot.orden_trabajo_estado,
+      estadoDisplay: cot.orden_trabajo_estado_display,
+    },
+  ]);
+});
 
 const subtotalServicios = computed(() =>
   servicios.value.reduce((acc, s) => acc + (Number(s.horas_estimadas) || 0) * (Number(s.precio_unitario) || 0), 0)
@@ -490,7 +513,7 @@ async function guardarDetalles(idCotizacion) {
 // ---------- Acciones de estado ----------
 function abrirModal(tipo) {
   modal.tipo = tipo;
-  modal.metodo = tipo === 'ACEPTAR' || tipo === 'GENERAR_ORDEN' ? 'PRESENCIAL' : modal.metodo;
+  modal.metodo = tipo === 'ACEPTAR' ? 'PRESENCIAL' : modal.metodo;
   modal.error = '';
   modal.visible = true;
 }
@@ -520,11 +543,6 @@ async function confirmarModal() {
     } else if (modal.tipo === 'REENVIAR') {
       await cotizacionesService.update(cotizacionId.value, { estado: 'ENVIADA' });
       successMessage.value = 'Cotización reenviada al cliente.';
-    } else if (modal.tipo === 'GENERAR_ORDEN') {
-      const resultado = await cotizacionesService.generarOrden(cotizacionId.value, {
-        metodo_aceptacion: modal.metodo,
-      });
-      successMessage.value = `Orden de trabajo N° ${resultado.numero_orden} generada. La cotización quedó aceptada.`;
     }
     modal.visible = false;
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -656,15 +674,14 @@ onBeforeUnmount(() => {
       </ol>
     </nav>
     <div class="flex items-center gap-3 flex-wrap">
-      <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-        {{ isEditModeFlag ? 'Cotización' : 'Nueva Cotización' }}
-      </h1>
-      <span
-        v-if="numeroCotizacion"
-        class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
-      >
-        {{ numeroCotizacion }}
-      </span>
+      <div class="flex items-center gap-3">
+        <a href="/crud/cotizaciones/" title="Volver al listado" class="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+          <ArrowLeft class="w-5 h-5" />
+        </a>
+        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
+          {{ isEditModeFlag ? (numeroCotizacion ? `Cotización ${numeroCotizacion}` : 'Cotización') : 'Nueva Cotización' }}
+        </h1>
+      </div>
       <span :class="['inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium', estadoInfo.color]">
         {{ estadoInfo.label }}
       </span>
@@ -696,15 +713,6 @@ onBeforeUnmount(() => {
           Marcar rechazada
         </button>
         <button
-          v-if="puedeGenerarOrden"
-          type="button"
-          class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-indigo-600 hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-300 dark:bg-indigo-700 dark:hover:bg-indigo-800"
-          @click="abrirModal('GENERAR_ORDEN')"
-        >
-          <ArrowLeftRight class="w-4 h-4 mr-2" />
-          Generar orden de trabajo
-        </button>
-        <button
           v-if="estado === 'BORRADOR'"
           type="button"
           class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
@@ -734,6 +742,9 @@ onBeforeUnmount(() => {
   </div>
 
   <div class="p-4">
+    <div v-if="cotizacion" class="relative mx-auto max-w-6xl mb-5">
+      <FlowSteps :steps="pasosFlujo" />
+    </div>
     <div class="relative mx-auto max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
       <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
       <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
@@ -872,8 +883,8 @@ onBeforeUnmount(() => {
                   <dd class="mt-0.5 text-sm font-semibold">
                     <a :href="`/crud/inspecciones/editar/?id=${encodeURIComponent(cotizacion.inspeccion_origen)}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
                       {{ cotizacion.inspeccion_numero || `#${cotizacion.inspeccion_origen}` }}
-                    </a>
-                    <span v-if="cotizacion.inspeccion_tipo" class="ml-2 text-xs font-medium text-gray-500 dark:text-gray-400">{{ cotizacion.inspeccion_tipo }}</span>
+                    </a> - 
+                    <span v-if="cotizacion.inspeccion_tipo" class="inline-flex items-center px-1 py-1 rounded-full text-xs font-small bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">{{ cotizacion.inspeccion_tipo }}</span>
                   </dd>
                 </div>
                 <div v-if="cotizacion.recepcion_origen">
@@ -896,10 +907,10 @@ onBeforeUnmount(() => {
                   <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Orden de trabajo generada</dt>
                   <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ ordenGeneradaNumero }}</dd>
                 </div>
-                <div>
+                <!--div>
                   <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Validez de la oferta</dt>
                   <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.validez_dias || '—' }} días</dd>
-                </div>
+                </div-->
                 <div v-if="fechaAceptacion">
                   <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Aceptada</dt>
                   <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(fechaAceptacion) }}</dd>
@@ -1135,7 +1146,7 @@ onBeforeUnmount(() => {
     <div class="w-full max-w-md p-6 bg-white rounded-lg shadow-xl dark:bg-gray-800">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-          {{ modal.tipo === 'ENVIAR' ? 'Enviar cotización al cliente' : modal.tipo === 'ACEPTAR' ? 'Marcar cotización como aceptada' : modal.tipo === 'RECHAZAR' ? 'Marcar cotización como rechazada' : modal.tipo === 'REENVIAR' ? 'Reenviar cotización al cliente' : 'Generar orden de trabajo' }}
+          {{ modal.tipo === 'ENVIAR' ? 'Enviar cotización al cliente' : modal.tipo === 'ACEPTAR' ? 'Marcar cotización como aceptada' : modal.tipo === 'RECHAZAR' ? 'Marcar cotización como rechazada' : 'Reenviar cotización al cliente' }}
         </h3>
         <button type="button" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" @click="cerrarModal">
           <X class="w-5 h-5" />
@@ -1143,7 +1154,7 @@ onBeforeUnmount(() => {
       </div>
 
       <p v-if="modal.tipo === 'ENVIAR'" class="text-sm text-gray-600 dark:text-gray-300">
-        La cotización quedará marcada como <strong>Enviada al cliente</strong> y no podrá editarse hasta su respuesta.
+        La cotización quedará marcada como <strong>Enviada al cliente</strong>. Podrá ajustarse o reenviarse hasta que el cliente responda.
       </p>
       <p v-else-if="modal.tipo === 'ACEPTAR'" class="text-sm text-gray-600 dark:text-gray-300">
         Indica cómo aceptó el cliente la cotización. Con la aceptación podrás convertirla en una orden de trabajo.
@@ -1154,11 +1165,8 @@ onBeforeUnmount(() => {
       <p v-else-if="modal.tipo === 'REENVIAR'" class="text-sm text-gray-600 dark:text-gray-300">
         La cotización volverá al estado <strong>Enviada al cliente</strong>.
       </p>
-      <p v-else-if="modal.tipo === 'GENERAR_ORDEN'" class="text-sm text-gray-600 dark:text-gray-300">
-        Se generará una <strong>orden de trabajo</strong> a partir de esta cotización y la cotización quedará en estado <strong>Aceptada</strong>.
-      </p>
 
-      <div v-if="modal.tipo === 'ACEPTAR' || modal.tipo === 'GENERAR_ORDEN'" class="mt-4">
+      <div v-if="modal.tipo === 'ACEPTAR'" class="mt-4">
         <label class="block text-sm font-medium text-gray-900 mb-2 dark:text-white">Método de aceptación *</label>
         <div class="space-y-2">
           <label v-for="metodo in METODOS_ACEPTACION" :key="metodo.value" class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">

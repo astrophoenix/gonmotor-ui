@@ -1,7 +1,6 @@
 <script setup>
 import { computed, nextTick, ref } from 'vue';
-import { X, Save, Search, Plus, UserPlus } from 'lucide-vue-next';
-import { CarChassisIcon } from 'gonmotor-icons';
+import { Car, X, Save, Search, Plus, UserPlus } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
 import { citasService } from '../services/citasService';
 import Alert from '../../../shared/components/Alert.vue';
@@ -565,7 +564,7 @@ function formatHour(value) {
               <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo *</label>
               <div v-if="form.vehiculo" class="flex items-center justify-between p-2.5 rounded-lg border border-gray-300 bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
                 <div class="flex items-center gap-2 min-w-0">
-                  <CarChassisIcon class="w-4 h-4 text-gray-500 shrink-0 dark:text-gray-400" />
+                  <Car class="w-4 h-4 text-gray-500 shrink-0 dark:text-gray-400" />
                   <div class="min-w-0">
                     <p class="text-sm font-medium text-gray-900 truncate dark:text-white">{{ form.vehiculo.placa }}</p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">{{ form.vehiculo.marca }} {{ form.vehiculo.modelo }} {{ form.vehiculo.color || '' }}</p>

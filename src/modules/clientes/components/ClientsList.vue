@@ -207,7 +207,7 @@ onUnmounted(() => {
             <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
               <Search class="w-4 h-4 text-body" />
             </div>
-            <input id="clients-search" v-model="search" type="search" placeholder="Buscar clientes" class="block w-full sm:w-64 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
+            <input id="clients-search" v-model="search" type="search" placeholder="Buscar cliente" class="block w-full sm:w-80 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
           </form>
         </div>
         <div class="flex items-center gap-2">
@@ -242,7 +242,6 @@ onUnmounted(() => {
             :href="`/crud/clientes/ver/?id=${encodeURIComponent(item.id)}`"
             class="inline-flex items-center gap-1.5 font-medium text-primary-600 hover:text-primary-800 hover:underline dark:text-primary-400"
           >
-          <IdCard class="w-4 h-4 shrink-0" />  
           {{ item.identificacion }}
           </a>
         </td>
