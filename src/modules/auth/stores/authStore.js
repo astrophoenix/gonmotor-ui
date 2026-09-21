@@ -110,10 +110,19 @@ export const useAuthStore = defineStore('auth', () => {
 
       user.value = userData;
       empresaId.value = userData.empresa_id || null;
+
+      window.dispatchEvent(new CustomEvent('gonmotor:user-updated'));
       return data;
     } finally {
       isLoading.value = false;
     }
+  }
+
+  function refreshUserFromStorage() {
+    const storage = getStorage();
+    const stored = readUser(storage);
+    user.value = stored && Object.keys(stored).length ? stored : {};
+    return user.value;
   }
 
   async function changePassword(passwordData) {
@@ -166,6 +175,7 @@ export const useAuthStore = defineStore('auth', () => {
     selectCompany,
     updateProfile,
     changePassword,
+    refreshUserFromStorage,
     logout
   };
 });

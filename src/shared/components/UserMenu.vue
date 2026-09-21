@@ -8,7 +8,7 @@
         @click="toggleDropdown"
       >
         <span class="sr-only">Open user menu</span>
-        <img class="w-8 h-8 rounded-full" src="https://flowbite.com/docs/images/people/profile-picture-5.jpg" alt="user photo">
+        <img class="w-8 h-8 rounded-full object-cover" :src="avatar" alt="user photo">
       </button>
     </div>
     <div
@@ -60,6 +60,9 @@ import { useAuthStore } from '../../modules/auth/stores/authStore';
 const authStore = useAuthStore();
 const isOpen = ref(false);
 
+const DEFAULT_AVATAR = 'https://flowbite.com/docs/images/people/profile-picture-5.jpg';
+
+const avatar = computed(() => authStore.user?.avatar || DEFAULT_AVATAR);
 const fullName = computed(() => {
   const user = authStore.user || {};
   const name = [user.first_name, user.last_name].filter(Boolean).join(' ').trim();
@@ -90,14 +93,21 @@ function handleKeydown(event) {
 }
 
 onMounted(() => {
+  authStore.refreshUserFromStorage();
+  window.addEventListener('gonmotor:user-updated', syncUserFromStorage);
   document.addEventListener('keydown', handleKeydown);
   document.addEventListener('click', handleClickOutside);
 });
 
 onUnmounted(() => {
+  window.removeEventListener('gonmotor:user-updated', syncUserFromStorage);
   document.removeEventListener('keydown', handleKeydown);
   document.removeEventListener('click', handleClickOutside);
 });
+
+function syncUserFromStorage() {
+  authStore.refreshUserFromStorage();
+}
 
 function handleClickOutside(event) {
   const el = document.getElementById('user-menu-app');

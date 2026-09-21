@@ -24,9 +24,10 @@ export const authService = {
   },
 
   updateProfile(data) {
+    const isForm = data instanceof FormData;
     return request('/api/auth/me/', {
       method: 'PATCH',
-      body: JSON.stringify(data),
+      body: isForm ? data : JSON.stringify(data),
     });
   },
 

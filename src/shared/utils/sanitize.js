@@ -47,11 +47,18 @@ export function sanitizeEmail(value) {
 }
 
 /**
- * Deja únicamente dígitos y limita la longitud (15 por defecto:
- * celular EC 10 dígitos + código de país, con margen).
+ * Sanitiza un teléfono.
+ * Por defecto deja únicamente dígitos y limita la longitud (`max`, 15 por
+ * defecto: celular EC 10 dígitos + código de país, con margen).
+ * Si `keepFormat` es true, conserva los separadores visuales típicos
+ * (`+`, `(`, `)`, `-` y espacios) eliminando cualquier otro carácter.
  */
-export function sanitizeTelefono(value, max = 15) {
-  return (value == null ? '' : String(value)).replace(/\D/g, '').slice(0, max);
+export function sanitizeTelefono(value, max = 15, keepFormat = false) {
+  const raw = value == null ? '' : String(value);
+  const cleaned = keepFormat
+    ? raw.replace(/[^0-9+\s()-]/g, '')
+    : raw.replace(/\D/g, '');
+  return cleaned.slice(0, max);
 }
 
 /**
