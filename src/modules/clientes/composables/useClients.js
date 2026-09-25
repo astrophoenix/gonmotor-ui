@@ -32,7 +32,7 @@ export function useClients() {
 
   const listRequest = createLatestRequest();
 
-  async function fetchClients(page = 1) {
+  async function fetchClients(page = 1, extra = {}) {
     const { signal, id } = listRequest.begin();
     isLoading.value = true;
     errorMessage.value = '';
@@ -41,6 +41,7 @@ export function useClients() {
         page,
         search: search.value.trim(),
         estado: estado.value,
+        ...extra,
         signal,
       });
       if (!listRequest.isCurrent(id)) return;

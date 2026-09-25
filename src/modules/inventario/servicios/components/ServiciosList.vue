@@ -1,10 +1,11 @@
 <script setup>
-import { onMounted, onUnmounted, ref, watch } from 'vue';
-import { Wrench, Pencil, Trash2, Search } from 'lucide-vue-next';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { Wrench, Pencil, Trash2, Search, Filter } from 'lucide-vue-next';
 import { useServicios } from '../composables/useServicios';
 import ConfirmModal from '../../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../../shared/components/Alert.vue';
 import EntityActionButtons from '../../../../shared/components/EntityActionButtons.vue';
+import FilterActions from '../../../../shared/components/FilterActions.vue';
 import EntityTable from '../../../../shared/components/EntityTable.vue';
 import Pagination from '../../../../shared/components/Pagination.vue';
 import ServicioModal from './ServicioModal.vue';
@@ -18,6 +19,7 @@ const {
   isDeleting,
   search,
   categoria,
+  estado,
   currentPage,
   total,
   nextUrl,
@@ -48,6 +50,21 @@ function formatTiempo(minutes) {
   return m ? `${h}h ${m}m` : `${h}h`;
 }
 
+// --- PANEL DE FILTROS AVANZADOS (no reactivos hasta "Buscar") ---
+const emptyAdvancedFilters = () => ({
+  estado: '',
+  categoria: '',
+});
+
+const draftFilters = ref({ ...emptyAdvancedFilters(), estado: estado.value, categoria: categoria.value });
+const appliedFilters = ref({ ...draftFilters.value });
+
+const exportParams = computed(() => ({
+  search: search.value.trim(),
+  estado: appliedFilters.value.estado,
+  categoria: appliedFilters.value.categoria,
+}));
+
 const alert = ref({ type: 'default', title: '', message: '' });
 
 function showAlert(type, title, message) {
@@ -64,9 +81,27 @@ const showServicioModal = ref(false);
 const servicioModalId = ref(null);
 let searchTimer;
 
+function applyAdvancedFilters() {
+  if (isLoading.value) return;
+  estado.value = draftFilters.value.estado;
+  categoria.value = draftFilters.value.categoria;
+  appliedFilters.value = { ...draftFilters.value };
+  loadServicios(1);
+}
+
+function clearAdvancedFilters() {
+  if (isLoading.value) return;
+  search.value = '';
+  estado.value = '';
+  categoria.value = '';
+  draftFilters.value = emptyAdvancedFilters();
+  appliedFilters.value = emptyAdvancedFilters();
+  loadServicios(1);
+}
+
 async function loadServicios(page = 1) {
   try {
-    await fetchServicios(page);
+    await fetchServicios(page, appliedFilters.value);
   } catch (error) {
     showAlert('error', '', error.message || 'No se pudieron cargar los servicios.');
   }
@@ -106,7 +141,7 @@ async function confirmDelete() {
     const page = servicios.value.length === 1 && currentPage.value > 1
       ? currentPage.value - 1
       : currentPage.value;
-    await fetchServicios(page);
+    await loadServicios(page);
   } catch (error) {
     showAlert('error', '', error.message || 'No se pudo eliminar el servicio.');
   } finally {
@@ -131,7 +166,6 @@ function scheduleSearch() {
 watch(search, () => {
   if (isSearchable(search.value)) scheduleSearch();
 });
-watch(categoria, scheduleSearch);
 onMounted(() => loadServicios());
 onUnmounted(() => clearTimeout(searchTimer));
 </script>
@@ -164,24 +198,70 @@ onUnmounted(() => clearTimeout(searchTimer));
   </div>
 
   <div class="px-4 pb-4 sm:px-6 lg:px-8 mt-4">
-    <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
-      <div class="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-default-medium">
-        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-          <form class="relative" @submit.prevent="loadServicios(1)">
-            <label for="servicios-search" class="sr-only">Buscar servicios</label>
-            <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-              <Search class="w-4 h-4 text-body" />
-            </div>
-            <input id="servicios-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="Buscar servicios" class="block w-full sm:w-64 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
-          </form>
-          <select v-model="categoria" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs block py-2.5 px-3 focus:ring-brand focus:border-brand">
-            <option value="">Todas las categorías</option>
-            <option v-for="item in CATEGORIAS" :key="item.value" :value="item.value">{{ item.label }}</option>
-          </select>
+    <!-- PANEL DE FILTROS -->
+    <div class="bg-neutral-primary-soft shadow-xs rounded-base border border-default mb-4">
+      <div class="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between border-b border-default-medium">
+        <h2 class="flex items-center gap-2 text-lg font-semibold text-heading">
+          <Filter class="w-5 h-5" />
+          Búsqueda
+        </h2>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <FilterActions
+            :loading="isLoading"
+            @clear="clearAdvancedFilters"
+            @search="applyAdvancedFilters" />
         </div>
-        <div class="flex items-center gap-2">
+      </div>
+
+      <div class="p-4">
+        <div class="flex flex-wrap items-end gap-3 min-w-0">
+          <div class="w-full min-w-60 shrink-0 lg:flex-1 lg:max-w-md">
+            <label for="servicios-search" class="block mb-1 text-sm font-medium text-heading">Buscar servicio</label>
+            <form class="relative" @submit.prevent="applyAdvancedFilters">
+              <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                <Search class="w-4 h-4 text-body" />
+              </div>
+              <input id="servicios-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="Código o nombre del servicio" class="block w-full ps-9 pe-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand dark:bg-gray-800">
+            </form>
+          </div>
+
+          <div class="shrink-0">
+            <label for="filtro-estado" class="block mb-1 text-sm font-medium text-heading">Estado</label>
+            <select
+              id="filtro-estado"
+              v-model="draftFilters.estado"
+              class="block w-36 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800"
+            >
+              <option value="">Todos</option>
+              <option value="activo">Activo</option>
+              <option value="inactivo">Inactivo</option>
+            </select>
+          </div>
+
+          <div class="shrink-0">
+            <label for="filtro-categoria" class="block mb-1 text-sm font-medium text-heading">Categoría</label>
+            <select
+              id="filtro-categoria"
+              v-model="draftFilters.categoria"
+              class="block w-56 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800"
+            >
+              <option value="">Todas las categorías</option>
+              <option v-for="item in CATEGORIAS" :key="item.value" :value="item.value">{{ item.label }}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL DE LISTADO -->
+    <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+      <div class="flex flex-col gap-3 px-4 py-3 border-b border-default-medium md:flex-row md:items-center md:justify-between">
+        <h2 class="text-lg font-semibold text-heading">Listado de Servicios</h2>
+        <div class="flex flex-wrap items-center gap-2">
           <EntityActionButtons
             entity="servicios"
+            :export-params="exportParams"
             @add="openCreateModal"
             @pdfExportError="handlePdfError"
             @excelExportError="handleExcelError"

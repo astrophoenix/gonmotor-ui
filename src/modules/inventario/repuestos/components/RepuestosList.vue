@@ -1,10 +1,11 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { Package, Pencil, Search, Trash2 } from 'lucide-vue-next';
+import { Package, Pencil, Search, Trash2, Filter } from 'lucide-vue-next';
 import { useRepuestos } from '../composables/useRepuestos';
 import ConfirmModal from '../../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../../shared/components/Alert.vue';
 import EntityActionButtons from '../../../../shared/components/EntityActionButtons.vue';
+import FilterActions from '../../../../shared/components/FilterActions.vue';
 import EntityTable from '../../../../shared/components/EntityTable.vue';
 import RepuestoModal from './RepuestoModal.vue';
 import { formatCurrency } from '../../../../shared/utils/format';
@@ -18,6 +19,7 @@ const {
   search,
   categoria,
   stockBajo,
+  estado,
   currentPage,
   total,
   firstItem,
@@ -69,6 +71,23 @@ function categoriaLabel(value) {
   return item ? item.label : value || '—';
 }
 
+// --- PANEL DE FILTROS AVANZADOS (no reactivos hasta "Buscar") ---
+const emptyAdvancedFilters = () => ({
+  estado: '',
+  categoria: '',
+  stockBajo: false,
+});
+
+const draftFilters = ref({ ...emptyAdvancedFilters(), estado: estado.value, categoria: categoria.value, stockBajo: stockBajo.value });
+const appliedFilters = ref({ ...draftFilters.value });
+
+const exportParams = computed(() => ({
+  search: search.value.trim(),
+  estado: appliedFilters.value.estado,
+  categoria: appliedFilters.value.categoria,
+  stockBajo: appliedFilters.value.stockBajo,
+}));
+
 const alert = ref({ type: 'default', title: '', message: '' });
 
 function showAlert(type, title, message) {
@@ -85,9 +104,29 @@ const showRepuestoModal = ref(false);
 const repuestoModalId = ref(null);
 let searchTimer;
 
+function applyAdvancedFilters() {
+  if (isLoading.value) return;
+  estado.value = draftFilters.value.estado;
+  categoria.value = draftFilters.value.categoria;
+  stockBajo.value = draftFilters.value.stockBajo;
+  appliedFilters.value = { ...draftFilters.value };
+  loadRepuestos(1);
+}
+
+function clearAdvancedFilters() {
+  if (isLoading.value) return;
+  search.value = '';
+  estado.value = '';
+  categoria.value = '';
+  stockBajo.value = false;
+  draftFilters.value = emptyAdvancedFilters();
+  appliedFilters.value = emptyAdvancedFilters();
+  loadRepuestos(1);
+}
+
 async function loadRepuestos(page = 1) {
   try {
-    await fetchRepuestos(page);
+    await fetchRepuestos(page, appliedFilters.value);
   } catch (error) {
     showAlert('error', '', error.message || 'No se pudieron cargar los repuestos.');
   }
@@ -127,7 +166,7 @@ async function confirmDelete() {
     const page = repuestos.value.length === 1 && currentPage.value > 1
       ? currentPage.value - 1
       : currentPage.value;
-    await fetchRepuestos(page);
+    await loadRepuestos(page);
   } catch (error) {
     showAlert('error', '', error.message || 'No se pudo eliminar el repuesto.');
   } finally {
@@ -152,7 +191,6 @@ function scheduleSearch() {
 watch(search, () => {
   if (isSearchable(search.value)) scheduleSearch();
 });
-watch([categoria, stockBajo], scheduleSearch);
 onMounted(() => loadRepuestos());
 onUnmounted(() => clearTimeout(searchTimer));
 </script>
@@ -185,28 +223,75 @@ onUnmounted(() => clearTimeout(searchTimer));
   </div>
 
   <div class="px-4 pb-4 sm:px-6 lg:px-8 mt-4">
-    <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
-      <div class="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-default-medium">
-        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-          <form class="relative" @submit.prevent="loadRepuestos(1)">
-            <label for="repuestos-search" class="sr-only">Buscar repuestos</label>
-            <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-              <Search class="w-4 h-4 text-body" />
-            </div>
-            <input id="repuestos-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="Buscar repuestos" class="block w-full sm:w-64 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
-          </form>
-          <select v-model="categoria" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs block py-2.5 px-3 focus:ring-brand focus:border-brand">
-            <option value="">Todas las categorías</option>
-            <option v-for="item in CATEGORIAS" :key="item.value" :value="item.value">{{ item.label }}</option>
-          </select>
-          <label class="inline-flex items-center gap-2 pt-2 sm:pt-0 text-sm font-normal text-body">
-            <input v-model="stockBajo" type="checkbox" class="w-4 h-4 border border-default-medium rounded-xs bg-neutral-secondary-medium focus:ring-2 focus:ring-brand-soft">
+    <!-- PANEL DE FILTROS -->
+    <div class="bg-neutral-primary-soft shadow-xs rounded-base border border-default mb-4">
+      <div class="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between border-b border-default-medium">
+        <h2 class="flex items-center gap-2 text-lg font-semibold text-heading">
+          <Filter class="w-5 h-5" />
+          Búsqueda
+        </h2>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <FilterActions
+            :loading="isLoading"
+            @clear="clearAdvancedFilters"
+            @search="applyAdvancedFilters" />
+        </div>
+      </div>
+
+      <div class="p-4">
+        <div class="flex flex-wrap items-end gap-3 min-w-0">
+          <div class="w-full min-w-60 shrink-0 lg:flex-1 lg:max-w-md">
+            <label for="repuestos-search" class="block mb-1 text-sm font-medium text-heading">Buscar repuesto</label>
+            <form class="relative" @submit.prevent="applyAdvancedFilters">
+              <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                <Search class="w-4 h-4 text-body" />
+              </div>
+              <input id="repuestos-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="Código, nombre, marca o parte" class="block w-full ps-9 pe-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand dark:bg-gray-800">
+            </form>
+          </div>
+
+          <div class="shrink-0">
+            <label for="filtro-estado" class="block mb-1 text-sm font-medium text-heading">Estado</label>
+            <select
+              id="filtro-estado"
+              v-model="draftFilters.estado"
+              class="block w-36 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800"
+            >
+              <option value="">Todos</option>
+              <option value="activo">Activo</option>
+              <option value="inactivo">Inactivo</option>
+            </select>
+          </div>
+
+          <div class="shrink-0">
+            <label for="filtro-categoria" class="block mb-1 text-sm font-medium text-heading">Categoría</label>
+            <select
+              id="filtro-categoria"
+              v-model="draftFilters.categoria"
+              class="block w-56 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800"
+            >
+              <option value="">Todas las categorías</option>
+              <option v-for="item in CATEGORIAS" :key="item.value" :value="item.value">{{ item.label }}</option>
+            </select>
+          </div>
+
+          <label class="inline-flex items-center gap-2 pb-2.5 text-sm font-normal text-body">
+            <input v-model="draftFilters.stockBajo" type="checkbox" class="w-4 h-4 border border-default-medium rounded-xs bg-white focus:ring-2 focus:ring-brand-soft dark:bg-gray-800">
             Solo stock bajo
           </label>
         </div>
-        <div class="flex items-center gap-2">
+      </div>
+    </div>
+
+    <!-- PANEL DE LISTADO -->
+    <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+      <div class="flex flex-col gap-3 px-4 py-3 border-b border-default-medium md:flex-row md:items-center md:justify-between">
+        <h2 class="text-lg font-semibold text-heading">Listado de Repuestos</h2>
+        <div class="flex flex-wrap items-center gap-2">
           <EntityActionButtons
             entity="repuestos"
+            :export-params="exportParams"
             @add="openCreateModal"
             @pdfExportError="handlePdfError"
             @excelExportError="handleExcelError"

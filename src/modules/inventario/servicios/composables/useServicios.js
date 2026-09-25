@@ -6,6 +6,7 @@ export function useServicios() {
   const servicios = ref([]);
   const search = ref('');
   const categoria = ref('');
+  const estado = ref('');
   const currentPage = ref(1);
   const total = ref(0);
   const nextUrl = ref(null);
@@ -31,7 +32,7 @@ export function useServicios() {
 
   const listRequest = createLatestRequest();
 
-  async function fetchServicios(page = 1) {
+  async function fetchServicios(page = 1, extra = {}) {
     const { signal, id } = listRequest.begin();
     isLoading.value = true;
     errorMessage.value = '';
@@ -40,6 +41,8 @@ export function useServicios() {
         page,
         search: search.value.trim(),
         categoria: categoria.value || null,
+        estado: estado.value,
+        ...extra,
         signal,
       });
       if (!listRequest.isCurrent(id)) return;
@@ -76,6 +79,7 @@ export function useServicios() {
     servicios,
     search,
     categoria,
+    estado,
     currentPage,
     total,
     nextUrl,

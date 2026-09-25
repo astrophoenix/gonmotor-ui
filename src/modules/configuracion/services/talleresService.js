@@ -3,9 +3,11 @@ import { request } from '../../../shared/services/httpClient';
 const ENDPOINT = '/api/configuracion/sucursales/';
 
 export const talleresService = {
-  listTalleres({ page = 1, search = '', signal } = {}) {
+  listTalleres({ page = 1, search = '', estado = '', ciudad = '', signal } = {}) {
     const params = new URLSearchParams({ page: String(page) });
     if (search) params.set('search', search);
+    if (estado) params.set('estado', estado);
+    if (ciudad) params.set('ciudad', ciudad);
     return request(`${ENDPOINT}?${params.toString()}`, { signal });
   },
 

@@ -233,8 +233,8 @@ onMounted(async () => {
             <dd class="mt-1 text-sm font-semibold">
               <a
                 v-if="orden.cotizacion_origen"
-                :href="`/crud/cotizaciones/editar/?id=${orden.cotizacion_origen}`"
-                class="text-emerald-600 hover:underline dark:text-emerald-400"
+                :href="`/crud/cotizaciones/ver/?id=${orden.cotizacion_origen}`"
+                class="text-primary-600 hover:underline dark:text-primary-400"
               >
                 {{ orden.cotizacion_origen_numero || `#${orden.cotizacion_origen}` }}
               </a>
@@ -247,7 +247,7 @@ onMounted(async () => {
               <a
                 v-if="orden.inspeccion?.id"
                 :href="`/crud/inspecciones/ver/?id=${orden.inspeccion.id}`"
-                class="text-purple-600 hover:underline dark:text-purple-400"
+                class="text-primary-600 hover:underline dark:text-primary-400"
               >
                 {{ orden.inspeccion.numero_inspeccion || `#${orden.inspeccion.id}` }}
               </a>
@@ -255,7 +255,7 @@ onMounted(async () => {
             </dd>
           </div>
           <div v-if="orden.recepciones?.length">
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Recepción / es</dt>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Recepción</dt>
             <dd class="mt-1 text-sm font-semibold">
               <a
                 v-for="recepcion in orden.recepciones"

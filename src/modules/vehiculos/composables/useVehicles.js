@@ -32,7 +32,7 @@ export function useVehicles() {
 
   const listRequest = createLatestRequest();
 
-  async function fetchVehicles(page = 1) {
+  async function fetchVehicles(page = 1, extra = {}) {
     const { signal, id } = listRequest.begin();
     isLoading.value = true;
     errorMessage.value = '';
@@ -42,6 +42,7 @@ export function useVehicles() {
         search: search.value.trim(),
         anio: anio.value,
         estado: estado.value,
+        ...extra,
         signal,
       });
       if (!listRequest.isCurrent(id)) return;

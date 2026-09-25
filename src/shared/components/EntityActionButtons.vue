@@ -27,6 +27,10 @@ const props = defineProps({
   entityApiPath: {
     type: String,
     default: ''
+  },
+  exportParams: {
+    type: Object,
+    default: null
   }
 });
 
@@ -37,6 +41,21 @@ const { showSuccess } = useToast();
 function apiPath() {
   const base = props.entityApiPath || props.entity;
   return base.replace(/^\/+|\/+$/g, '');
+}
+
+function exportUrlPath(action) {
+  let path = `/api/${apiPath()}/${action}`;
+  const params = new URLSearchParams();
+  if (props.exportParams) {
+    Object.entries(props.exportParams).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === '' || value === false) {
+        return;
+      }
+      params.set(key, value);
+    });
+  }
+  const query = params.toString();
+  return query ? `${path}?${query}` : path;
 }
 
 function getAccessToken() {
@@ -91,7 +110,7 @@ async function exportPdf() {
   try {
     const token = getAccessToken();
     const empresaId = getEmpresaId();
-    const url = `${API_BASE_URL.replace(/\/$/, '')}/api/${apiPath()}/exportar-pdf/`;
+    const url = `${API_BASE_URL.replace(/\/$/, '')}${exportUrlPath('exportar-pdf/')}`;
 
     const response = await fetch(url, {
       headers: {
@@ -133,7 +152,7 @@ async function exportExcel() {
   if (isExportingExcel.value) return;
   isExportingExcel.value = true;
   try {
-    await downloadFile(`/api/${apiPath()}/export-excel/`, `${props.entity}_reporte.xlsx`);
+    await downloadFile(exportUrlPath('export-excel/'), `${props.entity}_reporte.xlsx`);
     showSuccess(`Excel generado: ${props.entity}_reporte.xlsx`);
   } catch (error) {
     emit('excelExportError', error.message || 'Ocurrió un error al generar el Excel.');

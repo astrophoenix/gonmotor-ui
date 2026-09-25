@@ -2,7 +2,7 @@
 import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { Car, X, Trash2, Save, FileText, UserRoundPlus, UserRoundPen } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
-import { sanitizeIdentificacion, sanitizeNombreUpper, sanitizeEmail, sanitizeTelefono, formatPlaca, sanitizeVin, sanitizeText, sanitizeColor, sanitizeMotor, sanitizeObservaciones, getItemKey as getVehicleKey, validatePlaca, validateTelefono } from '../../../shared/utils/sanitize';
+import { sanitizeIdentificacion, sanitizeNombreUpper, sanitizeEmail, sanitizeTelefono, formatPlaca, sanitizeVin, sanitizeText, sanitizeColor, sanitizeMotor, sanitizeObservaciones, sanitizeDireccion, sanitizeAnio, sanitizeKilometraje, getItemKey as getVehicleKey, validatePlaca, validateTelefono } from '../../../shared/utils/sanitize';
 import Alert from '../../../shared/components/Alert.vue';
 import VehicleImageField from '../../../shared/components/VehicleImageField.vue';
 
@@ -379,6 +379,10 @@ watch(() => form.telefono, (val) => {
   const clean = sanitizeTelefono(val);
   if (clean !== val) form.telefono = clean;
 });
+watch(() => form.direccion, (val) => {
+  const clean = sanitizeDireccion(val);
+  if (clean !== val) form.direccion = clean;
+});
 watch(vehiculos, (list) => {
   list.forEach((v) => {
     if (v.placa !== undefined && formatPlaca(v.placa) !== v.placa) v.placa = formatPlaca(v.placa);
@@ -387,7 +391,9 @@ watch(vehiculos, (list) => {
     if (v.modelo !== undefined && sanitizeText(v.modelo) !== v.modelo) v.modelo = sanitizeText(v.modelo);
     if (v.color !== undefined && sanitizeColor(v.color) !== v.color) v.color = sanitizeColor(v.color);
     if (v.numero_motor !== undefined && sanitizeMotor(v.numero_motor) !== v.numero_motor) v.numero_motor = sanitizeMotor(v.numero_motor);
-    if (v.observaciones !== undefined && sanitizeObservaciones(v.observaciones) !== v.observaciones) v.observaciones = sanitizeObservaciones(v.observaciones);
+    if (v.anio !== undefined && v.anio !== null && v.anio !== '' && sanitizeAnio(String(v.anio)) !== String(v.anio)) v.anio = sanitizeAnio(String(v.anio));
+    if (v.kilometraje_actual !== undefined && v.kilometraje_actual !== null && v.kilometraje_actual !== '' && sanitizeKilometraje(String(v.kilometraje_actual)) !== String(v.kilometraje_actual)) v.kilometraje_actual = sanitizeKilometraje(String(v.kilometraje_actual));
+    if (v.observaciones !== undefined && sanitizeObservaciones(v.observaciones) !== v.observaciones) v.observaciones = sanitizeObservaciones(v.observaciones).slice(0, 500);
   });
 }, { deep: true });
 </script>
@@ -434,37 +440,37 @@ watch(vehiculos, (list) => {
           </h4>
           <div class="grid grid-cols-6 gap-4">
             <div class="col-span-6 sm:col-span-3">
-              <label for="modal_tipo_identificacion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de identificación</label>
-              <select id="modal_tipo_identificacion" v-model="form.tipo_identificacion" required class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+              <label for="modal_tipo_identificacion" class="block mb-2.5 text-sm font-medium text-heading">Tipo de identificación</label>
+              <select id="modal_tipo_identificacion" v-model="form.tipo_identificacion" required class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                 <option value="C">Cédula</option>
                 <option value="R">RUC</option>
                 <option value="P">Pasaporte</option>
               </select>
             </div>
             <div class="col-span-6 sm:col-span-3">
-              <label for="modal_identificacion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Identificación</label>
-              <input id="modal_identificacion" v-model="form.identificacion" required maxlength="13" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.identificacion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-              <p v-if="clientErrors.identificacion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.identificacion }}</p>
+              <label for="modal_identificacion" :class="['block mb-2.5 text-sm font-medium', clientErrors.identificacion ? 'text-fg-danger-strong' : 'text-gray-900 dark:text-white']">Identificación</label>
+              <input id="modal_identificacion" v-model="form.identificacion" required maxlength="20" :class="clientErrors.identificacion ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded-base focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+              <p v-if="clientErrors.identificacion" class="mt-2.5 text-sm text-fg-danger-strong">{{ clientErrors.identificacion }}</p>
             </div>
             <div class="col-span-6 sm:col-span-3">
-              <label for="modal_nombre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre o razón social</label>
-              <input id="modal_nombre" v-model="form.nombre" required maxlength="200" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.nombre ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-              <p v-if="clientErrors.nombre" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.nombre }}</p>
+              <label for="modal_nombre" :class="['block mb-2.5 text-sm font-medium', clientErrors.nombre ? 'text-fg-danger-strong' : 'text-heading']">Nombre o razón social</label>
+              <input id="modal_nombre" v-model="form.nombre" required maxlength="200" :class="clientErrors.nombre ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded-base focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+              <p v-if="clientErrors.nombre" class="mt-2.5 text-sm text-fg-danger-strong">{{ clientErrors.nombre }}</p>
             </div>
             <div class="col-span-6 sm:col-span-3">
-              <label for="modal_email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Correo electrónico</label>
-              <input id="modal_email" v-model="form.email" type="email" required :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.email ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-              <p v-if="clientErrors.email" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.email }}</p>
+              <label for="modal_email" :class="['block mb-2.5 text-sm font-medium', clientErrors.email ? 'text-fg-danger-strong' : 'text-heading']">Correo electrónico</label>
+              <input id="modal_email" v-model="form.email" type="email" required maxlength="100" :class="clientErrors.email ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded-base focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+              <p v-if="clientErrors.email" class="mt-2.5 text-sm text-fg-danger-strong">{{ clientErrors.email }}</p>
             </div>
             <div class="col-span-6 sm:col-span-3">
-              <label for="modal_telefono" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Teléfono</label>
-              <input id="modal_telefono" v-model="form.telefono" maxlength="15" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.telefono ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-              <p v-if="clientErrors.telefono" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.telefono }}</p>
+              <label for="modal_telefono" :class="['block mb-2.5 text-sm font-medium', clientErrors.telefono ? 'text-fg-danger-strong' : 'text-heading']">Teléfono</label>
+              <input id="modal_telefono" v-model="form.telefono" maxlength="15" :class="clientErrors.telefono ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded-base focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+              <p v-if="clientErrors.telefono" class="mt-2.5 text-sm text-fg-danger-strong">{{ clientErrors.telefono }}</p>
             </div>
             <div class="col-span-6 sm:col-span-3">
-              <label for="modal_direccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Dirección</label>
-              <textarea id="modal_direccion" v-model="form.direccion" rows="2" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.direccion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
-              <p v-if="clientErrors.direccion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.direccion }}</p>
+              <label for="modal_direccion" :class="['block mb-2.5 text-sm font-medium', clientErrors.direccion ? 'text-fg-danger-strong' : 'text-heading']">Dirección</label>
+              <textarea id="modal_direccion" v-model="form.direccion" rows="2" maxlength="150" :class="clientErrors.direccion ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded-base focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'"></textarea>
+              <p v-if="clientErrors.direccion" class="mt-2.5 text-sm text-fg-danger-strong">{{ clientErrors.direccion }}</p>
             </div>
           </div>
 
@@ -487,42 +493,42 @@ watch(vehiculos, (list) => {
             </div>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div class="col-span-1">
-                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Placa</label>
-                <input v-model="vehiculo.placa" maxlength="10" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].placa) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].placa" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehiculoErrors[getVehicleKey(vehiculo)].placa }}</p>
+                <label :class="['block mb-2.5 text-sm font-medium', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].placa) ? 'text-fg-danger-strong' : 'text-heading']">Placa</label>
+                <input v-model="vehiculo.placa" maxlength="10" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].placa) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded-base focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].placa" class="mt-2.5 text-sm text-fg-danger-strong">{{ vehiculoErrors[getVehicleKey(vehiculo)].placa }}</p>
               </div>
               <div class="col-span-1">
-                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Marca</label>
-                <input v-model="vehiculo.marca" maxlength="50" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehiculoErrors[getVehicleKey(vehiculo)].marca }}</p>
+                <label :class="['block mb-2.5 text-sm font-medium', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca) ? 'text-fg-danger-strong' : 'text-heading']">Marca</label>
+                <input v-model="vehiculo.marca" maxlength="50" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded-base focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca" class="mt-2.5 text-sm text-fg-danger-strong">{{ vehiculoErrors[getVehicleKey(vehiculo)].marca }}</p>
               </div>
               <div class="col-span-1">
-                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Modelo</label>
-                <input v-model="vehiculo.modelo" maxlength="50" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehiculoErrors[getVehicleKey(vehiculo)].modelo }}</p>
+                <label :class="['block mb-2.5 text-sm font-medium', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo) ? 'text-fg-danger-strong' : 'text-heading']">Modelo</label>
+                <input v-model="vehiculo.modelo" maxlength="50" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded-base focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo" class="mt-2.5 text-sm text-fg-danger-strong">{{ vehiculoErrors[getVehicleKey(vehiculo)].modelo }}</p>
               </div>
               <div class="col-span-1">
-                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Año</label>
-                <input v-model="vehiculo.anio" type="number" min="1900" :max="new Date().getFullYear() + 1" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].anio) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].anio" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehiculoErrors[getVehicleKey(vehiculo)].anio }}</p>
+                <label :class="['block mb-2.5 text-sm font-medium', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].anio) ? 'text-fg-danger-strong' : 'text-heading']">Año</label>
+                <input v-model="vehiculo.anio" type="number" min="1900" :max="new Date().getFullYear() + 1" maxlength="4" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].anio) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded-base focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].anio" class="mt-2.5 text-sm text-fg-danger-strong">{{ vehiculoErrors[getVehicleKey(vehiculo)].anio }}</p>
               </div>
               <div class="col-span-1">
-                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo</label>
-                <select v-model="vehiculo.tipo" :disabled="isLoadingChoices" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                <label class="block mb-2.5 text-sm font-medium text-heading">Tipo</label>
+                <select v-model="vehiculo.tipo" :disabled="isLoadingChoices" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                   <option v-for="item in tipos" :key="item.value" :value="item.value">{{ item.label }}</option>
                 </select>
               </div>
               <div class="col-span-1">
-                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Transmisión</label>
-                <select v-model="vehiculo.transmision" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                <label class="block mb-2.5 text-sm font-medium text-heading">Transmisión</label>
+                <select v-model="vehiculo.transmision" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                   <option value="M">Manual / Mecánica</option>
                   <option value="A">Automática</option>
                   <option value="C">CVT</option>
                 </select>
               </div>
               <div class="col-span-1">
-                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Combustible</label>
-                <select v-model="vehiculo.combustible" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                <label class="block mb-2.5 text-sm font-medium text-heading">Combustible</label>
+                <select v-model="vehiculo.combustible" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                   <option value="GAS">Gasolina</option>
                   <option value="DIE">Diésel</option>
                   <option value="HIB">Híbrido</option>
@@ -530,31 +536,31 @@ watch(vehiculos, (list) => {
                 </select>
               </div>
               <div class="col-span-1">
-                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Color</label>
-                <input v-model="vehiculo.color" maxlength="30" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                <label class="block mb-2.5 text-sm font-medium text-heading">Color</label>
+                <input v-model="vehiculo.color" maxlength="30" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body">
               </div>
               <div class="col-span-1">
-                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">VIN / Chasis</label>
-                <input v-model="vehiculo.vin" maxlength="17" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].vin) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].vin" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehiculoErrors[getVehicleKey(vehiculo)].vin }}</p>
+                <label :class="['block mb-2.5 text-sm font-medium', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].vin) ? 'text-fg-danger-strong' : 'text-heading']">VIN / Chasis</label>
+                <input v-model="vehiculo.vin" maxlength="17" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].vin) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded-base focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].vin" class="mt-2.5 text-sm text-fg-danger-strong">{{ vehiculoErrors[getVehicleKey(vehiculo)].vin }}</p>
               </div>
               <div class="col-span-1">
-                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Motor</label>
-                <input v-model="vehiculo.numero_motor" maxlength="50" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                <label class="block mb-2.5 text-sm font-medium text-heading">Motor</label>
+                <input v-model="vehiculo.numero_motor" maxlength="50" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body">
               </div>
               <div class="col-span-1">
-                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">País de Origen</label>
-                <select v-model="vehiculo.pais_origen" :disabled="isLoadingChoices" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                <label class="block mb-2.5 text-sm font-medium text-heading">País de Origen</label>
+                <select v-model="vehiculo.pais_origen" :disabled="isLoadingChoices" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                   <option v-for="item in paises" :key="item.code" :value="item.code">{{ item.name }}</option>
                 </select>
               </div>
               <div class="col-span-1">
-                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kilometraje</label>
-                <input v-model="vehiculo.kilometraje_actual" type="number" min="0" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual }}</p>
+                <label :class="['block mb-2.5 text-sm font-medium', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual) ? 'text-fg-danger-strong' : 'text-heading']">Kilometraje</label>
+                <input v-model="vehiculo.kilometraje_actual" type="number" min="0" maxlength="9" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded-base focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual" class="mt-2.5 text-sm text-fg-danger-strong">{{ vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual }}</p>
               </div>
               <div class="col-span-1 md:col-span-1">
-                <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Imagen</p>
+                <p class="block mb-2.5 text-sm font-medium text-heading">Imagen</p>
                 <VehicleImageField
                   :image-url="vehiculo.imagen"
                   :disabled="isLoadingChoices"
@@ -565,8 +571,8 @@ watch(vehiculos, (list) => {
                 />
               </div>
               <div class="col-span-1 md:col-span-3">
-                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Observaciones</label>
-                <textarea v-model="vehiculo.observaciones" rows="6" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"></textarea>
+                <label class="block mb-2.5 text-sm font-medium text-heading">Observaciones</label>
+                <textarea v-model="vehiculo.observaciones" rows="6" maxlength="500" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"></textarea>
               </div>
             </div>
           </div>
@@ -583,7 +589,7 @@ watch(vehiculos, (list) => {
       <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
         <button
           type="button"
-          class="px-5 py-2.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-300"
+          class="text-body bg-neutral-primary-soft border border-default hover:bg-neutral-secondary-medium hover:text-heading focus:ring-4 focus:ring-neutral-tertiary-soft shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none"
           @click="close"
         >
           Cancelar
@@ -591,7 +597,7 @@ watch(vehiculos, (list) => {
         <button
           type="button"
           :disabled="isSaving || isLoading"
-          class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="inline-flex items-center text-white bg-brand box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
           @click="submit"
         >
           <Save v-if="!isSaving" class="w-5 h-5 mr-1.5 -ml-1 text-white" />

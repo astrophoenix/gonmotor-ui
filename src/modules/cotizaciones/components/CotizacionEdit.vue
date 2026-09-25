@@ -881,10 +881,10 @@ onBeforeUnmount(() => {
                 <div v-if="cotizacion.inspeccion_origen">
                   <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° Inspección</dt>
                   <dd class="mt-0.5 text-sm font-semibold">
-                    <a :href="`/crud/inspecciones/editar/?id=${encodeURIComponent(cotizacion.inspeccion_origen)}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
+                    <a :href="`/crud/inspecciones/ver/?id=${encodeURIComponent(cotizacion.inspeccion_origen)}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
                       {{ cotizacion.inspeccion_numero || `#${cotizacion.inspeccion_origen}` }}
-                    </a> - 
-                    <span v-if="cotizacion.inspeccion_tipo" class="inline-flex items-center px-1 py-1 rounded-full text-xs font-small bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">{{ cotizacion.inspeccion_tipo }}</span>
+                    </a> 
+                    <!--span v-if="cotizacion.inspeccion_tipo" class="inline-flex items-center px-1 py-1 rounded-full text-xs font-small bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">{{ cotizacion.inspeccion_tipo }}</span-->
                   </dd>
                 </div>
                 <div v-if="cotizacion.recepcion_origen">

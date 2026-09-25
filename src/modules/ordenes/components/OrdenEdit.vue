@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { ArrowLeft, User, Wrench, Package, Eye, Wand2, Loader2, Plus, X, Camera } from 'lucide-vue-next';
+import { ArrowLeft, User, Wrench, Package, Wand2, Loader2, Plus, X, Camera } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
 import { ordenesService } from '../services/ordenesService';
 import Alert from '../../../shared/components/Alert.vue';
@@ -8,6 +8,8 @@ import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TextImprover from '../../../shared/components/TextImprover.vue';
 import CatalogoSelect from '../../../shared/components/CatalogoSelect.vue';
 import PhotoUploadGrid from '../../../shared/components/PhotoUploadGrid.vue';
+import FlowSteps from '../../../shared/components/FlowSteps.vue';
+import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 import { sanitizeObservaciones } from '../../../shared/utils/sanitize';
 
 const orden = ref(null);
@@ -109,6 +111,32 @@ const vehiculo = computed(() => orden.value?.vehiculo || null);
 const inspeccion = computed(() => orden.value?.inspeccion || null);
 const recepciones = computed(() => orden.value?.recepciones || []);
 
+const pasosFlujo = computed(() => {
+  const ord = orden.value || {};
+  return buildPasosFlujo([
+    {
+      entidad: 'recepcion',
+      estado: ord.recepcion_estado,
+      estadoDisplay: ord.recepcion_estado_display,
+    },
+    {
+      entidad: 'inspeccion',
+      estado: ord.inspeccion_estado,
+      estadoDisplay: ord.inspeccion_estado_display,
+    },
+    {
+      entidad: 'cotizacion',
+      estado: ord.cotizacion_estado,
+      estadoDisplay: ord.cotizacion_estado_display,
+    },
+    {
+      entidad: 'orden',
+      estado: ord.estado,
+      estadoDisplay: ord.estado_display,
+    },
+  ]);
+});
+
 const mecanicosOptions = computed(() => {
   const base = empleados.value.map((empleado) => ({
     value: String(empleado.user?.id),
@@ -124,15 +152,6 @@ const mecanicosOptions = computed(() => {
   }
   return base;
 });
-
-const NIVEL_COMBUSTIBLE = {
-  VACIO: 'Vacío',
-  RESERVA: 'Reserva',
-  '1/4': '1/4',
-  '1/2': '1/2',
-  '3/4': '3/4',
-  LLENO: 'Lleno',
-};
 
 function formatDate(dateString) {
   if (!dateString) return '—';
@@ -440,27 +459,36 @@ async function handleSubmit() {
       </ol>
     </nav>
     <div class="flex items-center gap-3 flex-wrap">
-      <button
-        type="button"
-        title="Volver al listado"
-        class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-        @click="goTo('/crud/ordenes/')"
-      >
-        <ArrowLeft class="w-5 h-5" />
-      </button>
-      <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-        Editar Orden de Trabajo {{ orden?.numero_orden || '' }}
-      </h1>
+      <div class="flex items-center gap-3">
+        <a href="/crud/ordenes/" title="Volver al listado" class="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+          <ArrowLeft class="w-5 h-5" />
+        </a>
+        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
+          Editar Orden de Trabajo {{ orden?.numero_orden || '' }}
+        </h1>
+      </div>
       <span v-if="orden" class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium" :class="estadoBadge.color">
         {{ estadoBadge.label }}
       </span>
       <span v-if="orden" class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium" :class="prioridadBadge.color">
         Prioridad {{ prioridadBadge.label }}
       </span>
+      <div class="flex items-center ml-auto gap-2 flex-wrap">
+        <FormSaveActions
+          v-if="orden"
+          :is-loading="saving"
+          :is-edit-mode="true"
+          :cancel-href="`/crud/ordenes/ver/?id=${ordenId}`"
+          :on-submit="handleSubmit"
+        />
+      </div>
     </div>
   </div>
 
   <div class="p-4">
+    <div v-if="orden" class="relative mx-auto max-w-6xl mb-5">
+      <FlowSteps :steps="pasosFlujo" />
+    </div>
     <div class="relative mx-auto max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
       <Alert v-if="success" type="success" title="Guardado correctamente" message="Redirigiendo al detalle..." dismissible @dismiss="success = false" />
       <Alert v-if="error" type="error" title="Error" :message="error" dismissible @dismiss="error = ''" />
@@ -482,110 +510,134 @@ async function handleSubmit() {
           </span>
         </h4>
 
-        <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Cliente</h5>
-        <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-5 rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-700/40 dark:border-gray-600/60">
           <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Cliente</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ cliente?.nombre || '—' }}</dd>
+            <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Cliente</h5>
+            <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Cliente</dt>
+                <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cliente?.nombre || '—' }}</dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Identificación</dt>
+                <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cliente?.identificacion || '—' }}</dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Teléfono</dt>
+                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ cliente?.telefono || '—' }}</dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Correo</dt>
+                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ cliente?.email || '—' }}</dd>
+              </div>
+            </dl>
           </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Identificación</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ cliente?.identificacion || '—' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Teléfono</dt>
-            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ cliente?.telefono || '—' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Correo</dt>
-            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ cliente?.email || '—' }}</dd>
-          </div>
-        </dl>
 
-        <h5 class="mt-8 mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Vehículo</h5>
-        <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Placa</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.placa || '—' }}</dd>
+            <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Vehículo</h5>
+            <div class="flex flex-col gap-4 sm:flex-row">
+              <dl class="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Placa</dt>
+                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.placa || '—' }}</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Marca</dt>
+                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.marca || '—' }}</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Modelo</dt>
+                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.modelo || '—' }}</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Color</dt>
+                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ vehiculo?.color || '—' }}</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Kilometraje actual</dt>
+                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.kilometraje_actual != null ? `${vehiculo.kilometraje_actual} km` : '—' }}</dd>
+                </div>
+              </dl>
+              <div class="w-full shrink-0 sm:w-36">
+                <button
+                  v-if="vehiculo?.imagen"
+                  type="button"
+                  title="Ver foto del vehículo"
+                  class="block w-full overflow-hidden rounded-lg border border-gray-200 cursor-zoom-in dark:border-gray-600"
+                  @click="abrirFotoZoom(vehiculo.imagen)"
+                >
+                  <img :src="vehiculo.imagen" alt="Foto del vehículo" class="h-28 w-full object-cover" />
+                </button>
+                <div v-else class="flex h-28 w-full items-center justify-center rounded-lg border border-dashed border-gray-300 text-xs text-gray-500 dark:border-gray-600 dark:text-gray-400">
+                  Sin foto
+                </div>
+              </div>
+            </div>
           </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Marca</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.marca || '—' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Modelo</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.modelo || '—' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Color</dt>
-            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ vehiculo?.color || '—' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Kilometraje actual</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.kilometraje_actual != null ? `${vehiculo.kilometraje_actual} km` : '—' }}</dd>
-          </div>
-        </dl>
 
-        <h5 class="mt-8 mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Origen y Responsables</h5>
-        <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° Orden</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ orden.numero_orden || '—' }}</dd>
+          <div class="sm:col-span-2 lg:col-span-2">
+            <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Origen y Responsables</h5>
+            <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° Orden</dt>
+                <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ orden.numero_orden || '—' }}</dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Taller</dt>
+                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ orden.sucursal_nombre || '—' }}</dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Tipo de Trabajo</dt>
+                <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ tipoTrabajoLabel }}</dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Asesor</dt>
+                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ orden.asesor_nombre || '—' }}</dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Mecánico Principal</dt>
+                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ orden.mecanico_nombre || 'Sin asignar' }}</dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de Ingreso</dt>
+                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ formatDate(orden.fecha_ingreso || orden.created_at) }}</dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de Entrega</dt>
+                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ formatDate(orden.fecha_entrega) }}</dd>
+              </div>
+              <div v-if="orden.cotizacion_origen">
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Cotización de Origen</dt>
+                <dd class="mt-0.5 text-sm font-semibold">
+                  <a :href="`/crud/cotizaciones/editar/?id=${orden.cotizacion_origen}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
+                    {{ orden.cotizacion_origen_numero || `#${orden.cotizacion_origen}` }}
+                  </a>
+                </dd>
+              </div>
+              <div v-if="inspeccion">
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Inspección</dt>
+                <dd class="mt-0.5 text-sm font-semibold">
+                  <a :href="`/crud/inspecciones/ver/?id=${inspeccion.id}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
+                    {{ inspeccion.numero_inspeccion || `#${inspeccion.id}` }}
+                  </a>
+                </dd>
+              </div>
+              <div v-if="recepciones.length">
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Recepción / es</dt>
+                <dd class="mt-0.5 text-sm font-semibold">
+                  <a
+                    v-for="recepcion in recepciones"
+                    :key="recepcion.id"
+                    :href="`/crud/recepciones/ver/?id=${recepcion.id}`"
+                    class="text-primary-blue-700 hover:underline dark:text-primary-blue-400"
+                  >
+                    {{ recepcion.numero_recepcion || `#${recepcion.id}` }}<span v-if="recepcion !== recepciones[recepciones.length - 1]">, </span>
+                  </a>
+                </dd>
+              </div>
+            </dl>
           </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Taller</dt>
-            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ orden.sucursal_nombre || '—' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Tipo de Trabajo</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ tipoTrabajoLabel }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Asesor</dt>
-            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ orden.asesor_nombre || '—' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Mecánico Principal</dt>
-            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ orden.mecanico_nombre || 'Sin asignar' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de Ingreso</dt>
-            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ formatDate(orden.fecha_ingreso || orden.created_at) }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de Entrega</dt>
-            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ formatDate(orden.fecha_entrega) }}</dd>
-          </div>
-          <div v-if="orden.cotizacion_origen">
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Cotización de Origen</dt>
-            <dd class="mt-1 text-sm font-semibold">
-              <a :href="`/crud/cotizaciones/editar/?id=${orden.cotizacion_origen}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
-                {{ orden.cotizacion_origen_numero || `#${orden.cotizacion_origen}` }}
-              </a>
-            </dd>
-          </div>
-          <div v-if="inspeccion">
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Inspección</dt>
-            <dd class="mt-1 text-sm font-semibold">
-              <a :href="`/crud/inspecciones/ver/?id=${inspeccion.id}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
-                {{ inspeccion.numero_inspeccion || `#${inspeccion.id}` }}
-              </a>
-            </dd>
-          </div>
-          <div v-if="recepciones.length">
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Recepción / es</dt>
-            <dd class="mt-1 text-sm font-semibold">
-              <a
-                v-for="recepcion in recepciones"
-                :key="recepcion.id"
-                :href="`/crud/recepciones/ver/?id=${recepcion.id}`"
-                class="text-primary-blue-700 hover:underline dark:text-primary-blue-400"
-              >
-                {{ recepcion.numero_recepcion || `#${recepcion.id}` }}<span v-if="recepcion !== recepciones[recepciones.length - 1]">, </span>
-              </a>
-            </dd>
-          </div>
-        </dl>
+        </div>
 
         <!-- Ejecución: campos editables -->
         <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
@@ -830,116 +882,6 @@ async function handleSubmit() {
           </div>
         </dl>
 
-        <!-- Contexto: inspección y recepción (solo lectura) -->
-        <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
-          <span class="inline-flex items-center gap-2">
-            <Eye class="w-6 h-6 text-gray-800 dark:text-white" />
-            Inspección y Recepción
-          </span>
-        </h4>
-
-        <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Hallazgos de la Inspección</h5>
-        <template v-if="inspeccion">
-          <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div>
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° Inspección</dt>
-              <dd class="mt-1 text-sm font-semibold">
-                <a :href="`/crud/inspecciones/ver/?id=${inspeccion.id}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
-                  {{ inspeccion.numero_inspeccion || `#${inspeccion.id}` }}
-                </a>
-              </dd>
-            </div>
-            <div>
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Tipo</dt>
-              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ inspeccion.tipo_inspeccion_display || '—' }}</dd>
-            </div>
-            <div>
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Códigos de Falla (DTC)</dt>
-              <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ inspeccion.codigos_dtc || '—' }}</dd>
-            </div>
-            <div>
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha</dt>
-              <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ formatDate(inspeccion.created_at) }}</dd>
-            </div>
-            <div class="sm:col-span-2 lg:col-span-4">
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Motivo de Ingreso</dt>
-              <dd class="mt-1 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ inspeccion.motivo_ingreso || '—' }}</dd>
-            </div>
-            <div class="sm:col-span-2 lg:col-span-4">
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Diagnóstico</dt>
-              <dd class="mt-1 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ inspeccion.diagnostico_tecnico || '—' }}</dd>
-            </div>
-            <div class="sm:col-span-2 lg:col-span-4">
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Recomendaciones</dt>
-              <dd class="mt-1 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ inspeccion.recomendaciones || '—' }}</dd>
-            </div>
-          </dl>
-
-          <h5 class="mt-6 mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Fotos de la Inspección</h5>
-          <div v-if="inspeccion.fotos?.length" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            <figure v-for="foto in inspeccion.fotos" :key="foto.id" class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
-              <button type="button" class="block w-full" @click="abrirFotoZoom(foto.imagen)">
-                <img :src="foto.imagen" :alt="foto.descripcion || `Foto ${foto.id}`" class="w-full h-36 object-cover hover:opacity-90" />
-              </button>
-              <figcaption v-if="foto.descripcion" class="px-3 py-2 text-xs text-gray-600 dark:text-gray-300">{{ foto.descripcion }}</figcaption>
-            </figure>
-          </div>
-          <div v-else class="p-4 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
-            Sin fotos registradas en la inspección.
-          </div>
-        </template>
-        <div v-else class="p-4 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
-          Esta orden no tiene una inspección asociada.
-        </div>
-
-        <h5 class="mt-8 mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Recepción del Vehículo</h5>
-        <template v-if="recepciones.length">
-          <div v-for="recepcion in recepciones" :key="recepcion.id" class="mb-4 last:mb-0">
-            <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° Recepción</dt>
-                <dd class="mt-1 text-sm font-semibold">
-                  <a :href="`/crud/recepciones/ver/?id=${recepcion.id}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
-                    {{ recepcion.numero_recepcion || `#${recepcion.id}` }}
-                  </a>
-                </dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de Ingreso</dt>
-                <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ formatDate(recepcion.fecha_ingreso) }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Kilometraje de Ingreso</dt>
-                <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ recepcion.kilometraje_ingreso != null ? `${recepcion.kilometraje_ingreso} km` : '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Nivel de Combustible</dt>
-                <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ NIVEL_COMBUSTIBLE[recepcion.nivel_combustible] || recepcion.nivel_combustible || '—' }}</dd>
-              </div>
-              <div class="sm:col-span-2 lg:col-span-4">
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Motivo de Ingreso</dt>
-                <dd class="mt-1 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ recepcion.motivo_ingreso || '—' }}</dd>
-              </div>
-            </dl>
-
-            <h6 class="mt-4 mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Fotos de la Recepción</h6>
-            <div v-if="recepcion.fotos?.length" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-              <figure v-for="foto in recepcion.fotos" :key="foto.id || foto.tipo_vista" class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
-                <button type="button" class="block w-full" @click="abrirFotoZoom(foto.imagen)">
-                  <img :src="foto.imagen" :alt="foto.tipo_vista_display" class="w-full h-28 object-cover hover:opacity-90" />
-                </button>
-                <figcaption class="px-2 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300">{{ foto.tipo_vista_display || foto.tipo_vista }}</figcaption>
-              </figure>
-            </div>
-            <div v-else class="p-3 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
-              Sin fotos en esta recepción.
-            </div>
-          </div>
-        </template>
-        <div v-else class="p-4 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
-          Esta orden no tiene recepciones asociadas.
-        </div>
-
         <!-- Fotos de la orden: subida -->
         <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
@@ -962,15 +904,6 @@ async function handleSubmit() {
           :disabled="orden.estado === 'CANCELADO'"
           disabled-message="La orden está cancelada; no se pueden subir fotos."
         />
-
-        <div class="mt-6">
-          <FormSaveActions
-            :is-loading="saving"
-            :is-edit-mode="true"
-            :cancel-href="`/crud/ordenes/ver/?id=${ordenId}`"
-            :on-submit="handleSubmit"
-          />
-        </div>
       </form>
     </div>
   </div>

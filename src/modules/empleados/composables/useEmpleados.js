@@ -5,6 +5,8 @@ import { createLatestRequest, isAbortError } from '../../../shared/utils/search'
 export function useEmpleados() {
   const empleados = ref([]);
   const search = ref('');
+  const estado = ref('');
+  const rol = ref('');
   const currentPage = ref(1);
   const total = ref(0);
   const nextUrl = ref(null);
@@ -30,7 +32,7 @@ export function useEmpleados() {
 
   const listRequest = createLatestRequest();
 
-  async function fetchEmpleados(page = 1) {
+  async function fetchEmpleados(page = 1, extra = {}) {
     const { signal, id } = listRequest.begin();
     isLoading.value = true;
     errorMessage.value = '';
@@ -38,6 +40,9 @@ export function useEmpleados() {
       const data = await empleadosService.list({
         page,
         search: search.value.trim(),
+        estado: estado.value,
+        rol: rol.value,
+        ...extra,
         signal,
       });
       if (!listRequest.isCurrent(id)) return;
@@ -74,6 +79,8 @@ export function useEmpleados() {
   return {
     empleados,
     search,
+    estado,
+    rol,
     currentPage,
     total,
     nextUrl,

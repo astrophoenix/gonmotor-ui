@@ -1,10 +1,11 @@
 <script setup>
-import { onMounted, ref, watch, onUnmounted } from 'vue';
-import { IdCard, Pencil, Trash2, Users, Search } from 'lucide-vue-next';
+import { computed, onMounted, ref, watch, onUnmounted } from 'vue';
+import { IdCard, Pencil, Trash2, Users, Search, Filter } from 'lucide-vue-next';
 import { useEmpleados } from '../composables/useEmpleados';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
+import FilterActions from '../../../shared/components/FilterActions.vue';
 import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
 import { SEARCH_DEBOUNCE_MS, isSearchable } from '../../../shared/utils/search';
 import EntityTable from '../../../shared/components/EntityTable.vue';
@@ -16,6 +17,8 @@ const {
   isLoading,
   isDeleting,
   search,
+  estado,
+  rol,
   currentPage,
   total,
   nextUrl,
@@ -23,6 +26,15 @@ const {
   fetchEmpleados,
   removeEmpleado,
 } = useEmpleados();
+
+const roles = [
+  { value: 'ADMIN_SISTEMA', label: 'Superadmin SaaS' },
+  { value: 'ADMIN_EMPRESA', label: 'Dueño / Admin de Empresa' },
+  { value: 'ADMIN_TALLER', label: 'Gerente de Taller' },
+  { value: 'ASESOR', label: 'Asesor de Servicio' },
+  { value: 'MECANICO', label: 'Técnico / Mecánico' },
+  { value: 'CAJERO', label: 'Caja / Facturación' },
+];
 
 const alert = ref({
   type: 'default',
@@ -36,6 +48,39 @@ function showAlert(type, title, message) {
 
 function hideAlert() {
   alert.value = { type: 'default', title: '', message: '' };
+}
+
+// --- PANEL DE FILTROS AVANZADOS (no reactivos hasta "Buscar") ---
+const emptyAdvancedFilters = () => ({
+  estado: '',
+  rol: '',
+});
+
+const draftFilters = ref({ ...emptyAdvancedFilters(), estado: estado.value, rol: rol.value });
+const appliedFilters = ref({ ...draftFilters.value });
+
+const exportParams = computed(() => ({
+  search: search.value.trim(),
+  estado: appliedFilters.value.estado,
+  rol: appliedFilters.value.rol,
+}));
+
+function applyAdvancedFilters() {
+  if (isLoading.value) return;
+  estado.value = draftFilters.value.estado;
+  rol.value = draftFilters.value.rol;
+  appliedFilters.value = { ...draftFilters.value };
+  loadEmpleados(1);
+}
+
+function clearAdvancedFilters() {
+  if (isLoading.value) return;
+  search.value = '';
+  estado.value = '';
+  rol.value = '';
+  draftFilters.value = emptyAdvancedFilters();
+  appliedFilters.value = emptyAdvancedFilters();
+  loadEmpleados(1);
 }
 
 const showDeleteModal = ref(false);
@@ -67,10 +112,18 @@ function openEditModal(id) {
   showEmpleadoModal.value = true;
 }
 
+async function loadEmpleados(page = 1) {
+  try {
+    await fetchEmpleados(page, appliedFilters.value);
+  } catch (error) {
+    showAlert('error', '', error.message || 'No se pudieron cargar los empleados.');
+  }
+}
+
 async function onEmpleadoSaved(message) {
   showEmpleadoModal.value = false;
   showAlert('success', '', message);
-  await fetchEmpleados(currentPage.value);
+  await loadEmpleados(currentPage.value);
 }
 
 function onEmpleadoCreated() {
@@ -96,7 +149,7 @@ async function confirmDelete() {
     const page = empleados.value.length === 1 && currentPage.value > 1
       ? currentPage.value - 1
       : currentPage.value;
-    await fetchEmpleados(page);
+    await loadEmpleados(page);
   } catch (error) {
     showAlert('error', '', error.message || 'No se pudo eliminar el empleado.');
   } finally {
@@ -107,14 +160,14 @@ async function confirmDelete() {
 
 function scheduleSearch() {
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => fetchEmpleados(1), SEARCH_DEBOUNCE_MS);
+  searchTimer = setTimeout(() => loadEmpleados(1), SEARCH_DEBOUNCE_MS);
 }
 
 watch(search, () => {
   if (isSearchable(search.value)) scheduleSearch();
 });
 onMounted(() => {
-  fetchEmpleados();
+  loadEmpleados();
 });
 
 onUnmounted(() => {
@@ -150,21 +203,71 @@ onUnmounted(() => {
   </div>
 
   <div class="px-4 pb-4 sm:px-6 lg:px-8 mt-4">
-    <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
-      <div class="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-default-medium">
-        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-          <form class="relative" @submit.prevent="fetchEmpleados(1)">
-            <label for="empleados-search" class="sr-only">Buscar empleados</label>
-            <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-              <Search class="w-4 h-4 text-body" />
-            </div>
-            <input id="empleados-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="Buscar empleados" class="block w-full sm:w-64 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
-          </form>
+    <!-- PANEL DE FILTROS -->
+    <div class="bg-neutral-primary-soft shadow-xs rounded-base border border-default mb-4">
+      <div class="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between border-b border-default-medium">
+        <h2 class="flex items-center gap-2 text-lg font-semibold text-heading">
+          <Filter class="w-5 h-5" />
+          Búsqueda
+        </h2>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <FilterActions
+            :loading="isLoading"
+            @clear="clearAdvancedFilters"
+            @search="applyAdvancedFilters" />
         </div>
-        <div class="flex items-center gap-2">
+      </div>
+
+      <div class="p-4">
+        <div class="flex flex-wrap items-end gap-3 min-w-0">
+          <div class="w-full min-w-60 shrink-0 lg:flex-1 lg:max-w-md">
+            <label for="empleados-search" class="block mb-1 text-sm font-medium text-heading">Buscar empleado</label>
+            <form class="relative" @submit.prevent="applyAdvancedFilters">
+              <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                <Search class="w-4 h-4 text-body" />
+              </div>
+              <input id="empleados-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="Identificación, nombre, correo o dirección" class="block w-full ps-9 pe-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand dark:bg-gray-800">
+            </form>
+          </div>
+
+          <div class="shrink-0">
+            <label for="filtro-estado" class="block mb-1 text-sm font-medium text-heading">Estado</label>
+            <select
+              id="filtro-estado"
+              v-model="draftFilters.estado"
+              class="block w-36 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800"
+            >
+              <option value="">Todos</option>
+              <option value="activo">Activo</option>
+              <option value="inactivo">Inactivo</option>
+            </select>
+          </div>
+
+          <div class="shrink-0">
+            <label for="filtro-rol" class="block mb-1 text-sm font-medium text-heading">Rol</label>
+            <select
+              id="filtro-rol"
+              v-model="draftFilters.rol"
+              class="block w-56 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800"
+            >
+              <option value="">Todos</option>
+              <option v-for="item in roles" :key="item.value" :value="item.value">{{ item.label }}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL DE LISTADO -->
+    <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+      <div class="flex flex-col gap-3 px-4 py-3 border-b border-default-medium md:flex-row md:items-center md:justify-between">
+        <h2 class="text-lg font-semibold text-heading">Listado de Empleados</h2>
+        <div class="flex flex-wrap items-center gap-2">
           <EntityActionButtons
             entity="empleados"
             entity-api-path="auth/empleados"
+            :export-params="exportParams"
             @add="openCreateModal"
             @pdfExportError="handlePdfError"
             @excelExportError="handleExcelError" />
@@ -237,7 +340,7 @@ onUnmounted(() => {
         :disabled="isLoading"
         item-word="empleado"
         empty-text="No se encontraron empleados."
-        @page="fetchEmpleados"
+        @page="loadEmpleados"
       />
     </template>
     </EntityTable>

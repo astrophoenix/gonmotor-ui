@@ -43,7 +43,7 @@ export function sanitizeNombreUpper(value) {
 
 /** Elimina espacios y limpia el correo. */
 export function sanitizeEmail(value) {
-  return (value == null ? '' : String(value)).replace(/\s+/g, '').trim();
+  return (value == null ? '' : String(value)).replace(/\s+/g, '').trim().slice(0, 100);
 }
 
 /**
@@ -110,19 +110,40 @@ export function sanitizeText(value) {
 /**
  * Búsqueda libre de vehículos/clientes: permite letras (con acentos), dígitos,
  * espacios y los separadores presentes en los campos filtrados (placa, VIN,
- * motor, marca, modelo, nombre, identificación, razón social, RUC).
+ * motor, marca, modelo, nombre, identificación, razón social, RUC) además de
+ * los caracteres válidos en una dirección de correo electrónico
+ * (`@ . _ - + ' ’`), para que buscar por email funcione sin recortar el texto.
  * Limita a 100 por defecto (longitud del campo más extenso: nombre del dueño).
  */
 export function sanitizeBusqueda(value, max = 100) {
   return (value == null ? '' : String(value))
     .replace(/<[^>]*>/g, '')
-    .replace(/[^a-zA-ZÁÉÍÓÚÜáéíóúüÑñ0-9\s\-._'’]/g, '')
+    .replace(/[^a-zA-ZÁÉÍÓÚÜáéíóúüÑñ0-9\s@._'’+\-]/g, '')
     .slice(0, max);
 }
 
 /** Año: solo dígitos, máximo 4 (uso en filtros por año). */
 export function sanitizeAnio(value) {
   return (value == null ? '' : String(value)).replace(/\D/g, '').slice(0, 4);
+}
+
+/**
+ * Dirección: letras (con acentos), dígitos, espacios, saltos de línea y la
+ * puntuación/símbolos típicos de direcciones (.,;:ºª#&()-/'' con comillas
+ * tipográficas). Elimina cualquier otro carácter. Máximo `max` (150 por
+ * defecto). No recorta espacios para conservar el formato del usuario.
+ */
+export function sanitizeDireccion(value, max = 150) {
+  return (value == null ? '' : String(value))
+    .replace(/<[^>]*>/g, '')
+    .replace(/&[a-zA-Z]+;/g, '')
+    .replace(/[^a-zA-ZÁÉÍÓÚÜáéíóúüÑñ0-9\s.,;:ºª#&()\-/'’“”…/\\]/g, '')
+    .slice(0, max);
+}
+
+/** Kilometraje: solo dígitos, máximo 9 (hasta 999,999,999). */
+export function sanitizeKilometraje(value, max = 9) {
+  return (value == null ? '' : String(value)).replace(/\D/g, '').slice(0, max);
 }
 
 /** Solo letras, espacios y acentos latinos (color). */

@@ -387,7 +387,7 @@ onMounted(cargar);
             <span class="ml-1">
               <a
                 v-if="cotizacion.inspeccion_origen"
-                :href="`/crud/inspecciones/editar/?id=${encodeURIComponent(cotizacion.inspeccion_origen)}`"
+                :href="`/crud/inspecciones/ver/?id=${encodeURIComponent(cotizacion.inspeccion_origen)}`"
                 class="text-primary-blue-700 hover:underline dark:text-primary-blue-400"
               >Inspección {{ cotizacion.inspeccion_numero || `#${cotizacion.inspeccion_origen}` }}</a>
               <a

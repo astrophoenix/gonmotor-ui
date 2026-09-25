@@ -69,8 +69,12 @@ async function onClientUpdated() {
   showClientModal.value = false;
   loading.value = true;
   try {
-    const data = await clientsService.getById(clientId);
-    client.value = data;
+    const [clientData, vehiclesData] = await Promise.all([
+      clientsService.getById(clientId),
+      vehiclesService.list({ cliente: clientId }),
+    ]);
+    client.value = clientData;
+    vehicles.value = Array.isArray(vehiclesData) ? vehiclesData : (vehiclesData.results || []);
     error.value = '';
   } catch (fetchError) {
     error.value = fetchError.message || 'No se pudo recargar el cliente.';
@@ -133,7 +137,7 @@ onMounted(async () => {
         <div class="flex items-center gap-2 ml-auto">
           <button
               type="button"
-              class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300"
+              class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 rounded border border-primary-700 hover:bg-primary-100 active:bg-primary-200 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800 dark:active:bg-gray-700"
               @click="abrirEditar"
             >
               <Pencil class="w-4 h-4" />

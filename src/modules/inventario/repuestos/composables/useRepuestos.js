@@ -7,6 +7,7 @@ export function useRepuestos() {
   const search = ref('');
   const categoria = ref('');
   const stockBajo = ref(false);
+  const estado = ref('');
   const currentPage = ref(1);
   const total = ref(0);
   const nextUrl = ref(null);
@@ -34,7 +35,7 @@ export function useRepuestos() {
 
   const listRequest = createLatestRequest();
 
-  async function fetchRepuestos(page = 1) {
+  async function fetchRepuestos(page = 1, extra = {}) {
     const { signal, id } = listRequest.begin();
     isLoading.value = true;
     errorMessage.value = '';
@@ -44,6 +45,8 @@ export function useRepuestos() {
         search: search.value.trim(),
         categoria: categoria.value || null,
         stockBajo: stockBajo.value,
+        estado: estado.value,
+        ...extra,
         signal,
       });
       if (!listRequest.isCurrent(id)) return;
@@ -81,6 +84,7 @@ export function useRepuestos() {
     search,
     categoria,
     stockBajo,
+    estado,
     currentPage,
     total,
     nextUrl,

@@ -1,12 +1,13 @@
 <script setup>
-import { onMounted, ref, watch, onUnmounted } from 'vue';
-import { Car, UsersRound, Upload, Phone, Mail, Pencil, Trash2, IdCard, Search, RotateCcw } from 'lucide-vue-next';
+import { onMounted, ref, watch, onUnmounted, computed } from 'vue';
+import { Car, UsersRound, Upload, Phone, Mail, Pencil, Trash2, IdCard, Search, RotateCcw, Filter } from 'lucide-vue-next';
 import { useClients } from '../composables/useClients';
 // import { useToast } from '../../../shared/composables/useToast';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 // import ToastContainer from '../../../shared/components/ToastContainer.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
+import FilterActions from '../../../shared/components/FilterActions.vue';
 import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
 import { SEARCH_DEBOUNCE_MS, isSearchable } from '../../../shared/utils/search';
 import EntityTable from '../../../shared/components/EntityTable.vue';
@@ -59,6 +60,39 @@ const showImportModal = ref(false);
 const showClientModal = ref(false);
 const clientModalId = ref(null);
 
+// --- PANEL DE FILTROS AVANZADOS (no reactivos hasta "Buscar") ---
+const emptyAdvancedFilters = () => ({
+  estado: '',
+  tipoIdentificacion: '',
+  minVehiculos: '',
+});
+
+const draftFilters = ref({ ...emptyAdvancedFilters(), estado: estado.value });
+const appliedFilters = ref({ ...draftFilters.value });
+
+const exportParams = computed(() => ({
+  search: search.value.trim(),
+  estado: appliedFilters.value.estado,
+  tipo_identificacion: appliedFilters.value.tipoIdentificacion,
+  min_vehiculos: appliedFilters.value.minVehiculos,
+}));
+
+function applyAdvancedFilters() {
+  if (isLoading.value) return;
+  estado.value = draftFilters.value.estado;
+  appliedFilters.value = { ...draftFilters.value };
+  loadClients(1);
+}
+
+function clearAdvancedFilters() {
+  if (isLoading.value) return;
+  search.value = '';
+  estado.value = '';
+  draftFilters.value = emptyAdvancedFilters();
+  appliedFilters.value = emptyAdvancedFilters();
+  loadClients(1);
+}
+
 function openCreateModal() {
   clientModalId.value = null;
   showClientModal.value = true;
@@ -69,22 +103,28 @@ function openEditModal(id) {
   showClientModal.value = true;
 }
 
-async function onClientSaved(message) {
+async function onClientSaved(message, payload = null) {
+  if (payload && payload.id) {
+    const index = clients.value.findIndex((c) => c.id === payload.id);
+    if (index !== -1) {
+      clients.value.splice(index, 1, { ...clients.value[index], ...payload });
+    }
+  }
   showClientModal.value = false;
   showAlert('success', '', message);
   await loadClients(currentPage.value);
 }
 
 function onClientCreated(client) {
-  onClientSaved('Cliente creado correctamente.');
+  onClientSaved('Cliente creado correctamente.', client);
 }
 
-function onClientUpdated() {
-  onClientSaved('Cliente actualizado correctamente.');
+function onClientUpdated(response) {
+  onClientSaved('Cliente actualizado correctamente.', response);
 }
 
-function onClientReactivated() {
-  onClientSaved('Cliente reactivado correctamente.');
+function onClientReactivated(response) {
+  onClientSaved('Cliente reactivado correctamente.', response);
 }
 
 function openImportModal() {
@@ -118,7 +158,7 @@ function handleClickOutside(event) {
 
 async function loadClients(page = 1) {
   try {
-    await fetchClients(page);
+    await fetchClients(page, appliedFilters.value);
   } catch (error) {
     showAlert('error', '', error.message || 'No se pudieron cargar los clientes.');
   }
@@ -143,7 +183,7 @@ async function confirmDelete() {
     const page = clients.value.length === 1 && currentPage.value > 1
       ? currentPage.value - 1
       : currentPage.value;
-    await fetchClients(page);
+    await fetchClients(page, appliedFilters.value);
   } catch (error) {
     showAlert('error', '', error.message || 'No se pudo eliminar el cliente.');
   } finally {
@@ -171,7 +211,7 @@ async function confirmReactivate() {
   try {
     const response = await reactivateClient(clientToReactivate.value.id);
     showAlert('success', '', response.message || 'Cliente reactivado correctamente.');
-    await fetchClients(currentPage.value);
+    await fetchClients(currentPage.value, appliedFilters.value);
   } catch (error) {
     showAlert('error', '', error.message || 'No se pudo reactivar el cliente.');
   } finally {
@@ -188,7 +228,6 @@ function scheduleSearch() {
 watch(search, () => {
   if (isSearchable(search.value)) scheduleSearch();
 });
-watch(estado, scheduleSearch);
 onMounted(() => {
   loadClients();
   document.addEventListener('keydown', handleKeydown);
@@ -230,23 +269,81 @@ onUnmounted(() => {
   </div>
 
   <div class="px-4 pb-4 sm:px-6 lg:px-8 mt-4">
-    <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
-      <div class="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-default-medium">
-        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-          <form class="relative" @submit.prevent="loadClients(1)">
-            <label for="clients-search" class="sr-only">Buscar clientes</label>
-            <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-              <Search class="w-4 h-4 text-body" />
-            </div>
-            <input id="clients-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="Buscar cliente" class="block w-full sm:w-80 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
-          </form>
-          <select id="clients-estado" v-model="estado" class="block w-full sm:w-32 px-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand">
-            <option value="">Todos</option>
-            <option value="activo">Activo</option>
-            <option value="inactivo">Inactivo</option>
-          </select>
+    <!-- PANEL DE FILTROS -->
+    <div class="bg-neutral-primary-soft shadow-xs rounded-base border border-default mb-4">
+      <div class="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between border-b border-default-medium">
+        <h2 class="flex items-center gap-2 text-lg font-semibold text-heading">
+          <Filter class="w-5 h-5" />
+          Búsqueda
+        </h2>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <FilterActions
+            :loading="isLoading"
+            @clear="clearAdvancedFilters"
+            @search="applyAdvancedFilters" />
         </div>
-        <div class="flex items-center gap-2">
+      </div>
+
+      <div class="p-4">
+        <div class="flex flex-wrap items-end gap-3 min-w-0">
+          <div class="w-full min-w-60 shrink-0 lg:flex-1 lg:max-w-md">
+            <label for="clients-search" class="block mb-1 text-sm font-medium text-heading">Buscar cliente</label>
+            <form class="relative" @submit.prevent="applyAdvancedFilters">
+              <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                <Search class="w-4 h-4 text-body" />
+              </div>
+              <input id="clients-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="Identificación, nombre, correo electrónico o teléfono" class="block w-full ps-9 pe-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand dark:bg-gray-800">
+            </form>
+          </div>
+
+          <div class="shrink-0">
+            <label for="filtro-estado" class="block mb-1 text-sm font-medium text-heading">Estado</label>
+            <select
+              id="filtro-estado"
+              v-model="draftFilters.estado"
+              class="block w-36 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800"
+            >
+              <option value="">Todos</option>
+              <option value="activo">Activo</option>
+              <option value="inactivo">Inactivo</option>
+            </select>
+          </div>
+
+          <div class="shrink-0">
+            <label for="filtro-tipo-id" class="block mb-1 text-sm font-medium text-heading">Tipo de identificación</label>
+            <select
+              id="filtro-tipo-id"
+              v-model="draftFilters.tipoIdentificacion"
+              class="block w-56 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800"
+            >
+              <option value="">Todos</option>
+              <option value="C">Cédula</option>
+              <option value="R">RUC</option>
+              <option value="P">Pasaporte</option>
+            </select>
+          </div>
+
+          <div class="shrink-0">
+            <label for="filtro-min-vehiculos" class="block mb-1 text-sm font-medium text-heading">N.º vehículos</label>
+            <input
+              id="filtro-min-vehiculos"
+              v-model="draftFilters.minVehiculos"
+              type="number"
+              min="0"
+              max="5000"
+              class="block w-36 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand dark:bg-gray-800"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL DE LISTADO -->
+    <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+      <div class="flex flex-col gap-3 px-4 py-3 border-b border-default-medium md:flex-row md:items-center md:justify-between">
+        <h2 class="text-lg font-semibold text-heading">Listado de Clientes</h2>
+        <div class="flex flex-wrap items-center gap-2">
           <button
             type="button"
             class="inline-flex items-center px-3 py-2 text-sm font-medium text-white rounded bg-emerald-600 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-300 dark:focus:ring-emerald-800"
@@ -257,6 +354,7 @@ onUnmounted(() => {
           </button>
           <EntityActionButtons
             entity="clientes"
+            :export-params="exportParams"
             @add="openCreateModal"
             @pdfExportError="handlePdfError"
             @excelExportError="handleExcelError" />

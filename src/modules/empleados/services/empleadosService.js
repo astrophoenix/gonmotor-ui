@@ -7,10 +7,12 @@ function buildUrl(id) {
 }
 
 export const empleadosService = {
-  list({ page = 1, search = '', ordering = 'user__first_name', signal } = {}) {
+  list({ page = 1, search = '', ordering = 'user__first_name', estado = '', rol = '', signal } = {}) {
     const empresaId = localStorage.getItem('gonmotor_empresa_id') || sessionStorage.getItem('gonmotor_empresa_id');
     const params = new URLSearchParams({ page: String(page), ordering });
     if (search) params.set('search', search);
+    if (estado) params.set('estado', estado);
+    if (rol) params.set('rol', rol);
     if (empresaId) params.set('empresa', String(empresaId));
     return request(`${ENDPOINT}?${params.toString()}`, { signal });
   },

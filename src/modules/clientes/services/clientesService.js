@@ -27,10 +27,12 @@ function getAuthHeaders() {
 }
 
 export const clientsService = {
-  list({ page = 1, search = '', ordering = 'nombre', estado = '', signal } = {}) {
+  list({ page = 1, search = '', ordering = 'nombre', estado = '', tipoIdentificacion = '', minVehiculos = '', signal } = {}) {
     const params = new URLSearchParams({ page: String(page), ordering });
     if (search) params.set('search', search);
     if (estado) params.set('estado', estado);
+    if (tipoIdentificacion) params.set('tipo_identificacion', tipoIdentificacion);
+    if (minVehiculos) params.set('min_vehiculos', minVehiculos);
     return request(`${ENDPOINT}?${params.toString()}`, { signal });
   },
 

@@ -7,11 +7,12 @@ function buildUrl(id) {
 }
 
 export const repuestosService = {
-  list({ page = 1, search = '', ordering = 'nombre', categoria = null, stockBajo = false, signal } = {}) {
+  list({ page = 1, search = '', ordering = 'nombre', categoria = null, stockBajo = false, estado = '', signal } = {}) {
     const params = new URLSearchParams({ page: String(page), ordering });
     if (search) params.set('search', search);
     if (categoria) params.set('categoria', categoria);
     if (stockBajo) params.set('stock_bajo', 'true');
+    if (estado) params.set('estado', estado);
     return request(`${ENDPOINT}?${params.toString()}`, { signal });
   },
 
