@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Search, RotateCcw } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -28,19 +28,30 @@ const emit = defineEmits(['clear', 'search']);
 // `loading` del padre se refleje). Se libera cuando termina la petición.
 const pending = ref(false);
 
+// Solo se muestra "Buscando..." cuando el usuario pulsó las acciones; evita
+// mostrar ese texto durante la carga inicial o el refresco de la pantalla.
+const userInitiated = ref(false);
+
+const searching = computed(() => props.loading && userInitiated.value);
+
 watch(() => props.loading, (loading) => {
-  if (!loading) pending.value = false;
+  if (!loading) {
+    pending.value = false;
+    userInitiated.value = false;
+  }
 });
 
 function handleClear() {
   if (pending.value || props.loading) return;
   pending.value = true;
+  userInitiated.value = true;
   emit('clear');
 }
 
 function handleSearch() {
   if (pending.value || props.loading) return;
   pending.value = true;
+  userInitiated.value = true;
   emit('search');
 }
 </script>
@@ -63,14 +74,14 @@ function handleSearch() {
       @click="handleSearch"
     >
       <svg
-        v-if="loading"
+        v-if="searching"
         class="w-4 h-4 mr-1.5 animate-spin" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
       >
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
       </svg>
       <Search v-else class="w-4 h-4 mr-1.5" />
-      {{ loading ? loadingLabel : searchLabel }}
+      {{ searching ? loadingLabel : searchLabel }}
     </button>
   </div>
 </template>
