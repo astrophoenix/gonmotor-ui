@@ -1,4 +1,3 @@
-import { API_BASE_URL } from '../../../shared/config/env';
 import { request } from '../../../shared/services/httpClient';
 
 const ENDPOINT = '/api/recepciones/';
@@ -7,45 +6,14 @@ function buildUrl(id) {
   return `${ENDPOINT}${encodeURIComponent(id)}/`;
 }
 
-export async function fetchRecepciones(token, empresaId, page = 1, search = '', signal) {
-  const headers = {
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...(empresaId ? { 'X-Empresa-ID': empresaId } : {}),
-  };
-
-  const params = new URLSearchParams({ page: String(page) });
-  if (search) params.set('search', search);
-
-  const response = await fetch(`${API_BASE_URL}/api/recepciones/?${params.toString()}`, { headers, signal });
-  if (!response.ok) {
-    const data = await response.json().catch(() => ({}));
-    const message = data?.detail || data?.non_field_errors?.[0] || 'No se pudo cargar las recepciones.';
-    throw new Error(message);
-  }
-
-  return response.json();
-}
-
-export async function fetchRecepcion(token, empresaId, id) {
-  const headers = {
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...(empresaId ? { 'X-Empresa-ID': empresaId } : {}),
-  };
-
-  const response = await fetch(`${API_BASE_URL}/api/recepciones/${id}/`, { headers });
-  if (!response.ok) {
-    const data = await response.json().catch(() => ({}));
-    const message = data?.detail || data?.non_field_errors?.[0] || 'No se pudo cargar la recepción.';
-    throw new Error(message);
-  }
-
-  return response.json();
-}
-
 export const recepcionesService = {
-  list({ page = 1, search = '', ordering = '-created_at', signal } = {}) {
+  list({ page = 1, search = '', ordering = '-created_at', filters = {}, signal } = {}) {
     const params = new URLSearchParams({ page: String(page), ordering });
     if (search) params.set('search', search);
+    Object.entries(filters || {}).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === '' || value === false) return;
+      params.set(key, value);
+    });
     return request(`${ENDPOINT}?${params.toString()}`, { signal });
   },
 

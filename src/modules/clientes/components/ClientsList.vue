@@ -310,24 +310,24 @@ onUnmounted(() => {
             </form>
           </div>
 
-          <div class="shrink-0">
+          <div class="w-full sm:w-auto sm:shrink-0">
             <label for="filtro-estado" class="block mb-1 text-sm font-medium text-heading">Estado</label>
             <select
               id="filtro-estado"
               v-model="draftFilters.estado"
-              class="block w-36 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800">
+              class="block w-full sm:w-36 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800">
               <option value="">Todos</option>
               <option value="activo">Activo</option>
               <option value="inactivo">Inactivo</option>
             </select>
           </div>
 
-          <div class="shrink-0">
+          <div class="w-full sm:w-auto sm:shrink-0">
             <label for="filtro-tipo-id" class="block mb-1 text-sm font-medium text-heading">Tipo de identificación</label>
             <select
               id="filtro-tipo-id"
               v-model="draftFilters.tipoIdentificacion"
-              class="block w-56 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800">
+              class="block w-full sm:w-56 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800">
               <option value="">Todos</option>
               <option value="C">Cédula</option>
               <option value="R">RUC</option>
@@ -335,7 +335,7 @@ onUnmounted(() => {
             </select>
           </div>
 
-          <div class="shrink-0">
+          <div class="w-full sm:w-auto sm:shrink-0">
             <label for="filtro-min-vehiculos" class="block mb-1 text-sm font-medium text-heading">N.º vehículos</label>
             <input
               id="filtro-min-vehiculos"
@@ -343,7 +343,7 @@ onUnmounted(() => {
               type="number"
               min="0"
               max="5000"
-              class="block w-36 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs placeholder:text-body focus:ring-brand focus:border-brand dark:bg-gray-800"/>
+              class="block w-full sm:w-36 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs placeholder:text-body focus:ring-brand focus:border-brand dark:bg-gray-800"/>
           </div>
         </div>
       </div>
@@ -410,13 +410,11 @@ onUnmounted(() => {
           </div>
           <div v-else-if="item.vehiculos.length === 1" class="flex items-center gap-2">
             <Car class="w-4 h-4 text-gray-800 dark:text-gray-400" />
-
             <span class="text-sm">{{ formatPlate(item.vehiculos[0].placa) }} → {{ item.vehiculos[0].marca }} {{ item.vehiculos[0].color || '—' }}</span>
           </div>
           <div v-else-if="item.vehiculos.length === 2" class="space-y-1">
             <div v-for="veh in item.vehiculos" :key="veh.id" class="flex items-center gap-2">
               <Car class="w-4 h-4 text-gray-800 dark:text-gray-400" />
-
               <span class="text-sm">{{ formatPlate(veh.placa) }} → {{ veh.marca }} {{ veh.color || '—' }}</span>
             </div>
           </div>
@@ -431,10 +429,7 @@ onUnmounted(() => {
                 {{ item.vehiculos_count }}
               </span>
             </button>
-            <div
-              v-if="openPopoverId === item.id"
-              class="absolute z-20 mt-2 w-80 text-sm text-gray-500 bg-white border border-gray-200 rounded-lg shadow-lg dark:text-gray-400 dark:border-gray-600 dark:bg-gray-800"
-            >
+            <div v-if="openPopoverId === item.id" class="absolute z-20 mt-2 w-80 text-sm text-gray-500 bg-white border border-gray-200 rounded-lg shadow-lg dark:text-gray-400 dark:border-gray-600 dark:bg-gray-800">
               <div class="px-3 py-2 bg-gray-100 border-b border-gray-200 rounded-t-lg dark:border-gray-600 dark:bg-gray-700">
                 <h3 class="font-semibold text-gray-800 dark:text-white">Vehículos del cliente</h3>
               </div>

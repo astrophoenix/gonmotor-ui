@@ -226,12 +226,12 @@ onUnmounted(() => clearTimeout(searchTimer));
             </form>
           </div>
 
-          <div class="shrink-0">
+          <div class="w-full sm:w-auto sm:shrink-0">
             <label for="filtro-estado" class="block mb-1 text-sm font-medium text-heading">Estado</label>
             <select
               id="filtro-estado"
               v-model="draftFilters.estado"
-              class="block w-36 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800"
+              class="block w-full sm:w-36 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800"
             >
               <option value="">Todos</option>
               <option value="activo">Activo</option>
@@ -239,12 +239,12 @@ onUnmounted(() => clearTimeout(searchTimer));
             </select>
           </div>
 
-          <div class="shrink-0">
+          <div class="w-full sm:w-auto sm:shrink-0">
             <label for="filtro-categoria" class="block mb-1 text-sm font-medium text-heading">Categoría</label>
             <select
               id="filtro-categoria"
               v-model="draftFilters.categoria"
-              class="block w-56 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800"
+              class="block w-full sm:w-56 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800"
             >
               <option value="">Todas las categorías</option>
               <option v-for="item in CATEGORIAS" :key="item.value" :value="item.value">{{ item.label }}</option>

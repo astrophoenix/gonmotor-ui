@@ -1,5 +1,5 @@
 import { ref, computed, onScopeDispose } from 'vue';
-import { fetchRecepciones, fetchRecepcion } from '../services/recepcionesService';
+import { recepcionesService } from '../services/recepcionesService';
 import { createLatestRequest, isAbortError } from '../../../shared/utils/search';
 
 export function useRecepciones() {
@@ -28,15 +28,19 @@ export function useRecepciones() {
 
   const listRequest = createLatestRequest();
 
-  async function loadRecepciones(page = 1, search = '') {
+  async function loadRecepciones(page = 1, filters = {}) {
     const { signal, id } = listRequest.begin();
     loading.value = true;
     error.value = null;
 
     try {
-      const token = localStorage.getItem('gonmotor_access_token') || sessionStorage.getItem('gonmotor_access_token');
-      const empresaId = localStorage.getItem('gonmotor_empresa_id') || sessionStorage.getItem('gonmotor_empresa_id');
-      const data = await fetchRecepciones(token, empresaId, page, search, signal);
+      const { search = '', ...resto } = filters;
+      const data = await recepcionesService.list({
+        page,
+        search,
+        filters: resto,
+        signal,
+      });
       if (!listRequest.isCurrent(id)) return;
       recepciones.value = Array.isArray(data) ? data : (data.results || []);
       total.value = Array.isArray(data) ? data.length : data.count;
@@ -57,9 +61,7 @@ export function useRecepciones() {
     error.value = null;
 
     try {
-      const token = localStorage.getItem('gonmotor_access_token') || sessionStorage.getItem('gonmotor_access_token');
-      const empresaId = localStorage.getItem('gonmotor_empresa_id') || sessionStorage.getItem('gonmotor_empresa_id');
-      return await fetchRecepcion(token, empresaId, id);
+      return await recepcionesService.getById(id);
     } catch (err) {
       error.value = err.message || 'Error al cargar la recepción.';
       throw err;

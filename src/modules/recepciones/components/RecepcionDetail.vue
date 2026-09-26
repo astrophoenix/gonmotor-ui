@@ -33,6 +33,7 @@ import {
   IconManualGearbox,
   IconAutomaticGearbox,
   IconGasStation,
+  IconReportSearch
 } from '@tabler/icons-vue';
 import Alert from '../../../shared/components/Alert.vue';
 import MdiIcon from '../../../shared/components/MdiIcon.vue';
@@ -452,15 +453,16 @@ function irAInspeccion(recepcion) {
           v-if="!tieneInspeccion && recepcion.estado === 'ACEPTADA'"
           type="button"
           :disabled="creandoInspeccion"
-          title="Crear Inspección heredando los datos de la recepción"
-          class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 rounded-lg border border-primary-700 hover:bg-primary-50 disabled:opacity-50 disabled:cursor-not-allowed dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800"
+          title="Generar Inspección"
+          class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 rounded border border-primary-700 hover:bg-primary-50 disabled:opacity-50 disabled:cursor-not-allowed dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800"
           @click="crearInspeccion(recepcion)"
         >
           <Loader2 v-if="creandoInspeccion" class="w-4 h-4 animate-spin" />
+          <IconReportSearch v-if="!creandoInspeccion" class="w-5.5 h-5.5" />
           {{ creandoInspeccion ? 'Creando...' : 'Crear Inspección' }}
-          <svg v-if="!creandoInspeccion" class="w-6 h-6 text-primary-800 dark:text-white ml-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+          <!--svg v-if="!creandoInspeccion" class="w-6 h-6 text-primary-800 dark:text-white ml-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12H5m14 0-4 4m4-4-4-4"/>
-          </svg>
+          </svg -->
         </button>
         <!--template v-if="tieneInspeccion && recepcion.estado === 'ACEPTADA'">
           <a
