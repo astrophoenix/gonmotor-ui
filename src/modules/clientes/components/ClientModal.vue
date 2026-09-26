@@ -441,7 +441,7 @@ watch(vehiculos, (list) => {
           <div class="grid grid-cols-6 gap-4">
             <div class="col-span-6 sm:col-span-3">
               <label for="modal_tipo_identificacion" class="block mb-2.5 text-sm font-medium text-heading">Tipo de identificación</label>
-              <select id="modal_tipo_identificacion" v-model="form.tipo_identificacion" required class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
+              <select id="modal_tipo_identificacion" v-model="form.tipo_identificacion" required class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                 <option value="C">Cédula</option>
                 <option value="R">RUC</option>
                 <option value="P">Pasaporte</option>
@@ -449,27 +449,27 @@ watch(vehiculos, (list) => {
             </div>
             <div class="col-span-6 sm:col-span-3">
               <label for="modal_identificacion" :class="['block mb-2.5 text-sm font-medium', clientErrors.identificacion ? 'text-fg-danger-strong' : 'text-gray-900 dark:text-white']">Identificación</label>
-              <input id="modal_identificacion" v-model="form.identificacion" required maxlength="20" :class="clientErrors.identificacion ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded-base focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+              <input id="modal_identificacion" v-model="form.identificacion" required maxlength="20" :class="clientErrors.identificacion ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
               <p v-if="clientErrors.identificacion" class="mt-2.5 text-sm text-fg-danger-strong">{{ clientErrors.identificacion }}</p>
             </div>
             <div class="col-span-6 sm:col-span-3">
               <label for="modal_nombre" :class="['block mb-2.5 text-sm font-medium', clientErrors.nombre ? 'text-fg-danger-strong' : 'text-heading']">Nombre o razón social</label>
-              <input id="modal_nombre" v-model="form.nombre" required maxlength="200" :class="clientErrors.nombre ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded-base focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+              <input id="modal_nombre" v-model="form.nombre" required maxlength="200" :class="clientErrors.nombre ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
               <p v-if="clientErrors.nombre" class="mt-2.5 text-sm text-fg-danger-strong">{{ clientErrors.nombre }}</p>
             </div>
             <div class="col-span-6 sm:col-span-3">
               <label for="modal_email" :class="['block mb-2.5 text-sm font-medium', clientErrors.email ? 'text-fg-danger-strong' : 'text-heading']">Correo electrónico</label>
-              <input id="modal_email" v-model="form.email" type="email" required maxlength="100" :class="clientErrors.email ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded-base focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+              <input id="modal_email" v-model="form.email" type="email" required maxlength="100" :class="clientErrors.email ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
               <p v-if="clientErrors.email" class="mt-2.5 text-sm text-fg-danger-strong">{{ clientErrors.email }}</p>
             </div>
             <div class="col-span-6 sm:col-span-3">
               <label for="modal_telefono" :class="['block mb-2.5 text-sm font-medium', clientErrors.telefono ? 'text-fg-danger-strong' : 'text-heading']">Teléfono</label>
-              <input id="modal_telefono" v-model="form.telefono" maxlength="15" :class="clientErrors.telefono ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded-base focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+              <input id="modal_telefono" v-model="form.telefono" maxlength="15" :class="clientErrors.telefono ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
               <p v-if="clientErrors.telefono" class="mt-2.5 text-sm text-fg-danger-strong">{{ clientErrors.telefono }}</p>
             </div>
             <div class="col-span-6 sm:col-span-3">
               <label for="modal_direccion" :class="['block mb-2.5 text-sm font-medium', clientErrors.direccion ? 'text-fg-danger-strong' : 'text-heading']">Dirección</label>
-              <textarea id="modal_direccion" v-model="form.direccion" rows="2" maxlength="150" :class="clientErrors.direccion ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded-base focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'"></textarea>
+              <textarea id="modal_direccion" v-model="form.direccion" rows="2" maxlength="150" :class="clientErrors.direccion ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'"></textarea>
               <p v-if="clientErrors.direccion" class="mt-2.5 text-sm text-fg-danger-strong">{{ clientErrors.direccion }}</p>
             </div>
           </div>
@@ -487,40 +487,40 @@ watch(vehiculos, (list) => {
           <div v-for="(vehiculo, index) in vehiculos" :key="vehiculo._uid || vehiculo.id" class="p-4 mb-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600">
             <div class="flex items-center justify-between mb-4">
               <h5 class="text-base font-medium text-gray-900 dark:text-white">Vehículo {{ index + 1 }}</h5>
-              <button type="button" @click="removeVehiculo(index)" class="inline-flex items-center p-2 text-red-600 border border-red-500 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-600" title="Eliminar vehículo" aria-label="Eliminar vehículo">
+              <button type="button" @click="removeVehiculo(index)" class="inline-flex items-center p-2 text-red-600 border border-red-500 rounded hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-600" title="Eliminar vehículo" aria-label="Eliminar vehículo">
                 <Trash2 class="w-5 h-5" />
               </button>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div class="col-span-1">
                 <label :class="['block mb-2.5 text-sm font-medium', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].placa) ? 'text-fg-danger-strong' : 'text-heading']">Placa</label>
-                <input v-model="vehiculo.placa" maxlength="10" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].placa) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded-base focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+                <input v-model="vehiculo.placa" maxlength="10" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].placa) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
                 <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].placa" class="mt-2.5 text-sm text-fg-danger-strong">{{ vehiculoErrors[getVehicleKey(vehiculo)].placa }}</p>
               </div>
               <div class="col-span-1">
                 <label :class="['block mb-2.5 text-sm font-medium', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca) ? 'text-fg-danger-strong' : 'text-heading']">Marca</label>
-                <input v-model="vehiculo.marca" maxlength="50" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded-base focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+                <input v-model="vehiculo.marca" maxlength="50" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
                 <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca" class="mt-2.5 text-sm text-fg-danger-strong">{{ vehiculoErrors[getVehicleKey(vehiculo)].marca }}</p>
               </div>
               <div class="col-span-1">
                 <label :class="['block mb-2.5 text-sm font-medium', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo) ? 'text-fg-danger-strong' : 'text-heading']">Modelo</label>
-                <input v-model="vehiculo.modelo" maxlength="50" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded-base focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+                <input v-model="vehiculo.modelo" maxlength="50" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
                 <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo" class="mt-2.5 text-sm text-fg-danger-strong">{{ vehiculoErrors[getVehicleKey(vehiculo)].modelo }}</p>
               </div>
               <div class="col-span-1">
                 <label :class="['block mb-2.5 text-sm font-medium', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].anio) ? 'text-fg-danger-strong' : 'text-heading']">Año</label>
-                <input v-model="vehiculo.anio" type="number" min="1900" :max="new Date().getFullYear() + 1" maxlength="4" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].anio) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded-base focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+                <input v-model="vehiculo.anio" type="number" min="1900" :max="new Date().getFullYear() + 1" maxlength="4" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].anio) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
                 <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].anio" class="mt-2.5 text-sm text-fg-danger-strong">{{ vehiculoErrors[getVehicleKey(vehiculo)].anio }}</p>
               </div>
               <div class="col-span-1">
                 <label class="block mb-2.5 text-sm font-medium text-heading">Tipo</label>
-                <select v-model="vehiculo.tipo" :disabled="isLoadingChoices" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
+                <select v-model="vehiculo.tipo" :disabled="isLoadingChoices" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                   <option v-for="item in tipos" :key="item.value" :value="item.value">{{ item.label }}</option>
                 </select>
               </div>
               <div class="col-span-1">
                 <label class="block mb-2.5 text-sm font-medium text-heading">Transmisión</label>
-                <select v-model="vehiculo.transmision" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
+                <select v-model="vehiculo.transmision" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                   <option value="M">Manual / Mecánica</option>
                   <option value="A">Automática</option>
                   <option value="C">CVT</option>
@@ -528,7 +528,7 @@ watch(vehiculos, (list) => {
               </div>
               <div class="col-span-1">
                 <label class="block mb-2.5 text-sm font-medium text-heading">Combustible</label>
-                <select v-model="vehiculo.combustible" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
+                <select v-model="vehiculo.combustible" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                   <option value="GAS">Gasolina</option>
                   <option value="DIE">Diésel</option>
                   <option value="HIB">Híbrido</option>
@@ -537,26 +537,26 @@ watch(vehiculos, (list) => {
               </div>
               <div class="col-span-1">
                 <label class="block mb-2.5 text-sm font-medium text-heading">Color</label>
-                <input v-model="vehiculo.color" maxlength="30" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body">
+                <input v-model="vehiculo.color" maxlength="30" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body">
               </div>
               <div class="col-span-1">
                 <label :class="['block mb-2.5 text-sm font-medium', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].vin) ? 'text-fg-danger-strong' : 'text-heading']">VIN / Chasis</label>
-                <input v-model="vehiculo.vin" maxlength="17" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].vin) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded-base focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+                <input v-model="vehiculo.vin" maxlength="17" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].vin) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
                 <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].vin" class="mt-2.5 text-sm text-fg-danger-strong">{{ vehiculoErrors[getVehicleKey(vehiculo)].vin }}</p>
               </div>
               <div class="col-span-1">
                 <label class="block mb-2.5 text-sm font-medium text-heading">Motor</label>
-                <input v-model="vehiculo.numero_motor" maxlength="50" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body">
+                <input v-model="vehiculo.numero_motor" maxlength="50" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body">
               </div>
               <div class="col-span-1">
                 <label class="block mb-2.5 text-sm font-medium text-heading">País de Origen</label>
-                <select v-model="vehiculo.pais_origen" :disabled="isLoadingChoices" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
+                <select v-model="vehiculo.pais_origen" :disabled="isLoadingChoices" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                   <option v-for="item in paises" :key="item.code" :value="item.code">{{ item.name }}</option>
                 </select>
               </div>
               <div class="col-span-1">
                 <label :class="['block mb-2.5 text-sm font-medium', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual) ? 'text-fg-danger-strong' : 'text-heading']">Kilometraje</label>
-                <input v-model="vehiculo.kilometraje_actual" type="number" min="0" maxlength="9" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded-base focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+                <input v-model="vehiculo.kilometraje_actual" type="number" min="0" maxlength="9" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
                 <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual" class="mt-2.5 text-sm text-fg-danger-strong">{{ vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual }}</p>
               </div>
               <div class="col-span-1 md:col-span-1">
@@ -572,7 +572,7 @@ watch(vehiculos, (list) => {
               </div>
               <div class="col-span-1 md:col-span-3">
                 <label class="block mb-2.5 text-sm font-medium text-heading">Observaciones</label>
-                <textarea v-model="vehiculo.observaciones" rows="6" maxlength="500" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"></textarea>
+                <textarea v-model="vehiculo.observaciones" rows="7" maxlength="500" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"></textarea>
               </div>
             </div>
           </div>
@@ -589,7 +589,7 @@ watch(vehiculos, (list) => {
       <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
         <button
           type="button"
-          class="text-body bg-neutral-primary-soft border border-default hover:bg-neutral-secondary-medium hover:text-heading focus:ring-4 focus:ring-neutral-tertiary-soft shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none"
+          class="text-body bg-neutral-primary-soft border border-default hover:bg-neutral-secondary-medium hover:text-heading focus:ring-4 focus:ring-neutral-tertiary-soft shadow-xs font-medium leading-5 rounded text-sm px-4 py-2.5 focus:outline-none"
           @click="close"
         >
           Cancelar
@@ -597,7 +597,7 @@ watch(vehiculos, (list) => {
         <button
           type="button"
           :disabled="isSaving || isLoading"
-          class="inline-flex items-center text-white bg-brand box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+          class="inline-flex items-center text-white bg-brand box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded text-sm px-4 py-2.5 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
           @click="submit"
         >
           <Save v-if="!isSaving" class="w-5 h-5 mr-1.5 -ml-1 text-white" />

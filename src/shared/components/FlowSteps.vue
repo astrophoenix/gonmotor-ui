@@ -66,6 +66,19 @@ function statusClass(step) {
         </span>
         <span class="whitespace-nowrap" :class="labelClass(step)">
           <h3 class="font-medium leading-tight">{{ step.label }}</h3>
+          <component
+            :is="step.to ? 'a' : 'span'"
+            v-if="step.numero"
+            :href="step.to"
+            class="mt-0.5 inline-block rounded px-1.5 py-0.5 text-xs font-semibold"
+            :class="
+              step.to
+                ? 'bg-brand-50 text-brand-600 hover:bg-brand-100 hover:underline dark:bg-brand-700/40 dark:text-brand-50 dark:hover:bg-brand-700/60'
+                : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200'
+            "
+          >
+            {{ step.numero }}
+          </component>
           <p v-if="step.status" class="text-xs font-medium whitespace-nowrap text-gray-500 dark:text-gray-400" :class="statusClass(step)">
             {{ step.status }}
           </p>

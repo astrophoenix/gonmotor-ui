@@ -66,12 +66,27 @@ export const FLUJO_LABELS = {
   orden: 'Orden de Trabajo',
 };
 
-export function buildPaso({ entidad, estado, estadoDisplay }) {
-  return {
+export const FLUJO_DETALLE_PATHS = {
+  recepcion: '/crud/recepciones/ver/',
+  inspeccion: '/crud/inspecciones/ver/',
+  cotizacion: '/crud/cotizaciones/ver/',
+  orden: '/crud/ordenes/ver/',
+};
+
+export function buildPaso({ entidad, estado, estadoDisplay, id, numero }) {
+  const paso = {
     label: FLUJO_LABELS[entidad] || entidad,
     state: estadoAState(entidad, estado),
     status: estadoDisplay || estadoADisplay(entidad, estado),
   };
+  const existe = id !== null && id !== undefined && id !== '';
+  if (existe && numero) {
+    paso.numero = numero;
+    if (FLUJO_DETALLE_PATHS[entidad]) {
+      paso.to = `${FLUJO_DETALLE_PATHS[entidad]}?id=${encodeURIComponent(id)}`;
+    }
+  }
+  return paso;
 }
 
 export function buildPasosFlujo(pasos) {

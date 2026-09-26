@@ -113,26 +113,35 @@ const recepciones = computed(() => orden.value?.recepciones || []);
 
 const pasosFlujo = computed(() => {
   const ord = orden.value || {};
+  const recepcionOrigen = recepciones.value[0] || null;
   return buildPasosFlujo([
     {
       entidad: 'recepcion',
       estado: ord.recepcion_estado,
       estadoDisplay: ord.recepcion_estado_display,
+      id: recepcionOrigen?.id,
+      numero: recepcionOrigen?.numero_recepcion,
     },
     {
       entidad: 'inspeccion',
       estado: ord.inspeccion_estado,
       estadoDisplay: ord.inspeccion_estado_display,
+      id: inspeccion.value?.id,
+      numero: inspeccion.value?.numero_inspeccion,
     },
     {
       entidad: 'cotizacion',
       estado: ord.cotizacion_estado,
       estadoDisplay: ord.cotizacion_estado_display,
+      id: ord.cotizacion_id || ord.cotizacion_origen,
+      numero: ord.cotizacion_numero || ord.cotizacion_origen_numero,
     },
     {
       entidad: 'orden',
       estado: ord.estado,
       estadoDisplay: ord.estado_display,
+      id: ord.id,
+      numero: ord.numero_orden,
     },
   ]);
 });

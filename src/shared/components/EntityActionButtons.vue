@@ -167,7 +167,7 @@ async function exportExcel() {
     <button
       v-if="showAdd"
       type="button"
-      class="inline-flex items-center px-3 py-2 text-sm font-medium text-white rounded bg-primary-500 hover:bg-primary-600 focus:ring-4 focus:ring-primary-300 disabled:opacity-50"
+      class="inline-flex items-center px-3 py-2 text-sm font-medium text-white rounded bg-primary-500 shadow-xs hover:bg-primary-600 focus:ring-4 focus:ring-primary-300 disabled:opacity-50"
       @click="goToAdd"
     >
       <Plus class="w-5 h-5 mr-1.5 -ml-1 text-white" />
@@ -178,7 +178,7 @@ async function exportExcel() {
       type="button"
       title="Exportar a PDF"
       :disabled="isExportingPdf"
-      class="inline-flex items-center px-3 py-2 text-sm font-medium text-red-600 rounded border border-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-400 dark:hover:bg-gray-800"
+      class="inline-flex items-center px-3 py-2 text-sm font-medium text-red-600 rounded border border-red-600 shadow-xs hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-400 dark:hover:bg-gray-800"
       @click="exportPdf"
     >
       <IconFileTypePdf v-if="!isExportingPdf" class="w-5 h-5" />
@@ -192,7 +192,7 @@ async function exportExcel() {
       type="button"
       title="Exportar a Excel"
       :disabled="isExportingExcel"
-      class="inline-flex items-center px-3 py-2 text-sm font-medium text-emerald-600 rounded border border-emerald-600 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-400 dark:border-emerald-400 dark:hover:bg-gray-800"
+      class="inline-flex items-center px-3 py-2 text-sm font-medium text-emerald-600 rounded border border-emerald-600 shadow-xs hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-400 dark:border-emerald-400 dark:hover:bg-gray-800"
       @click="exportExcel"
     >
       <IconFileTypeXls v-if="!isExportingExcel" class="w-5 h-5" />

@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue';
-import { ArrowLeft, Car, Toolbox, WrenchIcon, TriangleAlert, CheckCircle2, Clock, FileText, Loader2, Plus, Trash2, Wand2, Wrench, ClipboardList, IdCardIcon, TagIcon, Shapes, PaintBucket, Phone, Mail, CameraIcon, Camera } from 'lucide-vue-next';
+import { ArrowLeft, Car, Toolbox, WrenchIcon, TriangleAlert, CheckCircle2, Clock, FileText, Loader2, Plus, Trash2, Wand2, Wrench, ClipboardList, IdCardIcon, TagIcon, Shapes, PaintBucket, Phone, Mail, CameraIcon, Camera, ShieldCheck } from 'lucide-vue-next';
 import { IconClockCheck, IconClockPlay, IconEngine, IconManualGearbox, IconAutomaticGearbox, IconGasStation } from '@tabler/icons-vue';
 import { request } from '../../../shared/services/httpClient';
 import { API_BASE_URL } from '../../../shared/config/env';
@@ -87,10 +87,33 @@ const pasosFlujo = computed(() => {
   const data = inspeccionData.value || {};
   const estadoCotizacion = data.cotizacion_estado || (data.tiene_cotizacion_activa ? 'BORRADOR' : null);
   return buildPasosFlujo([
-    { entidad: 'recepcion', estado: rec?.estado, estadoDisplay: rec?.estado_display },
-    { entidad: 'inspeccion', estado: estadoInspeccion.value || 'PENDIENTE' },
-    { entidad: 'cotizacion', estado: estadoCotizacion, estadoDisplay: data.cotizacion_estado_display },
-    { entidad: 'orden', estado: data.orden_trabajo_estado, estadoDisplay: data.orden_trabajo_estado_display },
+    {
+      entidad: 'recepcion',
+      estado: rec?.estado,
+      estadoDisplay: rec?.estado_display,
+      id: rec?.id,
+      numero: rec?.numero_recepcion,
+    },
+    {
+      entidad: 'inspeccion',
+      estado: estadoInspeccion.value || 'PENDIENTE',
+      id: data.id || inspeccionId,
+      numero: data.numero_inspeccion || form.numero_inspeccion,
+    },
+    {
+      entidad: 'cotizacion',
+      estado: estadoCotizacion,
+      estadoDisplay: data.cotizacion_estado_display,
+      id: data.cotizacion_id || data.cotizacion_activa_id,
+      numero: data.cotizacion_numero || data.numero_cotizacion,
+    },
+    {
+      entidad: 'orden',
+      estado: data.orden_trabajo_estado,
+      estadoDisplay: data.orden_trabajo_estado_display,
+      id: data.orden_trabajo,
+      numero: data.orden_trabajo_numero,
+    },
   ]);
 });
 
@@ -141,6 +164,16 @@ const vehiculoSeleccionado = ref(null);
 const responsableSearch = ref('');
 const responsableSeleccionado = ref(null);
 const empleadosOpciones = ref([]);
+
+const inspectorInfo = computed(() => {
+  if (responsableSeleccionado.value) return responsableSeleccionado.value;
+  if (!form.responsable) return null;
+
+  return empleadosOpciones.value.find((empleado) => {
+    const empleadoUsuarioId = empleado.user?.id || empleado.id;
+    return empleadoUsuarioId != null && String(empleadoUsuarioId) === String(form.responsable);
+  }) || null;
+});
 
 function nombreEmpleado(empleado) {
   const user = empleado?.user || empleado || {};
@@ -894,119 +927,134 @@ onMounted(() => {
           </span>
         </div>
 
-        <div v-if="recepcion" class="grid grid-cols-5 gap-4">
-          <div class="col-span-3">
-            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente</label>
-            <div class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
-              {{ clienteInfo?.nombre || '—' }}
-            </div>
-            <div class="mt-3 space-y-1.5">
-              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                <IdCardIcon class="w-3.5 h-3.5 shrink-0" /> Identificación:
-                <span class="truncate font-bold text-gray-900 dark:text-white">{{ clienteInfo?.identificacion || '—' }}</span>
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_0.7fr_1fr]">
+          <div class="min-w-0">
+            <template v-if="recepcion">
+              <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente</label>
+              <div class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                {{ clienteInfo?.nombre || '—' }}
               </div>
-              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono:
-                <span class="truncate font-bold text-gray-900 dark:text-white">{{ clienteInfo?.telefono || '—' }}</span>
+              <div class="mt-3 space-y-1.5">
+                <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                  <IdCardIcon class="w-3.5 h-3.5 shrink-0" /> Identificación:
+                  <span class="truncate font-bold text-gray-900 dark:text-white">{{ clienteInfo?.identificacion || '—' }}</span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                  <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono:
+                  <span class="truncate font-bold text-gray-900 dark:text-white">{{ clienteInfo?.telefono || '—' }}</span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                  <Mail class="w-3.5 h-3.5 shrink-0" /> Correo:
+                  <span class="truncate font-bold text-gray-900 dark:text-white">{{ clienteInfo?.email || '—' }}</span>
+                </div>
               </div>
-              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                <Mail class="w-3.5 h-3.5 shrink-0" /> Correo:
-                <span class="truncate font-bold text-gray-900 dark:text-white">{{ clienteInfo?.email || '—' }}</span>
+            </template>
+
+            <template v-else>
+              <label for="cliente" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente</label>
+              <ClienteSearchSelect
+                id="cliente"
+                v-model="clienteSearch"
+                :error="Boolean(formErrors.cliente)"
+                :error-message="formErrors.cliente"
+                :show-create="true"
+                @select="selectCliente"
+                @clear="clearCliente"
+                @create="showClientCreateModal = true"
+              />
+              <div class="mt-3 space-y-1.5">
+                <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                  <IdCardIcon class="w-3.5 h-3.5 shrink-0" /> Identificación:
+                  <span class="truncate font-bold text-gray-900 dark:text-white">{{ clienteSeleccionado?.identificacion || '—' }}</span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                  <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono:
+                  <span class="truncate font-bold text-gray-900 dark:text-white">{{ clienteSeleccionado?.telefono || '—' }}</span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                  <Mail class="w-3.5 h-3.5 shrink-0" /> Correo:
+                  <span class="truncate font-bold text-gray-900 dark:text-white">{{ clienteSeleccionado?.email || '—' }}</span>
+                </div>
               </div>
-            </div>
+            </template>
           </div>
 
-          <div class="col-span-2">
-            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo</label>
-            <div class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
-              {{ vehiculoInfo?.placa || '—' }}
-            </div>
-            <div class="mt-3 space-y-1.5">
-              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                <TagIcon class="w-3.5 h-3.5 shrink-0" /> Marca:
-                <span class="truncate font-bold text-gray-900 dark:text-white">{{ vehiculoInfo?.marca || '—' }}</span>
+          <div class="relative min-w-0">
+            <template v-if="recepcion">
+              <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo</label>
+              <div class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                {{ vehiculoInfo?.placa || '—' }}
               </div>
-              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                <Shapes class="w-3.5 h-3.5 shrink-0" /> Modelo:
-                <span class="truncate font-bold text-gray-900 dark:text-white">{{ vehiculoInfo?.modelo || '—' }}</span>
+              <div class="mt-3 space-y-1.5">
+                <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                  <TagIcon class="w-3.5 h-3.5 shrink-0" /> Marca:
+                  <span class="truncate font-bold text-gray-900 dark:text-white">{{ vehiculoInfo?.marca || '—' }}</span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                  <Shapes class="w-3.5 h-3.5 shrink-0" /> Modelo:
+                  <span class="truncate font-bold text-gray-900 dark:text-white">{{ vehiculoInfo?.modelo || '—' }}</span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                  <PaintBucket class="w-3.5 h-3.5 shrink-0" /> Color:
+                  <span class="truncate font-bold text-gray-900 dark:text-white">{{ vehiculoInfo?.color || '—' }}</span>
+                </div>
               </div>
-              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                <PaintBucket class="w-3.5 h-3.5 shrink-0" /> Color:
-                <span class="truncate font-bold text-gray-900 dark:text-white">{{ vehiculoInfo?.color || '—' }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+            </template>
 
-        <div v-else class="grid grid-cols-5 gap-4">
-          <div class="col-span-3">
-            <label for="cliente" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente</label>
-            <ClienteSearchSelect
-              id="cliente"
-              v-model="clienteSearch"
-              :error="Boolean(formErrors.cliente)"
-              :error-message="formErrors.cliente"
-              :show-create="true"
-              @select="selectCliente"
-              @clear="clearCliente"
-              @create="showClientCreateModal = true"
+            <template v-else>
+              <label for="vehiculo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo</label>
+              <VehiculoSearchSelect
+                id="vehiculo"
+                v-model="vehiculoSearch"
+                :cliente-id="clienteSeleccionado?.id || null"
+                :disabled="!clienteSeleccionado"
+                :placeholder="clienteSeleccionado ? 'Buscar placa...' : 'Selecciona un cliente primero'"
+                class="relative"
+                @select="selectVehiculo"
+              />
+              <p v-if="formErrors.vehiculo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.vehiculo }}</p>
+              <div class="mt-3 space-y-1.5">
+                <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                  <TagIcon class="w-3.5 h-3.5 shrink-0" /> Marca:
+                  <span class="truncate font-bold text-gray-900 dark:text-white">{{ vehiculoSeleccionado?.marca || '—' }}</span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                  <Shapes class="w-3.5 h-3.5 shrink-0" /> Modelo:
+                  <span class="truncate font-bold text-gray-900 dark:text-white">{{ vehiculoSeleccionado?.modelo || '—' }}</span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                  <PaintBucket class="w-3.5 h-3.5 shrink-0" /> Color:
+                  <span class="truncate font-bold text-gray-900 dark:text-white">{{ vehiculoSeleccionado?.color || '—' }}</span>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <div class="min-w-0">
+            <label for="inspector" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Inspector</label>
+            <EmpleadoSearchSelect
+              id="inspector"
+              v-model="responsableSearch"
+              placeholder="Buscar inspector..."
+              @select="selectResponsable"
+              @clear="clearResponsable"
             />
             <div class="mt-3 space-y-1.5">
               <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
                 <IdCardIcon class="w-3.5 h-3.5 shrink-0" /> Identificación:
-                <span class="truncate font-bold text-gray-900 dark:text-white">{{ clienteSeleccionado?.identificacion || '—' }}</span>
+                <span class="truncate font-bold text-gray-900 dark:text-white">{{ inspectorInfo?.user?.identificacion || '—' }}</span>
               </div>
               <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
                 <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono:
-                <span class="truncate font-bold text-gray-900 dark:text-white">{{ clienteSeleccionado?.telefono || '—' }}</span>
+                <span class="truncate font-bold text-gray-900 dark:text-white">{{ inspectorInfo?.user?.telefono || '—' }}</span>
               </div>
               <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                <Mail class="w-3.5 h-3.5 shrink-0" /> Correo:
-                <span class="truncate font-bold text-gray-900 dark:text-white">{{ clienteSeleccionado?.email || '—' }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="relative col-span-2">
-            <label for="vehiculo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo</label>
-            <VehiculoSearchSelect
-              id="vehiculo"
-              v-model="vehiculoSearch"
-              :cliente-id="clienteSeleccionado?.id || null"
-              :disabled="!clienteSeleccionado"
-              :placeholder="clienteSeleccionado ? 'Buscar placa...' : 'Selecciona un cliente primero'"
-              class="relative"
-              @select="selectVehiculo"
-            />
-            <p v-if="formErrors.vehiculo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.vehiculo }}</p>
-            <div class="mt-3 space-y-1.5">
-              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                <TagIcon class="w-3.5 h-3.5 shrink-0" /> Marca:
-                <span class="truncate font-bold text-gray-900 dark:text-white">{{ vehiculoSeleccionado?.marca || '—' }}</span>
-              </div>
-              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                <Shapes class="w-3.5 h-3.5 shrink-0" /> Modelo:
-                <span class="truncate font-bold text-gray-900 dark:text-white">{{ vehiculoSeleccionado?.modelo || '—' }}</span>
-              </div>
-              <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                <PaintBucket class="w-3.5 h-3.5 shrink-0" /> Color:
-                <span class="truncate font-bold text-gray-900 dark:text-white">{{ vehiculoSeleccionado?.color || '—' }}</span>
+                <ShieldCheck class="w-3.5 h-3.5 shrink-0" /> Rol:
+                <span class="truncate font-bold text-gray-900 dark:text-white">{{ inspectorInfo?.rol_display || inspectorInfo?.rol || '—' }}</span>
               </div>
             </div>
           </div>
         </div>
-
-        <div class="col-span-2 mt-4">
-          <label for="responsable" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Responsable</label>
-          <EmpleadoSearchSelect
-            id="responsable"
-            v-model="responsableSearch"
-            placeholder="Buscar responsable por nombre o cédula..."
-            @select="selectResponsable"
-            @clear="clearResponsable"
-          />
-        </div>
-        <div class="relative col-span-2"></div>
       </div>
 
       <div class="relative p-6 bg-white rounded-lg shadow dark:bg-gray-800">

@@ -100,10 +100,34 @@ const pasosFlujo = computed(() => {
   const recepcion = ins.recepcion || null;
   const estadoCotizacion = ins.cotizacion_estado || (ins.tiene_cotizacion_activa ? 'BORRADOR' : null);
   return buildPasosFlujo([
-    { entidad: 'recepcion', estado: recepcion?.estado, estadoDisplay: recepcion?.estado_display },
-    { entidad: 'inspeccion', estado: ins.estado, estadoDisplay: ins.estado_display },
-    { entidad: 'cotizacion', estado: estadoCotizacion, estadoDisplay: ins.cotizacion_estado_display },
-    { entidad: 'orden', estado: ins.orden_trabajo_estado, estadoDisplay: ins.orden_trabajo_estado_display },
+    {
+      entidad: 'recepcion',
+      estado: recepcion?.estado,
+      estadoDisplay: recepcion?.estado_display,
+      id: recepcion?.id,
+      numero: recepcion?.numero_recepcion,
+    },
+    {
+      entidad: 'inspeccion',
+      estado: ins.estado,
+      estadoDisplay: ins.estado_display,
+      id: ins.id,
+      numero: ins.numero_inspeccion,
+    },
+    {
+      entidad: 'cotizacion',
+      estado: estadoCotizacion,
+      estadoDisplay: ins.cotizacion_estado_display,
+      id: ins.cotizacion_id || ins.cotizacion_activa_id,
+      numero: ins.cotizacion_numero || ins.numero_cotizacion,
+    },
+    {
+      entidad: 'orden',
+      estado: ins.orden_trabajo_estado,
+      estadoDisplay: ins.orden_trabajo_estado_display,
+      id: ins.orden_trabajo,
+      numero: ins.orden_trabajo_numero,
+    },
   ]);
 });
 

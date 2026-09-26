@@ -24,7 +24,7 @@ Convenciones y estándares del proyecto. El backend Django vive en `../gonmotor-
 - Estados: `src/shared/components/Alert.vue` (props `type`, `title`, `message`, `dismissible`; emite `dismiss`). Toasts: `src/shared/composables/useToast.js`.
 - Confirmaciones de borrado: `ConfirmModal.vue` (no volver a crear modales de eliminar).
 - Selectores con búsqueda: `ClienteSearchSelect`, `VehiculoSearchSelect`, `EmpleadoSearchSelect`, `CatalogoSelect`.
-- Fotos: `PhotoUploadGrid` / `PhotoSlotGrid`; acciones de fila: `EntityActionButtons`.
+- Fotos: `ImageField` (base de una sola imagen: valida formato/tamaño, drag-and-drop, preview y zoom) y sus wrappers `PhotoUploadGrid` (colección con descripciones y persistencia API), `PhotoSlotGrid` (N vistas obligatorias) y `VehicleImageField` / `PersonImageField`; acciones de fila: `EntityActionButtons`.
 
 ## Paleta visual
 - Tokens definidos en `@theme` de `src/style.css`: `primary-*` (azul, legacy Flowbite), `brand-*` (azul corporativo `#2B4352`), `accent-*` (rojo `#D9011B`).

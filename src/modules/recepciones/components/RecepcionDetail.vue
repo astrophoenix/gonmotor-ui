@@ -19,7 +19,21 @@ import {
   ShieldCheck,
   FileText,
   Loader2,
+  IdCard,
+  Phone,
+  Mail,
+  Tag,
+  Shapes,
+  PaintBucket,
+  Car,
+  ClipboardList,
 } from 'lucide-vue-next';
+import {
+  IconEngine,
+  IconManualGearbox,
+  IconAutomaticGearbox,
+  IconGasStation,
+} from '@tabler/icons-vue';
 import Alert from '../../../shared/components/Alert.vue';
 import MdiIcon from '../../../shared/components/MdiIcon.vue';
 import FlowSteps from '../../../shared/components/FlowSteps.vue';
@@ -53,7 +67,7 @@ const FOTO_VISTAS = [
   { key: 'LATERAL_IZQ', label: 'Lateral Izquierda' },
   { key: 'LATERAL_DER', label: 'Lateral Derecha' },
   { key: 'POSTERIOR', label: 'Posterior' },
-  { key: 'TABLERO', label: 'Tablero / Kilometraje' },
+  { key: 'TABLERO', label: 'Tablero' },
 ];
 
 const TIPO_RECEPCION = {
@@ -199,14 +213,28 @@ const pasosFlujo = computed(() => {
   const cotizaciones = r.cotizaciones_generadas || [];
   const cotizacion = cotizaciones[cotizaciones.length - 1] || null;
   return buildPasosFlujo([
-    { entidad: 'recepcion', estado: r.estado, estadoDisplay: r.estado_display },
-    { entidad: 'inspeccion', estado: inspec?.estado, estadoDisplay: inspec?.estado_display },
+    { entidad: 'recepcion', estado: r.estado, estadoDisplay: r.estado_display, id: r.id, numero: r.numero_recepcion },
+    {
+      entidad: 'inspeccion',
+      estado: inspec?.estado,
+      estadoDisplay: inspec?.estado_display,
+      id: inspec?.id,
+      numero: inspec?.numero_inspeccion,
+    },
     {
       entidad: 'cotizacion',
       estado: cotizacion?.estado || (cotizacion ? 'BORRADOR' : null),
       estadoDisplay: cotizacion?.estado_display,
+      id: cotizacion?.id,
+      numero: cotizacion?.numero_cotizacion,
     },
-    { entidad: 'orden', estado: r.orden_trabajo_estado, estadoDisplay: r.orden_trabajo_estado_display },
+    {
+      entidad: 'orden',
+      estado: r.orden_trabajo_estado,
+      estadoDisplay: r.orden_trabajo_estado_display,
+      id: r.orden_trabajo,
+      numero: r.orden_trabajo_numero,
+    },
   ]);
 });
 
@@ -250,6 +278,39 @@ const nivelCombustibleDisplay = computed(() => {
   const r = recepcion.value;
   if (!r || !r.nivel_combustible) return '-';
   return COMBUSTIBLE_LABELS[r.nivel_combustible] || r.nivel_combustible;
+});
+
+function formatPlaca(placa) {
+  if (!placa) return '';
+  const cleaned = String(placa).replace(/-/g, '').toUpperCase();
+  if (cleaned.length <= 3) return cleaned;
+  return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}`;
+}
+
+const placaDisplay = computed(() => formatPlaca(vehiculo.value?.placa || recepcion.value?.placa));
+
+const transmisionLabel = computed(() => {
+  const map = { M: 'Manual / Mecánica', A: 'Automática', C: 'CVT' };
+  const value = vehiculo.value?.transmision || '';
+  return map[value] || value || '';
+});
+
+const transmisionIcon = computed(() => {
+  const type = vehiculo.value?.transmision || '';
+  if (type === 'M') return IconManualGearbox;
+  return IconAutomaticGearbox;
+});
+
+const combustibleLabel = computed(() => {
+  const map = {
+    GAS: 'Gasolina',
+    DIE: 'Diésel',
+    HIB: 'Híbrido',
+    ELE: 'Eléctrico',
+    GNV: 'Gas Natural Vehicular (GNV)',
+  };
+  const value = vehiculo.value?.combustible || '';
+  return map[value] || value || '';
 });
 
 const detallesCarroceriaList = computed(() => {
@@ -444,7 +505,7 @@ function irAInspeccion(recepcion) {
     <div v-if="recepcion" class="relative mx-auto max-w-6xl mb-5">
       <FlowSteps :steps="pasosFlujo" />
     </div>
-    <div class="relative mx-auto max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
+    <div class="relative mx-auto max-w-8xl">
       <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
       <Alert v-if="errorCrearInspeccion" type="error" :message="errorCrearInspeccion" dismissible @dismiss="errorCrearInspeccion = ''" />
 
@@ -452,80 +513,84 @@ function irAInspeccion(recepcion) {
         {{ error }}
       </div>
 
-      <div v-if="loading" class="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+      <div v-if="loading" class="p-6 text-center text-sm text-gray-500 bg-white rounded-lg shadow dark:bg-gray-800 dark:text-gray-400">
         Cargando recepción...
       </div>
 
-      <div v-else-if="!recepcion" class="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+      <div v-else-if="!recepcion" class="p-6 text-center text-sm text-gray-500 bg-white rounded-lg shadow dark:bg-gray-800 dark:text-gray-400">
         Recepción no encontrada.
       </div>
 
-      <div v-else>
-        <div class="mb-4">
-          <h4 class="mb-3 text-lg font-semibold dark:text-white">
-            <span class="inline-flex items-center gap-2">
-              <!--Users class="w-5 h-5 text-gray-800 dark:text-white" /-->
-              <FileText class="w-5 h-5 text-gray-900 dark:text-gray-900" />
+      <div v-else class="grid grid-cols-1 gap-4 lg:grid-cols-4">
+        <div class="lg:col-span-3 p-6 bg-white rounded-lg shadow dark:bg-gray-800">
+        <div class="mb-4 p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600">
+          <div class="flex items-center gap-2 mb-4">
+            <FileText class="w-5 h-5 text-gray-900 dark:text-gray-900" />
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
               Información General
-            </span>
-          </h4>
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-5 rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-700/40 dark:border-gray-600/60">
+            </h3>
+          </div>
+          <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_0.7fr_1fr]">
             <div>
-              <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Cliente</h5>
-              <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Cliente</dt>
-                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cliente?.nombre || '—' }}</dd>
+              <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                Cliente
+              </p>
+              <p class="truncate text-sm font-bold text-gray-900 dark:text-white">
+                {{ cliente?.nombre || '—' }}
+              </p>
+              <div class="mt-3 space-y-1.5">
+                <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                  <IdCard class="w-3.5 h-3.5 shrink-0" /> Identificación:
+                  <span class="truncate font-bold text-gray-900 dark:text-white">{{ cliente?.identificacion || '—' }}</span>
                 </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Identificación</dt>
-                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cliente?.identificacion || '—' }}</dd>
+                <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                  <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono:
+                  <span class="truncate font-bold text-gray-900 dark:text-white">{{ cliente?.telefono || '—' }}</span>
                 </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Teléfono</dt>
-                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ cliente?.telefono || '—' }}</dd>
+                <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                  <Mail class="w-3.5 h-3.5 shrink-0" /> Correo:
+                  <span class="truncate font-bold text-gray-900 dark:text-white">{{ cliente?.email || '—' }}</span>
                 </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Correo</dt>
-                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ cliente?.email || '—' }}</dd>
-                </div>
-              </dl>
+              </div>
             </div>
 
             <div>
-              <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Vehículo</h5>
-              <div class="flex flex-col gap-4 sm:flex-row">
-                <dl class="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Placa</dt>
-                    <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.placa || recepcion.placa || '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Marca</dt>
-                    <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.marca || '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Modelo</dt>
-                    <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.modelo || '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Color</dt>
-                    <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.color || '—' }}</dd>
-                  </div>
-                </dl>
-                <div class="w-full shrink-0 sm:w-36">
-                  <button
-                    v-if="vehiculo?.imagen"
-                    type="button"
-                    title="Ver foto del vehículo"
-                    class="block w-full overflow-hidden rounded-lg border border-gray-200 cursor-zoom-in dark:border-gray-600"
-                    @click="abrirFoto(vehiculo.imagen)"
-                  >
-                    <img :src="vehiculo.imagen" alt="Foto del vehículo" class="h-28 w-full object-cover" />
-                  </button>
-                  <div v-else class="flex h-28 w-full items-center justify-center rounded-lg border border-dashed border-gray-300 text-xs text-gray-500 dark:border-gray-600 dark:text-gray-400">
-                    Sin foto
-                  </div>
+              <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                Vehículo
+              </p>
+              <p class="truncate text-sm font-bold text-gray-900 dark:text-white">
+                {{ vehiculo?.placa || recepcion.placa || '—' }}
+              </p>
+              <div class="mt-3 space-y-1.5">
+                <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                  <Tag class="w-3.5 h-3.5 shrink-0" /> Marca:
+                  <span class="truncate font-bold text-gray-900 dark:text-white">{{ vehiculo?.marca || '—' }}</span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                  <Shapes class="w-3.5 h-3.5 shrink-0" /> Modelo:
+                  <span class="truncate font-bold text-gray-900 dark:text-white">{{ vehiculo?.modelo || '—' }}</span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                  <PaintBucket class="w-3.5 h-3.5 shrink-0" /> Color:
+                  <span class="truncate font-bold text-gray-900 dark:text-white">
+                    {{ vehiculo?.color || '—' }}
+                    <template v-if="vehiculo?.kilometraje_actual">({{ vehiculo.kilometraje_actual }} km)</template>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                Asesor
+              </p>
+              <p class="truncate text-sm font-bold text-gray-900 dark:text-white">
+                {{ recepcion.recibido_por_nombre || '—' }}
+              </p>
+              <div class="mt-3 space-y-1.5">
+                <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                  <ShieldCheck class="w-3.5 h-3.5 shrink-0" /> Rol:
+                  <span class="truncate font-bold text-gray-900 dark:text-white">{{ recepcion.recibido_por_rol_display || recepcion.recibido_por_rol || '—' }}</span>
                 </div>
               </div>
             </div>
@@ -573,18 +638,12 @@ function irAInspeccion(recepcion) {
           </nav>
         </div>
 
-        <div v-show="activeTab === 'informacion'" class="p-4 space-y-6">
-          <div>
-            <!--h4 class="mb-3 text-lg font-semibold dark:text-white">
-              <span class="inline-flex items-center gap-2">
-                <FolderInput class="w-5 h-5 text-gray-800 dark:text-white" />
-                Información de Ingreso
-              </span>
-            </h4-->
-            <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div v-show="activeTab === 'informacion'" class="p-4 space-y-4">
+          <div class="p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div>
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de Ingreso</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ formatDate(recepcion.fecha_ingreso || recepcion.created_at) }}</dd>
+                <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(recepcion.fecha_ingreso || recepcion.created_at) }}</dd>
               </div>
               <div>
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de Salida (estimada)</dt>
@@ -593,10 +652,6 @@ function irAInspeccion(recepcion) {
               <div>
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Tipo de Recepción</dt>
                 <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ tipoRecepcionDisplay }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Recibido por</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ recepcion.recibido_por_nombre || '—' }}</dd>
               </div>
               <div v-if="recepcion.inspecciones?.length">
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Inspección</dt>
@@ -609,39 +664,116 @@ function irAInspeccion(recepcion) {
                   </a>
                 </dd>
               </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Kilometraje de Ingreso</dt>
-                <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ recepcion.kilometraje_ingreso }} km</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Nivel de Combustible</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ nivelCombustibleDisplay }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Ingresó en Grúa</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ recepcion.ingreso_en_grua ? 'Sí' : 'No' }}</dd>
-              </div>
-              <div v-if="recepcion.ingreso_en_grua">
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Datos de la Grúa / Chófer</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ recepcion.datos_grua || '—' }}</dd>
-              </div>
+            </div>
+          </div>
 
-              <div class="sm:col-span-2 lg:col-span-3">
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Motivo de Ingreso</dt>
-                <dd class="mt-0.5 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ recepcion.motivo_ingreso || '—' }}</dd>
+          <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div class="p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600">
+              <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Motivo de Ingreso</p>
+              <p class="text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ recepcion.motivo_ingreso || '—' }}</p>
+            </div>
+
+            <div class="p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600">
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div class="space-y-4">
+                  <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Kilometraje de Ingreso</dt>
+                    <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ recepcion.kilometraje_ingreso }} km</dd>
+                  </div>
+                  <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Ingresó en Grúa</dt>
+                    <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ recepcion.ingreso_en_grua ? 'Sí' : 'No' }}</dd>
+                  </div>
+                </div>
+                <div class="space-y-4">
+                  <div>
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Nivel de Combustible</dt>
+                    <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ nivelCombustibleDisplay }}</dd>
+                  </div>
+                  <div v-if="recepcion.ingreso_en_grua">
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Datos de la Grúa / Chófer</dt>
+                    <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ recepcion.datos_grua || '—' }}</dd>
+                  </div>
+                </div>
               </div>
-            </dl>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div class="p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600">
+              <h5 class="mb-4 font-semibold text-gray-900 dark:text-white">
+                <span class="inline-flex items-center gap-2">
+                  <KeyRound class="w-5 h-5 text-gray-800 dark:text-white" />
+                  Custodia y pertenencias
+                </span>
+              </h5>
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Cantidad de llaves</dt>
+                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ recepcion.cantidad_llaves ?? 0 }}</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Llave de control / Control remoto</dt>
+                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ recepcion.tiene_llave_control ? 'Sí' : 'No' }}</dd>
+                </div>
+              </div>
+              <div class="mt-4">
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Objetos de valor dejados en el vehículo</dt>
+                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">
+                  {{ pertenenciasActivas.length ? pertenenciasActivas.join(', ') : '—' }}
+                </dd>
+              </div>
+              <div class="mt-4">
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Observaciones (otros objetos no listados)</dt>
+                <dd class="mt-0.5 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ recepcion.pertenencias_observaciones || '—' }}</dd>
+              </div>
+            </div>
+
+            <div class="p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600">
+              <h5 class="mb-4 font-semibold text-gray-900 dark:text-white">
+                <span class="inline-flex items-center gap-2">
+                  <ShieldCheck class="w-5 h-5 text-gray-800 dark:text-white" />
+                  Seguro / Siniestros
+                </span>
+              </h5>
+              <div v-if="hayDatosSeguro" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Compañía de seguro</dt>
+                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ recepcion.compania_seguro || '—' }}</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° póliza</dt>
+                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ recepcion.numero_poliza || '—' }}</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° reclamo / siniestro</dt>
+                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ recepcion.numero_reclamo || '—' }}</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Nombre del perito seguro</dt>
+                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ recepcion.ajustador_nombre || '—' }}</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Teléfono del perito seguro</dt>
+                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ recepcion.ajustador_telefono || '—' }}</dd>
+                </div>
+              </div>
+              <p v-else class="text-sm text-gray-500 dark:text-gray-400">Sin datos de seguro registrados.</p>
+            </div>
           </div>
         </div>
 
-        <div v-show="activeTab === 'inspeccion'" class="p-4 space-y-6">
+        <div v-show="activeTab === 'inspeccion'" class="p-4">
           <div>
-            <h4 class="mb-3 text-lg font-semibold dark:text-white">
+            <h4 class="mb-2 font-semibold dark:text-white">
               <span class="inline-flex items-center gap-2">
-                <FileCheck class="w-5 h-5 text-gray-800 dark:text-white" />
-                Inventario del Vehículo
+                <FileCheck class="w-6 h-6 text-gray-800 dark:text-white" />
+                Inventario
               </span>
             </h4>
+            <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+              Registra los accesorios y objetos presentes en el vehículo al momento de la recepción.
+            </p>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div v-for="grupo in accesorios" :key="grupo.titulo">
                 <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">{{ grupo.titulo }}</p>
@@ -660,80 +792,18 @@ function irAInspeccion(recepcion) {
             </div>
           </div>
 
-          <hr class="border-gray-200 dark:border-gray-700" />
+          <hr class="my-6 border-gray-200 dark:border-gray-700" />
 
           <div>
-            <h4 class="mb-3 text-lg font-semibold dark:text-white">
+            <h4 class="mb-2 font-semibold dark:text-white">
               <span class="inline-flex items-center gap-2">
-                <KeyRound class="w-5 h-5 text-gray-800 dark:text-white" />
-                Custodia y pertenencias
-              </span>
-            </h4>
-            <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Cantidad de llaves</dt>
-                <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ recepcion.cantidad_llaves ?? 0 }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Llave de control / Control remoto</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ recepcion.tiene_llave_control ? 'Sí' : 'No' }}</dd>
-              </div>
-              <div class="sm:col-span-2 lg:col-span-1">
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Objetos de valor en el vehículo</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">
-                  {{ pertenenciasActivas.length ? pertenenciasActivas.join(', ') : '—' }}
-                </dd>
-              </div>
-              <div class="sm:col-span-2 lg:col-span-3">
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Observaciones de pertenencias</dt>
-                <dd class="mt-0.5 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ recepcion.pertenencias_observaciones || '—' }}</dd>
-              </div>
-            </dl>
-          </div>
-
-          <hr class="border-gray-200 dark:border-gray-700" />
-
-          <div>
-            <h4 class="mb-3 text-lg font-semibold dark:text-white">
-              <span class="inline-flex items-center gap-2">
-                <ShieldCheck class="w-5 h-5 text-gray-800 dark:text-white" />
-                Seguro / Siniestros
-              </span>
-            </h4>
-            <dl v-if="hayDatosSeguro" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Compañía de seguro</dt>
-                <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ recepcion.compania_seguro || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Número de póliza</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ recepcion.numero_poliza || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Número de reclamo / siniestro</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ recepcion.numero_reclamo || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Nombre del ajustador</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ recepcion.ajustador_nombre || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Teléfono del ajustador</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ recepcion.ajustador_telefono || '—' }}</dd>
-              </div>
-            </dl>
-            <p v-else class="text-sm text-gray-500 dark:text-gray-400">Sin datos de seguro registrados.</p>
-          </div>
-
-          <hr class="border-gray-200 dark:border-gray-700" />
-
-          <div>
-            <h4 class="mb-3 text-lg font-semibold dark:text-white">
-              <span class="inline-flex items-center gap-2">
-                <TriangleAlert class="w-5 h-5 text-gray-800 dark:text-white" />
+                <TriangleAlert class="w-6 h-6 text-gray-800 dark:text-white" />
                 Testigos luminosos
               </span>
             </h4>
+            <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+              Señala los testigos con problemas, daños o averías que se encuentren encendidos en el tablero del vehículo.
+            </p>
             <div class="space-y-4">
               <div class="grid grid-cols-5 lg:grid-cols-10 gap-2 lg:gap-3">
                 <div
@@ -756,15 +826,18 @@ function irAInspeccion(recepcion) {
             </div>
           </div>
 
-          <hr class="border-gray-200 dark:border-gray-700" />
+          <hr class="my-6 border-gray-200 dark:border-gray-700" />
 
           <div>
-            <h4 class="mb-3 text-lg font-semibold dark:text-white">
+            <h4 class="mb-2 font-semibold dark:text-white">
               <span class="inline-flex items-center gap-2">
-                <FileSearch class="w-5 h-5 text-gray-800 dark:text-white" />
-                Inspección Física / Carrocería
+                <FileSearch class="w-6 h-6 text-gray-800 dark:text-white" />
+                Inspección Física
               </span>
             </h4>
+            <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+              Marca sobre el diagrama la ubicación de daños en el vehículo, como rayones, golpes u otros detalles, y describe cada uno.
+            </p>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="col-span-1">
                 <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Marcación de Daños</p>
@@ -787,7 +860,7 @@ function irAInspeccion(recepcion) {
               </div>
 
               <div class="col-span-1">
-                <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Detalles de Carrocería</p>
+                <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Detalles</p>
                 <div v-if="marcasCarroceria.length" class="space-y-2">
                   <div v-for="detalle in marcasCarroceria" :key="detalle.numero" class="flex items-start gap-2">
                     <span class="inline-flex items-center justify-center w-5 h-5 text-xs font-semibold text-blue-800 bg-blue-200 rounded-full mt-1">{{ detalle.numero }}</span>
@@ -804,13 +877,16 @@ function irAInspeccion(recepcion) {
           </div>
         </div>
 
-        <div v-show="activeTab === 'evidencias'" class="p-4 space-y-4">
-          <h4 class="mb-4 text-lg font-semibold dark:text-white">
+        <div v-show="activeTab === 'evidencias'" class="p-4">
+          <h4 class="mb-1 font-semibold dark:text-white">
             <span class="inline-flex items-center gap-2">
-              <Camera class="w-5 h-5 text-gray-800 dark:text-white" />
-              Evidencia Fotográfica del Vehículo
+              <Camera class="w-6 h-6 text-gray-800 dark:text-white" />
+              Evidencia Fotográfica
             </span>
           </h4>
+          <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+            Fotografías del estado actual del vehículo. Se registran las 5 vistas requeridas.
+          </p>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div
@@ -836,10 +912,10 @@ function irAInspeccion(recepcion) {
           </div>
         </div>
 
-        <div v-show="activeTab === 'autorizacion'" class="p-4 space-y-4">
-          <h4 class="mb-4 text-lg font-semibold dark:text-white">
+        <div v-show="activeTab === 'autorizacion'" class="p-4">
+          <h4 class="mb-4 font-semibold dark:text-white">
             <span class="inline-flex items-center gap-2">
-              <Signature class="w-5 h-5 text-gray-800 dark:text-white" />
+              <Signature class="w-6 h-6 text-gray-800 dark:text-white" />
               Firma y Aceptación
             </span>
           </h4>
@@ -906,6 +982,97 @@ function irAInspeccion(recepcion) {
               <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12H5m14 0-4 4m4-4-4-4"/>
             </svg>
           </button>
+        </div>
+        </div>
+
+        <div class="lg:col-span-1 space-y-4">
+          <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
+            <div class="flex items-center gap-2 mb-3">
+              <ClipboardList class="w-5 h-5 text-gray-900 dark:text-gray-900" />
+              <h4 class="text-sm font-semibold text-gray-900 dark:text-white">
+                Resumen de recepción
+              </h4>
+            </div>
+            <dl class="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+              <div>
+                <dt class="font-medium text-gray-700 dark:text-gray-300">Cliente</dt>
+                <dd class="font-medium text-sm text-black dark:text-white">{{ cliente?.nombre || '—' }}</dd>
+              </div>
+              <div>
+                <dt class="font-medium text-gray-700 dark:text-gray-300">Vehículo</dt>
+                <dd class="font-medium text-sm text-black dark:text-white">{{ placaDisplay || '—' }}</dd>
+              </div>
+              <div>
+                <dt class="font-medium text-gray-700 dark:text-gray-300">Tipo</dt>
+                <dd class="font-medium text-sm text-black dark:text-white">{{ tipoRecepcionDisplay }}</dd>
+              </div>
+              <div>
+                <dt class="font-medium text-gray-700 dark:text-gray-300">Estado</dt>
+                <dd>
+                  <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium" :class="estadoBadge.color">
+                    <component :is="estadoBadge.icon" class="w-3.5 h-3.5" aria-hidden="true" />
+                    {{ estadoBadge.label }}
+                  </span>
+                </dd>
+              </div>
+            </dl>
+          </div>
+
+          <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
+            <div class="flex items-center gap-2 mb-3">
+              <Car class="w-5 h-5 text-gray-900 dark:text-gray-900" />
+              <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Vehículo</h4>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <button
+                v-if="vehiculo?.imagen"
+                type="button"
+                title="Ver foto del vehículo"
+                class="h-full min-h-40 overflow-hidden rounded-lg bg-gray-100 cursor-zoom-in dark:bg-gray-700"
+                @click="abrirFoto(vehiculo.imagen)"
+              >
+                <img :src="vehiculo.imagen" alt="Foto del vehículo" class="h-full w-full object-contain" />
+              </button>
+              <div
+                v-else
+                class="h-full min-h-40 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-xs text-gray-400 dark:bg-gray-700 dark:border-gray-600"
+              >
+                <div class="flex flex-col items-center gap-1.5 text-center">
+                  <Camera class="w-6 h-6" />
+                  <span>Foto del vehículo</span>
+                </div>
+              </div>
+              <dl class="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+                <div>
+                  <dt class="font-medium text-gray-700 dark:text-gray-300">
+                    <span class="inline-flex items-center gap-1.5">
+                      <IconEngine class="w-5 h-5 shrink-0 text-gray-700 dark:text-gray-400" stroke-width="1.8" />
+                      N° Motor:
+                    </span>
+                  </dt>
+                  <dd class="font-medium text-sm text-black dark:text-white">{{ vehiculo?.numero_motor || '—' }}</dd>
+                </div>
+                <div>
+                  <dt class="font-medium text-gray-700 dark:text-gray-300">
+                    <span class="inline-flex items-center gap-1.5">
+                      <component :is="transmisionIcon" class="w-5 h-5 shrink-0 text-gray-700 dark:text-gray-400" stroke-width="1.8" />
+                      Transmisión:
+                    </span>
+                  </dt>
+                  <dd class="font-medium text-sm text-black dark:text-white">{{ transmisionLabel || '—' }}</dd>
+                </div>
+                <div>
+                  <dt class="font-medium text-gray-700 dark:text-gray-300">
+                    <span class="inline-flex items-center gap-1.5">
+                      <IconGasStation class="w-5 h-5 shrink-0 text-gray-700 dark:text-gray-400" stroke-width="1.8" />
+                      Combustible:
+                    </span>
+                  </dt>
+                  <dd class="font-medium text-sm text-black dark:text-white">{{ combustibleLabel || '—' }}</dd>
+                </div>
+              </dl>
+            </div>
+          </div>
         </div>
       </div>
     </div>

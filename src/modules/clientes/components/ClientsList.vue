@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, watch, onUnmounted, computed } from 'vue';
+import { onMounted, ref, watch, onUnmounted, computed, h } from 'vue';
 import { Car, UsersRound, Upload, Phone, Mail, Pencil, Trash2, IdCard, Search, RotateCcw, Filter } from 'lucide-vue-next';
 import { useClients } from '../composables/useClients';
 // import { useToast } from '../../../shared/composables/useToast';
@@ -15,6 +15,16 @@ import Pagination from '../../../shared/components/Pagination.vue';
 import ImportExcelModal from './ImportExcelModal.vue';
 import ClientModal from './ClientModal.vue';
 import { formatPlate } from '../../../shared/utils/formatPlate';
+
+const TIPOS_IDENTIFICACION = {
+  C: 'Cédula',
+  R: 'RUC',
+  P: 'Pasaporte',
+};
+
+function tipoIdentificacionLabel(cliente) {
+  return TIPOS_IDENTIFICACION[cliente?.tipo_identificacion] || '—';
+}
 
 const {
   clients,
@@ -242,10 +252,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="p-4 bg-white block sm:flex items-center justify-between border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
-    <div class="w-full mb-1">
-      <div class="mb-4">
-        <nav class="flex mb-5" aria-label="Breadcrumb">
+  <div class="px-4 py-3 bg-white block sm:flex items-center justify-between border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
+    <div class="w-full">
+      <div>
+        <nav class="flex mb-1.5" aria-label="Breadcrumb">
           <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
             <li class="inline-flex items-center">
               <a href="/" class="inline-flex items-center text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Inicio</a>
@@ -253,10 +263,13 @@ onUnmounted(() => {
             <li class="text-gray-400" aria-current="page">/ Clientes</li>
           </ol>
         </nav>
-        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-          <UsersRound class="w-6 h-6 inline-block text-gray-900 dark:text-gray-400" />
+        <h1 class="inline-flex items-center gap-2 text-lg font-semibold text-gray-900 sm:text-xl dark:text-white">
+          <UsersRound class="w-5 h-5 text-gray-900 dark:text-gray-400" />
           Clientes
         </h1>
+        <!--h5 class="text-sm text-gray-500 sm:text-base dark:text-gray-400">
+          Administra los clientes de tu concesionario y sus vehículos asociados.
+        </h5-->
       </div>
       <Alert
         :type="alert.type"
@@ -271,11 +284,11 @@ onUnmounted(() => {
   <div class="px-4 pb-4 sm:px-6 lg:px-8 mt-4">
     <!-- PANEL DE FILTROS -->
     <div class="bg-neutral-primary-soft shadow-xs rounded-base border border-default mb-4">
-      <div class="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between border-b border-default-medium">
-        <h2 class="flex items-center gap-2 text-lg font-semibold text-heading">
+      <div class="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between border-b border-default-medium">
+        <h3 class="flex items-center gap-2 text-lg font-semibold text-heading">
           <Filter class="w-5 h-5" />
           Búsqueda
-        </h2>
+        </h3>
 
         <div class="flex flex-wrap items-center gap-2">
           <FilterActions
@@ -293,7 +306,7 @@ onUnmounted(() => {
               <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
                 <Search class="w-4 h-4 text-body" />
               </div>
-              <input id="clients-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="Identificación, nombre, correo electrónico o teléfono" class="block w-full ps-9 pe-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand dark:bg-gray-800">
+              <input id="clients-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="Identificación, nombre, correo electrónico o teléfono" class="block w-full ps-9 pe-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs placeholder:text-body focus:ring-brand focus:border-brand dark:bg-gray-800">
             </form>
           </div>
 
@@ -302,8 +315,7 @@ onUnmounted(() => {
             <select
               id="filtro-estado"
               v-model="draftFilters.estado"
-              class="block w-36 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800"
-            >
+              class="block w-36 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800">
               <option value="">Todos</option>
               <option value="activo">Activo</option>
               <option value="inactivo">Inactivo</option>
@@ -315,8 +327,7 @@ onUnmounted(() => {
             <select
               id="filtro-tipo-id"
               v-model="draftFilters.tipoIdentificacion"
-              class="block w-56 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800"
-            >
+              class="block w-56 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800">
               <option value="">Todos</option>
               <option value="C">Cédula</option>
               <option value="R">RUC</option>
@@ -332,8 +343,7 @@ onUnmounted(() => {
               type="number"
               min="0"
               max="5000"
-              class="block w-36 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand dark:bg-gray-800"
-            />
+              class="block w-36 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs placeholder:text-body focus:ring-brand focus:border-brand dark:bg-gray-800"/>
           </div>
         </div>
       </div>
@@ -372,12 +382,14 @@ onUnmounted(() => {
     <template #row="{ item }">
       <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
         <td class="p-4 whitespace-nowrap">
-          <a
-            :href="`/crud/clientes/ver/?id=${encodeURIComponent(item.id)}`"
-            class="inline-flex items-center gap-1.5 font-medium text-primary-600 hover:text-primary-800 hover:underline dark:text-primary-400"
-          >
+          <a :href="`/crud/clientes/ver/?id=${encodeURIComponent(item.id)}`"
+            class="inline-flex items-center gap-1.5 font-medium text-primary-600 hover:text-primary-800 hover:underline dark:text-primary-400">
           {{ item.identificacion }}
           </a>
+          <span class="mt-1 flex items-center gap-1 text-sm font-normal text-body text-gray-900">
+            <IdCard class="w-3.5 h-3.5" />
+            {{ tipoIdentificacionLabel(item) }}
+          </span>
         </td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.nombre }}</td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-gray-400">
@@ -412,8 +424,7 @@ onUnmounted(() => {
             <button
               type="button"
               @click="togglePopover(item.id)"
-              class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary-700 rounded-lg border border-primary-700 hover:bg-primary-100 active:bg-primary-200 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800 dark:active:bg-gray-700"
-            >
+              class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary-700 rounded-lg border border-primary-700 hover:bg-primary-100 active:bg-primary-200 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800 dark:active:bg-gray-700">
               <Car class="w-4 h-4 text-gray-800 dark:text-gray-400" />
               mostrar +
               <span class="inline-flex items-center justify-center w-4 h-4 text-xs font-semibold text-blue-800 bg-blue-200 rounded-full">
@@ -441,12 +452,10 @@ onUnmounted(() => {
         </td>
         <td class="p-4 whitespace-nowrap">
           <span v-if="item.is_active" class="inline-flex items-center bg-success-soft border border-success-subtle text-fg-success-strong text-xs font-medium px-1 py-0.5 rounded">
-            <span class="h-1.5 w-1.5 bg-fg-success-strong rounded-full me-0.5"></span>
-            Activo
+            <span class="h-1.5 w-1.5 bg-fg-success-strong rounded-full me-0.5"></span> Activo
           </span>
           <span v-else class="inline-flex items-center bg-danger-soft border border-danger-subtle text-fg-danger-strong text-xs font-medium px-1 py-0.5 rounded">
-            <span class="h-1.5 w-1.5 bg-fg-danger-strong rounded-full me-0.5"></span>
-            Inactivo
+            <span class="h-1.5 w-1.5 bg-fg-danger-strong rounded-full me-0.5"></span> Inactivo
           </span>
         </td>
         <td class="p-4 whitespace-nowrap">

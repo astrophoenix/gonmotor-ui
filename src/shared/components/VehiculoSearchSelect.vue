@@ -177,9 +177,11 @@ defineExpose({ focusInput, clearAll });
         autocomplete="off"
         :placeholder="placeholder"
         :class="[
-          'block w-full p-2.5 pl-9 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white',
+          'block w-full p-2.5 pl-9 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
           showCreate ? 'pr-16' : 'pr-3',
-          error ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : '',
+          error
+            ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
+            : '',
         ]"
         @input="onTyping"
         @focus="onFocus"

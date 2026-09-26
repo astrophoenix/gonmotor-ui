@@ -30,6 +30,7 @@ import {
   Users,
   ClipboardList,
   Search,
+  ShieldCheck,
   IdCardIcon,
   TagIcon,
   EvCharger,
@@ -69,6 +70,7 @@ import ClientModal from "../../clientes/components/ClientModal.vue";
 import TextImprover from "../../../shared/components/TextImprover.vue";
 import ClienteSearchSelect from "../../../shared/components/ClienteSearchSelect.vue";
 import VehiculoSearchSelect from "../../../shared/components/VehiculoSearchSelect.vue";
+import EmpleadoSearchSelect from "../../../shared/components/EmpleadoSearchSelect.vue";
 
 const recepcionId = new URLSearchParams(window.location.search).get("id");
 const isEditMode = Boolean(recepcionId);
@@ -184,7 +186,6 @@ const MAX_DETALLES_CARROCERIA = 20;
 const clienteSearch = ref("");
 const vehiculoSearch = ref("");
 const showClientCreateModal = ref(false);
-const empleadoActiveIndex = ref(-1);
 const blueprintImageUrl = ref("");
 const marcas = ref([]);
 const detallesSyncVersion = ref(0);
@@ -196,11 +197,39 @@ const activeTabIndex = computed(() => TAB_ORDER.indexOf(activeTab.value));
 
 const pasosFlujo = computed(() => {
   const estado = form.estado || "PENDIENTE";
+  const inspecciones = Array.isArray(form.inspecciones) ? form.inspecciones : [];
+  const inspeccion = inspecciones[0] || null;
+  const cotizaciones = Array.isArray(form.cotizaciones_generadas) ? form.cotizaciones_generadas : [];
+  const cotizacion = cotizaciones[cotizaciones.length - 1] || null;
   return buildPasosFlujo([
-    { entidad: "recepcion", estado },
-    { entidad: "inspeccion" },
-    { entidad: "cotizacion" },
-    { entidad: "orden" },
+    {
+      entidad: "recepcion",
+      estado,
+      estadoDisplay: form.estado_display,
+      id: form.id,
+      numero: form.numero_recepcion,
+    },
+    {
+      entidad: "inspeccion",
+      estado: inspeccion?.estado,
+      estadoDisplay: inspeccion?.estado_display,
+      id: inspeccion?.id,
+      numero: inspeccion?.numero_inspeccion,
+    },
+    {
+      entidad: "cotizacion",
+      estado: cotizacion?.estado || (cotizacion ? "BORRADOR" : null),
+      estadoDisplay: cotizacion?.estado_display,
+      id: cotizacion?.id,
+      numero: cotizacion?.numero_cotizacion,
+    },
+    {
+      entidad: "orden",
+      estado: form.orden_trabajo_estado,
+      estadoDisplay: form.orden_trabajo_estado_display,
+      id: form.orden_trabajo,
+      numero: form.orden_trabajo_numero,
+    },
   ]);
 });
 
@@ -213,9 +242,7 @@ function goToTab(direction) {
 
 const empleados = ref([]);
 const recibidoPorSearch = ref("");
-const showEmpleadoDropdown = ref(false);
-const empleadoOptions = ref([]);
-const empleadoDropdownRef = ref(null);
+const asesorSeleccionado = ref(null);
 
 const firmaClienteData = ref(null);
 const firmaClienteCanvas = ref(null);
@@ -419,11 +446,11 @@ const mensajeErroresValidacion = computed(() => {
 });
 
 const FOTO_VISTAS = [
-  { key: "FRONTAL", label: "Vista Frontal *" },
-  { key: "LATERAL_IZQ", label: "Lateral Izquierda *" },
-  { key: "LATERAL_DER", label: "Lateral Derecha *" },
-  { key: "POSTERIOR", label: "Posterior *" },
-  { key: "TABLERO", label: "Tablero / Kilometraje *" },
+  { key: "FRONTAL", label: "Vista Frontal", required: true },
+  { key: "LATERAL_IZQ", label: "Lateral Izquierda", required: true },
+  { key: "LATERAL_DER", label: "Lateral Derecha", required: true },
+  { key: "POSTERIOR", label: "Posterior", required: true },
+  { key: "TABLERO", label: "Tablero", required: true },
 ];
 
 const PERTENENCIAS = [
@@ -511,10 +538,6 @@ function parseDetallesCarroceria(texto) {
   }
   items.sort((a, b) => a.numero - b.numero);
   return items.map((item) => item.descripcion);
-}
-
-function wait(ms) {
-  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 function showError(error) {
@@ -641,16 +664,40 @@ function hasCanvasContent(canvas) {
   return pixel[3] !== 255;
 }
 
+function nombreEmpleado(empleado) {
+  const user = empleado?.user || {};
+  const nombre = `${user.first_name || ""} ${user.last_name || ""}`.trim();
+  return nombre || user.username || "";
+}
+
+const asesorInfo = computed(() => {
+  if (asesorSeleccionado.value) return asesorSeleccionado.value;
+  return {
+    user: {},
+    rol: form.recibido_por_rol || "",
+    rol_display: form.recibido_por_rol_display || form.recibido_por_rol || "",
+  };
+});
+
+watch([empleados, () => form.recibido_por], ([lista, recibidoPorId]) => {
+  if (!recibidoPorId) {
+    asesorSeleccionado.value = null;
+    return;
+  }
+  const encontrado =
+    lista.find((empleado) => String(empleado.user?.id) === String(recibidoPorId)) || null;
+  asesorSeleccionado.value = encontrado;
+  if (encontrado) {
+    recibidoPorSearch.value = nombreEmpleado(encontrado);
+  }
+});
+
 async function loadEmpleados() {
   try {
     const data = await request("/api/auth/empleados/?page=1&page_size=100");
     empleados.value = Array.isArray(data?.results) ? data.results : [];
     if (empleados.value.length > 0 && !form.recibido_por) {
-      form.recibido_por = empleados.value[0].user?.id || null;
-      recibidoPorSearch.value =
-        `${empleados.value[0].user?.first_name || ""} ${empleados.value[0].user?.last_name || ""}`.trim() +
-        " - " +
-        (empleados.value[0].rol_display || empleados.value[0].rol);
+      selectEmpleado(empleados.value[0]);
     }
   } catch (error) {
     console.error("No se pudieron cargar empleados:", error);
@@ -658,38 +705,15 @@ async function loadEmpleados() {
 }
 
 function selectEmpleado(empleado) {
-  form.recibido_por = empleado.user?.id || null;
-  recibidoPorSearch.value =
-    `${empleado.user?.first_name || ""} ${empleado.user?.last_name || ""}`.trim() +
-    " - " +
-    (empleado.rol_display || empleado.rol);
-  showEmpleadoDropdown.value = false;
+  asesorSeleccionado.value = empleado || null;
+  form.recibido_por = empleado?.user?.id || null;
+  recibidoPorSearch.value = nombreEmpleado(empleado);
 }
 
 function clearEmpleado() {
+  asesorSeleccionado.value = null;
   form.recibido_por = null;
   recibidoPorSearch.value = "";
-  empleadoOptions.value = [];
-}
-
-async function searchEmpleados() {
-  if (readOnly.value) return;
-  const term = recibidoPorSearch.value.trim();
-  if (!term) {
-    empleadoOptions.value = [];
-    return;
-  }
-  try {
-    const params = new URLSearchParams({
-      search: term,
-      page: "1",
-      page_size: "10",
-    });
-    const data = await request(`/api/auth/empleados/?${params.toString()}`);
-    empleadoOptions.value = Array.isArray(data?.results) ? data.results : [];
-  } catch (error) {
-    console.error("No se pudieron buscar empleados:", error);
-  }
 }
 
 async function loadRecepcion() {
@@ -886,49 +910,6 @@ function clearVehiculo() {
   form.vehiculo = null;
   form.vehiculo_color = "";
   vehiculoSearch.value = "";
-}
-
-function moveActiveIndex(activeIndex, listLength, direction) {
-  if (!listLength) return 0;
-  return (activeIndex + direction + listLength) % listLength;
-}
-
-function scrollActiveIntoView(containerRef, activeIndex) {
-  const container = containerRef.value;
-  if (!container) return;
-  const el = container.querySelector(`[data-option-index="${activeIndex}"]`);
-  if (el) el.scrollIntoView({ block: "nearest" });
-}
-
-function onEmpleadoKeydown(event) {
-  if (!empleadoOptions.value.length) return;
-  if (event.key === "ArrowDown") {
-    event.preventDefault();
-    showEmpleadoDropdown.value = true;
-    empleadoActiveIndex.value = moveActiveIndex(
-      empleadoActiveIndex.value,
-      empleadoOptions.value.length,
-      1,
-    );
-    scrollActiveIntoView(empleadoDropdownRef, empleadoActiveIndex.value);
-  } else if (event.key === "ArrowUp") {
-    event.preventDefault();
-    showEmpleadoDropdown.value = true;
-    empleadoActiveIndex.value = moveActiveIndex(
-      empleadoActiveIndex.value,
-      empleadoOptions.value.length,
-      -1,
-    );
-    scrollActiveIntoView(empleadoDropdownRef, empleadoActiveIndex.value);
-  } else if (event.key === "Enter") {
-    const item = empleadoOptions.value[empleadoActiveIndex.value];
-    if (item) {
-      event.preventDefault();
-      selectEmpleado(item);
-    }
-  } else if (event.key === "Escape") {
-    showEmpleadoDropdown.value = false;
-  }
 }
 
 function validateRecepcion() {
@@ -1254,21 +1235,6 @@ async function ejecutarGuardado() {
   }
 }
 
-watch(empleadoOptions, () => {
-  empleadoActiveIndex.value = -1;
-});
-
-watch(
-  () => recibidoPorSearch.value,
-  () => {
-    if (!recibidoPorSearch.value.trim()) {
-      clearEmpleado();
-      return;
-    }
-    searchEmpleados();
-  },
-);
-
 watch(
   () => form.vehiculo?.tipo,
   (tipo) => {
@@ -1354,25 +1320,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <div
-    class="p-4 bg-white border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700"
-  >
+  <div class="p-4 bg-white border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
     <nav class="flex mb-5" aria-label="Breadcrumb">
-      <ol
-        class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2"
-      >
+      <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
         <li>
-          <a
-            href="/"
-            class="text-gray-700 hover:text-primary-600 dark:text-gray-300"
-            >Inicio</a
-          >
+          <a href="/" class="text-gray-700 hover:text-primary-600 dark:text-gray-300" >Inicio</a>
         </li>
-        <li class="text-gray-400">
-          /
-          <a href="/crud/recepciones/" class="hover:text-primary-600"
-            >Recepciones</a
-          >
+        <li class="text-gray-400">/<a href="/crud/recepciones/" class="hover:text-primary-600">Recepciones</a>
         </li>
         <li class="text-gray-400">/ {{ isEditMode ? "Editar" : "Nueva" }}</li>
       </ol>
@@ -1401,7 +1355,7 @@ onMounted(() => {
     <FlowSteps :steps="pasosFlujo" />
   </div>
 
-  <div class="px-4 pt-4">
+  <div class="relative mx-auto max-w-8xl mb-5">
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
       <div class="lg:col-span-3 space-y-4">
         <Alert
@@ -1424,22 +1378,16 @@ onMounted(() => {
           title="Solo lectura"
           message="Esta recepción ya fue aceptada y firmada por el cliente, por lo que solo es posible modificarla."
         />
-        <div
-          class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4"
-        >
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">
           <div class="flex items-center gap-2 mb-4">
             <FileText class="w-5 h-5 text-gray-900 dark:text-gray-900" />
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
               Información General
             </h3>
           </div>
-          <div class="grid grid-cols-5 gap-4">
-            <div class="col-span-3">
-              <label
-                for="cliente"
-                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >Cliente</label
-              >
+          <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_0.7fr_1fr]">
+            <div>
+              <label for="cliente" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente <span class="text-accent-500">*</span></label>
               <ClienteSearchSelect
                 id="cliente"
                 v-model="clienteSearch"
@@ -1482,11 +1430,11 @@ onMounted(() => {
               </div>
             </div>
 
-            <div class="relative col-span-2">
+            <div class="relative">
               <label
                 for="vehiculo"
                 class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >Vehículo</label
+                >Vehículo <span class="text-accent-500">*</span></label
               >
               <VehiculoSearchSelect
                 id="vehiculo"
@@ -1539,24 +1487,65 @@ onMounted(() => {
                 </div>
               </div>
             </div>
+
+            <div class="relative">
+              <label
+                for="asesor"
+                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >Asesor <span class="text-accent-500">*</span></label
+              >
+              <EmpleadoSearchSelect
+                id="asesor"
+                v-model="recibidoPorSearch"
+                placeholder="Buscar asesor..."
+                :error="Boolean(formErrors.recibido_por)"
+                :error-message="formErrors.recibido_por"
+                :disabled="readOnly"
+                @select="selectEmpleado"
+                @clear="clearEmpleado"
+              />
+              <div class="mt-3 space-y-1.5">
+                <div
+                  class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400"
+                >
+                  <IdCardIcon class="w-3.5 h-3.5 shrink-0" /> Identificación:
+                  <span
+                    class="truncate font-bold text-gray-900 dark:text-white"
+                    >{{ asesorInfo.user?.identificacion || "—" }}</span
+                  >
+                </div>
+                <div
+                  class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400"
+                >
+                  <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono:
+                  <span
+                    class="truncate font-bold text-gray-900 dark:text-white"
+                    >{{ asesorInfo.user?.telefono || "—" }}</span
+                  >
+                </div>
+                <div
+                  class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400"
+                >
+                  <ShieldCheck class="w-3.5 h-3.5 shrink-0" /> Rol:
+                  <span
+                    class="truncate font-bold text-gray-900 dark:text-white"
+                    >{{ asesorInfo.rol_display || asesorInfo.rol || "—" }}</span
+                  >
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="relative p-6 bg-white rounded-lg shadow dark:bg-gray-800">
-          <div
-            v-if="isLoading"
-            class="text-sm text-gray-500 dark:text-gray-400"
-          >
+        <div class="relative bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">
+          <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">
             Cargando recepción...
           </div>
           <form
             v-else-if="!savedError"
             class="space-y-6"
             novalidate
-            @submit.prevent="submit"
-          >
-            <div
-              class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700"
-            >
+            @submit.prevent="submit">
+            <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700">
               <div class="border-b border-gray-200 dark:border-gray-700">
                 <nav class="flex flex-wrap -mb-px">
                   <button
@@ -1623,7 +1612,7 @@ onMounted(() => {
                         <label
                           for="fecha_ingreso"
                           class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                          >Fecha Ingreso *</label
+                          >Fecha Ingreso <span class="text-accent-500">*</span></label
                         >
                         <input
                           id="fecha_ingreso"
@@ -1631,9 +1620,9 @@ onMounted(() => {
                           type="datetime-local"
                           :disabled="readOnly"
                           :class="[
-                            'block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white',
+                            'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
                             formErrors.fecha_ingreso
-                              ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500'
+                              ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
                               : '',
                           ]"
                         />
@@ -1656,9 +1645,9 @@ onMounted(() => {
                           type="datetime-local"
                           :disabled="readOnly"
                           :class="[
-                            'block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white',
+                            'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
                             formErrors.fecha_salida
-                              ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500'
+                              ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
                               : '',
                           ]"
                         />
@@ -1669,70 +1658,42 @@ onMounted(() => {
                           {{ formErrors.fecha_salida }}
                         </p>
                       </div>
-                      <div class="relative">
+                      <div>
                         <label
-                          for="recibido_por"
+                          for="tipo_recepcion"
                           class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                          >Asesor *</label
+                          >Tipo de Recepción</label
                         >
-                        <input
-                          id="recibido_por"
-                          v-model="recibidoPorSearch"
-                          autocomplete="off"
+                        <select
+                          id="tipo_recepcion"
+                          v-model="form.tipo_recepcion"
                           :disabled="readOnly"
-                          placeholder="Buscar empleado..."
                           :class="[
-                            'block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white',
-                            formErrors.recibido_por
-                              ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500'
+                            'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
+                            formErrors.tipo_recepcion
+                              ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
                               : '',
                           ]"
-                          @focus="showEmpleadoDropdown = true"
-                          @blur="
-                            async () => {
-                              await wait(150);
-                              showEmpleadoDropdown = false;
-                            }
-                          "
-                          @keydown="onEmpleadoKeydown"
-                        />
+                        >
+                          <option value="MANTENIMIENTO">Mantenimiento</option>
+                          <option value="REPARACIÓN">Reparación</option>
+                          <option value="DIAGNOSTICO">Diagnóstico</option>
+                          <option value="ESTETICA">Estética</option>
+                          <option value="GARANTIA">Garantía</option>
+                          <option value="SINISTRO">Siniestro</option>
+                          <option value="OTRO">Otro</option>
+                        </select>
                         <p
-                          v-if="formErrors.recibido_por"
+                          v-if="formErrors.tipo_recepcion"
                           class="mt-2 text-sm text-red-600 dark:text-red-500"
                         >
-                          {{ formErrors.recibido_por }}
+                          {{ formErrors.tipo_recepcion }}
                         </p>
-                        <div
-                          ref="empleadoDropdownRef"
-                          v-if="showEmpleadoDropdown && empleadoOptions.length"
-                          class="absolute z-10 w-full mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600"
-                        >
-                          <button
-                            v-for="(item, index) in empleadoOptions"
-                            :key="item.id"
-                            :data-option-index="index"
-                            type="button"
-                            class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600"
-                            :class="
-                              index === empleadoActiveIndex
-                                ? 'bg-primary-blue-50 dark:bg-gray-600'
-                                : ''
-                            "
-                            @mouseenter="empleadoActiveIndex = index"
-                            @mousedown="selectEmpleado(item)"
-                          >
-                            {{ item.user?.first_name }}
-                            {{ item.user?.last_name }} -
-                            {{ item.rol_display || item.rol }}
-                          </button>
-                        </div>
                       </div>
                     </div>
                   </div>
                   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div
-                      class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4"
-                    >
+                    <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4">
                       <div class="space-y-4">
                         <TextImprover
                           v-model="form.motivo_ingreso"
@@ -1744,16 +1705,12 @@ onMounted(() => {
                             error,
                             mejorado,
                             tieneOriginal,
-                          }"
-                        >
-                          <div
-                            class="flex items-center justify-between gap-2 mb-2"
-                          >
+                          }">
+                          <div class="flex items-center justify-between gap-2 mb-2">
                             <label
                               for="motivo_ingreso"
-                              class="block text-sm font-medium text-gray-900 dark:text-white"
-                              >Motivo *</label
-                            >
+                              class="block text-sm font-medium text-gray-900 dark:text-white">Motivo <span class="text-accent-500">*</span>
+                            </label>
                             <button
                               type="button"
                               title="Mejorar el texto con IA"
@@ -1774,16 +1731,14 @@ onMounted(() => {
                             :disabled="readOnly"
                             placeholder="Describe la razón por la que el cliente trae el vehículo..."
                             :class="[
-                              'block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white',
+                              'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
                               formErrors.motivo_ingreso
-                                ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500'
+                                ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
                                 : '',
-                            ]"
-                          ></textarea>
+                            ]"></textarea>
                           <p
                             v-if="formErrors.motivo_ingreso"
-                            class="mt-2 text-sm text-red-600 dark:text-red-500"
-                          >
+                            class="mt-2 text-sm text-red-600 dark:text-red-500">
                             {{ formErrors.motivo_ingreso }}
                           </p>
                           <p
@@ -1811,38 +1766,6 @@ onMounted(() => {
                             </div>
                           </div>
                         </TextImprover>
-                        <div>
-                          <label
-                            for="tipo_recepcion"
-                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                            >Tipo de Recepción</label
-                          >
-                          <select
-                            id="tipo_recepcion"
-                            v-model="form.tipo_recepcion"
-                            :disabled="readOnly"
-                            :class="[
-                              'block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white',
-                              formErrors.tipo_recepcion
-                                ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500'
-                                : '',
-                            ]"
-                          >
-                            <option value="MANTENIMIENTO">Mantenimiento</option>
-                            <option value="REPARACIÓN">Reparación</option>
-                            <option value="DIAGNOSTICO">Diagnóstico</option>
-                            <option value="ESTETICA">Estética</option>
-                            <option value="GARANTIA">Garantía</option>
-                            <option value="SINISTRO">Siniestro</option>
-                            <option value="OTRO">Otro</option>
-                          </select>
-                          <p
-                            v-if="formErrors.tipo_recepcion"
-                            class="mt-2 text-sm text-red-600 dark:text-red-500"
-                          >
-                            {{ formErrors.tipo_recepcion }}
-                          </p>
-                        </div>
                       </div>
                     </div>
 
@@ -1856,7 +1779,7 @@ onMounted(() => {
                               <label
                                 for="kilometraje_ingreso"
                                 class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                                >Kilometraje *</label
+                                >Kilometraje <span class="text-accent-500">*</span></label
                               >
                               <input
                                 id="kilometraje_ingreso"
@@ -1866,9 +1789,9 @@ onMounted(() => {
                                 :disabled="readOnly"
                                 placeholder="Ingresa el kilometraje"
                                 :class="[
-                                  'block w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white',
+                                  'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
                                   formErrors.kilometraje_ingreso
-                                    ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500'
+                                    ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
                                     : '',
                                 ]"
                               />
@@ -1910,18 +1833,13 @@ onMounted(() => {
                             <div>
                               <label
                                 id="nivel_combustible_label"
-                                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                                >Nivel de Combustible *</label
-                              >
+                                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nivel Combustible <span class="text-accent-500">*</span></label>
                               <div
                                 id="nivel_combustible"
                                 role="radiogroup"
                                 aria-labelledby="nivel_combustible_label"
-                                class="flex flex-col gap-2"
-                              >
-                                <div
-                                  class="flex w-full gap-1 p-1 rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-800 dark:border-gray-600"
-                                >
+                                class="flex flex-col gap-2">
+                                <div class="flex w-full gap-1 p-1 rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-800 dark:border-gray-600">
                                   <button
                                     v-for="(opcion, index) in FUEL_LEVELS"
                                     :key="opcion.value"
@@ -1970,9 +1888,9 @@ onMounted(() => {
                                 maxlength="80"
                                 rows="3"
                                 :class="[
-                                  'block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white',
+                                  'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
                                   formErrors.datos_grua
-                                    ? 'bg-red-50 border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500'
+                                    ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
                                     : '',
                                 ]"
                               ></textarea>
@@ -2009,7 +1927,7 @@ onMounted(() => {
                             id="cantidad_llaves"
                             v-model="form.cantidad_llaves"
                             :disabled="readOnly"
-                            class="block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white"
+                            class="block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand"
                           >
                             <option :value="0">0</option>
                             <option :value="1">1</option>
@@ -2060,41 +1978,28 @@ onMounted(() => {
                           :disabled="readOnly"
                           placeholder="Observaciones (ej. otros objetos no listados)"
                           maxlength="255"
-                          class="block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white"
+                          class="block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand"
                         />
                       </div>
                     </div>
 
-                    <div
-                      class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4"
-                    >
-                      <h5
-                        class="mb-4 font-semibold text-gray-900 dark:text-white"
-                      >
+                    <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4">
+                      <h5 class="mb-4 font-semibold text-gray-900 dark:text-white">
                         Seguro / Siniestros
                       </h5>
                       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label
-                            for="compania_seguro"
-                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                            >Compañía de seguro</label
-                          >
+                          <label for="compania_seguro" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Compañía de seguro</label>
                           <input
                             id="compania_seguro"
                             v-model="form.compania_seguro"
                             type="text"
                             maxlength="100"
                             :disabled="readOnly"
-                            class="block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white"
-                          />
+                            class="block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand"/>
                         </div>
                         <div>
-                          <label
-                            for="numero_poliza"
-                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                            >N° póliza</label
-                          >
+                          <label for="numero_poliza" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">N° póliza</label>
                           <input
                             id="numero_poliza"
                             v-model="form.numero_poliza"
@@ -2102,9 +2007,9 @@ onMounted(() => {
                             maxlength="20"
                             :disabled="readOnly"
                             :class="[
-                              'block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white',
+                              'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
                               formErrors.numero_poliza
-                                ? 'border-red-500 dark:border-red-500'
+                                ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
                                 : '',
                             ]"
                           />
@@ -2128,9 +2033,9 @@ onMounted(() => {
                             maxlength="80"
                             :disabled="readOnly"
                             :class="[
-                              'block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white',
+                              'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
                               formErrors.numero_reclamo
-                                ? 'border-red-500 dark:border-red-500'
+                                ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
                                 : '',
                             ]"
                           />
@@ -2153,7 +2058,7 @@ onMounted(() => {
                             type="text"
                             maxlength="120"
                             :disabled="readOnly"
-                            class="block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white"
+                            class="block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand"
                           />
                         </div>
                         <div>
@@ -2168,7 +2073,7 @@ onMounted(() => {
                             type="text"
                             maxlength="15"
                             :disabled="readOnly"
-                            class="block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white"
+                            class="block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand"
                           />
                         </div>
                       </div>
@@ -2426,46 +2331,27 @@ onMounted(() => {
                     </div>
 
                     <div class="col-span-1">
-                      <label
-                        for="detalles_carroceria"
-                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                        >Detalles</label
-                      >
+                      <label for="detalles_carroceria" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Detalles</label>
                       <div class="mt-2 space-y-2">
-                        <div
-                          v-for="(punto, idx) in marcas"
-                          :key="punto.id"
-                          class="flex items-start gap-2"
-                        >
-                          <span
-                            class="inline-flex items-center justify-center w-5 h-5 text-xs font-semibold text-blue-800 bg-blue-200 rounded-full mt-1"
-                            >{{ idx + 1 }}</span
-                          >
+                        <div v-for="(punto, idx) in marcas" :key="punto.id" class="flex items-start gap-2">
+                          <span class="inline-flex items-center justify-center w-5 h-5 text-xs font-semibold text-blue-800 bg-blue-200 rounded-full mt-1">{{ idx + 1 }}</span>
                           <div class="flex-1">
                             <input
                               :value="punto.descripcion"
-                              @input="
-                                sanitizeDetalleCarroceria(
-                                  punto,
-                                  $event.target.value,
-                                )
-                              "
+                              @input="sanitizeDetalleCarroceria(punto, $event.target.value,)"
                               :disabled="readOnly"
                               type="text"
                               :name="`detalle_carroceria_${punto.id}`"
                               placeholder="Descripción del daño..."
                               maxlength="80"
                               :class="[
-                                'block w-full p-2 text-sm bg-white border rounded-lg dark:bg-gray-700 dark:text-white',
+                                'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
                                 detallesErrors[idx]
-                                  ? 'border-red-500 text-red-900 dark:text-red-500 dark:border-red-500'
-                                  : 'border-gray-300 dark:border-gray-600',
+                                  ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
+                                  : '',
                               ]"
                             />
-                            <p
-                              v-if="detallesErrors[idx]"
-                              class="mt-1 text-sm text-red-600 dark:text-red-500"
-                            >
+                            <p v-if="detallesErrors[idx]" class="mt-1 text-sm text-red-600 dark:text-red-500">
                               {{ detallesErrors[idx] }}
                             </p>
                           </div>
@@ -2473,13 +2359,8 @@ onMounted(() => {
                             v-if="!readOnly"
                             type="button"
                             class="inline-flex items-center justify-center w-8 h-8 text-red-700 border border-red-400 rounded hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-900/20 mt-1"
-                            @click="
-                              marcas = marcas.filter((m) => m.id !== punto.id)
-                            "
-                          >
-                            <Trash2
-                              class="w-5 h-5 text-red-700 dark:text-red-400"
-                            />
+                            @click="marcas = marcas.filter((m) => m.id !== punto.id)">
+                            <Trash2 class="w-5 h-5 text-red-700 dark:text-red-400"/>
                           </button>
                         </div>
                       </div>
@@ -2489,8 +2370,7 @@ onMounted(() => {
                         hidden
                         rows="8"
                         placeholder="Describe golpes, rayones o estado de pintura..."
-                        class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"
-                      ></textarea>
+                        class="block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand"></textarea>
                     </div>
                   </div>
                 </div>
@@ -2503,8 +2383,7 @@ onMounted(() => {
                     </span>
                   </h5>
                   <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
-                    Fotografías del estado actual del vehículo. Adjunta las 5
-                    vistas requeridas del vehículo.
+                    Fotografías del estado actual del vehículo. Adjunta las 5 vistas requeridas del vehículo.
                   </p>
 
                   <div v-if="formErrors.fotos" class="mb-4">
@@ -2540,16 +2419,10 @@ onMounted(() => {
                     >
                       Firma del Cliente
                     </p>
-                    <div
-                      v-if="form.fecha_firma_cliente"
-                      class="mb-2 text-xs text-gray-500 dark:text-gray-400"
-                    >
-                      Firmado el
-                      {{ formatFechaFirma(form.fecha_firma_cliente) }}
+                    <div v-if="form.fecha_firma_cliente" class="mb-2 text-xs text-gray-500 dark:text-gray-400">
+                      Firmado el {{ formatFechaFirma(form.fecha_firma_cliente) }}
                     </div>
-                    <div
-                      class="relative bg-white border border-gray-300 rounded-lg dark:bg-white dark:border-gray-600 overflow-hidden"
-                    >
+                    <div class="relative bg-white border border-gray-300 rounded-lg dark:bg-white dark:border-gray-600 overflow-hidden">
                       <canvas
                         ref="firmaClienteCanvas"
                         width="400"
@@ -2558,8 +2431,7 @@ onMounted(() => {
                         @pointerdown="onClientePointerDown"
                         @pointermove="onClientePointerMove"
                         @pointerup="onClientePointerUp"
-                        @pointerleave="onClientePointerUp"
-                      ></canvas>
+                        @pointerleave="onClientePointerUp"></canvas>
                       <button
                         v-if="!readOnly"
                         type="button"
@@ -2620,16 +2492,12 @@ onMounted(() => {
                         :disabled="readOnly"
                         placeholder="Registra el motivo por el cual el cliente no aceptó las condiciones o no dejó el vehículo..."
                         :class="[
-                          'block w-full p-2.5 text-sm rounded-lg bg-white border border-gray-300 dark:bg-gray-700 dark:text-white',
+                          'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
                           formErrors.motivo_no_recepcion
-                            ? 'bg-yellow-50 border-yellow-500 text-yellow-900 dark:bg-gray-700 dark:text-yellow-500 dark:border-yellow-500'
+                            ? 'bg-yellow-50! border-yellow-500! text-yellow-900 placeholder:text-yellow-900! focus:ring-yellow-500! focus:border-yellow-500!'
                             : '',
-                        ]"
-                      ></textarea>
-                      <p
-                        v-if="formErrors.motivo_no_recepcion"
-                        class="mt-2 text-sm text-yellow-600 dark:text-yellow-500"
-                      >
+                        ]"></textarea>
+                      <p v-if="formErrors.motivo_no_recepcion" class="mt-2 text-sm text-yellow-600 dark:text-yellow-500">
                         {{ formErrors.motivo_no_recepcion }}
                       </p>
                     </div>
@@ -2639,9 +2507,7 @@ onMounted(() => {
             </div>
 
             <div class="col-span-1 md:col-span-4">
-              <div
-                class="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700"
-              >
+              <div class="flex items-center justify-end gap-3 border-gray-200 dark:border-gray-700">
                 <button
                   type="button"
                   class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -2828,19 +2694,10 @@ onMounted(() => {
     </div>
   </div>
 
-  <div
-    v-if="showContradiccionModal"
-    class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 p-4"
-  >
-    <div
-      class="relative w-full max-w-md rounded-lg bg-white shadow-xl dark:bg-gray-800"
-    >
-      <div
-        class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700"
-      >
-        <h3
-          class="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white"
-        >
+  <div v-if="showContradiccionModal" class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 p-4">
+    <div class="relative w-full max-w-md rounded-lg bg-white shadow-xl dark:bg-gray-800">
+      <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
+        <h3 class="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
           <CircleAlert class="w-6 h-6 text-yellow-500" />
           ¿El cliente se retractó?
         </h3>
@@ -2848,8 +2705,7 @@ onMounted(() => {
           type="button"
           class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200"
           aria-label="Cerrar"
-          @click="showContradiccionModal = false"
-        >
+          @click="showContradiccionModal = false">
           <X class="w-5 h-5" />
         </button>
       </div>
@@ -2858,29 +2714,23 @@ onMounted(() => {
           Hay firma y aceptación del cliente, pero también un motivo de no
           aceptación.
         </p>
-        <p
-          class="mt-2 text-sm font-semibold text-yellow-700 dark:text-yellow-400"
-        >
+        <p class="mt-2 text-sm font-semibold text-yellow-700 dark:text-yellow-400">
           Si continúas se guardará como "No Aceptada / Sin Firma" y se
           descartará la aceptación registrada.
         </p>
       </div>
-      <div
-        class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700"
-      >
+      <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
         <button
           type="button"
           class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-          @click="showContradiccionModal = false"
-        >
+          @click="showContradiccionModal = false">
           <X class="w-5 h-5 mr-1.5 -ml-1 text-gray-500 dark:text-gray-300" />
           Cancelar
         </button>
         <button
           type="button"
           class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded-lg bg-red-600 hover:bg-red-700 focus:ring-4 focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800"
-          @click="confirmarGuardadoNoAceptada"
-        >
+          @click="confirmarGuardadoNoAceptada">
           <CheckCircle2 class="w-5 h-5 mr-1.5 -ml-1" />
           Confirmar no aceptación
         </button>

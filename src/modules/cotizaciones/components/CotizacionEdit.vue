@@ -109,26 +109,36 @@ const estadoInfo = computed(() => ESTADOS[estado.value] || ESTADOS.BORRADOR);
 
 const pasosFlujo = computed(() => {
   const cot = cotizacion.value || {};
+  const ordenId = cot.orden_generada_id || cot.orden_trabajo_origen || null;
+  const ordenNumero = cot.orden_generada_id ? cot.orden_generada_numero : cot.orden_trabajo_numero;
   return buildPasosFlujo([
     {
       entidad: 'recepcion',
       estado: cot.recepcion_estado,
       estadoDisplay: cot.recepcion_estado_display,
+      id: cot.recepcion_origen,
+      numero: cot.recepcion_numero,
     },
     {
       entidad: 'inspeccion',
       estado: cot.inspeccion_estado,
       estadoDisplay: cot.inspeccion_estado_display,
+      id: cot.inspeccion_origen,
+      numero: cot.inspeccion_numero,
     },
     {
       entidad: 'cotizacion',
       estado: cot.estado,
       estadoDisplay: cot.estado_display,
+      id: cot.id,
+      numero: cot.numero_cotizacion,
     },
     {
       entidad: 'orden',
       estado: cot.orden_trabajo_estado,
       estadoDisplay: cot.orden_trabajo_estado_display,
+      id: ordenId,
+      numero: ordenNumero,
     },
   ]);
 });

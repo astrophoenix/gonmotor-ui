@@ -196,10 +196,10 @@ onUnmounted(() => clearTimeout(searchTimer));
 </script>
 
 <template>
-  <div class="p-4 bg-white block sm:flex items-center justify-between border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
-    <div class="w-full mb-1">
-      <div class="mb-4">
-        <nav class="flex mb-5" aria-label="Breadcrumb">
+  <div class="p-4 py-3 bg-white block sm:flex items-center justify-between border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
+    <div class="w-full">
+      <div>
+        <nav class="flex mb-1.5" aria-label="Breadcrumb">
           <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
             <li class="inline-flex items-center">
               <a href="/" class="inline-flex items-center text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Inicio</a>
@@ -207,8 +207,8 @@ onUnmounted(() => clearTimeout(searchTimer));
             <li class="text-gray-400" aria-current="page">/ Vehículos</li>
           </ol>
         </nav>
-        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-          <Car class="w-6 h-6 inline-block text-gray-900 dark:text-gray-400" />
+        <h1 class="inline-flex items-center gap-2 text-lg font-semibold text-gray-900 sm:text-xl dark:text-white">
+          <Car class="w-5 h-5 text-gray-900 dark:text-gray-400" />
           Vehículos
         </h1>
       </div>
@@ -224,8 +224,8 @@ onUnmounted(() => clearTimeout(searchTimer));
 
   <div class="px-4 pb-4 sm:px-6 lg:px-8 mt-4">
     <!-- PANEL DE FILTROS -->
-    <div class="bg-neutral-primary-soft shadow-xs rounded-base border border-default mb-4">
-      <div class="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between border-b border-default-medium">
+    <div class="bg-neutral-primary-soft shadow-xs rounded border border-default mb-4">
+      <div class="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between border-b border-default-medium">
         <h2 class="flex items-center gap-2 text-lg font-semibold text-heading">
           <Filter class="w-5 h-5" />
           Búsqueda
@@ -247,7 +247,7 @@ onUnmounted(() => clearTimeout(searchTimer));
               <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
                 <Search class="w-4 h-4 text-body" />
               </div>
-              <input id="vehicles-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="Placa, VIN, motor, marca, modelo o dueño" class="block w-full ps-9 pe-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand dark:bg-gray-800">
+              <input id="vehicles-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="Placa, VIN, motor, marca, modelo o dueño" class="block w-full ps-9 pe-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs placeholder:text-body focus:ring-brand focus:border-brand dark:bg-gray-800">
             </form>
           </div>
 
@@ -256,7 +256,7 @@ onUnmounted(() => clearTimeout(searchTimer));
             <select
               id="filtro-estado"
               v-model="draftFilters.estado"
-              class="block w-36 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800"
+              class="block w-36 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800"
             >
               <option value="">Todos</option>
               <option value="activo">Activo</option>
@@ -273,7 +273,7 @@ onUnmounted(() => clearTimeout(searchTimer));
               inputmode="numeric"
               maxlength="4"
               placeholder="Ej. 2020"
-              class="block w-32 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand dark:bg-gray-800"
+              class="block w-32 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs placeholder:text-body focus:ring-brand focus:border-brand dark:bg-gray-800"
             />
           </div>
 
@@ -282,7 +282,7 @@ onUnmounted(() => clearTimeout(searchTimer));
             <select
               id="filtro-tipo"
               v-model="draftFilters.tipo"
-              class="block w-60 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800"
+              class="block w-60 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800"
             >
               <option value="">Todos</option>
               <option value="AUTO">Automóvil</option>
@@ -309,7 +309,7 @@ onUnmounted(() => clearTimeout(searchTimer));
     </div>
 
     <!-- PANEL DE LISTADO -->
-    <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+    <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded border border-default">
       <div class="flex flex-col gap-3 px-4 py-3 border-b border-default-medium md:flex-row md:items-center md:justify-between">
         <h2 class="text-lg font-semibold text-heading">Listado de Vehículos</h2>
         <div class="flex flex-wrap items-center gap-2">
