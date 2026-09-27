@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted, computed, h } from 'vue';
-import { Car, UsersRound, Upload, Phone, Mail, Pencil, Trash2, IdCard, Search, RotateCcw, Filter } from 'lucide-vue-next';
+import { UsersRound, Upload, Phone, Mail, Pencil, Trash2, IdCard, Search, RotateCcw, Filter } from 'lucide-vue-next';
 import { useClients } from '../composables/useClients';
 // import { useToast } from '../../../shared/composables/useToast';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
@@ -14,7 +14,7 @@ import EntityTable from '../../../shared/components/EntityTable.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
 import ImportExcelModal from './ImportExcelModal.vue';
 import ClientModal from './ClientModal.vue';
-import { formatPlate } from '../../../shared/utils/formatPlate';
+import ClienteVehiculosCell from './ClienteVehiculosCell.vue';
 
 const TIPOS_IDENTIFICACION = {
   C: 'Cédula',
@@ -63,7 +63,6 @@ const clientToDelete = ref(null);
 const showReactivateModal = ref(false);
 const clientToReactivate = ref(null);
 let searchTimer;
-const openPopoverId = ref(null);
 
 const showImportModal = ref(false);
 
@@ -146,26 +145,6 @@ async function onImported(count) {
   loadClients(1);
 }
 
-function togglePopover(clientId) {
-  openPopoverId.value = openPopoverId.value === clientId ? null : clientId;
-}
-
-function closePopover() {
-  openPopoverId.value = null;
-}
-
-function handleKeydown(event) {
-  if (event.key === 'Escape') {
-    closePopover();
-  }
-}
-
-function handleClickOutside(event) {
-  if (openPopoverId.value && !event.target.closest('[data-popover-container]')) {
-    closePopover();
-  }
-}
-
 async function loadClients(page = 1) {
   try {
     await fetchClients(page, appliedFilters.value);
@@ -240,14 +219,10 @@ watch(search, () => {
 });
 onMounted(() => {
   loadClients();
-  document.addEventListener('keydown', handleKeydown);
-  document.addEventListener('click', handleClickOutside);
 });
 
 onUnmounted(() => {
   clearTimeout(searchTimer);
-  document.removeEventListener('keydown', handleKeydown);
-  document.removeEventListener('click', handleClickOutside);
 });
 </script>
 
@@ -404,46 +379,8 @@ onUnmounted(() => {
             </li>
           </ul>
         </td>
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">
-          <div v-if="!item.vehiculos || !item.vehiculos.length" class="text-sm text-gray-500 dark:text-gray-400">
-            Sin vehículos
-          </div>
-          <div v-else-if="item.vehiculos.length === 1" class="flex items-center gap-2">
-            <Car class="w-4 h-4 text-gray-800 dark:text-gray-400" />
-            <span class="text-sm">{{ formatPlate(item.vehiculos[0].placa) }} → {{ item.vehiculos[0].marca }} {{ item.vehiculos[0].color || '—' }}</span>
-          </div>
-          <div v-else-if="item.vehiculos.length === 2" class="space-y-1">
-            <div v-for="veh in item.vehiculos" :key="veh.id" class="flex items-center gap-2">
-              <Car class="w-4 h-4 text-gray-800 dark:text-gray-400" />
-              <span class="text-sm">{{ formatPlate(veh.placa) }} → {{ veh.marca }} {{ veh.color || '—' }}</span>
-            </div>
-          </div>
-          <div v-else class="relative" data-popover-container>
-            <button
-              type="button"
-              @click="togglePopover(item.id)"
-              class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary-700 rounded-lg border border-primary-700 hover:bg-primary-100 active:bg-primary-200 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800 dark:active:bg-gray-700">
-              <Car class="w-4 h-4 text-gray-800 dark:text-gray-400" />
-              mostrar +
-              <span class="inline-flex items-center justify-center w-4 h-4 text-xs font-semibold text-blue-800 bg-blue-200 rounded-full">
-                {{ item.vehiculos_count }}
-              </span>
-            </button>
-            <div v-if="openPopoverId === item.id" class="absolute z-20 mt-2 w-80 text-sm text-gray-500 bg-white border border-gray-200 rounded-lg shadow-lg dark:text-gray-400 dark:border-gray-600 dark:bg-gray-800">
-              <div class="px-3 py-2 bg-gray-100 border-b border-gray-200 rounded-t-lg dark:border-gray-600 dark:bg-gray-700">
-                <h3 class="font-semibold text-gray-800 dark:text-white">Vehículos del cliente</h3>
-              </div>
-              <div class="px-3 py-2 max-h-60 overflow-y-auto">
-                <ul class="space-y-2">
-                  <li v-for="veh in item.vehiculos" :key="veh.id" class="flex items-center gap-2">
-                    <Car class="w-4 h-4 text-gray-800 dark:text-gray-400" />
-                    <span class="text-sm">{{ formatPlate(veh.placa) }} → {{ veh.marca }} {{ veh.color || '—' }}</span>
-                  </li>
-                </ul>
-              </div>
-              <div data-popper-arrow></div>
-            </div>
-          </div>
+        <td class="p-4 whitespace-nowrap align-top">
+          <ClienteVehiculosCell :cliente="item" />
         </td>
         <td class="p-4 whitespace-nowrap">
           <span v-if="item.is_active" class="inline-flex items-center bg-success-soft border border-success-subtle text-fg-success-strong text-xs font-medium px-1 py-0.5 rounded">

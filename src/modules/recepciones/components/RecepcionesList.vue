@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted } from 'vue';
-import { ClipboardList, Pencil, Loader2, Trash2, Search, Gauge, IdCard, Phone, Stethoscope, FileText, Wrench, Plus, Filter, CalendarDays } from 'lucide-vue-next';
+import { ClipboardList, Pencil, Loader2, Trash2, Search, Gauge, Car, IdCard, Phone, Stethoscope, FileText, Wrench, Plus, Filter, CalendarDays } from 'lucide-vue-next';
 import { IconReportSearch } from '@tabler/icons-vue';
 import { Icon } from '@iconify/vue';
 import filePdfIcon from '@iconify-icons/fa6-regular/file-pdf';
@@ -10,7 +10,6 @@ import { talleresService } from '../../configuracion/services/talleresService';
 import { inspeccionesService } from '../../inspecciones/services/inspeccionesService';
 import { recepcionesService } from '../services/recepcionesService';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
-import CarFilled from '../../../shared/components/car-filled.vue';
 import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
 import EstadoRecepcionBadge from './EstadoRecepcionBadge.vue';
 import { ESTADOS_FILTRABLE } from '../constants/estadosRecepcion';
@@ -376,13 +375,15 @@ onUnmounted(() => {
 
       <div class="p-4">
         <div class="flex flex-wrap items-end gap-3 min-w-0">
-          <div class="w-full min-w-60 shrink-0 lg:flex-1 lg:max-w-md">
-            <label for="recepciones-search" class="block mb-1 text-sm font-medium text-heading">Buscar recepción</label>
+          <div class="w-full min-w-60 shrink-0 lg:flex-1 lg:max-w-2xl">
+            <label for="recepciones-search" class="block mb-1 text-sm font-medium text-heading">
+              Buscar recepción
+            </label>
             <form class="relative" @submit.prevent="applyAdvancedFilters">
               <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
                 <Search class="w-4 h-4 text-body" />
               </div>
-              <input id="recepciones-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="N.º de recepción, placa, cliente u orden" class="block w-full ps-9 pe-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs placeholder:text-body focus:ring-brand focus:border-brand dark:bg-gray-800">
+              <input id="recepciones-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="N.º recepción, placa, cliente, inspección, cotización u orden" class="block w-full ps-9 pe-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs placeholder:text-body focus:ring-brand focus:border-brand dark:bg-gray-800">
             </form>
           </div>
 
@@ -419,9 +420,9 @@ onUnmounted(() => {
             </select>
           </div>
 
-          <div class="w-full sm:w-auto sm:shrink-0">
+          <div class="w-full sm:w-40 sm:shrink-0">
             <label for="filtro-fecha-desde" class="block mb-1 text-sm font-medium text-heading">Desde</label>
-            <div class="relative max-w-sm">
+            <div class="relative">
               <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
                 <CalendarDays class="w-4 h-4 text-body" aria-hidden="true" />
               </div>
@@ -434,13 +435,13 @@ onUnmounted(() => {
                 type="text"
                 autocomplete="off"
                 placeholder="dd/mm/aaaa"
-                class="block w-full ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body dark:bg-gray-800" />
+                class="block w-full ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs placeholder:text-body dark:bg-gray-800" />
             </div>
           </div>
 
-          <div class="w-full sm:w-auto sm:shrink-0">
+          <div class="w-full sm:w-40 sm:shrink-0">
             <label for="filtro-fecha-hasta" class="block mb-1 text-sm font-medium text-heading">Hasta</label>
-            <div class="relative max-w-sm">
+            <div class="relative">
               <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
                 <CalendarDays class="w-4 h-4 text-body" aria-hidden="true" />
               </div>
@@ -453,7 +454,7 @@ onUnmounted(() => {
                 type="text"
                 autocomplete="off"
                 placeholder="dd/mm/aaaa"
-                class="block w-full ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body dark:bg-gray-800" />
+                class="block w-full ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs placeholder:text-body dark:bg-gray-800" />
             </div>
           </div>
 
@@ -504,7 +505,7 @@ onUnmounted(() => {
           </span>
           <div class="mt-1 flex flex-col gap-1 ps-0.5 text-xs text-gray-500 dark:text-gray-400">
             <span class="flex items-center gap-1.5">
-              <CarFilled class="w-3.5 h-3.5 shrink-0" />
+              <Car class="w-3.5 h-3.5 shrink-0" />
               <span class="truncate">
                 {{ [item.vehiculo?.marca, item.vehiculo?.modelo].filter(Boolean).join(' ') || '-' }}
                 <span v-if="item.vehiculo?.color" class="text-gray-400 dark:text-gray-500">· {{ item.vehiculo.color }}</span>

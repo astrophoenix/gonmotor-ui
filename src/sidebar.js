@@ -11,7 +11,7 @@ if (sidebar) {
         toggleSidebarMobileHamburger.classList.toggle('hidden');
         toggleSidebarMobileClose.classList.toggle('hidden');
         toggleSidebarMobileHamburger.setAttribute('aria-expanded', String(abierto));
-        toggleSidebarMobile.setAttribute('aria-expanded', String(abierto));
+        document.getElementById('toggleSidebarMobile').setAttribute('aria-expanded', String(abierto));
     }
 
     const toggleSidebarMobileEl = document.getElementById('toggleSidebarMobile');

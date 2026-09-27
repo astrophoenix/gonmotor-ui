@@ -78,6 +78,7 @@
   },
   "dependencies": {
     "@iconify-icons/fa6-regular": "^2.0.0",
+    "@iconify/css-vue": "^1.0.2",
     "@iconify/vue": "^5.0.2",
     "@mdi/js": "^7.4.47",
     "@popperjs/core": "^2.10.2",
