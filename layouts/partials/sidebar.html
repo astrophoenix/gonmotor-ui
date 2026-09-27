@@ -11,9 +11,12 @@
             <img src="/images/mechanic_logo_icon.svg" class="h-10 w-auto" alt="gonmotor Logo" />
             <span sidebar-toggle-item class="self-center text-2xl font-semibold sm:text-3xl whitespace-nowrap ml-2"><span class="text-brand-500 dark:text-brand-300">gon</span><span class="text-accent-500 dark:text-accent-400">motor</span></span>
           </a>
-          <button id="toggleSidebarDesktop" type="button" class="sidebar-toggle-btn" aria-label="Colapsar sidebar" aria-expanded="true">
+          <button id="toggleSidebarDesktop" type="button" class="sidebar-toggle-btn sidebar-toggle-btn-dark" aria-label="Colapsar sidebar" aria-expanded="true">
             <svg id="toggleSidebarDesktopCollapse" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
             <svg id="toggleSidebarDesktopExpand" class="hidden w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+          </button>
+          <button id="sidebarCloseMobile" type="button" class="sidebar-close-mobile flex items-center justify-center p-1.5 rounded-lg lg:hidden" aria-label="Cerrar menú">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
           </button>
         </div>
         <ul class="pb-2 space-y-2">
@@ -30,18 +33,18 @@
           </li>
           <li>
             <a href="{{ "/" | relURL }}" sidebar-tooltip="Dashboard" class="flex items-center p-2 text-base text-white hover:bg-brand-550 group dark:text-white dark:hover:bg-brand-550">
-                <svg class="flex-shrink-0 w-5 h-5 mx-auto text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <svg class="flex-shrink-0 w-5 h-5 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                   <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"></path><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"></path></svg>
                 <span class="ml-3" sidebar-toggle-item>Dashboard</span>
             </a>
           </li>
           <li>
             <button type="button" class="flex items-center w-full p-2 text-base text-white transition duration-75 group hover:bg-brand-550 dark:text-white dark:hover:bg-brand-550" aria-controls="dropdown-operacion" data-collapse-toggle="dropdown-operacion">
-                <svg class="flex-shrink-0 w-5 h-5 mx-auto text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="currentColor" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg">
+                <svg class="flex-shrink-0 w-5 h-5 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="currentColor" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg">
                   <path fill-rule="evenodd" d="M9 2a1 1 0 0 0-1 1H6a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-2a1 1 0 0 0-1-1H9Zm1 2h4v2h1a1 1 0 1 1 0 2H9a1 1 0 0 1 0-2h1V4Zm5.707 8.707a1 1 0 0 0-1.414-1.414L11 14.586l-1.293-1.293a1 1 0 0 0-1.414 1.414l2 2a1 1 0 0 0 1.414 0l4-4Z" clip-rule="evenodd"/>
                 </svg>
                 <span class="flex-1 ml-3 text-left whitespace-nowrap" sidebar-toggle-item>Operación</span>
-                <svg sidebar-toggle-item class="w-6 h-6" fill="currentColor" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                <svg sidebar-toggle-item class="sidebar-chevron w-5 h-5" fill="currentColor" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
             </button>
             <div sidebar-dropdown class="relative">
               <ul id="dropdown-operacion" class="space-y-2 py-0 bg-brand-600 {{ if not (eq .Params.group "operacion") }}hidden {{ end }}">
@@ -65,12 +68,12 @@
           </li>
           <li>
             <button type="button" class="flex items-center w-full p-2 text-base text-white transition duration-75 group hover:bg-brand-550 dark:text-white dark:hover:bg-brand-550 {{ if eq .Params.group "inventario" }} bg-brand-600 dark:bg-brand-600 {{ end }}" aria-controls="dropdown-inventario" data-collapse-toggle="dropdown-inventario">
-                <svg class="flex-shrink-0 w-5 h-5 mx-auto text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="currentColor" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <svg class="flex-shrink-0 w-5 h-5 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="currentColor" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <path fill-rule="evenodd" d="M20 10H4v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8ZM9 13v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1Z" clip-rule="evenodd"/>
                   <path d="M2 6a2 2 0 0 1 2-2h16a2 2 0 1 1 0 4H4a2 2 0 0 1-2-2Z"/>
                 </svg>                
                 <span class="flex-1 ml-3 text-left whitespace-nowrap" sidebar-toggle-item>Inventario</span>
-                <svg sidebar-toggle-item class="w-6 h-6" fill="currentColor" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                <svg sidebar-toggle-item class="sidebar-chevron w-5 h-5" fill="currentColor" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
             </button>
             <div sidebar-dropdown class="relative">
               <ul id="dropdown-inventario" class="space-y-2 py-0 bg-brand-600 {{ if not (eq .Params.group "inventario") }}hidden {{ end }}">
@@ -85,7 +88,7 @@
           </li>
           <li>
             <a href="{{ "crud/clientes/" | relURL }}" sidebar-tooltip="Clientes" class="flex items-center p-2 text-base text-white hover:bg-brand-550 group dark:text-white dark:hover:bg-brand-550 {{ if eq $page_slug "settings" }} bg-brand-600 dark:bg-brand-600 {{ end }}">
-                <svg class="flex-shrink-0 w-5 h-5 mx-auto text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="currentColor" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <svg class="flex-shrink-0 w-5 h-5 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="currentColor" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <path d="M12 6a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm-1.5 8a4 4 0 0 0-4 4 2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 4 4 0 0 0-4-4h-3Zm6.82-3.096a5.51 5.51 0 0 0-2.797-6.293 3.5 3.5 0 1 1 2.796 6.292ZM19.5 18h.5a2 2 0 0 0 2-2 4 4 0 0 0-4-4h-1.1a5.503 5.503 0 0 1-.471.762A5.998 5.998 0 0 1 19.5 18ZM4 7.5a3.5 3.5 0 0 1 5.477-2.889 5.5 5.5 0 0 0-2.796 6.293A3.501 3.501 0 0 1 4 7.5ZM7.1 12H6a4 4 0 0 0-4 4 2 2 0 0 0 2 2h.5a5.998 5.998 0 0 1 3.071-5.238A5.505 5.505 0 0 1 7.1 12Z"></path>
                 </svg>
                 <span class="ml-3" sidebar-toggle-item>Clientes</span>
@@ -94,7 +97,7 @@
 
           <li>
             <a href="{{ "crud/proveedores/" | relURL }}" sidebar-tooltip="Proveedores" class="flex items-center p-2 text-base text-white hover:bg-brand-550 group dark:text-white dark:hover:bg-brand-550 {{ if eq $page_slug "settings" }} bg-brand-600 dark:bg-brand-600 {{ end }}">
-                <svg class="flex-shrink-0 w-5 h-5 mx-auto text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="currentColor" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <svg class="flex-shrink-0 w-5 h-5 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="currentColor" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <path fill="currentColor" d="M9.98189 4.50602c1.24881-.67469 2.78741-.67469 4.03621 0l3.9638 2.14148c.3634.19632.6862.44109.9612.72273l-6.9288 3.60207L5.20654 7.225c.2403-.22108.51215-.41573.81157-.5775l3.96378-2.14148ZM4.16678 8.84364C4.05757 9.18783 4 9.5493 4 9.91844v4.28296c0 1.3494.7693 2.5963 2.01811 3.2709l3.96378 2.1415c.32051.1732.66011.3019 1.00901.3862v-7.4L4.16678 8.84364ZM13.009 20c.3489-.0843.6886-.213 1.0091-.3862l3.9638-2.1415C19.2307 16.7977 20 15.5508 20 14.2014V9.91844c0-.30001-.038-.59496-.1109-.87967L13.009 12.6155V20Z"/>
                 </svg>
                 <span class="ml-3" sidebar-toggle-item>Proveedores</span>
@@ -103,21 +106,21 @@
 
           <li>
             <a href="{{ "crud/vehiculos/" | relURL }}" sidebar-tooltip="Vehículos" class="flex items-center p-2 text-base text-white hover:bg-brand-550 group dark:text-white dark:hover:bg-brand-550 {{ if eq $page_slug "settings" }} bg-brand-600 dark:bg-brand-600 {{ end }}">
-                <svg class="flex-shrink-0 w-5 h-5 mx-auto text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3 8 2.722 2.268a1 1 0 0 0 .64.232h11.276a1 1 0 0 0 .64-.232L21 8M6.5 14h.01m10.99 0h.01M8.16 4.5h7.68a2 2 0 0 1 1.736 1.008l2.897 5.07A4 4 0 0 1 21 12.562V18.5a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H6v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5.938a4 4 0 0 1 .527-1.984l2.897-5.07A2 2 0 0 1 8.161 4.5M7 14a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m11 0a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0"/></svg>
+                <svg class="flex-shrink-0 w-5 h-5 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3 8 2.722 2.268a1 1 0 0 0 .64.232h11.276a1 1 0 0 0 .64-.232L21 8M6.5 14h.01m10.99 0h.01M8.16 4.5h7.68a2 2 0 0 1 1.736 1.008l2.897 5.07A4 4 0 0 1 21 12.562V18.5a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H6v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5.938a4 4 0 0 1 .527-1.984l2.897-5.07A2 2 0 0 1 8.161 4.5M7 14a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m11 0a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0"/></svg>
                 <span class="ml-3" sidebar-toggle-item>Vehículos</span>
             </a>
           </li>
 
           <li>
             <a href="{{ "notificaciones/" | relURL }}" sidebar-tooltip="Notificaciones" class="flex items-center p-2 text-base text-white hover:bg-brand-550 group dark:text-white dark:hover:bg-brand-550 {{ if eq $page_slug "notificaciones" }} bg-brand-600 dark:bg-brand-600 {{ end }}">
-                <svg class="flex-shrink-0 w-5 h-5 mx-auto text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/></svg>
+                <svg class="flex-shrink-0 w-5 h-5 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/></svg>
                 <span class="ml-3" sidebar-toggle-item>Notificaciones</span>
             </a>
           </li>
 
           <li>
             <a href="{{ "crud/empleados/" | relURL }}" sidebar-tooltip="Empleados" class="flex items-center p-2 text-base text-white hover:bg-brand-550 group dark:text-white dark:hover:bg-brand-550 {{ if eq $page_slug "settings" }} bg-brand-600 dark:bg-brand-600 {{ end }}">
-                <svg class="flex-shrink-0 w-5 h-5 mx-auto text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <svg class="flex-shrink-0 w-5 h-5 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <path d="M6 2c-1.10457 0-2 .89543-2 2v4c0 .55228.44772 1 1 1s1-.44772 1-1V4h12v7h-2c-.5523 0-1 .4477-1 1v2h-1c-.5523 0-1 .4477-1 1s.4477 1 1 1h5c.5523 0 1-.4477 1-1V3.85714C20 2.98529 19.3667 2 18.268 2H6Z"/>
                   <path d="M6 11.5C6 9.567 7.567 8 9.5 8S13 9.567 13 11.5 11.433 15 9.5 15 6 13.433 6 11.5ZM4 20c0-2.2091 1.79086-4 4-4h3c2.2091 0 4 1.7909 4 4 0 1.1046-.8954 2-2 2H6c-1.10457 0-2-.8954-2-2Z"/>
                 </svg>
@@ -131,7 +134,7 @@
                   <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
                 </svg>
                 <span class="flex-1 ml-3 text-left whitespace-nowrap" sidebar-toggle-item>Layouts</span>
-                <svg sidebar-toggle-item class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                <svg sidebar-toggle-item class="sidebar-chevron w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
             </button>
             <ul id="dropdown-layouts" class="hidden py-2 space-y-2 bg-brand-600">
               <li>
@@ -148,7 +151,7 @@
                   <path clip-rule="evenodd" fill-rule="evenodd" d="M.99 5.24A2.25 2.25 0 013.25 3h13.5A2.25 2.25 0 0119 5.25l.01 9.5A2.25 2.25 0 0116.76 17H3.26A2.267 2.267 0 011 14.74l-.01-9.5zm8.26 9.52v-.625a.75.75 0 00-.75-.75H3.25a.75.75 0 00-.75.75v.615c0 .414.336.75.75.75h5.373a.75.75 0 00.627-.74zm1.5 0a.75.75 0 00.627.74h5.373a.75.75 0 00.75-.75v-.615a.75.75 0 00-.75-.75H11.5a.75.75 0 00-.75.75v.625zm6.75-3.63v-.625a.75.75 0 00-.75-.75H11.5a.75.75 0 00-.75.75v.625c0 .414.336.75.75.75h5.25a.75.75 0 00.75-.75zm-8.25 0v-.625a.75.75 0 00-.75-.75H3.25a.75.75 0 00-.75.75v.625c0 .414.336.75.75.75H8.5a.75.75 0 00.75-.75zM17.5 7.5v-.625a.75.75 0 00-.75-.75H11.5a.75.75 0 00-.75.75V7.5c0 .414.336.75.75.75h5.25a.75.75 0 00.75-.75zm-8.25 0v-.625a.75.75 0 00-.75-.75H3.25a.75.75 0 00-.75.75V7.5c0 .414.336.75.75.75H8.5a.75.75 0 00.75-.75z"></path>
                 </svg>
                 <span class="flex-1 ml-3 text-left whitespace-nowrap" sidebar-toggle-item>CRUD</span>
-                <svg sidebar-toggle-item class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                <svg sidebar-toggle-item class="sidebar-chevron w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
             </button>
             <ul id="dropdown-crud" class="space-y-2 py-0 bg-brand-600 {{ if not (eq .Params.group "crud") }}hidden {{ end }}">
               <li>
@@ -171,7 +174,7 @@
             <button type="button" class="flex items-center w-full p-2 text-base text-white transition duration-75 group hover:bg-brand-550 dark:text-white dark:hover:bg-brand-550" aria-controls="dropdown-pages" data-collapse-toggle="dropdown-pages">
                 <svg class="flex-shrink-0 w-6 h-6 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm2 10a1 1 0 10-2 0v3a1 1 0 102 0v-3zm2-3a1 1 0 011 1v5a1 1 0 11-2 0v-5a1 1 0 011-1zm4-1a1 1 0 10-2 0v7a1 1 0 102 0V8z" clip-rule="evenodd"></path></svg>
                 <span class="flex-1 ml-3 text-left whitespace-nowrap" sidebar-toggle-item>Pages</span>
-                <svg sidebar-toggle-item class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                <svg sidebar-toggle-item class="sidebar-chevron w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
             </button>
             <ul id="dropdown-pages" class="hidden py-2 space-y-2 bg-brand-600">
               <li>
@@ -192,7 +195,7 @@
             <button type="button" class="flex items-center w-full p-2 text-base text-white transition duration-75 group hover:bg-brand-550 dark:text-white dark:hover:bg-brand-550" aria-controls="dropdown-auth" data-collapse-toggle="dropdown-auth">
                 <svg class="flex-shrink-0 w-6 h-6 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path></svg>
                 <span class="flex-1 ml-3 text-left whitespace-nowrap" sidebar-toggle-item>Authentication</span>
-                <svg sidebar-toggle-item class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                <svg sidebar-toggle-item class="sidebar-chevron w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
             </button>
             <ul id="dropdown-auth" class="hidden py-2 space-y-2 bg-brand-600">
               <li>
@@ -218,7 +221,7 @@
                   <path clip-rule="evenodd" fill-rule="evenodd" d="M6.672 1.911a1 1 0 10-1.932.518l.259.966a1 1 0 001.932-.518l-.26-.966zM2.429 4.74a1 1 0 10-.517 1.932l.966.259a1 1 0 00.517-1.932l-.966-.26zm8.814-.569a1 1 0 00-1.415-1.414l-.707.707a1 1 0 101.415 1.415l.707-.708zm-7.071 7.072l.707-.707A1 1 0 003.465 9.12l-.708.707a1 1 0 001.415 1.415zm3.2-5.171a1 1 0 00-1.3 1.3l4 10a1 1 0 001.823.075l1.38-2.759 3.018 3.02a1 1 0 001.414-1.415l-3.019-3.02 2.76-1.379a1 1 0 00-.076-1.822l-10-4z"></path>
                 </svg>
                 <span class="flex-1 ml-3 text-left whitespace-nowrap" sidebar-toggle-item>Playground</span>
-                <svg sidebar-toggle-item class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                <svg sidebar-toggle-item class="sidebar-chevron w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
             </button>
             <ul id="dropdown-playground" class="space-y-2 py-0 bg-brand-600 {{ if not (eq .Params.group "playground") }}hidden {{ end }}">
               <li>
@@ -231,11 +234,11 @@
            </li-->
           <li>
             <button type="button" class="flex items-center w-full p-2 text-base text-white transition duration-75 group hover:bg-brand-550 dark:text-white dark:hover:bg-brand-550 {{ if eq .Params.group "configuracion" }} bg-brand-600 dark:bg-brand-600 {{ end }}" aria-controls="dropdown-configuracion" data-collapse-toggle="dropdown-configuracion">
-                <svg class="flex-shrink-0 w-5 h-5 mx-auto text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="currentColor" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <svg class="flex-shrink-0 w-5 h-5 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="currentColor" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <path clip-rule="evenodd" fill-rule="evenodd" d="M8.34 1.804A1 1 0 019.32 1h1.36a1 1 0 01.98.804l.295 1.473c.497.144.971.342 1.416.587l1.25-.834a1 1 0 011.262.125l.962.962a1 1 0 01.125 1.262l-.834 1.25c.245.445.443.919.587 1.416l1.473.294a1 1 0 01.804.98v1.361a1 1 0 01-.804.98l-1.473.295a6.95 6.95 0 01-.587 1.416l.834 1.25a1 1 0 01-.125 1.262l-.962.962a1 1 0 01-1.262.125l-1.25-.834a6.953 6.953 0 01-1.416.587l-.294 1.473a1 1 0 01-.98.804H9.32a1 1 0 01-.98-.804l-.295-1.473a6.957 6.957 0 01-1.416-.587l-1.25.834a1 1 0 01-1.262-.125l-.962-.962a1 1 0 01-.125-1.262l.834-1.25a6.957 6.957 0 01-.587-1.416l-1.473-.294A1 1 0 011 10.68V9.32a1 1 0 01.804-.98l1.473-.295c.144-.497.342-.971.587-1.416l-.834-1.25a1 1 0 01.125-1.262l.962-.962A1 1 0 015.38 3.03l1.25.834a6.957 6.957 0 011.416-.587l.294-1.473zM13 10a3 3 0 11-6 0 3 3 0 016 0z"></path>
                 </svg>
                 <span class="flex-1 ml-3 text-left whitespace-nowrap" sidebar-toggle-item>Configuración</span>
-                <svg sidebar-toggle-item class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                <svg sidebar-toggle-item class="sidebar-chevron w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
             </button>
             <div sidebar-dropdown class="relative">
             <ul id="dropdown-configuracion" class="space-y-2 py-0 bg-brand-600 {{ if not (eq .Params.group "configuracion") }}hidden {{ end }}">
@@ -346,29 +349,25 @@
 <script>
 (function() {
   const buttons = document.querySelectorAll('[data-collapse-toggle][aria-controls]');
-  const observers = [];
 
   buttons.forEach(button => {
     const targetId = button.getAttribute('aria-controls');
     const target = document.getElementById(targetId);
     if (!target) return;
 
-    const observer = new MutationObserver(() => {
-      const isHidden = target.classList.contains('hidden');
-      if (isHidden) {
-        button.classList.remove('bg-brand-600', 'dark:bg-brand-600');
-      } else {
-        button.classList.add('bg-brand-600', 'dark:bg-brand-600');
-      }
+    const sincronizar = () => {
+      const abierto = !target.classList.contains('hidden');
+      button.setAttribute('aria-expanded', String(abierto));
+      button.classList.toggle('bg-brand-600', abierto);
+      button.classList.toggle('dark:bg-brand-600', abierto);
+    };
+
+    new MutationObserver(sincronizar).observe(target, {
+      attributes: true,
+      attributeFilter: ['class', 'hidden'],
     });
 
-    observer.observe(target, { attributes: true, attributeFilter: ['class', 'hidden'] });
-    observers.push(observer);
-
-    // Estado inicial
-    if (!target.classList.contains('hidden')) {
-      button.classList.add('bg-brand-600', 'dark:bg-brand-600');
-    }
+    sincronizar();
   });
 })();
 </script>
