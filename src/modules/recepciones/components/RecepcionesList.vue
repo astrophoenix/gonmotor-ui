@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted } from 'vue';
-import { ClipboardList, Pencil, Loader2, Trash2, Search, Clock, CircleCheck, CircleSlash, Gauge, IdCard, Phone, Stethoscope, FileText, Wrench, Plus, Filter } from 'lucide-vue-next';
+import { ClipboardList, Pencil, Loader2, Trash2, Search, Gauge, IdCard, Phone, Stethoscope, FileText, Wrench, Plus, Filter, CalendarDays } from 'lucide-vue-next';
 import { IconReportSearch } from '@tabler/icons-vue';
 import { Icon } from '@iconify/vue';
 import filePdfIcon from '@iconify-icons/fa6-regular/file-pdf';
@@ -11,8 +11,10 @@ import { inspeccionesService } from '../../inspecciones/services/inspeccionesSer
 import { recepcionesService } from '../services/recepcionesService';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import CarFilled from '../../../shared/components/car-filled.vue';
-import TipoRecepcionBadge from './TipoRecepcionBadge.vue';
-import { TIPOS_RECEPCION } from '../constants/tiposRecepcion';
+import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
+import EstadoRecepcionBadge from './EstadoRecepcionBadge.vue';
+import { ESTADOS_FILTRABLE } from '../constants/estadosRecepcion';
+import { TIPOS_TRABAJO_OPCIONES } from '../../../shared/config/tiposTrabajo';
 import MdiIcon from '../../../shared/components/MdiIcon.vue';
 import FilterActions from '../../../shared/components/FilterActions.vue';
 import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
@@ -89,8 +91,6 @@ const alert = ref({
 const search = ref('');
 let searchTimer;
 
-const ESTADOS_FILTRABLE = ['PENDIENTE', 'ACEPTADA', 'NO_ACEPTADA'];
-
 // --- PANEL DE FILTROS (no reactivos hasta "Buscar") ---
 const emptyAdvancedFilters = () => ({
   estado: '',
@@ -103,6 +103,30 @@ const emptyAdvancedFilters = () => ({
 
 const draftFilters = ref(emptyAdvancedFilters());
 const appliedFilters = ref({ ...draftFilters.value });
+
+// Flowbite escribe directamente en input.value (no emite input/change), por eso
+// estos campos se leen del DOM en vez de usar v-model.
+const fechaDesdeInput = ref(null);
+const fechaHastaInput = ref(null);
+
+function fechaInputAIso(elemento) {
+  const valor = (elemento?.value || '').trim();
+  if (!valor) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) return valor;
+  const match = valor.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+  if (!match) return '';
+  const [, dia, mes, anio] = match;
+  return `${anio}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+}
+
+function limpiarCamposFecha() {
+  [fechaDesdeInput, fechaHastaInput].forEach((campo) => {
+    const elemento = campo.value;
+    if (!elemento) return;
+    elemento.value = '';
+    if (typeof elemento.datepicker?.clear === 'function') elemento.datepicker.clear();
+  });
+}
 
 function buildQuery() {
   return {
@@ -126,7 +150,11 @@ async function reloadList(page = 1) {
 
 function applyAdvancedFilters() {
   if (loading.value) return;
-  appliedFilters.value = { ...draftFilters.value };
+  appliedFilters.value = {
+    ...draftFilters.value,
+    fechaDesde: fechaInputAIso(fechaDesdeInput.value),
+    fechaHasta: fechaInputAIso(fechaHastaInput.value),
+  };
   reloadList(1);
 }
 
@@ -135,6 +163,7 @@ function clearAdvancedFilters() {
   search.value = '';
   draftFilters.value = emptyAdvancedFilters();
   appliedFilters.value = emptyAdvancedFilters();
+  limpiarCamposFecha();
   reloadList(1);
 }
 
@@ -169,21 +198,6 @@ function getFechaIngreso(item) {
     hora: date.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' }),
     antiguedad: formatAntiguedad(date),
     completo: date.toLocaleString('es-EC', { dateStyle: 'long', timeStyle: 'short' }),
-  };
-}
-
-const ESTADOS_RECEPCION = {
-  PENDIENTE: { icon: Clock, color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200' },
-  ACEPTADA: { icon: CircleCheck, color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200' },
-  NO_ACEPTADA: { icon: CircleSlash, color: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200' },
-};
-
-function getEstadoRecepcion(recepcion) {
-  const estado = recepcion.estado || 'PENDIENTE';
-  const config = ESTADOS_RECEPCION[estado] || ESTADOS_RECEPCION.PENDIENTE;
-  return {
-    ...config,
-    label: recepcion.estado_display || estadoADisplay('recepcion', estado),
   };
 }
 
@@ -390,7 +404,7 @@ onUnmounted(() => {
               v-model="draftFilters.tipoRecepcion"
               class="block w-full sm:w-44 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800">
               <option value="">Todos</option>
-              <option v-for="item in TIPOS_RECEPCION" :key="item.value" :value="item.value">{{ item.label }}</option>
+              <option v-for="item in TIPOS_TRABAJO_OPCIONES" :key="item.value" :value="item.value">{{ item.label }}</option>
             </select>
           </div>
 
@@ -407,20 +421,40 @@ onUnmounted(() => {
 
           <div class="w-full sm:w-auto sm:shrink-0">
             <label for="filtro-fecha-desde" class="block mb-1 text-sm font-medium text-heading">Desde</label>
-            <input
-              id="filtro-fecha-desde"
-              v-model="draftFilters.fechaDesde"
-              type="date"
-              class="block w-full sm:w-40 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800" />
+            <div class="relative max-w-sm">
+              <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                <CalendarDays class="w-4 h-4 text-body" aria-hidden="true" />
+              </div>
+              <input
+                id="filtro-fecha-desde"
+                ref="fechaDesdeInput"
+                datepicker
+                datepicker-autohide
+                datepicker-format="dd/mm/yyyy"
+                type="text"
+                autocomplete="off"
+                placeholder="dd/mm/aaaa"
+                class="block w-full ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body dark:bg-gray-800" />
+            </div>
           </div>
 
           <div class="w-full sm:w-auto sm:shrink-0">
             <label for="filtro-fecha-hasta" class="block mb-1 text-sm font-medium text-heading">Hasta</label>
-            <input
-              id="filtro-fecha-hasta"
-              v-model="draftFilters.fechaHasta"
-              type="date"
-              class="block w-full sm:w-40 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800" />
+            <div class="relative max-w-sm">
+              <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                <CalendarDays class="w-4 h-4 text-body" aria-hidden="true" />
+              </div>
+              <input
+                id="filtro-fecha-hasta"
+                ref="fechaHastaInput"
+                datepicker
+                datepicker-autohide
+                datepicker-format="dd/mm/yyyy"
+                type="text"
+                autocomplete="off"
+                placeholder="dd/mm/aaaa"
+                class="block w-full ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body dark:bg-gray-800" />
+            </div>
           </div>
 
           <label class="inline-flex items-center gap-2 pb-2.5 text-sm font-normal text-body">
@@ -498,7 +532,7 @@ onUnmounted(() => {
           </div>
         </td>
         <td class="p-4 whitespace-nowrap align-top">
-          <TipoRecepcionBadge :tipo="item.tipo_recepcion" />
+          <TipoTrabajoBadge :tipo="item.tipo_recepcion" />
         </td>
         <td class="p-4 text-gray-800 whitespace-nowrap align-top dark:text-white">
           <div class="flex flex-col gap-1" :title="getFechaIngreso(item).completo">
@@ -518,13 +552,7 @@ onUnmounted(() => {
           </span>
         </td>
         <td class="p-4 whitespace-nowrap">
-          <span
-            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-            :class="getEstadoRecepcion(item).color"
-          >
-            <component :is="getEstadoRecepcion(item).icon" class="w-5 h-5 shrink-0" />
-            {{ getEstadoRecepcion(item).label }}
-          </span>
+          <EstadoRecepcionBadge :estado="item.estado" :estado-display="item.estado_display" />
         </td>
         <td class="p-4 whitespace-nowrap align-top">
           <div class="flex flex-col items-start gap-1.5">

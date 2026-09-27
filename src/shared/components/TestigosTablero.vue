@@ -66,7 +66,7 @@ function getCardClasses(testigo) {
         maxlength="255"
         placeholder="Otros testigos o notas adicionales..."
         :disabled="disabled"
-        class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+        class="block w-full p-2.5 text-sm bg-gray-50 rounded hadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600"
         @input="updateObservaciones($event.target.value)"
       />
     </div>

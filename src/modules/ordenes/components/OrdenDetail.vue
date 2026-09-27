@@ -4,6 +4,7 @@ import { ArrowLeft, User, Car, ClipboardList, ReceiptText, CircleDollarSign, Wre
 import { request } from '../../../shared/services/httpClient';
 import { ordenesService } from '../services/ordenesService';
 import Alert from '../../../shared/components/Alert.vue';
+import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
 
 const orden = ref(null);
 const loading = ref(true);
@@ -210,7 +211,9 @@ onMounted(async () => {
           </div>
           <div>
             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Tipo de Trabajo</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ orden.tipo_trabajo_display || '—' }}</dd>
+            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+              <TipoTrabajoBadge :tipo="orden.tipo_trabajo" size="sm" />
+            </dd>
           </div>
           <div>
             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Asesor</dt>

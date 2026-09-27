@@ -61,6 +61,12 @@ import {
   testigoPayload,
 } from "../../../shared/config/testigos";
 import Alert from "../../../shared/components/Alert.vue";
+import EstadoRecepcionBadge from "./EstadoRecepcionBadge.vue";
+import {
+  TIPOS_TRABAJO_OPCIONES,
+  getTipoTrabajoLabel,
+  normalizarTipoTrabajo,
+} from "../../../shared/config/tiposTrabajo";
 import FormSaveActions from "../../../shared/components/FormSaveActions.vue";
 import FlowSteps from "../../../shared/components/FlowSteps.vue";
 import { buildPasosFlujo } from "../../../shared/utils/estadoFlujo";
@@ -113,7 +119,7 @@ function toLocalDatetimeInput(value) {
 const form = reactive({
   cliente: null,
   vehiculo: null,
-  tipo_recepcion: "DIAGNOSTICO",
+  tipo_recepcion: "MANTENIMIENTO",
   motivo_ingreso: "",
   fecha_ingreso: defaultNow,
   fecha_salida: "",
@@ -254,18 +260,7 @@ const esNoAceptada = computed(
   () => clienteNoFirma.value || (form.motivo_no_recepcion || "").trim() !== "",
 );
 
-const tipoRecepcionLabel = computed(() => {
-  const map = {
-    MANTENIMIENTO: "Mantenimiento",
-    REPARACIÓN: "Reparación",
-    DIAGNOSTICO: "Diagnóstico",
-    ESTETICA: "Estética",
-    GARANTIA: "Garantía",
-    SINISTRO: "Siniestro",
-    OTRO: "Otro",
-  };
-  return map[form.tipo_recepcion] || form.tipo_recepcion || "—";
-});
+const tipoRecepcionLabel = computed(() => getTipoTrabajoLabel(form.tipo_recepcion));
 
 const FUEL_LEVELS = [
   {
@@ -378,30 +373,6 @@ const vehiculoKilometrajeText = computed(() => {
   const km = form.vehiculo?.kilometraje_actual;
   if (km == null) return "";
   return formatMiles(km);
-});
-
-const estadoRecepcionBadge = computed(() => {
-  const map = {
-    ACEPTADA: {
-      label: "Aceptada",
-      classes:
-        "bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-700",
-      dot: "bg-green-600 dark:bg-green-400",
-    },
-    NO_ACEPTADA: {
-      label: "No Aceptada",
-      classes:
-        "bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-200 dark:border-red-700",
-      dot: "bg-red-600 dark:bg-red-400",
-    },
-    PENDIENTE: {
-      label: "Pendiente",
-      classes:
-        "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900 dark:text-yellow-200 dark:border-yellow-700",
-      dot: "bg-yellow-600 dark:bg-yellow-400",
-    },
-  };
-  return map[form.estado] || map.PENDIENTE;
 });
 
 const TAB_ERROR_MAP = {
@@ -732,7 +703,7 @@ async function loadRecepcion() {
         ...data,
         cliente: data.cliente || null,
         vehiculo: data.vehiculo || null,
-        tipo_recepcion: data.tipo_recepcion || "DIAGNOSTICO",
+        tipo_recepcion: normalizarTipoTrabajo(data.tipo_recepcion) || "MANTENIMIENTO",
         motivo_ingreso: data.motivo_ingreso || "",
         fecha_ingreso: toLocalDatetimeInput(data.fecha_ingreso),
         fecha_salida: toLocalDatetimeInput(data.fecha_salida),
@@ -1355,7 +1326,8 @@ onMounted(() => {
     <FlowSteps :steps="pasosFlujo" />
   </div>
 
-  <div class="relative mx-auto max-w-8xl mb-5">
+  <!--div class="relative mx-auto max-w-8xl mb-5"-->
+  <div class="px-4 pt-4">
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
       <div class="lg:col-span-3 space-y-4">
         <Alert
@@ -1675,13 +1647,13 @@ onMounted(() => {
                               : '',
                           ]"
                         >
-                          <option value="MANTENIMIENTO">Mantenimiento</option>
-                          <option value="REPARACIÓN">Reparación</option>
-                          <option value="DIAGNOSTICO">Diagnóstico</option>
-                          <option value="ESTETICA">Estética</option>
-                          <option value="GARANTIA">Garantía</option>
-                          <option value="SINISTRO">Siniestro</option>
-                          <option value="OTRO">Otro</option>
+                          <option
+                            v-for="item in TIPOS_TRABAJO_OPCIONES"
+                            :key="item.value"
+                            :value="item.value"
+                          >
+                            {{ item.label }}
+                          </option>
                         </select>
                         <p
                           v-if="formErrors.tipo_recepcion"
@@ -2148,11 +2120,7 @@ onMounted(() => {
                     </div>
 
                     <div>
-                      <p
-                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                      >
-                        Interiores / Confort
-                      </p>
+                      <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Interiores / Confort</p>
                       <div class="space-y-2">
                         <label
                           v-for="field in [
@@ -2576,6 +2544,14 @@ onMounted(() => {
           <dl class="space-y-2 text-xs text-gray-600 dark:text-gray-400">
             <div>
               <dt class="font-medium text-gray-700 dark:text-gray-300">
+                N° Recepción
+              </dt>
+              <dd class="font-medium text-sm text-black dark:text-white">
+                {{ form.numero_recepcion || "—" }}
+              </dd>
+            </div>
+            <div>
+              <dt class="font-medium text-gray-700 dark:text-gray-300">
                 Cliente
               </dt>
               <dd class="font-medium text-sm text-black dark:text-white">
@@ -2601,16 +2577,11 @@ onMounted(() => {
                 Estado
               </dt>
               <dd>
-                <span
-                  class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border"
-                  :class="estadoRecepcionBadge.classes"
-                >
-                  <span
-                    class="w-2 h-2 rounded-full"
-                    :class="estadoRecepcionBadge.dot"
-                  ></span>
-                  {{ estadoRecepcionBadge.label }}
-                </span>
+                <EstadoRecepcionBadge
+                  :estado="form.estado"
+                  :estado-display="form.estado_display"
+                  size="sm"
+                />
               </dd>
             </div>
           </dl>

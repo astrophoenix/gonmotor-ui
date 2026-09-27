@@ -11,6 +11,10 @@ import PhotoUploadGrid from '../../../shared/components/PhotoUploadGrid.vue';
 import FlowSteps from '../../../shared/components/FlowSteps.vue';
 import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 import { sanitizeObservaciones } from '../../../shared/utils/sanitize';
+import {
+  TIPOS_TRABAJO_OPCIONES,
+  normalizarTipoTrabajo,
+} from '../../../shared/config/tiposTrabajo';
 
 const orden = ref(null);
 const loading = ref(true);
@@ -40,7 +44,7 @@ const ordenId = computed(() => {
 const form = ref({
   estado: 'INGRESADO',
   prioridad: 'MEDIA',
-  tipo_trabajo: 'PREVENTIVO',
+  tipo_trabajo: 'MANTENIMIENTO',
   mecanico_principal: '',
   fecha_entrega: '',
   observaciones_internas: '',
@@ -80,13 +84,7 @@ const PRIORIDAD_BADGES = {
 
 const prioridadBadge = computed(() => PRIORIDAD_BADGES[form.value.prioridad] || { label: form.value.prioridad || '—', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' });
 
-const TIPOS = [
-  { value: 'PREVENTIVO', label: 'Mantenimiento Preventivo' },
-  { value: 'CORRECTIVO', label: 'Reparación Correctiva' },
-  { value: 'DIAGNOSTICO', label: 'Solo Diagnóstico / Escaneo' },
-  { value: 'ESTETICA', label: 'Enderezada, Pintura o Detailing' },
-  { value: 'GARANTIA', label: 'Garantía / Retorno' },
-];
+const TIPOS = TIPOS_TRABAJO_OPCIONES;
 
 const tipoTrabajoLabel = computed(() => {
   const tipo = TIPOS.find((t) => t.value === form.value.tipo_trabajo);
@@ -315,7 +313,7 @@ function aplicarOrden(data) {
   form.value = {
     estado: data.estado || 'INGRESADO',
     prioridad: data.prioridad || 'MEDIA',
-    tipo_trabajo: data.tipo_trabajo || 'PREVENTIVO',
+    tipo_trabajo: normalizarTipoTrabajo(data.tipo_trabajo) || 'MANTENIMIENTO',
     mecanico_principal: data.mecanico_principal || '',
     fecha_entrega: toDateTimeLocal(data.fecha_entrega),
     observaciones_internas: data.observaciones_internas || '',

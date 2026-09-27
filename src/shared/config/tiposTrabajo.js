@@ -2,16 +2,22 @@ import carCog from '@iconify-icons/mdi/car-cog';
 import carSearch from '@iconify-icons/mdi/car-search';
 import folderWrench from '@iconify-icons/mdi/folder-wrench';
 import tagOutline from '@iconify-icons/mdi/tag-outline';
-import carMechanic from '@iconify-icons/bxs/car-mechanic';
 import carCrash from '@iconify-icons/bxs/car-crash';
 import fileProtectOutlined from '@iconify-icons/ant-design/file-protect-outlined';
 import carSparklesFilled from '@iconify-icons/boxicons/car-sparkles-filled';
+import CarWrench from '../components/car-wrench.vue';
 
 /**
- * Tipos de recepción canónicos (apps/ordenes/models.py → TIPOS_CHOICES).
- * `icon` son datos offline de @iconify-icons (no requieren red en runtime).
+ * Tipos de trabajo canónicos (apps/ordenes/models.py → TipoTrabajo).
+ *
+ * Única taxonomía del "motivo de ingreso": la comparten
+ * `recepcion.tipo_recepcion`, `inspeccion.tipo_inspeccion` y
+ * `orden.tipo_trabajo`. No duplicar listas por módulo.
+ *
+ * `icon` puede ser un componente Vue (p. ej. car-wrench.vue) o datos offline
+ * de @iconify-icons (no requieren red en runtime).
  */
-export const TIPOS_RECEPCION = [
+export const TIPOS_TRABAJO = [
   {
     value: 'MANTENIMIENTO',
     label: 'Mantenimiento',
@@ -19,9 +25,9 @@ export const TIPOS_RECEPCION = [
     color: 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200',
   },
   {
-    value: 'REPARACIÓN',
+    value: 'REPARACION',
     label: 'Reparación',
-    icon: carMechanic,
+    icon: CarWrench,
     color: 'bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-200',
   },
   {
@@ -56,14 +62,37 @@ export const TIPOS_RECEPCION = [
   },
 ];
 
-/** Para valores fuera de las choices (ej. el legacy `PREVENTIVO` o el default `PENDIENTE`). */
-export const TIPO_RECEPCION_FALLBACK = {
+/** Para `<select>`: solo value + label. */
+export const TIPOS_TRABAJO_OPCIONES = TIPOS_TRABAJO.map(({ value, label }) => ({ value, label }));
+
+/** Para valores fuera de la choices (ej. registros históricos sin tipo). */
+export const TIPO_TRABAJO_FALLBACK = {
   value: '',
   label: 'Sin tipo',
   icon: tagOutline,
   color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
 };
 
-export function getTipoRecepcionConfig(tipo) {
-  return TIPOS_RECEPCION.find((item) => item.value === tipo) || TIPO_RECEPCION_FALLBACK;
+/** Alias heredados que aún podrían venir en datos guardados. */
+const ALIAS_LEGACY = {
+  PREVENTIVO: 'MANTENIMIENTO',
+  CORRECTIVO: 'REPARACION',
+  'REPARACIÓN': 'REPARACION',
+};
+
+/** Normaliza un valor recibido del API a un valor canónico (o `''` si no existe). */
+export function normalizarTipoTrabajo(tipo) {
+  if (!tipo) return '';
+  const valor = String(tipo).trim();
+  const canonico = ALIAS_LEGACY[valor] || valor;
+  return TIPOS_TRABAJO.some((item) => item.value === canonico) ? canonico : '';
+}
+
+export function getTipoTrabajoConfig(tipo) {
+  const canonico = normalizarTipoTrabajo(tipo);
+  return TIPOS_TRABAJO.find((item) => item.value === canonico) || TIPO_TRABAJO_FALLBACK;
+}
+
+export function getTipoTrabajoLabel(tipo) {
+  return getTipoTrabajoConfig(tipo).label;
 }

@@ -9,6 +9,7 @@ import Alert from '../../../shared/components/Alert.vue';
 import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
 import { SEARCH_DEBOUNCE_MS, isSearchable } from '../../../shared/utils/search';
 import EntityTable from '../../../shared/components/EntityTable.vue';
+import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
 
 const {
@@ -74,17 +75,6 @@ function formatDate(dateString) {
   if (!dateString) return '-';
   const date = new Date(dateString);
   return date.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
-
-function tipoBadge(tipo) {
-  const map = {
-    PREVENTIVO: { label: 'Preventivo', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
-    CORRECTIVO: { label: 'Correctivo', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' },
-    DIAGNOSTICO: { label: 'Diagnóstico / Escaneo', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300' },
-    ESTETICA: { label: 'Estética', color: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300' },
-    GARANTIA: { label: 'Garantía', color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300' },
-  };
-  return map[tipo] || { label: tipo || '-', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' };
 }
 
 function prioridadBadge(prioridad) {
@@ -193,9 +183,7 @@ onUnmounted(() => {
         </td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.cliente?.nombre || '-' }}</td>
         <td class="p-4 whitespace-nowrap">
-          <span :class="['px-2 py-1 rounded-full text-xs font-medium', tipoBadge(item.tipo_trabajo).color]">
-            {{ tipoBadge(item.tipo_trabajo).label }}
-          </span>
+          <TipoTrabajoBadge :tipo="item.tipo_trabajo" size="sm" />
         </td>
         <td class="p-4 whitespace-nowrap">
           <span :class="['px-2 py-1 rounded-full text-xs font-medium', prioridadBadge(item.prioridad).color]">
