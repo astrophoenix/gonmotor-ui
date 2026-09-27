@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted } from 'vue';
-import { ClipboardList, Pencil, Loader2, Trash2, Search, Gauge, Car, IdCard, Phone, Stethoscope, FileText, Wrench, Plus, Filter, CalendarDays } from 'lucide-vue-next';
+import { ClipboardList, Pencil, Loader2, Trash2, Search, Gauge, Car, IdCard, Phone, Filter, CalendarDays } from 'lucide-vue-next';
 import { IconReportSearch } from '@tabler/icons-vue';
 import { Icon } from '@iconify/vue';
 import filePdfIcon from '@iconify-icons/fa6-regular/file-pdf';
@@ -22,6 +22,8 @@ import { estadoADisplay } from '../../../shared/utils/estadoFlujo';
 import Alert from '../../../shared/components/Alert.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
+import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
+import { relacionesDeRecepcion } from '../../../shared/utils/relacionesFlujo';
 import Pagination from '../../../shared/components/Pagination.vue';
 
 const { recepciones, loading, error, loadRecepciones, currentPage, total, nextUrl, previousUrl } = useRecepciones();
@@ -198,55 +200,6 @@ function getFechaIngreso(item) {
     antiguedad: formatAntiguedad(date),
     completo: date.toLocaleString('es-EC', { dateStyle: 'long', timeStyle: 'short' }),
   };
-}
-
-const COLOR_RELACION = {
-  inspeccion: 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-200 dark:border-blue-800 dark:hover:bg-blue-900/60',
-  cotizacion: 'bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-800 dark:hover:bg-amber-900/60',
-  orden: 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-800 dark:hover:bg-emerald-900/60',
-};
-
-function getRelaciones(item) {
-  const inspecciones = item.inspecciones || [];
-  const cotizaciones = item.cotizaciones_generadas || [];
-  const inspeccion = inspecciones[0] || null;
-  const cotizacion = cotizaciones[0] || null;
-  return [
-    {
-      key: 'inspeccion',
-      label: 'Inspección',
-      icon: Stethoscope,
-      color: COLOR_RELACION.inspeccion,
-      numero: inspeccion?.numero_inspeccion || null,
-      estado: inspeccion?.estado_display || null,
-      url: inspeccion?.id ? `/crud/inspecciones/ver/?id=${encodeURIComponent(inspeccion.id)}` : null,
-      extra: inspecciones.length - 1,
-    },
-    {
-      key: 'cotizacion',
-      label: 'Cotización',
-      icon: FileText,
-      color: COLOR_RELACION.cotizacion,
-      numero: cotizacion?.numero_cotizacion || null,
-      estado: cotizacion?.estado_display || null,
-      url: cotizacion?.id ? `/crud/cotizaciones/ver/?id=${encodeURIComponent(cotizacion.id)}` : null,
-      extra: cotizaciones.length - 1,
-    },
-    {
-      key: 'orden',
-      label: 'Orden',
-      icon: Wrench,
-      color: COLOR_RELACION.orden,
-      numero: item.orden_trabajo_numero || null,
-      estado: item.orden_trabajo_estado_display || null,
-      url: item.orden_trabajo ? `/crud/ordenes/ver/?id=${encodeURIComponent(item.orden_trabajo)}` : null,
-      extra: 0,
-    },
-  ];
-}
-
-function relacionTitle(relacion) {
-  return `${relacion.label} ${relacion.numero}${relacion.estado ? ` · ${relacion.estado}` : ''}`;
 }
 
 function handleEditar(id) {
@@ -490,10 +443,8 @@ onUnmounted(() => {
     <template #row="{ item, index }">
       <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
         <td class="p-4 whitespace-nowrap">
-          <a
-            :href="`/crud/recepciones/ver/?id=${encodeURIComponent(item.id)}`"
-            class="font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
-          >
+          <a :href="`/crud/recepciones/ver/?id=${encodeURIComponent(item.id)}`"
+            class="font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
             {{ numeroDisplay(item) }}
           </a>
         </td>
@@ -533,7 +484,7 @@ onUnmounted(() => {
           </div>
         </td>
         <td class="p-4 whitespace-nowrap align-top">
-          <TipoTrabajoBadge :tipo="item.tipo_recepcion" />
+          <TipoTrabajoBadge :tipo="item.tipo_recepcion" :size=" 'sm' " />
         </td>
         <td class="p-4 text-gray-800 whitespace-nowrap align-top dark:text-white">
           <div class="flex flex-col gap-1" :title="getFechaIngreso(item).completo">
@@ -556,35 +507,7 @@ onUnmounted(() => {
           <EstadoRecepcionBadge :estado="item.estado" :estado-display="item.estado_display" />
         </td>
         <td class="p-4 whitespace-nowrap align-top">
-          <div class="flex flex-col items-start gap-1.5">
-            <template v-for="relacion in getRelaciones(item)" :key="relacion.key">
-              <a
-                v-if="relacion.numero"
-                :href="relacion.url"
-                :title="relacionTitle(relacion)"
-                class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border transition-colors"
-                :class="relacion.color"
-              >
-                <component :is="relacion.icon" class="w-3.5 h-3.5 shrink-0" />
-                {{ relacion.numero }}
-                <span
-                  v-if="relacion.extra > 0"
-                  class="inline-flex items-center gap-0.5 pl-1 border-l border-current/30 font-semibold"
-                  :title="`${relacion.extra} relación(es) adicional(es)`"
-                >
-                  <Plus class="w-2.5 h-2.5" />{{ relacion.extra }}
-                </span>
-              </a>
-              <span
-                v-else
-                class="inline-flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500"
-                :title="`${relacion.label}: sin relación`"
-              >
-                <component :is="relacion.icon" class="w-3.5 h-3.5 shrink-0" />
-                {{ relacion.label }}: No
-              </span>
-            </template>
-          </div>
+          <RelacionesFlujo :pasos="relacionesDeRecepcion(item)" />
         </td>
         <td class="p-4 whitespace-nowrap align-top">
           <div class="flex items-center gap-2">

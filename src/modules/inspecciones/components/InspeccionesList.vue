@@ -1,21 +1,30 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted } from 'vue';
-import { FileSearchCorner, Pencil, Trash2, Search } from 'lucide-vue-next';
+import {
+  FileSearchCorner, Pencil, Trash2, Search, Receipt, Filter, CalendarDays, Flag,
+  Car, Gauge, IdCard, Phone,
+} from 'lucide-vue-next';
 import { IconLockOpen2 } from '@tabler/icons-vue';
-import { QuoteIcon } from 'gonmotor-icons';
 import { Icon } from '@iconify/vue';
 import filePdfIcon from '@iconify-icons/fa6-regular/file-pdf';
 import { useInspecciones } from '../composables/useInspecciones';
 import { inspeccionesService } from '../services/inspeccionesService';
 import { talleresService } from '../../configuracion/services/talleresService';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
+import FilterActions from '../../../shared/components/FilterActions.vue';
 import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
 import { SEARCH_DEBOUNCE_MS, isSearchable } from '../../../shared/utils/search';
+import { estadoADisplay } from '../../../shared/utils/estadoFlujo';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
 import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
+import EstadoInspeccionBadge from './EstadoInspeccionBadge.vue';
+import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
+import { relacionesDeInspeccion } from '../../../shared/utils/relacionesFlujo';
 import Pagination from '../../../shared/components/Pagination.vue';
+import { ESTADOS_INSPECCION_FILTRABLE } from '../constants/estadosInspeccion';
+import { TIPOS_TRABAJO_OPCIONES } from '../../../shared/config/tiposTrabajo';
 
 const {
   inspecciones,
@@ -45,11 +54,13 @@ function hideAlert() {
 }
 
 const prefijoInspeccionBySucursal = ref({});
+const talleres = ref([]);
 
 async function loadPrefijosInspeccion() {
   try {
     const data = await talleresService.listTalleres();
     const list = Array.isArray(data) ? data : data?.results || [];
+    talleres.value = list;
     const map = {};
     list.forEach((taller) => {
       if (taller.id && taller.prefijo_inspeccion) {
@@ -58,8 +69,13 @@ async function loadPrefijosInspeccion() {
     });
     prefijoInspeccionBySucursal.value = map;
   } catch (error) {
+    talleres.value = [];
     prefijoInspeccionBySucursal.value = {};
   }
+}
+
+function tallerLabel(taller) {
+  return [taller.nombre, taller.ciudad].filter(Boolean).join(' · ') || `Taller ${taller.id}`;
 }
 
 function numeroDisplay(item) {
@@ -68,14 +84,32 @@ function numeroDisplay(item) {
   return `#${prefijo}${item.id}`;
 }
 
+// La inspección guarda su propio vehículo/cliente; si viene de una recepción
+// el backend los completa con los de esa recepción.
+function vehiculoDe(item) {
+  return item.vehiculo || item.recepcion?.vehiculo || null;
+}
+
+function clienteDe(item) {
+  return item.cliente || item.recepcion?.cliente || null;
+}
+
 function vehiculoUrl(item) {
-  const id = item?.vehiculo?.id || item?.recepcion?.vehiculo?.id;
+  const id = vehiculoDe(item)?.id;
   return id ? `/crud/vehiculos/ver/?id=${encodeURIComponent(id)}` : null;
 }
 
 function clienteUrl(item) {
-  const id = item?.cliente?.id || item?.recepcion?.cliente?.id;
+  const id = clienteDe(item)?.id;
   return id ? `/crud/clientes/ver/?id=${encodeURIComponent(id)}` : null;
+}
+
+function kmDisplay(item) {
+  const km = vehiculoDe(item)?.kilometraje_actual;
+  if (km === null || km === undefined || km === '') return 'Sin km registrado';
+  const numero = Number(km);
+  if (Number.isNaN(numero)) return 'Sin km registrado';
+  return `${numero.toLocaleString('es-EC')} km`;
 }
 
 const showDeleteModal = ref(false);
@@ -95,6 +129,80 @@ function solicitarReabrir(inspeccion) {
   showReabrirModal.value = true;
 }
 
+// --- PANEL DE FILTROS (no reactivos hasta "Buscar") ---
+const emptyAdvancedFilters = () => ({
+  estado: '',
+  tipoInspeccion: '',
+  sucursal: '',
+  fechaDesde: '',
+  fechaHasta: '',
+});
+
+const draftFilters = ref(emptyAdvancedFilters());
+const appliedFilters = ref({ ...draftFilters.value });
+
+// Flowbite escribe directamente en input.value (no emite input/change), por eso
+// estos campos se leen del DOM en vez de usar v-model.
+const fechaDesdeInput = ref(null);
+const fechaHastaInput = ref(null);
+
+function fechaInputAIso(elemento) {
+  const valor = (elemento?.value || '').trim();
+  if (!valor) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) return valor;
+  const match = valor.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+  if (!match) return '';
+  const [, dia, mes, anio] = match;
+  return `${anio}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+}
+
+function limpiarCamposFecha() {
+  [fechaDesdeInput, fechaHastaInput].forEach((campo) => {
+    const elemento = campo.value;
+    if (!elemento) return;
+    elemento.value = '';
+    if (typeof elemento.datepicker?.clear === 'function') elemento.datepicker.clear();
+  });
+}
+
+function buildQuery() {
+  return {
+    search: search.value.trim(),
+    estado: appliedFilters.value.estado,
+    tipo_inspeccion: appliedFilters.value.tipoInspeccion,
+    sucursal: appliedFilters.value.sucursal,
+    fecha_desde: appliedFilters.value.fechaDesde,
+    fecha_hasta: appliedFilters.value.fechaHasta,
+  };
+}
+
+async function reloadList(page = 1) {
+  try {
+    await loadInspecciones(page, buildQuery());
+  } catch (err) {
+    showAlert('error', '', err?.message || 'No se pudieron cargar las inspecciones.');
+  }
+}
+
+function applyAdvancedFilters() {
+  if (loading.value) return;
+  appliedFilters.value = {
+    ...draftFilters.value,
+    fechaDesde: fechaInputAIso(fechaDesdeInput.value),
+    fechaHasta: fechaInputAIso(fechaHastaInput.value),
+  };
+  reloadList(1);
+}
+
+function clearAdvancedFilters() {
+  if (loading.value) return;
+  search.value = '';
+  draftFilters.value = emptyAdvancedFilters();
+  appliedFilters.value = emptyAdvancedFilters();
+  limpiarCamposFecha();
+  reloadList(1);
+}
+
 async function confirmarReabrir() {
   if (!inspeccionToReabrir.value || isReopening.value) return;
   isReopening.value = true;
@@ -104,7 +212,7 @@ async function confirmarReabrir() {
     inspeccionToReabrir.value = null;
     showReabrirModal.value = false;
     showAlert('success', '', `Inspección ${numero} reabierta. Ahora está en proceso.`);
-    await loadInspecciones(currentPage.value);
+    await reloadList(currentPage.value);
   } catch (error) {
     showAlert('error', '', error.message || 'No se pudo reabrir la inspección.');
     showReabrirModal.value = false;
@@ -140,7 +248,7 @@ async function confirmDelete() {
     const page = inspecciones.value.length === 1 && currentPage.value > 1
       ? currentPage.value - 1
       : currentPage.value;
-    await loadInspecciones(page);
+    await reloadList(page);
   } catch (error) {
     showAlert('error', '', error.message || 'No se pudo eliminar la inspección.');
   } finally {
@@ -149,24 +257,34 @@ async function confirmDelete() {
   }
 }
 
-function formatDate(dateString) {
-  if (!dateString) return '-';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+function formatAntiguedad(date) {
+  const minutos = Math.floor((Date.now() - date.getTime()) / 60000);
+  if (minutos < 1) return 'recién';
+  if (minutos < 60) return `hace ${minutos} min`;
+  const horas = Math.floor(minutos / 60);
+  if (horas < 24) return `hace ${horas} h`;
+  const dias = Math.floor(horas / 24);
+  if (dias === 1) return 'ayer';
+  if (dias < 30) return `hace ${dias} días`;
+  const meses = Math.floor(dias / 30);
+  return `hace ${meses} ${meses === 1 ? 'mes' : 'meses'}`;
 }
 
-function estadoBadge(estado) {
-  const map = {
-    PENDIENTE: { label: 'Pendiente', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' },
-    EN_PROCESO: { label: 'En proceso', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
-    FINALIZADA: { label: 'Finalizada', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' },
+function fechaDisplay(valor) {
+  if (!valor) return null;
+  const date = new Date(valor);
+  if (Number.isNaN(date.getTime())) return null;
+  return {
+    fecha: date.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+    hora: date.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' }),
+    antiguedad: formatAntiguedad(date),
+    completo: date.toLocaleString('es-EC', { dateStyle: 'long', timeStyle: 'short' }),
   };
-  return map[estado] || { label: estado || '-', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' };
 }
 
 function scheduleSearch() {
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => loadInspecciones(1), SEARCH_DEBOUNCE_MS);
+  searchTimer = setTimeout(() => reloadList(1), SEARCH_DEBOUNCE_MS);
 }
 
 watch(search, () => {
@@ -174,7 +292,7 @@ watch(search, () => {
 });
 onMounted(() => {
   loadPrefijosInspeccion();
-  loadInspecciones();
+  reloadList();
 });
 
 onUnmounted(() => {
@@ -210,18 +328,115 @@ onUnmounted(() => {
   </div>
 
   <div class="px-4 pb-4 sm:px-6 lg:px-8 mt-4">
-    <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
-      <div class="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-default-medium">
-        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-          <form class="relative" @submit.prevent="loadInspecciones(1)">
-            <label for="inspecciones-search" class="sr-only">Buscar inspecciones</label>
-            <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-              <Search class="w-4 h-4 text-body" />
-            </div>
-            <input id="inspecciones-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="Buscar por placa o cliente" class="block w-full sm:w-64 ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand">
-          </form>
+    <!-- PANEL DE FILTROS -->
+    <div class="bg-neutral-primary-soft shadow-xs rounded-base border border-default mb-4">
+      <div class="flex flex-col gap-3 px-4 py-3 border-b border-default-medium md:flex-row md:items-center md:justify-between">
+        <h2 class="flex items-center gap-2 text-lg font-semibold text-heading">
+          <Filter class="w-5 h-5" />
+          Búsqueda
+        </h2>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <FilterActions
+            :loading="loading"
+            @clear="clearAdvancedFilters"
+            @search="applyAdvancedFilters" />
         </div>
-        <div class="flex items-center gap-2">
+      </div>
+
+      <div class="p-4">
+        <div class="flex flex-wrap items-end gap-3 min-w-0">
+          <div class="w-full min-w-60 shrink-0 lg:flex-1 lg:max-w-2xl">
+            <label for="inspecciones-search" class="block mb-1 text-sm font-medium text-heading">
+              Buscar inspección
+            </label>
+            <form class="relative" @submit.prevent="applyAdvancedFilters">
+              <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                <Search class="w-4 h-4 text-body" />
+              </div>
+              <input id="inspecciones-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="N.º inspección, placa, cliente o recepción" class="block w-full ps-9 pe-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs placeholder:text-body focus:ring-brand focus:border-brand dark:bg-gray-800">
+            </form>
+          </div>
+
+          <div class="w-full sm:w-auto sm:shrink-0">
+            <label for="filtro-estado" class="block mb-1 text-sm font-medium text-heading">Estado</label>
+            <select
+              id="filtro-estado"
+              v-model="draftFilters.estado"
+              class="block w-full sm:w-36 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800">
+              <option value="">Todos</option>
+              <option v-for="item in ESTADOS_INSPECCION_FILTRABLE" :key="item" :value="item">{{ estadoADisplay('inspeccion', item) }}</option>
+            </select>
+          </div>
+
+          <div class="w-full sm:w-auto sm:shrink-0">
+            <label for="filtro-tipo-inspeccion" class="block mb-1 text-sm font-medium text-heading">Tipo de inspección</label>
+            <select
+              id="filtro-tipo-inspeccion"
+              v-model="draftFilters.tipoInspeccion"
+              class="block w-full sm:w-44 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800">
+              <option value="">Todos</option>
+              <option v-for="item in TIPOS_TRABAJO_OPCIONES" :key="item.value" :value="item.value">{{ item.label }}</option>
+            </select>
+          </div>
+
+          <div class="w-full sm:w-auto sm:shrink-0">
+            <label for="filtro-taller" class="block mb-1 text-sm font-medium text-heading">Taller</label>
+            <select
+              id="filtro-taller"
+              v-model="draftFilters.sucursal"
+              class="block w-full sm:w-48 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800">
+              <option value="">Todos los talleres</option>
+              <option v-for="taller in talleres" :key="taller.id" :value="taller.id">{{ tallerLabel(taller) }}</option>
+            </select>
+          </div>
+
+          <div class="w-full sm:w-40 sm:shrink-0">
+            <label for="filtro-fecha-desde" class="block mb-1 text-sm font-medium text-heading">Desde</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                <CalendarDays class="w-4 h-4 text-body" aria-hidden="true" />
+              </div>
+              <input
+                id="filtro-fecha-desde"
+                ref="fechaDesdeInput"
+                datepicker
+                datepicker-autohide
+                datepicker-format="dd/mm/yyyy"
+                type="text"
+                autocomplete="off"
+                placeholder="dd/mm/aaaa"
+                class="block w-full ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs placeholder:text-body dark:bg-gray-800" />
+            </div>
+          </div>
+
+          <div class="w-full sm:w-40 sm:shrink-0">
+            <label for="filtro-fecha-hasta" class="block mb-1 text-sm font-medium text-heading">Hasta</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                <CalendarDays class="w-4 h-4 text-body" aria-hidden="true" />
+              </div>
+              <input
+                id="filtro-fecha-hasta"
+                ref="fechaHastaInput"
+                datepicker
+                datepicker-autohide
+                datepicker-format="dd/mm/yyyy"
+                type="text"
+                autocomplete="off"
+                placeholder="dd/mm/aaaa"
+                class="block w-full ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs placeholder:text-body dark:bg-gray-800" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL DE LISTADO -->
+    <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+      <div class="flex flex-col gap-3 px-4 py-3 border-b border-default-medium md:flex-row md:items-center md:justify-between">
+        <h2 class="text-lg font-semibold text-heading">Listado de Inspecciones</h2>
+        <div class="flex flex-wrap items-center gap-2">
           <EntityActionButtons
             entity="inspecciones"
             @pdfExportError="handlePdfError"
@@ -230,7 +445,16 @@ onUnmounted(() => {
         </div>
       </div>
       <EntityTable
-        :columns="['Nº Inspección', 'Vehículo', 'Cliente', 'Tipo', 'Estado', 'Fecha', 'Acciones']"
+        :columns="[
+          'Nº Inspección',
+          { key: 'vehiculo', label: 'Vehículo', thClass: 'w-44' },
+          'Cliente',
+          'Tipo',
+          { key: 'fechas', label: 'Fechas', thClass: 'w-64' },
+          'Estado',
+          'Relaciones',
+          'Acciones',
+        ]"
         :items="inspecciones"
         :loading="loading"
         loading-text="Cargando inspecciones..."
@@ -248,49 +472,95 @@ onUnmounted(() => {
             {{ numeroDisplay(item) }}
           </a>
         </td>
-        <td class="p-4 whitespace-nowrap">
+        <td class="p-4 whitespace-nowrap align-top">
           <a
             v-if="vehiculoUrl(item)"
             :href="vehiculoUrl(item)"
-            class="font-medium text-gray-800 hover:text-primary-600 dark:text-white dark:hover:text-primary-400"
-          >{{ item.recepcion?.placa || '-' }}</a>
-          <span v-else class="font-medium text-gray-800 dark:text-white">{{ item.recepcion?.placa || '-' }}</span>
-          <span class="block text-xs text-gray-500 dark:text-gray-400">
-            {{ item.recepcion?.marca || '' }} {{ item.recepcion?.modelo || '' }}
-          </span>
+            class="font-semibold text-gray-900 hover:text-primary-600 dark:text-white dark:hover:text-primary-400"
+          >{{ vehiculoDe(item)?.placa || '-' }}</a>
+          <span v-else class="font-semibold text-gray-900 dark:text-white">{{ vehiculoDe(item)?.placa || '-' }}</span>
+          <div class="mt-1 flex flex-col gap-1 ps-0.5 text-xs text-gray-500 dark:text-gray-400">
+            <span class="flex items-center gap-1.5 min-w-0">
+              <Car class="w-3.5 h-3.5 shrink-0" />
+              <span class="min-w-0 truncate">
+                {{ [vehiculoDe(item)?.marca, vehiculoDe(item)?.modelo].filter(Boolean).join(' ') || '-' }}
+                <span v-if="vehiculoDe(item)?.color" class="text-gray-400 dark:text-gray-500">· {{ vehiculoDe(item).color }}</span>
+              </span>
+            </span>
+            <span class="flex items-center gap-1.5">
+              <Gauge class="w-3.5 h-3.5 shrink-0" />
+              <span>{{ kmDisplay(item) }}</span>
+            </span>
+          </div>
         </td>
-        <td class="p-4 whitespace-nowrap">
+        <td class="p-4 whitespace-nowrap align-top">
           <a
             v-if="clienteUrl(item)"
             :href="clienteUrl(item)"
             class="font-medium text-gray-800 hover:text-primary-600 dark:text-white dark:hover:text-primary-400"
-          >{{ item.recepcion?.cliente_nombre || '-' }}</a>
-          <span v-else class="font-medium text-gray-800 dark:text-white">{{ item.recepcion?.cliente_nombre || '-' }}</span>
+          >{{ clienteDe(item)?.nombre || '-' }}</a>
+          <span v-else class="font-medium text-gray-800 dark:text-white">{{ clienteDe(item)?.nombre || '-' }}</span>
+          <div class="mt-1 flex flex-col gap-1 ps-0.5 text-xs text-gray-500 dark:text-gray-400">
+            <span v-if="clienteDe(item)?.identificacion" class="flex items-center gap-1.5">
+              <IdCard class="w-3.5 h-3.5 shrink-0" />
+              <span>{{ clienteDe(item).identificacion }}</span>
+            </span>
+            <span v-if="clienteDe(item)?.telefono" class="flex items-center gap-1.5">
+              <Phone class="w-3.5 h-3.5 shrink-0" />
+              <span>{{ clienteDe(item).telefono }}</span>
+            </span>
+          </div>
         </td>
-        <td class="p-4 whitespace-nowrap">
-          <TipoTrabajoBadge :tipo="item.tipo_inspeccion" size="sm" />
+        <td class="p-4 whitespace-nowrap align-top">
+          <TipoTrabajoBadge :tipo="item.tipo_inspeccion" :size=" 'sm' " />
         </td>
-        <td class="p-4 whitespace-nowrap">
-          <span :class="['px-2 py-1 rounded-full text-xs font-medium', estadoBadge(item.estado).color]">
-            {{ estadoBadge(item.estado).label }}
-          </span>
+        <td class="p-4 whitespace-nowrap align-top">
+          <div class="flex flex-col gap-1.5">
+            <div class="flex flex-col gap-0.5" :title="fechaDisplay(item.fecha_inspeccion)?.completo || ''">
+              <span class="flex items-center gap-1.5 text-xs font-medium text-gray-400 dark:text-gray-500">
+                <CalendarDays class="w-3.5 h-3.5 shrink-0" />
+                Inspección
+              </span>
+              <span v-if="fechaDisplay(item.fecha_inspeccion)" class="flex items-baseline gap-1.5 whitespace-nowrap">
+                <span class="font-medium text-gray-900 dark:text-white">{{ fechaDisplay(item.fecha_inspeccion).fecha }}</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">{{ fechaDisplay(item.fecha_inspeccion).hora }}</span>
+                <span class="text-xs text-gray-400 dark:text-gray-500">· {{ fechaDisplay(item.fecha_inspeccion).antiguedad }}</span>
+              </span>
+              <span v-else class="text-sm text-gray-400 dark:text-gray-500">Sin fecha</span>
+            </div>
+            <div class="flex flex-col gap-0.5" :title="fechaDisplay(item.fecha_finalizacion)?.completo || ''">
+              <span class="flex items-center gap-1.5 text-xs font-medium text-gray-400 dark:text-gray-500">
+                <Flag class="w-3.5 h-3.5 shrink-0" />
+                Finalización
+              </span>
+              <span v-if="fechaDisplay(item.fecha_finalizacion)" class="flex items-baseline gap-1.5 whitespace-nowrap">
+                <span class="font-medium text-gray-900 dark:text-white">{{ fechaDisplay(item.fecha_finalizacion).fecha }}</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">{{ fechaDisplay(item.fecha_finalizacion).hora }}</span>
+                <span class="text-xs text-gray-400 dark:text-gray-500">· {{ fechaDisplay(item.fecha_finalizacion).antiguedad }}</span>
+              </span>
+              <span v-else class="text-sm text-gray-400 dark:text-gray-500">Pendiente de finalizar</span>
+            </div>
+          </div>
         </td>
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ formatDate(item.created_at) }}</td>
-        <td class="p-4 whitespace-nowrap">
+        <td class="p-4 whitespace-nowrap align-top">
+          <EstadoInspeccionBadge :estado="item.estado" :estado-display="item.estado_display" />
+        </td>
+        <td class="p-4 whitespace-nowrap align-top">
+          <RelacionesFlujo :pasos="relacionesDeInspeccion(item)" />
+        </td>
+        <td class="p-4 whitespace-nowrap align-top">
           <div class="flex items-center gap-2">
             <button v-if="item.estado !== 'FINALIZADA'" type="button" title="Editar inspección" aria-label="Editar inspección" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="handleEditar(item)">
               <Pencil class="w-5 h-5" />
+            </button>
+            <button type="button" title="Eliminar inspección" aria-label="Eliminar inspección" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
+              <Trash2 class="w-5 h-5" />
             </button>
             <button v-if="item.estado === 'FINALIZADA'" type="button" title="Reabrir inspección" aria-label="Reabrir inspección" :disabled="isReopening" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="solicitarReabrir(item)">
               <IconLockOpen2 class="w-5 h-5" />
             </button>
             <button v-if="item.estado === 'PENDIENTE'" type="button" title="Crear cotización" aria-label="Crear cotización" class="px-1.5 py-1.5 inline-flex items-center p-2 text-gray-900 rounded border border-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-primary-400" @click="handleCrearCotizacion(item.id)">
-              <QuoteIcon class="w-5 h-5" />
-            </button>
-
-
-            <button type="button" title="Eliminar inspección" aria-label="Eliminar inspección" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
-              <Trash2 class="w-5 h-5" />
+              <Receipt class="w-5 h-5" />
             </button>
             <button type="button" title="Descargar PDF" aria-label="Descargar PDF" class="px-1.5 py-1.5 inline-flex items-center p-2 text-gray-900 rounded border border-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-primary-400">
               <Icon :icon="filePdfIcon" class="w-5 h-5" />
@@ -309,7 +579,7 @@ onUnmounted(() => {
         item-word="inspección"
         item-plural="inspecciones"
         empty-text="No se encontraron inspecciones."
-        @page="loadInspecciones"
+        @page="reloadList"
       />
     </template>
     </EntityTable>

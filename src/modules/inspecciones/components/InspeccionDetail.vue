@@ -842,10 +842,7 @@ onMounted(async () => {
               <div>
                 <dt class="font-medium text-gray-700 dark:text-gray-300">Estado</dt>
                 <dd>
-                  <span
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
-                    :class="estadoBadge.color"
-                  >
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium" :class="estadoBadge.color">
                     <component :is="estadoBadge.icon" class="w-3.5 h-3.5" aria-hidden="true" />
                     {{ estadoBadge.label }}
                   </span>

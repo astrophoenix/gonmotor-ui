@@ -7,9 +7,13 @@ function buildUrl(id) {
 }
 
 export const inspeccionesService = {
-  list({ page = 1, search = '', ordering = '-created_at', signal } = {}) {
+  list({ page = 1, search = '', ordering = '-created_at', filters = {}, signal } = {}) {
     const params = new URLSearchParams({ page: String(page), ordering });
     if (search) params.set('search', search);
+    Object.entries(filters || {}).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === '' || value === false) return;
+      params.set(key, value);
+    });
     return request(`${ENDPOINT}?${params.toString()}`, { signal });
   },
 

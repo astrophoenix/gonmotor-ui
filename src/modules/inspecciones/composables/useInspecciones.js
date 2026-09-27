@@ -19,17 +19,19 @@ export function useInspecciones() {
 
   const listRequest = createLatestRequest();
 
-  async function loadInspecciones(page = 1) {
+  async function loadInspecciones(page = 1, filters = {}) {
     const { signal, id } = listRequest.begin();
     loading.value = true;
     error.value = null;
     currentPage.value = page;
 
     try {
+      const { search: busqueda = '', ...resto } = filters;
       const data = await inspeccionesService.list({
         page,
-        search: search.value,
+        search: busqueda || search.value,
         ordering: '-created_at',
+        filters: resto,
         signal,
       });
       if (!listRequest.isCurrent(id)) return;

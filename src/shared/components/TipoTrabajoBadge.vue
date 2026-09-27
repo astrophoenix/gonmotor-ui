@@ -18,7 +18,7 @@ const props = defineProps({
 const config = computed(() => getTipoTrabajoConfig(props.tipo));
 
 const TAMANOS = {
-  sm: { wrap: 'gap-1 px-2 py-0.5', text: 'text-xs', icon: 'w-4 h-4' },
+  sm: { wrap: 'gap-1 px-2 py-0.5', text: 'text-xs', icon: 'w-5 h-5' },
   md: { wrap: 'gap-1.5 px-2.5 py-1', text: 'text-sm', icon: 'w-6 h-6' },
   lg: { wrap: 'gap-2 px-3 py-1.5', text: 'text-base', icon: 'w-7 h-7' },
 };
