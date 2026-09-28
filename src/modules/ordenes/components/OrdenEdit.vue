@@ -1,7 +1,8 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { ArrowLeft, User, Wrench, Package, Wand2, Loader2, Plus, X, Camera } from 'lucide-vue-next';
+import { ArrowLeft, Package, Wand2, Loader2, Plus, X, Camera, FileText, ClipboardList, Car } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
+import { API_BASE_URL } from '../../../shared/config/env';
 import { ordenesService } from '../services/ordenesService';
 import Alert from '../../../shared/components/Alert.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
@@ -11,20 +12,29 @@ import PhotoUploadGrid from '../../../shared/components/PhotoUploadGrid.vue';
 import EstadoOrdenBadge from './EstadoOrdenBadge.vue';
 import ClienteSearchSelect from '../../../shared/components/ClienteSearchSelect.vue';
 import VehiculoSearchSelect from '../../../shared/components/VehiculoSearchSelect.vue';
+import EmpleadoSearchSelect from '../../../shared/components/EmpleadoSearchSelect.vue';
 import ClientModal from '../../clientes/components/ClientModal.vue';
+import FlowSteps from '../../../shared/components/FlowSteps.vue';
 import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 import { sanitizeObservaciones } from '../../../shared/utils/sanitize';
 import {
   TIPOS_TRABAJO_OPCIONES,
   normalizarTipoTrabajo,
 } from '../../../shared/config/tiposTrabajo';
+import {
+  IVA_DEFECTO,
+  IVA_OPCIONES,
+  ivaLinea,
+  netoLinea,
+  normalizarIva,
+  round2,
+} from '../../../shared/utils/impuestos';
 
 const orden = ref(null);
 const loading = ref(true);
 const saving = ref(false);
 const error = ref('');
-const success = ref(false);
-const empleados = ref([]);
+const successMessage = ref('');
 const servicios = ref([]);
 const repuestos = ref([]);
 const serviciosEliminados = ref([]);
@@ -32,8 +42,6 @@ const repuestosEliminados = ref([]);
 const catalogoServicios = ref([]);
 const catalogoRepuestos = ref([]);
 const mostrarServicios = ref(true);
-
-const IVA_PORCENTAJE = 0.15;
 
 const FOTO_MAX = 5;
 const fotosOt = ref([]);
@@ -54,8 +62,10 @@ const clienteSeleccionado = ref(null);
 const vehiculoSeleccionado = ref(null);
 const clienteSearch = ref('');
 const vehiculoSearch = ref('');
+const mecanicoSearch = ref('');
 const showClientCreateModal = ref(false);
 const formErrors = ref({ cliente: '', vehiculo: '' });
+const activeTab = ref('trabajo');
 
 function seleccionarCliente(clienteObj) {
   clienteSeleccionado.value = clienteObj || null;
@@ -83,24 +93,46 @@ function onClientCreated(clienteObj) {
   }
 }
 
+function limpiarVehiculo() {
+  vehiculoSeleccionado.value = null;
+  vehiculoSearch.value = '';
+  formErrors.value.vehiculo = '';
+}
+
+function formatPlaca(placa) {
+  if (!placa) return '';
+  const cleaned = String(placa).replace(/-/g, '').toUpperCase();
+  if (cleaned.length <= 3) return cleaned;
+  return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}`;
+}
+
+function nombreEmpleado(empleado) {
+  const user = empleado?.user || {};
+  return `${user.first_name || ''} ${user.last_name || ''}`.trim()
+    || user.username
+    || user.email
+    || '';
+}
+
+function seleccionarMecanico(empleado) {
+  form.value.mecanico_principal = empleado?.user?.id ? String(empleado.user.id) : '';
+  mecanicoSearch.value = nombreEmpleado(empleado);
+}
+
+function limpiarMecanico() {
+  form.value.mecanico_principal = '';
+  mecanicoSearch.value = '';
+}
+
 const form = ref({
   estado: 'PENDIENTE',
   prioridad: 'MEDIA',
   tipo_trabajo: 'MANTENIMIENTO',
   mecanico_principal: '',
   fecha_entrega: '',
-  observaciones_internas: '',
+  observaciones: '',
   motivo_espera: '',
 });
-
-const ESTADOS = [
-  { value: 'PENDIENTE', label: 'Pendiente' },
-  { value: 'EN_ESPERA', label: 'En espera' },
-  { value: 'EN_PROCESO', label: 'En proceso' },
-  { value: 'COMPLETADO', label: 'Completado' },
-  { value: 'ENTREGADO', label: 'Entregado' },
-  { value: 'CANCELADO', label: 'Anulado' },
-];
 
 const PRIORIDADES = [
   { value: 'BAJA', label: 'Baja' },
@@ -125,21 +157,69 @@ const tipoTrabajoLabel = computed(() => {
   return tipo ? tipo.label : (form.value.tipo_trabajo || '—');
 });
 
+function brutoServicio(s) {
+  return (Number(s.horas_aplicadas) || 0) * (Number(s.precio_unitario) || 0);
+}
+
+function netoServicio(s) {
+  return netoLinea(brutoServicio(s), s.descuento);
+}
+
+function brutoRepuesto(r) {
+  return (Number(r.cantidad) || 0) * (Number(r.precio_unitario) || 0);
+}
+
+function netoRepuesto(r) {
+  return netoLinea(brutoRepuesto(r), r.descuento);
+}
+
 const subtotalServicios = computed(() =>
-  servicios.value.reduce((acc, s) => acc + (Number(s.horas_aplicadas) || 0) * (Number(s.precio_unitario) || 0), 0)
+  round2(servicios.value.reduce((acc, s) => acc + netoServicio(s), 0))
 );
 const subtotalRepuestos = computed(() =>
-  repuestos.value.reduce((acc, r) => acc + (Number(r.cantidad) || 0) * (Number(r.precio_unitario) || 0), 0)
+  round2(repuestos.value.reduce((acc, r) => acc + netoRepuesto(r), 0))
 );
-const subtotalNeto = computed(() => {
-  const bruto = subtotalServicios.value + subtotalRepuestos.value;
-  return Math.max(0, bruto - (Number(orden.value?.descuento) || 0));
-});
-const montoIva = computed(() => subtotalNeto.value * IVA_PORCENTAJE);
-const totalOt = computed(() => subtotalNeto.value + montoIva.value);
+const descuentoTotal = computed(() =>
+  round2(
+    [...servicios.value, ...repuestos.value].reduce(
+      (acc, item) => acc + (Number(item.descuento) || 0),
+      0
+    )
+  )
+);
+const lineasFiscales = computed(() => [
+  ...servicios.value.map((s) => {
+    const neto = netoServicio(s);
+    return { neto, tasa: Number(s.iva_porcentaje) || 0, montoIva: ivaLinea(neto, s.iva_porcentaje) };
+  }),
+  ...repuestos.value.map((r) => {
+    const neto = netoRepuesto(r);
+    return { neto, tasa: Number(r.iva_porcentaje) || 0, montoIva: ivaLinea(neto, r.iva_porcentaje) };
+  }),
+]);
+const subtotalNeto = computed(() => round2(subtotalServicios.value + subtotalRepuestos.value));
+const subtotalBase0 = computed(() =>
+  round2(lineasFiscales.value.filter((l) => l.tasa === 0).reduce((acc, l) => acc + l.neto, 0))
+);
+const subtotalBaseGravada = computed(() =>
+  round2(lineasFiscales.value.filter((l) => l.tasa > 0).reduce((acc, l) => acc + l.neto, 0))
+);
+const montoIva = computed(() =>
+  round2(lineasFiscales.value.reduce((acc, l) => acc + l.montoIva, 0))
+);
+const totalOt = computed(() => round2(subtotalNeto.value + montoIva.value));
 
-const cliente = computed(() => orden.value?.cliente || clienteSeleccionado.value || null);
-const vehiculo = computed(() => orden.value?.vehiculo || vehiculoSeleccionado.value || null);
+const cliente = computed(() => clienteSeleccionado.value || null);
+const vehiculo = computed(() => vehiculoSeleccionado.value || null);
+
+function resolveMediaUrl(url) {
+  if (!url) return '';
+  if (/^https?:\/\//i.test(url)) return url;
+  return `${API_BASE_URL.replace(/\/$/, '')}${url.startsWith('/') ? url : `/${url}`}`;
+}
+
+const vehiculoImagenSrc = computed(() => resolveMediaUrl(vehiculo.value?.imagen));
+
 const inspeccion = computed(() => orden.value?.inspeccion || null);
 const recepciones = computed(() => orden.value?.recepciones || []);
 
@@ -178,22 +258,6 @@ const pasosFlujo = computed(() => {
   ]);
 });
 
-const mecanicosOptions = computed(() => {
-  const base = empleados.value.map((empleado) => ({
-    value: String(empleado.user?.id),
-    label: [empleado.user?.first_name, empleado.user?.last_name].filter(Boolean).join(' ')
-      || empleado.user?.username
-      || empleado.user?.email
-      || 'Empleado',
-  }));
-  const actualId = form.value.mecanico_principal;
-  const actualNombre = orden.value?.mecanico_nombre;
-  if (actualId && actualNombre && !base.some((option) => option.value === String(actualId))) {
-    base.unshift({ value: String(actualId), label: actualNombre });
-  }
-  return base;
-});
-
 function formatDate(dateString) {
   if (!dateString) return '—';
   const date = new Date(dateString);
@@ -201,13 +265,14 @@ function formatDate(dateString) {
   return date.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
+const fechaIngresoDisplay = computed(() => {
+  if (esCreacion.value) return '';
+  return formatDate(orden.value?.fecha_ingreso || orden.value?.created_at);
+});
+
 function formatNumber(value) {
   if (value == null || value === '') return '—';
   return Number(value).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-function goTo(path) {
-  window.location.assign(path);
 }
 
 function toDateTimeLocal(value) {
@@ -217,16 +282,6 @@ function toDateTimeLocal(value) {
   const offset = date.getTimezoneOffset();
   const local = new Date(date.getTime() - offset * 60 * 1000);
   return local.toISOString().slice(0, 16);
-}
-
-async function cargarEmpleados() {
-  try {
-    const data = await request('/api/auth/empleados/');
-    const list = Array.isArray(data) ? data : (data && data.results) || [];
-    empleados.value = list.filter((empleado) => Boolean(empleado.user?.id));
-  } catch (err) {
-    empleados.value = [];
-  }
 }
 
 function loadCatalogo() {
@@ -245,6 +300,8 @@ function nuevaFilaServicio() {
     descripcion: '',
     horas_aplicadas: '1.00',
     precio_unitario: '0.00',
+    descuento: '0.00',
+    iva_porcentaje: IVA_DEFECTO,
   };
 }
 
@@ -256,6 +313,8 @@ function nuevaFilaRepuesto() {
     descripcion: '',
     cantidad: '1',
     precio_unitario: '0.00',
+    descuento: '0.00',
+    iva_porcentaje: IVA_DEFECTO,
   };
 }
 
@@ -290,6 +349,8 @@ function seleccionarServicio(item, fila) {
   fila.descripcion = formatearItem(item.codigo, item.nombre);
   fila.horas_aplicadas = '1.00';
   fila.precio_unitario = String(item.precio_referencial ?? '0.00');
+  fila.descuento = '0.00';
+  fila.iva_porcentaje = normalizarIva(item.iva_porcentaje_defecto);
   focusInput(`svc-horas-${fila.sufijo}`);
 }
 
@@ -298,6 +359,8 @@ function seleccionarRepuesto(item, fila) {
   fila.descripcion = formatearItem(item.codigo, item.nombre);
   fila.cantidad = '1';
   fila.precio_unitario = String(item.precio_venta ?? '0.00');
+  fila.descuento = '0.00';
+  fila.iva_porcentaje = normalizarIva(item.iva_porcentaje_defecto);
   focusInput(`rpt-cant-${fila.sufijo}`);
 }
 
@@ -318,6 +381,8 @@ function mapearServicio(s) {
     descripcion: s.descripcion || '',
     horas_aplicadas: String(s.horas_aplicadas ?? '1.00'),
     precio_unitario: String(s.precio_unitario ?? '0.00'),
+    descuento: String(s.descuento ?? '0.00'),
+    iva_porcentaje: normalizarIva(s.iva_porcentaje),
   };
 }
 
@@ -329,6 +394,8 @@ function mapearRepuesto(r) {
     descripcion: r.descripcion || '',
     cantidad: String(r.cantidad ?? '1'),
     precio_unitario: String(r.precio_unitario ?? '0.00'),
+    descuento: String(r.descuento ?? '0.00'),
+    iva_porcentaje: normalizarIva(r.iva_porcentaje),
   };
 }
 
@@ -350,9 +417,14 @@ function aplicarOrden(data) {
     tipo_trabajo: normalizarTipoTrabajo(data.tipo_trabajo) || 'MANTENIMIENTO',
     mecanico_principal: data.mecanico_principal || '',
     fecha_entrega: toDateTimeLocal(data.fecha_entrega),
-    observaciones_internas: data.observaciones_internas || '',
+    observaciones: data.observaciones || '',
     motivo_espera: data.motivo_espera || '',
   };
+  clienteSearch.value = data.cliente?.nombre || '';
+  clienteSeleccionado.value = data.cliente || null;
+  vehiculoSearch.value = data.vehiculo?.placa ? formatPlaca(data.vehiculo.placa) : '';
+  vehiculoSeleccionado.value = data.vehiculo || null;
+  mecanicoSearch.value = data.mecanico_nombre || '';
 }
 
 async function guardarDetalles(idOrden) {
@@ -365,6 +437,8 @@ async function guardarDetalles(idOrden) {
       descripcion: sanitizeObservaciones(s.descripcion || ''),
       horas_aplicadas: String(s.horas_aplicadas ?? '1.00'),
       precio_unitario: String(s.precio_unitario ?? '0.00'),
+      descuento: String(s.descuento ?? '0.00'),
+      iva_porcentaje: normalizarIva(s.iva_porcentaje),
     };
     try {
       if (s.id) {
@@ -384,6 +458,8 @@ async function guardarDetalles(idOrden) {
       descripcion: sanitizeObservaciones(r.descripcion || ''),
       cantidad: String(r.cantidad ?? '1'),
       precio_unitario: String(r.precio_unitario ?? '0.00'),
+      descuento: String(r.descuento ?? '0.00'),
+      iva_porcentaje: normalizarIva(r.iva_porcentaje),
     };
     try {
       if (r.id) {
@@ -423,7 +499,6 @@ async function guardarDetalles(idOrden) {
 }
 
 onMounted(async () => {
-  cargarEmpleados();
   loadCatalogo();
   if (esCreacion.value) {
     loading.value = false;
@@ -439,55 +514,50 @@ onMounted(async () => {
   }
 });
 
-const fotoZoom = ref('');
-
-function abrirFotoZoom(url) {
-  if (!url) return;
-  fotoZoom.value = url;
-}
-
-function cerrarFotoZoom() {
-  fotoZoom.value = '';
-}
-
 async function handleSubmit() {
   if (saving.value) return;
   saving.value = true;
   error.value = '';
-  success.value = false;
+  successMessage.value = '';
+
+  formErrors.value = { cliente: '', vehiculo: '' };
+  if (!clienteSeleccionado.value) formErrors.value.cliente = 'Selecciona el cliente de la orden.';
+  if (!vehiculoSeleccionado.value) formErrors.value.vehiculo = 'Selecciona el vehículo a atender.';
+  if (formErrors.value.cliente || formErrors.value.vehiculo) {
+    error.value = 'Completa los campos obligatorios del panel Información General (cliente y vehículo).';
+    saving.value = false;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+
+  if (form.value.estado === 'EN_ESPERA' && !String(form.value.motivo_espera || '').trim()) {
+    error.value = 'Indica el motivo de la espera de la orden.';
+    saving.value = false;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+
+  const datosOrden = {
+    cliente: clienteSeleccionado.value.id,
+    vehiculo: vehiculoSeleccionado.value.id,
+    prioridad: form.value.prioridad,
+    tipo_trabajo: form.value.tipo_trabajo,
+    mecanico_principal: form.value.mecanico_principal || null,
+    fecha_entrega: form.value.fecha_entrega ? new Date(form.value.fecha_entrega).toISOString() : null,
+    observaciones: form.value.observaciones || '',
+    motivo_espera: form.value.motivo_espera || null,
+  };
 
   if (esCreacion.value) {
-    formErrors.value = { cliente: '', vehiculo: '' };
-    if (!clienteSeleccionado.value) formErrors.value.cliente = 'Selecciona el cliente de la orden.';
-    if (!vehiculoSeleccionado.value) formErrors.value.vehiculo = 'Selecciona el vehículo a atender.';
-    if (formErrors.value.cliente || formErrors.value.vehiculo) {
-      saving.value = false;
-      return;
-    }
-
-    const payload = {
-      cliente: clienteSeleccionado.value.id,
-      vehiculo: vehiculoSeleccionado.value.id,
-      estado: form.value.estado,
-      prioridad: form.value.prioridad,
-      tipo_trabajo: form.value.tipo_trabajo,
-      mecanico_principal: form.value.mecanico_principal || null,
-      fecha_entrega: form.value.fecha_entrega ? new Date(form.value.fecha_entrega).toISOString() : null,
-      observaciones_internas: form.value.observaciones_internas || '',
-      motivo_espera: form.value.motivo_espera || null,
-    };
-
     try {
-      const creada = await ordenesService.create(payload);
+      const creada = await ordenesService.create(datosOrden);
       ordenPersistidaId.value = creada && creada.id;
       if (!ordenPersistidaId.value) {
         throw new Error('No se pudo confirmar la orden de trabajo creada.');
       }
       await guardarDetalles(ordenPersistidaId.value);
       await photosGrid.value?.guardarFotos();
-      success.value = true;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      setTimeout(() => goTo(`/crud/ordenes/ver/?id=${ordenPersistidaId.value}`), 1500);
+      window.location.assign(`/crud/ordenes/editar/?id=${ordenPersistidaId.value}`);
     } catch (err) {
       error.value = err.message || 'No se pudo crear la orden de trabajo.';
     } finally {
@@ -501,31 +571,12 @@ async function handleSubmit() {
     return;
   }
 
-  const payload = {
-    estado: form.value.estado,
-    prioridad: form.value.prioridad,
-    tipo_trabajo: form.value.tipo_trabajo,
-    observaciones_internas: form.value.observaciones_internas,
-    motivo_espera: form.value.motivo_espera || null,
-  };
-  if (form.value.mecanico_principal) {
-    payload.mecanico_principal = form.value.mecanico_principal;
-  } else {
-    payload.mecanico_principal = null;
-  }
-  if (form.value.fecha_entrega) {
-    payload.fecha_entrega = new Date(form.value.fecha_entrega).toISOString();
-  } else {
-    payload.fecha_entrega = null;
-  }
-
   try {
-    await ordenesService.update(orden.value.id, payload);
+    await ordenesService.update(orden.value.id, datosOrden);
     await guardarDetalles(orden.value.id);
     await photosGrid.value.guardarFotos();
-    success.value = true;
+    successMessage.value = 'Orden de trabajo guardada correctamente.';
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    setTimeout(() => goTo(`/crud/ordenes/ver/?id=${orden.value.id}`), 1500);
   } catch (err) {
     error.value = err.message || 'No se pudo guardar la orden de trabajo.';
   } finally {
@@ -574,230 +625,343 @@ async function handleSubmit() {
     <div v-if="orden" class="relative mx-auto max-w-6xl mb-5">
       <FlowSteps :steps="pasosFlujo" />
     </div>
-    <div class="relative mx-auto max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
-      <Alert v-if="success" type="success" title="Guardado correctamente" message="Redirigiendo al detalle..." dismissible @dismiss="success = false" />
-      <Alert v-if="error" type="error" title="Error" :message="error" dismissible @dismiss="error = ''" />
 
-      <div v-if="loading" class="flex items-center justify-center py-16 text-sm text-gray-500 dark:text-gray-400">
-        Cargando orden de trabajo...
-      </div>
+    <Alert v-if="successMessage" type="success" title="Guardado correctamente" :message="successMessage" dismissible @dismiss="successMessage = ''" />
+    <Alert v-if="error" type="error" title="Error" :message="error" dismissible @dismiss="error = ''" />
 
-      <div v-else-if="!esCreacion && !orden && !error" class="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
-        Orden de trabajo no encontrada.
-      </div>
+    <div v-if="loading" class="flex items-center justify-center py-16 text-sm text-gray-500 dark:text-gray-400">
+      Cargando orden de trabajo...
+    </div>
 
-      <form v-else @submit.prevent="handleSubmit">
-        <!-- Resumen: contexto de solo lectura -->
-        <h4 class="mb-4 text-xl font-semibold dark:text-white">
-          <span class="inline-flex items-center gap-2">
-            <User class="w-6 h-6 text-gray-800 dark:text-white" />
-            Información General
-          </span>
-        </h4>
+    <div v-else-if="!esCreacion && !orden && !error" class="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+      Orden de trabajo no encontrada.
+    </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-5 rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-700/40 dark:border-gray-600/60">
-          <div v-if="!esCreacion">
-            <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Cliente</h5>
-            <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Cliente</dt>
-                <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cliente?.nombre || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Identificación</dt>
-                <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cliente?.identificacion || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Teléfono</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ cliente?.telefono || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Correo</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ cliente?.email || '—' }}</dd>
-              </div>
-            </dl>
+    <form v-else class="grid grid-cols-1 gap-4 lg:grid-cols-4" novalidate @submit.prevent="handleSubmit">
+      <div class="space-y-4 lg:col-span-3">
+        <!-- Panel Información General -->
+        <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
+          <div class="flex items-center gap-2 mb-4">
+            <FileText class="w-5 h-5 text-gray-900 dark:text-white" />
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Información General</h3>
           </div>
 
-          <div v-if="!esCreacion">
-            <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Vehículo</h5>
-            <div class="flex flex-col gap-4 sm:flex-row">
-              <dl class="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Placa</dt>
-                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.placa || '—' }}</dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Marca</dt>
-                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.marca || '—' }}</dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Modelo</dt>
-                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.modelo || '—' }}</dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Color</dt>
-                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ vehiculo?.color || '—' }}</dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Kilometraje actual</dt>
-                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ vehiculo?.kilometraje_actual != null ? `${vehiculo.kilometraje_actual} km` : '—' }}</dd>
-                </div>
-              </dl>
-              <div class="w-full shrink-0 sm:w-36">
-                <button
-                  v-if="vehiculo?.imagen"
-                  type="button"
-                  title="Ver foto del vehículo"
-                  class="block w-full overflow-hidden rounded-lg border border-gray-200 cursor-zoom-in dark:border-gray-600"
-                  @click="abrirFotoZoom(vehiculo.imagen)"
+          <div class="space-y-4">
+            <!-- Fila 1: Cliente, Vehículo y Mecánico -->
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div class="min-w-0">
+                <label for="cliente" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente <span class="text-accent-500">*</span></label>
+                <ClienteSearchSelect
+                  id="cliente"
+                  v-model="clienteSearch"
+                  :error="Boolean(formErrors.cliente)"
+                  :error-message="formErrors.cliente"
+                  show-create
+                  @select="seleccionarCliente"
+                  @clear="limpiarCliente"
+                  @create="showClientCreateModal = true"
+                />
+              </div>
+              <div class="min-w-0">
+                <label for="vehiculo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo <span class="text-accent-500">*</span></label>
+                <VehiculoSearchSelect
+                  id="vehiculo"
+                  v-model="vehiculoSearch"
+                  :cliente-id="clienteSeleccionado?.id || null"
+                  :disabled="!clienteSeleccionado"
+                  :placeholder="clienteSeleccionado ? 'Buscar por placa...' : 'Selecciona un cliente primero'"
+                  :error="Boolean(formErrors.vehiculo)"
+                  :error-message="formErrors.vehiculo"
+                  @select="seleccionarVehiculo"
+                  @clear="limpiarVehiculo"
+                />
+              </div>
+              <div class="min-w-0">
+                <label for="mecanico" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Mecánico</label>
+                <EmpleadoSearchSelect
+                  id="mecanico"
+                  v-model="mecanicoSearch"
+                  placeholder="Buscar mecánico..."
+                  @select="seleccionarMecanico"
+                  @clear="limpiarMecanico"
+                />
+              </div>
+            </div>
+
+            <!-- Fila 2: Fechas y tipo de trabajo -->
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div class="min-w-0">
+                <label for="fecha_ingreso" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Fecha de Ingreso</label>
+                <input
+                  id="fecha_ingreso"
+                  :value="fechaIngresoDisplay"
+                  type="text"
+                  readonly
+                  disabled
+                  placeholder="Se registra al crear"
+                  class="block w-full p-2.5 text-sm text-gray-500 bg-gray-100 rounded shadow-xs border border-gray-300 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600"
                 >
-                  <img :src="vehiculo.imagen" alt="Foto del vehículo" class="h-28 w-full object-cover" />
+              </div>
+              <div class="min-w-0">
+                <label for="fecha_entrega" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Fecha de Entrega</label>
+                <input
+                  id="fecha_entrega"
+                  v-model="form.fecha_entrega"
+                  type="datetime-local"
+                  class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                >
+              </div>
+              <div class="min-w-0">
+                <label for="tipo_trabajo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de Trabajo</label>
+                <select id="tipo_trabajo" v-model="form.tipo_trabajo" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                  <option v-for="tipo in TIPOS" :key="tipo.value" :value="tipo.value">{{ tipo.label }}</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Fila 3: Prioridad -->
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div class="min-w-0">
+                <label for="prioridad" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Prioridad</label>
+                <select id="prioridad" v-model="form.prioridad" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                  <option v-for="prioridad in PRIORIDADES" :key="prioridad.value" :value="prioridad.value">{{ prioridad.label }}</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Fila 4: Motivo de espera (solo si la orden está en espera) -->
+            <div v-if="form.estado === 'EN_ESPERA'" class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div class="min-w-0 sm:col-span-3">
+                <label for="motivo_espera" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Motivo de Espera <span class="text-accent-500">*</span></label>
+                <input
+                  id="motivo_espera"
+                  v-model="form.motivo_espera"
+                  type="text"
+                  maxlength="80"
+                  placeholder="Ej.: esperando repuestos, aprobación del cliente..."
+                  class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel Body: pestañas Trabajo / Evidencia -->
+        <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
+          <div class="border-b border-gray-200 dark:border-gray-700">
+            <nav class="flex flex-wrap -mb-px">
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
+                :class="activeTab === 'trabajo' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+                @click="activeTab = 'trabajo'"
+              >
+                <Package class="w-4 h-4" />
+                1. Trabajo
+              </button>
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
+                :class="activeTab === 'evidencia' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+                @click="activeTab = 'evidencia'"
+              >
+                <Camera class="w-4 h-4" />
+                2. Evidencia
+              </button>
+            </nav>
+          </div>
+
+          <div v-show="activeTab === 'trabajo'" class="pt-4 space-y-6">
+            <div class="flex gap-4 mb-4 border-b border-gray-200 dark:border-gray-600">
+              <button
+                type="button"
+                :class="[mostrarServicios ? 'pb-2 text-sm font-medium border-b-2 border-primary-blue-700 text-primary-blue-700 dark:border-primary-blue-400 dark:text-primary-blue-400' : 'pb-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white']"
+                @click="mostrarServicios = true">Servicios</button>
+              <button
+                type="button"
+                :class="[!mostrarServicios ? 'pb-2 text-sm font-medium border-b-2 border-primary-blue-700 text-primary-blue-700 dark:border-primary-blue-400 dark:text-primary-blue-400' : 'pb-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white']"
+                @click="mostrarServicios = false">Repuestos</button>
+            </div>
+
+            <!-- Servicios -->
+            <div v-show="mostrarServicios">
+              <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+                <table class="w-full text-sm text-left text-gray-900 dark:text-white">
+                  <thead class="text-xs uppercase bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                    <tr>
+                      <th class="px-4 py-3">Servicio</th>
+                      <th class="px-4 py-3 w-24">Horas</th>
+                      <th class="px-4 py-3 w-36">P. unitario</th>
+                      <th class="px-4 py-3 w-28">Descuento</th>
+                      <th class="px-4 py-3 w-20">IVA</th>
+                      <th class="px-4 py-3 w-32">Neto</th>
+                      <th class="px-4 py-3 w-14"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-if="!servicios.length">
+                      <td colspan="7" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No hay servicios de mano de obra.</td>
+                    </tr>
+                    <tr v-for="(servicio, index) in servicios" :key="servicio.sufijo || servicio.id" class="border-t border-gray-200 dark:border-gray-600">
+                      <td class="px-4 py-2.5">
+                        <div class="relative">
+                          <CatalogoSelect
+                            :input-id="`svc-desc-${servicio.sufijo}`"
+                            v-model="servicio.descripcion"
+                            :catalogo="catalogoServicios"
+                            placeholder="Busca y selecciona..."
+                            mensaje-sin-resultados="Sin coincidencias. Puedes escribir un servicio libre."
+                            @select="(item) => seleccionarServicio(item, servicio)"
+                          />
+                        </div>
+                      </td>
+                      <td class="px-4 py-2.5">
+                        <input :id="`svc-horas-${servicio.sufijo}`" v-model="servicio.horas_aplicadas" type="number" min="0" step="0.5" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-2.5">
+                        <input v-model="servicio.precio_unitario" type="number" min="0" step="0.01" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-2.5">
+                        <input v-model="servicio.descuento" type="number" min="0" step="0.01" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-2.5">
+                        <select v-model="servicio.iva_porcentaje" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                          <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
+                        </select>
+                      </td>
+                      <td class="px-4 py-2.5 font-medium">$ {{ formatNumber(netoServicio(servicio)) }}</td>
+                      <td class="px-4 py-2.5">
+                        <button type="button" title="Quitar servicio" aria-label="Quitar servicio" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarServicio(index)">
+                          <X class="w-5 h-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="flex justify-end mt-3">
+                <button
+                  type="button"
+                  title="Añadir servicio o mano de obra"
+                  aria-label="Añadir servicio"
+                  class="add-row-btn inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-primary-blue-700 text-white hover:bg-primary-blue-800 dark:bg-primary-blue-600 dark:hover:bg-primary-blue-700"
+                  @click="agregarServicioVacio"
+                >
+                  <Plus class="w-4 h-4" />
+                  Añadir servicio
                 </button>
-                <div v-else class="flex h-28 w-full items-center justify-center rounded-lg border border-dashed border-gray-300 text-xs text-gray-500 dark:border-gray-600 dark:text-gray-400">
-                  Sin foto
-                </div>
+              </div>
+            </div>
+
+            <!-- Repuestos -->
+            <div v-show="!mostrarServicios">
+              <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+                <table class="w-full text-sm text-left text-gray-900 dark:text-white">
+                  <thead class="text-xs uppercase bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                    <tr>
+                      <th class="px-4 py-3">Repuesto</th>
+                      <th class="px-4 py-3 w-24">Cant.</th>
+                      <th class="px-4 py-3 w-36">P. unitario</th>
+                      <th class="px-4 py-3 w-28">Descuento</th>
+                      <th class="px-4 py-3 w-20">IVA</th>
+                      <th class="px-4 py-3 w-32">Neto</th>
+                      <th class="px-4 py-3 w-14"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-if="!repuestos.length">
+                      <td colspan="7" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No hay repuestos o materiales.</td>
+                    </tr>
+                    <tr v-for="(repuesto, index) in repuestos" :key="repuesto.sufijo || repuesto.id" class="border-t border-gray-200 dark:border-gray-600">
+                      <td class="px-4 py-2.5">
+                        <div class="relative">
+                          <CatalogoSelect
+                            :input-id="`rpt-desc-${repuesto.sufijo}`"
+                            v-model="repuesto.descripcion"
+                            :catalogo="catalogoRepuestos"
+                            placeholder="Busca y selecciona..."
+                            mostrar-stock
+                            mensaje-sin-resultados="Sin coincidencias. Puedes escribir un repuesto libre."
+                            @select="(item) => seleccionarRepuesto(item, repuesto)"
+                          />
+                        </div>
+                      </td>
+                      <td class="px-4 py-2.5">
+                        <input :id="`rpt-cant-${repuesto.sufijo}`" v-model="repuesto.cantidad" type="number" min="1" step="1" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-2.5">
+                        <input v-model="repuesto.precio_unitario" type="number" min="0" step="0.01" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-2.5">
+                        <input v-model="repuesto.descuento" type="number" min="0" step="0.01" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-2.5">
+                        <select v-model="repuesto.iva_porcentaje" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                          <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
+                        </select>
+                      </td>
+                      <td class="px-4 py-2.5 font-medium">$ {{ formatNumber(netoRepuesto(repuesto)) }}</td>
+                      <td class="px-4 py-2.5">
+                        <button type="button" title="Quitar repuesto" aria-label="Quitar repuesto" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarRepuesto(index)">
+                          <X class="w-5 h-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="flex justify-end mt-3">
+                <button
+                  type="button"
+                  title="Añadir repuesto o material"
+                  aria-label="Añadir repuesto"
+                  class="add-row-btn inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-primary-blue-700 text-white hover:bg-primary-blue-800 dark:bg-primary-blue-600 dark:hover:bg-primary-blue-700"
+                  @click="agregarRepuestoVacio"
+                >
+                  <Plus class="w-4 h-4" />
+                  Añadir repuesto
+                </button>
               </div>
             </div>
           </div>
 
-          <div v-if="esCreacion">
-            <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Cliente y Vehículo</h5>
-            <label for="cliente-nuevo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente <span class="text-accent-500">*</span></label>
-            <ClienteSearchSelect
-              id="cliente-nuevo"
-              v-model="clienteSearch"
-              :error="Boolean(formErrors.cliente)"
-              :error-message="formErrors.cliente"
-              show-create
-              @select="seleccionarCliente"
-              @clear="limpiarCliente"
-              @create="showClientCreateModal = true"
-            />
-            <label for="vehiculo-nuevo" class="block mt-4 mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo <span class="text-accent-500">*</span></label>
-            <VehiculoSearchSelect
-              id="vehiculo-nuevo"
-              v-model="vehiculoSearch"
-              :cliente-id="clienteSeleccionado?.id || null"
-              :disabled="!clienteSeleccionado"
-              :placeholder="clienteSeleccionado ? 'Buscar por placa...' : 'Selecciona un cliente primero'"
-              @select="seleccionarVehiculo"
-            />
-          </div>
+          <div v-show="activeTab === 'evidencia'" class="pt-4">
+            <!-- Fotos de la orden: subida -->
+            <h4 class="mb-4 text-xl font-semibold dark:text-white">
+              <span class="inline-flex items-center gap-2">
+                <Camera class="w-6 h-6 text-gray-800 dark:text-white" />
+                Fotos de la Orden
+              </span>
+            </h4>
+            <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+              Adjunta evidencia del trabajo realizado (hasta {{ FOTO_MAX }} fotos). Solo JPG, PNG o WebP de máximo 5 MB.
+            </p>
 
-          <div class="sm:col-span-2 lg:col-span-2">
-            <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Origen y Responsables</h5>
-            <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° Orden</dt>
-                <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ orden?.numero_orden || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Taller</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ orden?.sucursal_nombre || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Tipo de Trabajo</dt>
-                <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ tipoTrabajoLabel }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Asesor</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ orden?.asesor_nombre || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Mecánico Principal</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ orden?.mecanico_nombre || 'Sin asignar' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de Ingreso</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ formatDate(orden?.fecha_ingreso || orden?.created_at) }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de Entrega</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ formatDate(orden?.fecha_entrega) }}</dd>
-              </div>
-              <div v-if="orden?.cotizacion_origen">
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Cotización de Origen</dt>
-                <dd class="mt-0.5 text-sm font-semibold">
-                  <a :href="`/crud/cotizaciones/editar/?id=${orden.cotizacion_origen}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
-                    {{ orden.cotizacion_origen_numero || `#${orden.cotizacion_origen}` }}
-                  </a>
-                </dd>
-              </div>
-              <div v-if="inspeccion">
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Inspección</dt>
-                <dd class="mt-0.5 text-sm font-semibold">
-                  <a :href="`/crud/inspecciones/ver/?id=${inspeccion.id}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
-                    {{ inspeccion.numero_inspeccion || `#${inspeccion.id}` }}
-                  </a>
-                </dd>
-              </div>
-              <div v-if="recepciones.length">
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Recepción / es</dt>
-                <dd class="mt-0.5 text-sm font-semibold">
-                  <a
-                    v-for="recepcion in recepciones"
-                    :key="recepcion.id"
-                    :href="`/crud/recepciones/ver/?id=${recepcion.id}`"
-                    class="text-primary-blue-700 hover:underline dark:text-primary-blue-400"
-                  >
-                    {{ recepcion.numero_recepcion || `#${recepcion.id}` }}<span v-if="recepcion !== recepciones[recepciones.length - 1]">, </span>
-                  </a>
-                </dd>
-              </div>
-            </dl>
+            <PhotoUploadGrid
+              ref="photosGrid"
+              v-model="fotosOt"
+              :entity-id="photoEntityId"
+              entity-field="orden_trabajo"
+              :service="ordenesService"
+              :max="FOTO_MAX"
+              entity-label="orden de trabajo"
+              :disabled="form.estado === 'CANCELADO'"
+              disabled-message="La orden está cancelada; no se pueden subir fotos."
+            />
           </div>
         </div>
 
-        <!-- Ejecución: campos editables -->
-        <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
-          <span class="inline-flex items-center gap-2">
-            <Wrench class="w-6 h-6 text-gray-800 dark:text-white" />
-            Ejecución de la Orden
-          </span>
-        </h4>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label for="estado" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Estado</label>
-            <select id="estado" v-model="form.estado" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
-              <option v-for="estado in ESTADOS" :key="estado.value" :value="estado.value">{{ estado.label }}</option>
-            </select>
-          </div>
-          <div v-if="form.estado === 'EN_ESPERA'">
-            <label for="motivo_espera" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Motivo de Espera</label>
-            <input id="motivo_espera" v-model="form.motivo_espera" type="text" placeholder="Ej.: esperando repuestos, aprobación del cliente..." class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
-          </div>
-          <div>
-            <label for="prioridad" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Prioridad</label>
-            <select id="prioridad" v-model="form.prioridad" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
-              <option v-for="prioridad in PRIORIDADES" :key="prioridad.value" :value="prioridad.value">{{ prioridad.label }}</option>
-            </select>
-          </div>
-          <div>
-            <label for="tipo_trabajo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de Trabajo</label>
-            <select id="tipo_trabajo" v-model="form.tipo_trabajo" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
-              <option v-for="tipo in TIPOS" :key="tipo.value" :value="tipo.value">{{ tipo.label }}</option>
-            </select>
-          </div>
-          <div>
-            <label for="mecanico_principal" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Mecánico Principal</label>
-            <select id="mecanico_principal" v-model="form.mecanico_principal" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
-              <option value="">Sin asignar</option>
-              <option v-for="mecanico in mecanicosOptions" :key="mecanico.value" :value="mecanico.value">{{ mecanico.label }}</option>
-            </select>
-          </div>
-          <div>
-            <label for="fecha_entrega" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Fecha de Entrega</label>
-            <input id="fecha_entrega" v-model="form.fecha_entrega" type="datetime-local" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
-          </div>
-          <div class="md:col-span-2">
+        <!-- Observaciones y Resumen (siempre visibles, fuera de pestañas) -->
+        <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <!-- Columna izquierda: Observaciones -->
+          <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
             <TextImprover
-              v-model="form.observaciones_internas"
-              contexto="observaciones internas de una orden de trabajo de un taller mecánico"
+              v-model="form.observaciones"
+              contexto="observaciones de una orden de trabajo de un taller mecánico"
               v-slot="{ mejorar, restaurar, mejorando, error: errorMejora, mejorado, tieneOriginal }"
             >
               <div class="flex items-center justify-between gap-2 mb-2">
-                <label for="observaciones_internas" class="block text-sm font-medium text-gray-900 dark:text-white">Observaciones Internas</label>
+                <label for="observaciones" class="block text-sm font-medium text-gray-900 dark:text-white">Observaciones</label>
                 <button
                   type="button"
                   title="Mejorar el texto con IA"
@@ -810,7 +974,7 @@ async function handleSubmit() {
                   {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
                 </button>
               </div>
-              <textarea id="observaciones_internas" v-model="form.observaciones_internas" rows="3" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="Notas no visibles para el cliente"></textarea>
+              <textarea id="observaciones" v-model="form.observaciones" rows="4" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="Notas visibles para el cliente"></textarea>
               <p v-if="errorMejora" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ errorMejora }}</p>
               <div v-if="mejorado && !errorMejora" class="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-emerald-700 dark:text-emerald-400">
                 <p>Texto mejorado. Revisa antes de guardar.</p>
@@ -818,223 +982,168 @@ async function handleSubmit() {
               </div>
             </TextImprover>
           </div>
-        </div>
 
-        <!-- Trabajos: líneas editables de la orden -->
-        <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
-          <span class="inline-flex items-center gap-2">
-            <Package class="w-6 h-6 text-gray-800 dark:text-white" />
-            Trabajos de la Orden
-          </span>
-        </h4>
-        <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
-          Servicios y repuestos que se ejecutarán en esta orden. Si la orden proviene de una cotización aceptada, ya vienen cargados; puedes ajustarlos o añadir líneas.
-        </p>
-
-        <div class="flex gap-4 mb-4 border-b border-gray-200 dark:border-gray-600">
-          <button
-            type="button"
-            :class="[mostrarServicios ? 'pb-2 text-sm font-medium border-b-2 border-primary-blue-700 text-primary-blue-700 dark:border-primary-blue-400 dark:text-primary-blue-400' : 'pb-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white']"
-            @click="mostrarServicios = true"
-          >Servicios</button>
-          <button
-            type="button"
-            :class="[!mostrarServicios ? 'pb-2 text-sm font-medium border-b-2 border-primary-blue-700 text-primary-blue-700 dark:border-primary-blue-400 dark:text-primary-blue-400' : 'pb-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white']"
-            @click="mostrarServicios = false"
-          >Repuestos / Materiales</button>
-        </div>
-
-        <!-- Servicios -->
-        <div v-show="mostrarServicios">
-          <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Servicios</h5>
-          <div class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-x-visible">
-            <table class="w-full text-sm text-left text-gray-900 dark:text-white">
-              <thead class="text-xs uppercase bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                <tr>
-                  <th class="px-4 py-3">Servicio</th>
-                  <th class="px-4 py-3 w-24">Horas</th>
-                  <th class="px-4 py-3 w-36">P. unitario</th>
-                  <th class="px-4 py-3 w-36">Subtotal</th>
-                  <th class="px-4 py-3 w-14"></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-if="!servicios.length">
-                  <td colspan="5" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No hay servicios de mano de obra.</td>
-                </tr>
-                <tr v-for="(servicio, index) in servicios" :key="servicio.sufijo || servicio.id" class="border-t border-gray-200 dark:border-gray-600">
-                  <td class="px-4 py-2.5">
-                    <div class="relative">
-                      <CatalogoSelect
-                        :input-id="`svc-desc-${servicio.sufijo}`"
-                        v-model="servicio.descripcion"
-                        :catalogo="catalogoServicios"
-                        placeholder="Busca y selecciona..."
-                        mensaje-sin-resultados="Sin coincidencias. Puedes escribir un servicio libre."
-                        @select="(item) => seleccionarServicio(item, servicio)"
-                      />
-                    </div>
-                  </td>
-                  <td class="px-4 py-2.5">
-                    <input :id="`svc-horas-${servicio.sufijo}`" v-model="servicio.horas_aplicadas" type="number" min="0" step="0.5" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
-                  </td>
-                  <td class="px-4 py-2.5">
-                    <input v-model="servicio.precio_unitario" type="number" min="0" step="0.01" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
-                  </td>
-                  <td class="px-4 py-2.5 font-medium">$ {{ formatNumber((Number(servicio.horas_aplicadas) || 0) * (Number(servicio.precio_unitario) || 0)) }}</td>
-                  <td class="px-4 py-2.5">
-                    <button type="button" title="Quitar servicio" aria-label="Quitar servicio" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarServicio(index)">
-                      <X class="w-5 h-5" />
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="flex justify-end mt-3">
-            <button
-              type="button"
-              title="Añadir servicio o mano de obra"
-              aria-label="Añadir servicio"
-              class="add-row-btn inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-primary-blue-700 text-white hover:bg-primary-blue-800 dark:bg-primary-blue-600 dark:hover:bg-primary-blue-700"
-              @click="agregarServicioVacio"
-            >
-              <Plus class="w-4 h-4" />
-              Añadir servicio
-            </button>
+          <!-- Columna derecha: Resumen (igual que Cotización) -->
+          <div class="p-5 space-y-2 text-sm rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-700/40 dark:border-gray-600/60">
+            <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+              <span>Subtotal servicios</span>
+              <span class="font-medium tabular-nums">$ {{ formatNumber(subtotalServicios) }}</span>
+            </div>
+            <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+              <span>Subtotal repuestos / materiales</span>
+              <span class="font-medium tabular-nums">$ {{ formatNumber(subtotalRepuestos) }}</span>
+            </div>
+            <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+              <span>Subtotal neto</span>
+              <span class="font-medium tabular-nums">$ {{ formatNumber(subtotalNeto) }}</span>
+            </div>
+            <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+              <span>Descuento total</span>
+              <span class="font-medium tabular-nums text-accent-600 dark:text-accent-400">$ {{ formatNumber(descuentoTotal) }}</span>
+            </div>
+            <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+              <span>Subtotal base 0%</span>
+              <span class="font-medium tabular-nums">$ {{ formatNumber(subtotalBase0) }}</span>
+            </div>
+            <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+              <span>Subtotal base gravada</span>
+              <span class="font-medium tabular-nums">$ {{ formatNumber(subtotalBaseGravada) }}</span>
+            </div>
+            <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+              <span>IVA total</span>
+              <span class="font-medium tabular-nums">$ {{ formatNumber(montoIva) }}</span>
+            </div>
+            <div class="flex items-center justify-between pt-3 mt-3 text-base font-bold border-t border-gray-200 text-gray-900 dark:border-gray-600 dark:text-white">
+              <span>Total</span>
+              <span class="tabular-nums">$ {{ formatNumber(totalOt) }}</span>
+            </div>
           </div>
         </div>
 
-        <!-- Repuestos -->
-        <div v-show="!mostrarServicios">
-          <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Repuestos / Materiales</h5>
-          <div class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-x-visible">
-            <table class="w-full text-sm text-left text-gray-900 dark:text-white">
-              <thead class="text-xs uppercase bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                <tr>
-                  <th class="px-4 py-3">Repuesto</th>
-                  <th class="px-4 py-3 w-24">Cant.</th>
-                  <th class="px-4 py-3 w-36">P. unitario</th>
-                  <th class="px-4 py-3 w-36">Subtotal</th>
-                  <th class="px-4 py-3 w-14"></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-if="!repuestos.length">
-                  <td colspan="5" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No hay repuestos o materiales.</td>
-                </tr>
-                <tr v-for="(repuesto, index) in repuestos" :key="repuesto.sufijo || repuesto.id" class="border-t border-gray-200 dark:border-gray-600">
-                  <td class="px-4 py-2.5">
-                    <div class="relative">
-                      <CatalogoSelect
-                        :input-id="`rpt-desc-${repuesto.sufijo}`"
-                        v-model="repuesto.descripcion"
-                        :catalogo="catalogoRepuestos"
-                        placeholder="Busca y selecciona..."
-                        mostrar-stock
-                        mensaje-sin-resultados="Sin coincidencias. Puedes escribir un repuesto libre."
-                        @select="(item) => seleccionarRepuesto(item, repuesto)"
-                      />
-                    </div>
-                  </td>
-                  <td class="px-4 py-2.5">
-                    <input :id="`rpt-cant-${repuesto.sufijo}`" v-model="repuesto.cantidad" type="number" min="1" step="1" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
-                  </td>
-                  <td class="px-4 py-2.5">
-                    <input v-model="repuesto.precio_unitario" type="number" min="0" step="0.01" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
-                  </td>
-                  <td class="px-4 py-2.5 font-medium">$ {{ formatNumber((Number(repuesto.cantidad) || 0) * (Number(repuesto.precio_unitario) || 0)) }}</td>
-                  <td class="px-4 py-2.5">
-                    <button type="button" title="Quitar repuesto" aria-label="Quitar repuesto" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarRepuesto(index)">
-                      <X class="w-5 h-5" />
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+      </div>
+
+      <!-- Panel lateral: resumen de la orden -->
+      <div class="space-y-4 lg:col-span-1">
+        <div v-if="esCreacion || orden" class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
+          <div class="flex items-center gap-2 mb-3">
+            <ClipboardList class="w-5 h-5 text-gray-900 dark:text-white" />
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Resumen de la orden</h2>
           </div>
-          <div class="flex justify-end mt-3">
-            <button
-              type="button"
-              title="Añadir repuesto o material"
-              aria-label="Añadir repuesto"
-              class="add-row-btn inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-primary-blue-700 text-white hover:bg-primary-blue-800 dark:bg-primary-blue-600 dark:hover:bg-primary-blue-700"
-              @click="agregarRepuestoVacio"
-            >
-              <Plus class="w-4 h-4" />
-              Añadir repuesto
-            </button>
-          </div>
+          <dl class="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+            <div v-if="orden?.numero_orden">
+              <dt class="font-medium text-gray-700 dark:text-gray-300">N° Orden</dt>
+              <dd class="font-medium text-sm text-black dark:text-white">{{ orden.numero_orden }}</dd>
+            </div>
+            <div>
+              <dt class="font-medium text-gray-700 dark:text-gray-300">Cliente</dt>
+              <dd class="font-medium text-sm text-black dark:text-white">{{ cliente?.nombre || '—' }}</dd>
+            </div>
+            <div>
+              <dt class="font-medium text-gray-700 dark:text-gray-300">Vehículo</dt>
+              <dd class="font-medium text-sm text-black dark:text-white">{{ formatPlaca(vehiculo?.placa) || '—' }}</dd>
+            </div>
+            <div>
+              <dt class="font-medium text-gray-700 dark:text-gray-300">Mecánico</dt>
+              <dd class="font-medium text-sm text-black dark:text-white">{{ mecanicoSearch || '—' }}</dd>
+            </div>
+            <div>
+              <dt class="font-medium text-gray-700 dark:text-gray-300">Tipo de trabajo</dt>
+              <dd class="font-medium text-sm text-black dark:text-white">{{ tipoTrabajoLabel }}</dd>
+            </div>
+            <div v-if="fechaIngresoDisplay">
+              <dt class="font-medium text-gray-700 dark:text-gray-300">Fecha de ingreso</dt>
+              <dd class="font-medium text-sm text-black dark:text-white">{{ fechaIngresoDisplay }}</dd>
+            </div>
+            <div v-if="form.fecha_entrega">
+              <dt class="font-medium text-gray-700 dark:text-gray-300">Fecha de entrega</dt>
+              <dd class="font-medium text-sm text-black dark:text-white">{{ formatDate(form.fecha_entrega) }}</dd>
+            </div>
+            <div v-if="orden?.sucursal_nombre">
+              <dt class="font-medium text-gray-700 dark:text-gray-300">Taller</dt>
+              <dd class="font-medium text-sm text-black dark:text-white">{{ orden.sucursal_nombre }}</dd>
+            </div>
+            <div v-if="orden?.asesor_nombre">
+              <dt class="font-medium text-gray-700 dark:text-gray-300">Asesor</dt>
+              <dd class="font-medium text-sm text-black dark:text-white">{{ orden.asesor_nombre }}</dd>
+            </div>
+            <div>
+              <dt class="font-medium text-gray-700 dark:text-gray-300">Estado</dt>
+              <dd><EstadoOrdenBadge :estado="orden?.estado || form.estado || 'PENDIENTE'" size="sm" /></dd>
+            </div>
+            <div v-if="orden?.cotizacion_origen">
+              <dt class="font-medium text-gray-700 dark:text-gray-300">Cotización de origen</dt>
+              <dd class="font-medium text-sm">
+                <a :href="`/crud/cotizaciones/editar/?id=${orden.cotizacion_origen}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
+                  {{ orden.cotizacion_origen_numero || `#${orden.cotizacion_origen}` }}
+                </a>
+              </dd>
+            </div>
+            <div v-if="inspeccion">
+              <dt class="font-medium text-gray-700 dark:text-gray-300">Inspección</dt>
+              <dd class="font-medium text-sm">
+                <a :href="`/crud/inspecciones/ver/?id=${inspeccion.id}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
+                  {{ inspeccion.numero_inspeccion || `#${inspeccion.id}` }}
+                </a>
+              </dd>
+            </div>
+            <div v-if="recepciones.length">
+              <dt class="font-medium text-gray-700 dark:text-gray-300">Recepción / es</dt>
+              <dd class="font-medium text-sm">
+                <a
+                  v-for="recepcion in recepciones"
+                  :key="recepcion.id"
+                  :href="`/crud/recepciones/ver/?id=${recepcion.id}`"
+                  class="text-primary-blue-700 hover:underline dark:text-primary-blue-400"
+                >
+                  {{ recepcion.numero_recepcion || `#${recepcion.id}` }}<span v-if="recepcion !== recepciones[recepciones.length - 1]">, </span>
+                </a>
+              </dd>
+            </div>
+          </dl>
         </div>
 
-        <h5 class="mt-8 mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Montos</h5>
-        <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Subtotal Servicios</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ formatNumber(subtotalServicios) }} USD</dd>
+        <!-- Panel lateral: vehículo -->
+        <div v-if="vehiculo" class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
+          <div class="flex items-center gap-2 mb-3">
+            <Car class="w-5 h-5 text-gray-900 dark:text-white" />
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Vehículo</h2>
           </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Subtotal Repuestos</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ formatNumber(subtotalRepuestos) }} USD</dd>
+          <div class="grid grid-cols-2 gap-3">
+            <div v-if="vehiculoImagenSrc" class="h-full min-h-40 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-700">
+              <img :src="vehiculoImagenSrc" alt="Foto del vehículo" class="h-full w-full object-contain" />
+            </div>
+            <div v-else class="flex h-full min-h-40 items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-100 text-xs text-gray-400 dark:border-gray-600 dark:bg-gray-700">
+              <div class="flex flex-col items-center gap-1.5 text-center">
+                <Camera class="w-6 h-6" />
+                <span>Foto del vehículo</span>
+              </div>
+            </div>
+            <dl class="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+              <div>
+                <dt class="font-medium text-gray-700 dark:text-gray-300">Marca</dt>
+                <dd class="font-medium text-sm text-black dark:text-white">{{ vehiculo.marca || '—' }}</dd>
+              </div>
+              <div>
+                <dt class="font-medium text-gray-700 dark:text-gray-300">Modelo</dt>
+                <dd class="font-medium text-sm text-black dark:text-white">{{ vehiculo.modelo || '—' }}</dd>
+              </div>
+              <div>
+                <dt class="font-medium text-gray-700 dark:text-gray-300">Año</dt>
+                <dd class="font-medium text-sm text-black dark:text-white">{{ vehiculo.anio || '—' }}</dd>
+              </div>
+              <div>
+                <dt class="font-medium text-gray-700 dark:text-gray-300">Color</dt>
+                <dd class="font-medium text-sm text-black dark:text-white">{{ vehiculo.color || '—' }}</dd>
+              </div>
+              <div>
+                <dt class="font-medium text-gray-700 dark:text-gray-300">Kilometraje actual</dt>
+                <dd class="font-medium text-sm text-black dark:text-white">{{ vehiculo.kilometraje_actual != null ? `${vehiculo.kilometraje_actual} km` : '—' }}</dd>
+              </div>
+            </dl>
           </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Descuento</dt>
-            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ formatNumber(orden?.descuento) }} USD</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Subtotal Neto</dt>
-            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ formatNumber(subtotalNeto) }} USD</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">IVA (15%)</dt>
-            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ formatNumber(montoIva) }} USD</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Total</dt>
-            <dd class="mt-1 text-lg font-bold text-gray-900 dark:text-white">{{ formatNumber(totalOt) }} USD</dd>
-          </div>
-        </dl>
-
-        <!-- Fotos de la orden: subida -->
-        <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
-          <span class="inline-flex items-center gap-2">
-            <Camera class="w-6 h-6 text-gray-800 dark:text-white" />
-            Fotos de la Orden
-          </span>
-        </h4>
-        <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
-          Adjunta evidencia del trabajo realizado (hasta {{ FOTO_MAX }} fotos). Solo JPG, PNG o WebP de máximo 5 MB.
-        </p>
-
-        <PhotoUploadGrid
-          ref="photosGrid"
-          v-model="fotosOt"
-          :entity-id="photoEntityId"
-          entity-field="orden_trabajo"
-          :service="ordenesService"
-          :max="FOTO_MAX"
-          entity-label="orden de trabajo"
-          :disabled="orden?.estado === 'CANCELADO'"
-          disabled-message="La orden está cancelada; no se pueden subir fotos."
-        />
-      </form>
-    </div>
-  </div>
-
-  <!-- Zoom de foto (galerías read-only) -->
-  <div v-if="fotoZoom" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/70" @click.self="cerrarFotoZoom">
-    <div class="relative max-w-4xl w-full bg-white rounded-lg shadow-xl dark:bg-gray-800">
-      <button
-        type="button"
-        title="Cerrar"
-        aria-label="Cerrar foto ampliada"
-        class="absolute top-2 right-2 z-10 inline-flex items-center justify-center p-2 text-white bg-gray-900/60 rounded-full hover:bg-gray-900/80"
-        @click="cerrarFotoZoom"
-      >
-        <X class="w-5 h-5" />
-      </button>
-      <img :src="fotoZoom" alt="Foto ampliada" class="w-full max-h-[85vh] object-contain rounded-lg" />
-    </div>
+        </div>
+      </div>
+    </form>
   </div>
 
   <ClientModal v-model="showClientCreateModal" @created="onClientCreated" />

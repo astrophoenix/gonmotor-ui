@@ -3,6 +3,7 @@ import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { X, Save } from 'lucide-vue-next';
 import { repuestosService } from '../services/repuestosService';
 import Alert from '../../../../shared/components/Alert.vue';
+import { IVA_OPCIONES, normalizarIva } from '../../../../shared/utils/impuestos';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -46,7 +47,7 @@ function createEmptyForm() {
     unidad_medida: 'UNIDAD',
     costo_referencial: '0.00',
     precio_venta: '0.00',
-    aplica_iva: true,
+    iva_porcentaje_defecto: '0.1500',
     stock_actual: '0.00',
     stock_minimo: '0.00',
     ubicacion: '',
@@ -75,7 +76,7 @@ function getComparableState() {
     unidad_medida: form.unidad_medida,
     costo_referencial: form.costo_referencial,
     precio_venta: form.precio_venta,
-    aplica_iva: form.aplica_iva,
+    iva_porcentaje_defecto: form.iva_porcentaje_defecto,
     stock_actual: form.stock_actual,
     stock_minimo: form.stock_minimo,
     ubicacion: form.ubicacion,
@@ -107,6 +108,7 @@ async function open() {
     try {
       const data = await repuestosService.getById(props.repuestoId);
       Object.assign(form, createEmptyForm(), data);
+      form.iva_porcentaje_defecto = normalizarIva(form.iva_porcentaje_defecto);
       nextTick().then(() => { formSnapshot.value = getComparableState(); });
     } catch (error) {
       showError(error);
@@ -172,7 +174,7 @@ function buildPayload() {
     unidad_medida: form.unidad_medida,
     costo_referencial: String(form.costo_referencial ?? '0.00'),
     precio_venta: String(form.precio_venta ?? '0.00'),
-    aplica_iva: Boolean(form.aplica_iva),
+    iva_porcentaje_defecto: normalizarIva(form.iva_porcentaje_defecto),
     stock_actual: String(form.stock_actual ?? '0.00'),
     stock_minimo: String(form.stock_minimo ?? '0.00'),
     ubicacion: form.ubicacion || '',
@@ -351,10 +353,10 @@ watch(() => form.nombre, (val) => {
               <input id="rep_proveedor" v-model="form.proveedor" maxlength="150" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
             </div>
             <div class="col-span-1">
-              <label class="inline-flex items-center mt-6">
-                <input v-model="form.aplica_iva" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600">
-                <span class="ml-2 text-sm font-medium text-gray-900 dark:text-white">Sujeto a IVA</span>
-              </label>
+              <label for="rep_iva" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">IVA por defecto</label>
+              <select id="rep_iva" v-model="form.iva_porcentaje_defecto" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
+              </select>
             </div>
             <div class="col-span-1 md:col-span-3">
               <label for="rep_descripcion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Descripción</label>

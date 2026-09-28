@@ -129,6 +129,11 @@ function formatMoney(value) {
   return Number(value || 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function ivaLabel(valor) {
+  const tasa = Number(valor) || 0;
+  return `${(tasa * 100).toFixed(0)}%`;
+}
+
 function formatDate(dateString) {
   if (!dateString) return '';
   const date = new Date(dateString);
@@ -428,7 +433,9 @@ onMounted(cargar);
                   <th class="px-4 py-3">Descripción</th>
                   <th class="px-4 py-3 w-24 text-right">Horas</th>
                   <th class="px-4 py-3 w-32 text-right">P. Unitario</th>
-                  <th class="px-4 py-3 w-32 text-right">Subtotal</th>
+                  <th class="px-4 py-3 w-28 text-right">Descuento</th>
+                  <th class="px-4 py-3 w-16 text-right">IVA</th>
+                  <th class="px-4 py-3 w-32 text-right">Neto</th>
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200 dark:divide-gray-600 dark:bg-gray-800">
@@ -442,6 +449,8 @@ onMounted(cargar);
                   </td>
                   <td class="px-4 py-3 text-right tabular-nums">{{ servicio.horas_estimadas ?? '—' }}</td>
                   <td class="px-4 py-3 text-right tabular-nums">{{ formatMoney(servicio.precio_unitario) }}</td>
+                  <td class="px-4 py-3 text-right tabular-nums">{{ formatMoney(servicio.descuento) }}</td>
+                  <td class="px-4 py-3 text-right tabular-nums">{{ ivaLabel(servicio.iva_porcentaje) }}</td>
                   <td class="px-4 py-3 text-right font-medium tabular-nums text-gray-900 dark:text-white">{{ formatMoney(servicio.subtotal) }}</td>
                 </tr>
               </tbody>
@@ -465,7 +474,9 @@ onMounted(cargar);
                   <th class="px-4 py-3">Descripción</th>
                   <th class="px-4 py-3 w-24 text-right">Cant.</th>
                   <th class="px-4 py-3 w-32 text-right">P. Unitario</th>
-                  <th class="px-4 py-3 w-32 text-right">Subtotal</th>
+                  <th class="px-4 py-3 w-28 text-right">Descuento</th>
+                  <th class="px-4 py-3 w-16 text-right">IVA</th>
+                  <th class="px-4 py-3 w-32 text-right">Neto</th>
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200 dark:divide-gray-600 dark:bg-gray-800">
@@ -479,6 +490,8 @@ onMounted(cargar);
                   </td>
                   <td class="px-4 py-3 text-right tabular-nums">{{ repuesto.cantidad ?? '—' }}</td>
                   <td class="px-4 py-3 text-right tabular-nums">{{ formatMoney(repuesto.precio_unitario_referencial) }}</td>
+                  <td class="px-4 py-3 text-right tabular-nums">{{ formatMoney(repuesto.descuento) }}</td>
+                  <td class="px-4 py-3 text-right tabular-nums">{{ ivaLabel(repuesto.iva_porcentaje) }}</td>
                   <td class="px-4 py-3 text-right font-medium tabular-nums text-gray-900 dark:text-white">{{ formatMoney(repuesto.subtotal) }}</td>
                 </tr>
               </tbody>
@@ -525,11 +538,23 @@ onMounted(cargar);
                 <span class="font-medium tabular-nums">$ {{ formatMoney(subtotalRepuestos) }}</span>
               </div>
               <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                <span>Subtotal</span>
-                <span class="font-medium tabular-nums">$ {{ formatMoney(cotizacion.subtotal) }}</span>
+                <span>Subtotal neto</span>
+                <span class="font-medium tabular-nums">$ {{ formatMoney(cotizacion.subtotal_neto) }}</span>
               </div>
               <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                <span>IVA (15%)</span>
+                <span>Descuento total</span>
+                <span class="font-medium tabular-nums text-accent-600 dark:text-accent-400">$ {{ formatMoney(cotizacion.descuento) }}</span>
+              </div>
+              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                <span>Subtotal base 0%</span>
+                <span class="font-medium tabular-nums">$ {{ formatMoney(cotizacion.subtotal_base_0) }}</span>
+              </div>
+              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                <span>Subtotal base gravada</span>
+                <span class="font-medium tabular-nums">$ {{ formatMoney(cotizacion.subtotal_base_gravada) }}</span>
+              </div>
+              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                <span>IVA total</span>
                 <span class="font-medium tabular-nums">$ {{ formatMoney(cotizacion.total_iva) }}</span>
               </div>
               <div class="flex items-center justify-between pt-3 mt-3 text-base font-bold border-t border-gray-200 text-gray-900 dark:border-gray-600 dark:text-white">

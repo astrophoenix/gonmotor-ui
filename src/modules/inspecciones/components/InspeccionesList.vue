@@ -332,7 +332,7 @@ onUnmounted(() => {
     <!-- PANEL DE FILTROS -->
     <div class="bg-neutral-primary-soft shadow-xs rounded-base border border-default mb-4">
       <div class="flex flex-col gap-3 px-4 py-3 border-b border-default-medium md:flex-row md:items-center md:justify-between">
-        <h2 class="flex items-center gap-2 text-lg font-semibold text-heading">
+        <h2 class="flex items-center gap-2 text-md font-semibold text-heading">
           <Filter class="w-5 h-5" />
           Búsqueda
         </h2>

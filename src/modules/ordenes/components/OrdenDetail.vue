@@ -57,6 +57,11 @@ function formatNumber(value) {
   return Number(value).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function ivaLabel(valor) {
+  const tasa = Number(valor) || 0;
+  return `${(tasa * 100).toFixed(0)}%`;
+}
+
 function goTo(path) {
   window.location.assign(path);
 }
@@ -264,8 +269,8 @@ onMounted(async () => {
             </dd>
           </div>
           <div class="sm:col-span-2 lg:col-span-3">
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Observaciones Internas</dt>
-            <dd class="mt-1 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ orden.observaciones_internas || '—' }}</dd>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Observaciones</dt>
+            <dd class="mt-1 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ orden.observaciones || '—' }}</dd>
           </div>
         </dl>
 
@@ -293,7 +298,15 @@ onMounted(async () => {
             <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ formatNumber(orden.subtotal_neto) }} USD</dd>
           </div>
           <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">IVA (15%)</dt>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Subtotal base 0%</dt>
+            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ formatNumber(orden.subtotal_base_0) }} USD</dd>
+          </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Subtotal base gravada</dt>
+            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ formatNumber(orden.subtotal_base_gravada) }} USD</dd>
+          </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">IVA total</dt>
             <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ formatNumber(orden.monto_iva) }} USD</dd>
           </div>
           <div>
@@ -315,7 +328,9 @@ onMounted(async () => {
                 <th scope="col" class="px-4 py-3">Descripción</th>
                 <th scope="col" class="px-4 py-3">Horas</th>
                 <th scope="col" class="px-4 py-3">P. Unitario</th>
-                <th scope="col" class="px-4 py-3">Subtotal</th>
+                <th scope="col" class="px-4 py-3">Descuento</th>
+                <th scope="col" class="px-4 py-3">IVA</th>
+                <th scope="col" class="px-4 py-3">Neto</th>
                 <th scope="col" class="px-4 py-3">Estado</th>
               </tr>
             </thead>
@@ -324,6 +339,8 @@ onMounted(async () => {
                 <td class="px-4 py-3 text-gray-900 dark:text-white">{{ servicio.descripcion || '—' }}</td>
                 <td class="px-4 py-3">{{ servicio.horas_aplicadas ?? '—' }}</td>
                 <td class="px-4 py-3">{{ formatNumber(servicio.precio_unitario) }}</td>
+                <td class="px-4 py-3">{{ formatNumber(servicio.descuento) }}</td>
+                <td class="px-4 py-3">{{ ivaLabel(servicio.iva_porcentaje) }}</td>
                 <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ formatNumber(servicio.subtotal) }}</td>
                 <td class="px-4 py-3">
                   <span :class="['px-2 py-1 rounded-full text-xs font-medium', servicio.completado ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300']">
@@ -352,7 +369,9 @@ onMounted(async () => {
                 <th scope="col" class="px-4 py-3">Descripción</th>
                 <th scope="col" class="px-4 py-3">Cantidad</th>
                 <th scope="col" class="px-4 py-3">P. Unitario</th>
-                <th scope="col" class="px-4 py-3">Subtotal</th>
+                <th scope="col" class="px-4 py-3">Descuento</th>
+                <th scope="col" class="px-4 py-3">IVA</th>
+                <th scope="col" class="px-4 py-3">Neto</th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200 dark:divide-gray-600 dark:bg-gray-800">
@@ -361,6 +380,8 @@ onMounted(async () => {
                 <td class="px-4 py-3 text-gray-900 dark:text-white">{{ repuesto.descripcion || '—' }}</td>
                 <td class="px-4 py-3">{{ repuesto.cantidad ?? '—' }}</td>
                 <td class="px-4 py-3">{{ formatNumber(repuesto.precio_unitario) }}</td>
+                <td class="px-4 py-3">{{ formatNumber(repuesto.descuento) }}</td>
+                <td class="px-4 py-3">{{ ivaLabel(repuesto.iva_porcentaje) }}</td>
                 <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ formatNumber(repuesto.subtotal) }}</td>
               </tr>
             </tbody>

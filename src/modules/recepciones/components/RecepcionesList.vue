@@ -284,7 +284,6 @@ onUnmounted(() => {
 <template>
   <div class="px-4 py-3 bg-white block sm:flex items-center justify-between border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
     <div class="w-full">
-      <div>
         <nav class="flex mb-1.5" aria-label="Breadcrumb">
           <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
             <li class="inline-flex items-center">
@@ -293,11 +292,10 @@ onUnmounted(() => {
             <li class="text-gray-400" aria-current="page">/ Recepciones</li>
           </ol>
         </nav>
-        <h1 class="inline-flex items-center gap-2 text-lg font-semibold text-gray-900 sm:text-xl dark:text-white">
+        <h1 class="inline-flex items-center gap-2 text-md font-semibold text-gray-900 sm:text-xl dark:text-white">
           <ClipboardList class="w-5 h-5 text-gray-900 dark:text-gray-400" />
           Recepciones
         </h1>
-      </div>
 
       <Alert
         :type="alert.type"

@@ -3,6 +3,7 @@ import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { X, Save } from 'lucide-vue-next';
 import { serviciosService } from '../services/serviciosService';
 import Alert from '../../../../shared/components/Alert.vue';
+import { IVA_OPCIONES, normalizarIva } from '../../../../shared/utils/impuestos';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -31,6 +32,7 @@ function createEmptyForm() {
     tiempo_estimado_minutos: 60,
     tareas_estandar: '',
     precio_referencial: '0.00',
+    iva_porcentaje_defecto: '0.1500',
     contifico_producto_id: '',
   };
 }
@@ -52,6 +54,7 @@ function getComparableState() {
     tiempo_estimado_minutos: form.tiempo_estimado_minutos,
     tareas_estandar: form.tareas_estandar,
     precio_referencial: form.precio_referencial,
+    iva_porcentaje_defecto: form.iva_porcentaje_defecto,
     contifico_producto_id: form.contifico_producto_id,
   };
 }
@@ -78,6 +81,7 @@ async function open() {
     try {
       const data = await serviciosService.getById(props.servicioId);
       Object.assign(form, createEmptyForm(), data);
+      form.iva_porcentaje_defecto = normalizarIva(form.iva_porcentaje_defecto);
       nextTick().then(() => { formSnapshot.value = getComparableState(); });
     } catch (error) {
       showError(error);
@@ -135,6 +139,7 @@ function buildPayload() {
     tiempo_estimado_minutos: Number(form.tiempo_estimado_minutos ?? 60),
     tareas_estandar: form.tareas_estandar || '',
     precio_referencial: String(form.precio_referencial ?? '0.00'),
+    iva_porcentaje_defecto: normalizarIva(form.iva_porcentaje_defecto),
     contifico_producto_id: form.contifico_producto_id || '',
   };
 }
@@ -270,6 +275,12 @@ watch(() => form.codigo, (val) => {
               <label for="ser_precio" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Precio Referencial de Mano de Obra</label>
               <input id="ser_precio" v-model="form.precio_referencial" type="number" step="0.01" min="0" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', servicioErrors.precio_referencial ? 'bg-red-50 border border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
               <p v-if="servicioErrors.precio_referencial" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ servicioErrors.precio_referencial }}</p>
+            </div>
+            <div class="col-span-1">
+              <label for="ser_iva" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">IVA por defecto</label>
+              <select id="ser_iva" v-model="form.iva_porcentaje_defecto" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
+              </select>
             </div>
             <div class="col-span-2">
               <label for="ser_contifico" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">ID Producto/Servicio Contífico</label>

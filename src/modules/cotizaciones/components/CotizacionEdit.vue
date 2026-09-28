@@ -9,10 +9,29 @@ import {
   Wand2,
   X,
   Plus,
+  Package,
+  Wrench,
+  CircleDollarSign,
+  User,
+  IdCardIcon,
+  Phone,
+  Mail,
+  Car,
+  TagIcon,
+  Shapes,
+  PaintBucket,
 } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
 import { cotizacionesService } from '../services/cotizacionesService';
 import { sanitizeObservaciones } from '../../../shared/utils/sanitize';
+import {
+  IVA_DEFECTO,
+  IVA_OPCIONES,
+  ivaLinea,
+  netoLinea,
+  normalizarIva,
+  round2,
+} from '../../../shared/utils/impuestos';
 import Alert from '../../../shared/components/Alert.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TextImprover from '../../../shared/components/TextImprover.vue';
@@ -20,6 +39,7 @@ import FlowSteps from '../../../shared/components/FlowSteps.vue';
 import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 import ClientModal from '../../clientes/components/ClientModal.vue';
 import ClienteSearchSelect from '../../../shared/components/ClienteSearchSelect.vue';
+import EmpleadoSearchSelect from '../../../shared/components/EmpleadoSearchSelect.vue';
 import CatalogoSelect from '../../../shared/components/CatalogoSelect.vue';
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -28,9 +48,6 @@ const inspeccionParamId = urlParams.get('inspeccion');
 
 const isEditMode = Boolean(cotizacionParamId);
 const inspeccionId = inspeccionParamId ? Number(inspeccionParamId) : null;
-
-const IVA_PORCENTAJE = 0.15;
-const IVA_DISPLAY = '15%';
 
 const ESTADOS = {
   BORRADOR: { label: 'Borrador', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
@@ -77,6 +94,7 @@ const cotizacion = ref(null);
 const form = reactive({
   cliente: null,
   vehiculo: null,
+  asesor: null,
   clienteSearch: '',
   vehiculoSearch: '',
   validez_dias: 15,
@@ -87,6 +105,11 @@ const vehiculoOptions = ref([]);
 const showVehiculoDropdown = ref(false);
 const showClientCreateModal = ref(false);
 
+// Asesor (reemplaza inspector)
+const asesorSearch = ref('');
+const asesorSeleccionado = ref(null);
+const empleadosOpciones = ref([]);
+
 const servicios = ref([]);
 const repuestos = ref([]);
 const serviciosEliminados = ref([]);
@@ -94,7 +117,7 @@ const repuestosEliminados = ref([]);
 
 const catalogoServicios = ref([]);
 const catalogoRepuestos = ref([]);
-const mostrarServicios = ref(true);
+const activeTab = ref('servicios');
 
 const modal = reactive({
   visible: false,
@@ -143,15 +166,57 @@ const pasosFlujo = computed(() => {
   ]);
 });
 
+function brutoServicio(s) {
+  return (Number(s.horas_estimadas) || 0) * (Number(s.precio_unitario) || 0);
+}
+
+function netoServicio(s) {
+  return netoLinea(brutoServicio(s), s.descuento);
+}
+
+function brutoRepuesto(r) {
+  return (Number(r.cantidad) || 0) * (Number(r.precio_unitario_referencial) || 0);
+}
+
+function netoRepuesto(r) {
+  return netoLinea(brutoRepuesto(r), r.descuento);
+}
+
 const subtotalServicios = computed(() =>
-  servicios.value.reduce((acc, s) => acc + (Number(s.horas_estimadas) || 0) * (Number(s.precio_unitario) || 0), 0)
+  round2(servicios.value.reduce((acc, s) => acc + netoServicio(s), 0))
 );
 const subtotalRepuestos = computed(() =>
-  repuestos.value.reduce((acc, r) => acc + (Number(r.cantidad) || 0) * (Number(r.precio_unitario_referencial) || 0), 0)
+  round2(repuestos.value.reduce((acc, r) => acc + netoRepuesto(r), 0))
 );
-const subtotal = computed(() => subtotalServicios.value + subtotalRepuestos.value);
-const totalIva = computed(() => subtotal.value * IVA_PORCENTAJE);
-const total = computed(() => subtotal.value + totalIva.value);
+const subtotal = computed(() => round2(subtotalServicios.value + subtotalRepuestos.value));
+const descuentoTotal = computed(() =>
+  round2(
+    [...servicios.value, ...repuestos.value].reduce(
+      (acc, item) => acc + (Number(item.descuento) || 0),
+      0
+    )
+  )
+);
+const lineasFiscales = computed(() => [
+  ...servicios.value.map((s) => {
+    const neto = netoServicio(s);
+    return { neto, tasa: Number(s.iva_porcentaje) || 0, montoIva: ivaLinea(neto, s.iva_porcentaje) };
+  }),
+  ...repuestos.value.map((r) => {
+    const neto = netoRepuesto(r);
+    return { neto, tasa: Number(r.iva_porcentaje) || 0, montoIva: ivaLinea(neto, r.iva_porcentaje) };
+  }),
+]);
+const subtotalBase0 = computed(() =>
+  round2(lineasFiscales.value.filter((l) => l.tasa === 0).reduce((acc, l) => acc + l.neto, 0))
+);
+const subtotalBaseGravada = computed(() =>
+  round2(lineasFiscales.value.filter((l) => l.tasa > 0).reduce((acc, l) => acc + l.neto, 0))
+);
+const totalIva = computed(() =>
+  round2(lineasFiscales.value.reduce((acc, l) => acc + l.montoIva, 0))
+);
+const total = computed(() => round2(subtotal.value + totalIva.value));
 
 function formatMoney(value) {
   return Number(value || 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -192,6 +257,42 @@ function loadCatalogo() {
   }).catch(() => { catalogoRepuestos.value = []; });
 }
 
+// ---------- Asesor ----------
+function nombreEmpleado(empleado) {
+  const user = empleado?.user || empleado || {};
+  return `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.name || user.username || user.email || `#${empleado?.id || ''}`;
+}
+
+const asesorInfo = computed(() => {
+  if (asesorSeleccionado.value) return asesorSeleccionado.value;
+  if (!form.asesor) return null;
+  return empleadosOpciones.value.find((empleado) => {
+    const empleadoUsuarioId = empleado.user?.id || empleado.id;
+    return empleadoUsuarioId != null && String(empleadoUsuarioId) === String(form.asesor);
+  }) || null;
+});
+
+async function loadEmpleados() {
+  try {
+    const data = await request('/api/auth/empleados/?page=1&page_size=100');
+    empleadosOpciones.value = Array.isArray(data?.results) ? data.results : [];
+  } catch (error) {
+    empleadosOpciones.value = [];
+  }
+}
+
+function selectAsesor(empleado) {
+  asesorSeleccionado.value = empleado;
+  form.asesor = empleado?.user?.id || null;
+  asesorSearch.value = nombreEmpleado(empleado);
+}
+
+function clearAsesor() {
+  asesorSeleccionado.value = null;
+  form.asesor = null;
+  asesorSearch.value = '';
+}
+
 // ---------- Ítems: filas con autocompletado desde catálogo (CatalogoSelect) ----------
 function nuevaFilaServicio() {
   return {
@@ -201,6 +302,8 @@ function nuevaFilaServicio() {
     descripcion: '',
     horas_estimadas: '1.00',
     precio_unitario: '0.00',
+    descuento: '0.00',
+    iva_porcentaje: IVA_DEFECTO,
     es_opcional: false,
   };
 }
@@ -213,6 +316,8 @@ function nuevaFilaRepuesto() {
     descripcion: '',
     cantidad: '1',
     precio_unitario_referencial: '0.00',
+    descuento: '0.00',
+    iva_porcentaje: IVA_DEFECTO,
     es_opcional: false,
   };
 }
@@ -251,6 +356,8 @@ function seleccionarServicio(item, fila) {
   fila.descripcion = formatearItem(item.codigo, item.nombre);
   fila.horas_estimadas = '1.00';
   fila.precio_unitario = String(item.precio_referencial ?? '0.00');
+  fila.descuento = '0.00';
+  fila.iva_porcentaje = normalizarIva(item.iva_porcentaje_defecto);
   fila.es_opcional = false;
   focusInput(`svc-horas-${fila.sufijo}`);
 }
@@ -260,6 +367,8 @@ function seleccionarRepuesto(item, fila) {
   fila.descripcion = formatearItem(item.codigo, item.nombre);
   fila.cantidad = '1';
   fila.precio_unitario_referencial = String(item.precio_venta ?? '0.00');
+  fila.descuento = '0.00';
+  fila.iva_porcentaje = normalizarIva(item.iva_porcentaje_defecto);
   fila.es_opcional = false;
   focusInput(`rpt-cant-${fila.sufijo}`);
 }
@@ -336,8 +445,10 @@ function aplicarCotizacion(data) {
   form.observaciones = data.observaciones || '';
   form.cliente = data.cliente ? { id: Number(data.cliente) } : null;
   form.vehiculo = data.vehiculo ? { id: Number(data.vehiculo) } : null;
+  form.asesor = data.asesor ? { id: Number(data.asesor) } : null;
   form.clienteSearch = data.cliente_nombre || '';
   form.vehiculoSearch = data.vehiculo_placa || '';
+  form.asesorSearch = data.asesor_nombre || '';
   servicios.value = (data.servicios || []).map((s) => ({
     id: s.id,
     sufijo: Date.now() + Math.random(),
@@ -345,6 +456,8 @@ function aplicarCotizacion(data) {
     descripcion: formatearItem(s.codigo, s.descripcion),
     horas_estimadas: String(s.horas_estimadas ?? '1.00'),
     precio_unitario: String(s.precio_unitario ?? '0.00'),
+    descuento: String(s.descuento ?? '0.00'),
+    iva_porcentaje: normalizarIva(s.iva_porcentaje),
     es_opcional: Boolean(s.es_opcional),
   }));
   repuestos.value = (data.repuestos || []).map((r) => ({
@@ -354,6 +467,8 @@ function aplicarCotizacion(data) {
     descripcion: formatearItem(r.codigo_repuesto, r.descripcion),
     cantidad: String(r.cantidad ?? '1'),
     precio_unitario_referencial: String(r.precio_unitario_referencial ?? '0.00'),
+    descuento: String(r.descuento ?? '0.00'),
+    iva_porcentaje: normalizarIva(r.iva_porcentaje),
     es_opcional: Boolean(r.es_opcional),
   }));
 }
@@ -412,6 +527,11 @@ async function crearCotizacionDesdeInspeccion() {
   }
 }
 
+function ivaDesdeCatalogo(catalogo, id) {
+  const item = id ? catalogo.value.find((c) => c.id === id) : null;
+  return item ? item.iva_porcentaje_defecto : IVA_DEFECTO;
+}
+
 function prefillDesdeInspeccion(inspeccion) {
   const detallesServicios = inspeccion.servicios_detectados || [];
   const detallesRepuestos = inspeccion.repuestos_sugeridos || [];
@@ -423,6 +543,8 @@ function prefillDesdeInspeccion(inspeccion) {
       descripcion: s.descripcion || s.servicio_nombre || '',
       horas_estimadas: String(s.horas_estimadas ?? '1.00'),
       precio_unitario: String(s.precio_referencial ?? '0.00'),
+      descuento: '0.00',
+      iva_porcentaje: normalizarIva(ivaDesdeCatalogo(catalogoServicios, s.servicio)),
     }));
   repuestos.value = detallesRepuestos
     .filter((r) => r.descripcion || r.repuesto_nombre)
@@ -433,6 +555,8 @@ function prefillDesdeInspeccion(inspeccion) {
       descripcion: r.descripcion || r.repuesto_nombre || '',
       cantidad: String(r.cantidad ?? '1'),
       precio_unitario_referencial: String(r.precio_referencial ?? '0.00'),
+      descuento: '0.00',
+      iva_porcentaje: normalizarIva(ivaDesdeCatalogo(catalogoRepuestos, r.repuesto)),
       es_opcional: Boolean(r.es_sugerido),
     }));
 }
@@ -459,6 +583,8 @@ async function guardarDetalles(idCotizacion) {
       descripcion: s.descripcion || '',
       horas_estimadas: String(s.horas_estimadas ?? '1.00'),
       precio_unitario: String(s.precio_unitario ?? '0.00'),
+      descuento: String(s.descuento ?? '0.00'),
+      iva_porcentaje: normalizarIva(s.iva_porcentaje),
       es_opcional: Boolean(s.es_opcional),
     };
     try {
@@ -479,6 +605,8 @@ async function guardarDetalles(idCotizacion) {
       descripcion: r.descripcion || '',
       cantidad: String(r.cantidad ?? '1'),
       precio_unitario_referencial: String(r.precio_unitario_referencial ?? '0.00'),
+      descuento: String(r.descuento ?? '0.00'),
+      iva_porcentaje: normalizarIva(r.iva_porcentaje),
       es_opcional: Boolean(r.es_opcional),
     };
     try {
@@ -658,6 +786,7 @@ function cerrarPopups(event) {
 
 onMounted(() => {
   loadCatalogo();
+  loadEmpleados();
   document.addEventListener('click', cerrarPopups);
   if (isEditMode && cotizacionId.value) {
     cargarCotizacion(cotizacionId.value);
@@ -816,41 +945,134 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- Información desplegada cuando ya existe -->
-        <div v-if="isEditModeFlag && cotizacion" class="mb-8">
-          <h4 class="mb-4 text-lg font-semibold dark:text-white">
-            <span class="inline-flex items-center gap-2">
-              <FileText class="w-5 h-5 text-gray-800 dark:text-white" />
-              Información General
-            </span>
-          </h4>
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-5 rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-700/40 dark:border-gray-600/60">
-            <div>
-              <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Cliente</h5>
-              <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Cliente</dt>
-                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.cliente_nombre || '—' }}</dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Identificación</dt>
-                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.cliente_identificacion || '—' }}</dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Teléfono</dt>
-                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ cotizacion.cliente_telefono || '—' }}</dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Correo</dt>
-                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ cotizacion.cliente_email || '—' }}</dd>
-                </div>
-              </dl>
+        <!-- Información General (estilo InspeccionEdit) -->
+        <div v-if="isEditModeFlag && cotizacion" class="mb-6">
+          <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">
+            <div class="flex items-center gap-2 mb-4">
+              <FileText class="w-5 h-5 text-gray-900 dark:text-white" />
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Información General</h3>
             </div>
 
-            <div>
-              <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Vehículo</h5>
-              <div class="flex flex-col gap-4 sm:flex-row">
-                <dl class="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
+            <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_0.7fr_1fr]">
+              <!-- Cliente -->
+              <div class="min-w-0">
+                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente</label>
+                <div class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                  {{ cotizacion.cliente_nombre || '—' }}
+                </div>
+                <div class="mt-3 space-y-1.5">
+                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                    <IdCardIcon class="w-3.5 h-3.5 shrink-0" /> Identificación:
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.cliente_identificacion || '—' }}</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                    <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono:
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.cliente_telefono || '—' }}</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                    <Mail class="w-3.5 h-3.5 shrink-0" /> Correo:
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.cliente_email || '—' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Vehículo -->
+              <div class="relative min-w-0">
+                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo</label>
+                <div class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                  {{ cotizacion.vehiculo_placa || '—' }}
+                </div>
+                <div class="mt-3 space-y-1.5">
+                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                    <TagIcon class="w-3.5 h-3.5 shrink-0" /> Marca:
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_marca || '—' }}</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                    <Shapes class="w-3.5 h-3.5 shrink-0" /> Modelo:
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_modelo || '—' }}</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                    <PaintBucket class="w-3.5 h-3.5 shrink-0" /> Color:
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_color || '—' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Asesor (reemplaza Inspector) -->
+              <div class="min-w-0">
+                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Asesor</label>
+                <div class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                  {{ cotizacion.asesor_nombre || '—' }}
+                </div>
+                <div class="mt-3 space-y-1.5">
+                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                    <IdCardIcon class="w-3.5 h-3.5 shrink-0" /> Identificación:
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.asesor_identificacion || '—' }}</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                    <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono:
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.asesor_telefono || '—' }}</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                    <Mail class="w-3.5 h-3.5 shrink-0" /> Correo:
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.asesor_email || '—' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Resumen de Cotización (estilo CotizacionDetail con icono $) -->
+          <div class="mt-4 p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
+            <div class="flex items-center gap-2 mb-4">
+              <CircleDollarSign class="w-5 h-5 text-gray-900 dark:text-white" />
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Resumen de Cotización</h3>
+            </div>
+            <div class="p-5 space-y-2 text-sm rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-700/40 dark:border-gray-600/60">
+              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                <span>Subtotal servicios</span>
+                <span class="font-medium tabular-nums">$ {{ formatMoney(subtotalServicios) }}</span>
+              </div>
+              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                <span>Subtotal repuestos / materiales</span>
+                <span class="font-medium tabular-nums">$ {{ formatMoney(subtotalRepuestos) }}</span>
+              </div>
+              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                <span>Subtotal neto</span>
+                <span class="font-medium tabular-nums">$ {{ formatMoney(subtotal) }}</span>
+              </div>
+              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                <span>Descuento total</span>
+                <span class="font-medium tabular-nums text-accent-600 dark:text-accent-400">$ {{ formatMoney(descuentoTotal) }}</span>
+              </div>
+              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                <span>Subtotal base 0%</span>
+                <span class="font-medium tabular-nums">$ {{ formatMoney(subtotalBase0) }}</span>
+              </div>
+              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                <span>Subtotal base gravada</span>
+                <span class="font-medium tabular-nums">$ {{ formatMoney(subtotalBaseGravada) }}</span>
+              </div>
+              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                <span>IVA total</span>
+                <span class="font-medium tabular-nums">$ {{ formatMoney(totalIva) }}</span>
+              </div>
+              <div class="flex items-center justify-between pt-3 mt-3 text-base font-bold border-t border-gray-200 text-gray-900 dark:border-gray-600 dark:text-white">
+                <span>Total</span>
+                <span class="tabular-nums">$ {{ formatMoney(total) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Datos y foto del vehículo (debajo del resumen) -->
+          <div class="mt-4 p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
+            <div class="flex items-center gap-2 mb-4">
+              <Car class="w-5 h-5 text-gray-900 dark:text-white" />
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Datos del Vehículo</h3>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 p-5 rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-700/40 dark:border-gray-600/60">
+              <div class="lg:col-span-3">
+                <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   <div>
                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Placa</dt>
                     <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_placa || '—' }}</dd>
@@ -867,129 +1089,66 @@ onBeforeUnmount(() => {
                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Color</dt>
                     <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ cotizacion.vehiculo_color || '—' }}</dd>
                   </div>
-                </dl>
-                <div class="w-full shrink-0 sm:w-36">
-                  <button
-                    v-if="cotizacion.vehiculo_imagen"
-                    type="button"
-                    title="Ver foto del vehículo"
-                    class="block w-full overflow-hidden rounded-lg border border-gray-200 cursor-zoom-in dark:border-gray-600"
-                    @click="abrirFoto(cotizacion.vehiculo_imagen)"
-                  >
-                    <img :src="cotizacion.vehiculo_imagen" alt="Foto del vehículo" class="h-28 w-full object-cover" />
-                  </button>
-                  <div v-else class="flex h-28 w-full items-center justify-center rounded-lg border border-dashed border-gray-300 text-xs text-gray-500 dark:border-gray-600 dark:text-gray-400">
-                    Sin foto
+                  <div class="lg:col-span-4">
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Kilometraje</dt>
+                    <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.kilometraje_actual ? cotizacion.kilometraje_actual.toLocaleString('es-EC') + ' km' : '—' }}</dd>
                   </div>
+                </dl>
+              </div>
+              <div class="w-full shrink-0 lg:w-36">
+                <button
+                  v-if="cotizacion.vehiculo_imagen"
+                  type="button"
+                  title="Ver foto del vehículo"
+                  class="block w-full overflow-hidden rounded-lg border border-gray-200 cursor-zoom-in dark:border-gray-600"
+                  @click="abrirFoto(cotizacion.vehiculo_imagen)"
+                >
+                  <img :src="cotizacion.vehiculo_imagen" alt="Foto del vehículo" class="h-28 w-full object-cover" />
+                </button>
+                <div v-else class="flex h-28 w-full items-center justify-center rounded-lg border border-dashed border-gray-300 text-xs text-gray-500 dark:border-gray-600 dark:text-gray-400">
+                  Sin foto
                 </div>
               </div>
-            </div>
-
-            <div class="sm:col-span-2 lg:col-span-2">
-              <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Origen y Emisión</h5>
-              <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <div v-if="cotizacion.inspeccion_origen">
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° Inspección</dt>
-                  <dd class="mt-0.5 text-sm font-semibold">
-                    <a :href="`/crud/inspecciones/ver/?id=${encodeURIComponent(cotizacion.inspeccion_origen)}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
-                      {{ cotizacion.inspeccion_numero || `#${cotizacion.inspeccion_origen}` }}
-                    </a> 
-                    <!--span v-if="cotizacion.inspeccion_tipo" class="inline-flex items-center px-1 py-1 rounded-full text-xs font-small bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">{{ cotizacion.inspeccion_tipo }}</span-->
-                  </dd>
-                </div>
-                <div v-if="cotizacion.recepcion_origen">
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° Recepción</dt>
-                  <dd class="mt-0.5 text-sm font-semibold">
-                    <a :href="`/crud/recepciones/ver/?id=${encodeURIComponent(cotizacion.recepcion_origen)}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
-                      {{ cotizacion.recepcion_numero || `#${cotizacion.recepcion_origen}` }}
-                    </a>
-                  </dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Taller</dt>
-                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ sucursalNombre || '—' }}</dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Emitida</dt>
-                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(createdAt) }}</dd>
-                </div>
-                <div v-if="ordenGeneradaNumero">
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Orden de trabajo generada</dt>
-                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ ordenGeneradaNumero }}</dd>
-                </div>
-                <!--div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Validez de la oferta</dt>
-                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.validez_dias || '—' }} días</dd>
-                </div-->
-                <div v-if="fechaAceptacion">
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Aceptada</dt>
-                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(fechaAceptacion) }}</dd>
-                  <dd class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ (METODOS_ACEPTACION.find((m) => m.value === metodoAceptacion) || {}).label || metodoAceptacion }}</dd>
-                </div>
-              </dl>
             </div>
           </div>
         </div>
 
         <fieldset :disabled="!esEditable" class="grid grid-cols-1 gap-8">
-          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <label for="validez_dias" class="block text-sm font-medium text-gray-900 dark:text-white">Validez de la oferta (días)</label>
-              <select id="validez_dias" v-model="form.validez_dias" class="mt-1 block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
-                <option v-for="dias in VALIDEZ_OPCIONES" :key="dias" :value="dias">{{ dias }} días</option>
-              </select>
-            </div>
-            <div class="col-span-1">
-              <TextImprover
-                v-model="form.observaciones"
-                contexto="observaciones generales de una cotización de un taller"
-                v-slot="{ mejorar, restaurar, mejorando, error, mejorado, tieneOriginal }"
-              >
-                <div class="flex items-center justify-between gap-2 mb-1">
-                  <label for="observaciones" class="block text-sm font-medium text-gray-900 dark:text-white">Observaciones</label>
-                  <button
-                    v-if="esEditable"
-                    type="button"
-                    title="Mejorar el texto con IA"
-                    :disabled="mejorando"
-                    class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-primary-blue-700 text-primary-blue-700 hover:bg-primary-blue-50 dark:border-primary-blue-400 dark:text-primary-blue-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    @click="mejorar"
-                  >
-                    <Wand2 v-if="!mejorando" class="w-4 h-4" />
-                    <Loader2 v-else class="w-4 h-4 animate-spin" />
-                    {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
-                  </button>
-                </div>
-                <textarea id="observaciones" v-model="form.observaciones" rows="3" placeholder="Condiciones, garantías, notas para el cliente..." class="block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white"></textarea>
-                <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error }}</p>
-                <div v-if="mejorado && !error" class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
-                  <CheckCircle2 class="w-5 h-5 shrink-0" />
-                  <div class="flex flex-wrap items-center gap-x-2">
-                    <p>Texto mejorado. Revisa antes de guardar.</p>
-                    <button v-if="tieneOriginal" type="button" class="text-sm font-medium underline hover:no-underline" @click="restaurar">Restaurar original</button>
-                  </div>
-                </div>
-              </TextImprover>
-            </div>
+          <div>
+            <label for="validez_dias" class="block text-sm font-medium text-gray-900 dark:text-white">Validez de la oferta (días)</label>
+            <select id="validez_dias" v-model="form.validez_dias" class="mt-1 block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+              <option v-for="dias in VALIDEZ_OPCIONES" :key="dias" :value="dias">{{ dias }} días</option>
+            </select>
           </div>
 
-          <div class="flex gap-4 border-b border-gray-200 dark:border-gray-600">
-            <button
-              type="button"
-              :class="[mostrarServicios ? 'pb-2 text-sm font-medium border-b-2 border-primary-blue-700 text-primary-blue-700 dark:border-primary-blue-400 dark:text-primary-blue-400' : 'pb-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white']"
-              @click="mostrarServicios = true"
-            >Servicios</button>
-            <button
-              type="button"
-              :class="[!mostrarServicios ? 'pb-2 text-sm font-medium border-b-2 border-primary-blue-700 text-primary-blue-700 dark:border-primary-blue-400 dark:text-primary-blue-400' : 'pb-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white']"
-              @click="mostrarServicios = false"
-            >Repuestos / Materiales</button>
-          </div>
+          <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700">
+            <div class="border-b border-gray-200 dark:border-gray-700">
+              <nav class="flex flex-wrap -mb-px">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
+                  :class="activeTab === 'servicios' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+                  @click="activeTab = 'servicios'"
+                >
+                  <Package class="w-4 h-4" />
+                  1. Servicios
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
+                  :class="activeTab === 'repuestos' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+                  @click="activeTab = 'repuestos'"
+                >
+                  <Wrench class="w-4 h-4" />
+                  2. Repuestos
+                </button>
+              </nav>
+            </div>
 
-          <!-- Servicios -->
-          <div v-show="mostrarServicios" class="col-span-1">
-            <h3 class="text-lg font-semibold text-gray-900 mb-3 dark:text-white">Servicios</h3>
-            <div class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-x-visible">
+            <div class="p-4 space-y-6">
+              <!-- Servicios -->
+              <div v-show="activeTab === 'servicios'" class="col-span-1">
+                <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
               <table class="w-full text-sm text-left text-gray-900 dark:text-white">
                 <thead class="text-xs uppercase bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
                   <tr>
@@ -997,13 +1156,15 @@ onBeforeUnmount(() => {
                     <th class="px-4 py-3 w-24">Horas</th>
                     <th class="px-4 py-3 w-24 text-center">Opcional</th>
                     <th class="px-4 py-3 w-36">Precio unitario</th>
-                    <th class="px-4 py-3 w-36">Subtotal</th>
+                    <th class="px-4 py-3 w-28">Descuento</th>
+                    <th class="px-4 py-3 w-20">IVA</th>
+                    <th class="px-4 py-3 w-32">Neto</th>
                     <th v-if="esEditable" class="px-4 py-3 w-14"></th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-if="!servicios.length">
-                    <td colspan="6" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No hay servicios de mano de obra.</td>
+                    <td colspan="8" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No hay servicios de mano de obra.</td>
                   </tr>
                   <tr v-for="(servicio, index) in servicios" :key="servicio.sufijo || servicio.id" class="border-t border-gray-200 dark:border-gray-600">
                     <td class="px-4 py-2.5">
@@ -1028,7 +1189,15 @@ onBeforeUnmount(() => {
                     <td class="px-4 py-2.5">
                       <input v-model="servicio.precio_unitario" type="number" min="0" step="0.01" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" :disabled="!esEditable" />
                     </td>
-                    <td class="px-4 py-2.5 font-medium">$ {{ formatMoney((Number(servicio.horas_estimadas) || 0) * (Number(servicio.precio_unitario) || 0)) }}</td>
+                    <td class="px-4 py-2.5">
+                      <input v-model="servicio.descuento" type="number" min="0" step="0.01" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" :disabled="!esEditable" />
+                    </td>
+                    <td class="px-4 py-2.5">
+                      <select v-model="servicio.iva_porcentaje" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" :disabled="!esEditable">
+                        <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
+                      </select>
+                    </td>
+                    <td class="px-4 py-2.5 font-medium">$ {{ formatMoney(netoServicio(servicio)) }}</td>
                     <td v-if="esEditable" class="px-4 py-2.5">
                       <button type="button" title="Quitar servicio" aria-label="Quitar servicio" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarServicio(index)">
                         <X class="w-5 h-5" />
@@ -1053,10 +1222,9 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
-          <!-- Repuestos -->
-          <div v-show="!mostrarServicios" class="col-span-1">
-            <h3 class="text-lg font-semibold text-gray-900 mb-3 dark:text-white">Repuestos / Materiales</h3>
-            <div class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-x-visible">
+              <!-- Repuestos -->
+              <div v-show="activeTab === 'repuestos'" class="col-span-1">
+                <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
               <table class="w-full text-sm text-left text-gray-900 dark:text-white">
                 <thead class="text-xs uppercase bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
                   <tr>
@@ -1064,13 +1232,15 @@ onBeforeUnmount(() => {
                     <th class="px-4 py-3 w-24">Cant.</th>
                     <th class="px-4 py-3 w-28 text-center">Opcional</th>
                     <th class="px-4 py-3 w-36">Precio unit.</th>
-                    <th class="px-4 py-3 w-36">Subtotal</th>
+                    <th class="px-4 py-3 w-28">Descuento</th>
+                    <th class="px-4 py-3 w-20">IVA</th>
+                    <th class="px-4 py-3 w-32">Neto</th>
                     <th v-if="esEditable" class="px-4 py-3 w-14"></th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-if="!repuestos.length">
-                    <td colspan="6" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No hay repuestos o materiales.</td>
+                    <td colspan="8" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No hay repuestos o materiales.</td>
                   </tr>
                   <tr v-for="(repuesto, index) in repuestos" :key="repuesto.sufijo || repuesto.id" class="border-t border-gray-200 dark:border-gray-600">
                     <td class="px-4 py-2.5">
@@ -1096,7 +1266,15 @@ onBeforeUnmount(() => {
                     <td class="px-4 py-2.5">
                       <input v-model="repuesto.precio_unitario_referencial" type="number" min="0" step="0.01" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" :disabled="!esEditable" />
                     </td>
-                    <td class="px-4 py-2.5 font-medium">$ {{ formatMoney((Number(repuesto.cantidad) || 0) * (Number(repuesto.precio_unitario_referencial) || 0)) }}</td>
+                    <td class="px-4 py-2.5">
+                      <input v-model="repuesto.descuento" type="number" min="0" step="0.01" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" :disabled="!esEditable" />
+                    </td>
+                    <td class="px-4 py-2.5">
+                      <select v-model="repuesto.iva_porcentaje" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" :disabled="!esEditable">
+                        <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
+                      </select>
+                    </td>
+                    <td class="px-4 py-2.5 font-medium">$ {{ formatMoney(netoRepuesto(repuesto)) }}</td>
                     <td v-if="esEditable" class="px-4 py-2.5">
                       <button type="button" title="Quitar repuesto" aria-label="Quitar repuesto" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarRepuesto(index)">
                         <X class="w-5 h-5" />
@@ -1119,34 +1297,89 @@ onBeforeUnmount(() => {
                 Añadir
               </button>
             </div>
+            </div>
+          </div>
+        </div>
+        </fieldset>
+
+        <!-- ===== OBSERVACIONES + RESUMEN (estilo CotizacionDetail) ===== -->
+        <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <!-- Columna izquierda: Observaciones -->
+          <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
+            <TextImprover
+              v-model="form.observaciones"
+              contexto="observaciones generales de una cotización de un taller"
+              v-slot="{ mejorar, restaurar, mejorando, error, mejorado, tieneOriginal }"
+            >
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <label for="observaciones" class="block text-sm font-medium text-gray-900 dark:text-white">Observaciones</label>
+                <button
+                  v-if="esEditable"
+                  type="button"
+                  title="Mejorar el texto con IA"
+                  :disabled="mejorando"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-primary-blue-700 text-primary-blue-700 hover:bg-primary-blue-50 dark:border-primary-blue-400 dark:text-primary-blue-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  @click="mejorar"
+                >
+                  <Wand2 v-if="!mejorando" class="w-4 h-4" />
+                  <Loader2 v-else class="w-4 h-4 animate-spin" />
+                  {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
+                </button>
+              </div>
+              <textarea id="observaciones" v-model="form.observaciones" rows="4" placeholder="Condiciones, garantías, notas para el cliente..." class="block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white"></textarea>
+              <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error }}</p>
+              <div v-if="mejorado && !error" class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
+                <CheckCircle2 class="w-5 h-5 shrink-0" />
+                <div class="flex flex-wrap items-center gap-x-2">
+                  <p>Texto mejorado. Revisa antes de guardar.</p>
+                  <button v-if="tieneOriginal" type="button" class="text-sm font-medium underline hover:no-underline" @click="restaurar">Restaurar original</button>
+                </div>
+              </div>
+            </TextImprover>
           </div>
 
-          <!-- Resumen -->
-          <div class="col-span-1">
-            <div class="ml-auto max-w-sm space-y-2 text-sm">
+          <!-- Columna derecha: Resumen -->
+          <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
+            <div class="flex items-center gap-2 mb-4">
+              <CircleDollarSign class="w-5 h-5 text-gray-900 dark:text-white" />
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Resumen</h3>
+            </div>
+            <div class="p-5 space-y-2 text-sm rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-700/40 dark:border-gray-600/60">
               <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
                 <span>Subtotal servicios</span>
-                <span class="font-medium">$ {{ formatMoney(subtotalServicios) }}</span>
+                <span class="font-medium tabular-nums">$ {{ formatMoney(subtotalServicios) }}</span>
               </div>
               <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                <span>Subtotal repuestos</span>
-                <span class="font-medium">$ {{ formatMoney(subtotalRepuestos) }}</span>
+                <span>Subtotal repuestos / materiales</span>
+                <span class="font-medium tabular-nums">$ {{ formatMoney(subtotalRepuestos) }}</span>
               </div>
               <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                <span>Subtotal</span>
-                <span class="font-medium">$ {{ formatMoney(subtotal) }}</span>
+                <span>Subtotal neto</span>
+                <span class="font-medium tabular-nums">$ {{ formatMoney(subtotal) }}</span>
               </div>
               <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                <span>IVA ({{ IVA_DISPLAY }})</span>
-                <span class="font-medium">$ {{ formatMoney(totalIva) }}</span>
+                <span>Descuento total</span>
+                <span class="font-medium tabular-nums text-accent-600 dark:text-accent-400">$ {{ formatMoney(descuentoTotal) }}</span>
               </div>
-              <div class="flex items-center justify-between border-t border-gray-200 pt-2 text-base font-semibold text-gray-900 dark:text-white">
+              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                <span>Subtotal base 0%</span>
+                <span class="font-medium tabular-nums">$ {{ formatMoney(subtotalBase0) }}</span>
+              </div>
+              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                <span>Subtotal base gravada</span>
+                <span class="font-medium tabular-nums">$ {{ formatMoney(subtotalBaseGravada) }}</span>
+              </div>
+              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                <span>IVA total</span>
+                <span class="font-medium tabular-nums">$ {{ formatMoney(totalIva) }}</span>
+              </div>
+              <div class="flex items-center justify-between pt-3 mt-3 text-base font-bold border-t border-gray-200 text-gray-900 dark:border-gray-600 dark:text-white">
                 <span>Total</span>
-                <span>$ {{ formatMoney(total) }}</span>
+                <span class="tabular-nums">$ {{ formatMoney(total) }}</span>
               </div>
             </div>
           </div>
-        </fieldset>
+        </div>
       </template>
     </div>
   </div>

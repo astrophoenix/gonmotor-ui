@@ -612,7 +612,9 @@ onMounted(async () => {
                   <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">
                     {{ inspeccion.kilometraje_diagnostico != null
                       ? `${formatNumber(inspeccion.kilometraje_diagnostico)} km`
-                      : '—' }}
+                      : (vehiculoInfo?.kilometraje_actual != null
+                          ? `${formatNumber(vehiculoInfo.kilometraje_actual)} km (actual del vehículo)`
+                          : '—' ) }}
                   </dd>
                 </div>
                 <div class="sm:col-span-2 lg:col-span-4">
