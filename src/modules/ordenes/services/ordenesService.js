@@ -28,6 +28,13 @@ export const ordenesService = {
     });
   },
 
+  create(payload) {
+    return request(ENDPOINT, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
   delete(id) {
     return request(buildUrl(id), {
       method: 'DELETE',

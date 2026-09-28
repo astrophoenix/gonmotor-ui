@@ -8,8 +8,10 @@ import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TextImprover from '../../../shared/components/TextImprover.vue';
 import CatalogoSelect from '../../../shared/components/CatalogoSelect.vue';
 import PhotoUploadGrid from '../../../shared/components/PhotoUploadGrid.vue';
-import FlowSteps from '../../../shared/components/FlowSteps.vue';
 import EstadoOrdenBadge from './EstadoOrdenBadge.vue';
+import ClienteSearchSelect from '../../../shared/components/ClienteSearchSelect.vue';
+import VehiculoSearchSelect from '../../../shared/components/VehiculoSearchSelect.vue';
+import ClientModal from '../../clientes/components/ClientModal.vue';
 import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 import { sanitizeObservaciones } from '../../../shared/utils/sanitize';
 import {
@@ -41,6 +43,45 @@ const ordenId = computed(() => {
   const params = new URLSearchParams(window.location.search);
   return params.get('id');
 });
+
+const esCreacion = computed(() => !ordenId.value);
+const isEditMode = computed(() => Boolean(ordenId.value));
+
+const ordenPersistidaId = ref(null);
+const photoEntityId = computed(() => (esCreacion.value ? ordenPersistidaId.value : ordenId.value));
+
+const clienteSeleccionado = ref(null);
+const vehiculoSeleccionado = ref(null);
+const clienteSearch = ref('');
+const vehiculoSearch = ref('');
+const showClientCreateModal = ref(false);
+const formErrors = ref({ cliente: '', vehiculo: '' });
+
+function seleccionarCliente(clienteObj) {
+  clienteSeleccionado.value = clienteObj || null;
+  formErrors.value.cliente = '';
+  vehiculoSeleccionado.value = null;
+  vehiculoSearch.value = '';
+}
+
+function limpiarCliente() {
+  clienteSeleccionado.value = null;
+  formErrors.value.cliente = '';
+  vehiculoSeleccionado.value = null;
+  vehiculoSearch.value = '';
+}
+
+function seleccionarVehiculo(vehiculoObj) {
+  vehiculoSeleccionado.value = vehiculoObj || null;
+  formErrors.value.vehiculo = '';
+}
+
+function onClientCreated(clienteObj) {
+  showClientCreateModal.value = false;
+  if (clienteObj && clienteObj.id) {
+    seleccionarCliente(clienteObj);
+  }
+}
 
 const form = ref({
   estado: 'PENDIENTE',
@@ -97,8 +138,8 @@ const subtotalNeto = computed(() => {
 const montoIva = computed(() => subtotalNeto.value * IVA_PORCENTAJE);
 const totalOt = computed(() => subtotalNeto.value + montoIva.value);
 
-const cliente = computed(() => orden.value?.cliente || null);
-const vehiculo = computed(() => orden.value?.vehiculo || null);
+const cliente = computed(() => orden.value?.cliente || clienteSeleccionado.value || null);
+const vehiculo = computed(() => orden.value?.vehiculo || vehiculoSeleccionado.value || null);
 const inspeccion = computed(() => orden.value?.inspeccion || null);
 const recepciones = computed(() => orden.value?.recepciones || []);
 
@@ -382,13 +423,12 @@ async function guardarDetalles(idOrden) {
 }
 
 onMounted(async () => {
-  if (!ordenId.value) {
-    error.value = 'Falta el identificador de la orden de trabajo.';
+  cargarEmpleados();
+  loadCatalogo();
+  if (esCreacion.value) {
     loading.value = false;
     return;
   }
-  cargarEmpleados();
-  loadCatalogo();
   try {
     const data = await ordenesService.getById(ordenId.value);
     aplicarOrden(data);
@@ -411,10 +451,55 @@ function cerrarFotoZoom() {
 }
 
 async function handleSubmit() {
-  if (!orden.value) return;
+  if (saving.value) return;
   saving.value = true;
   error.value = '';
   success.value = false;
+
+  if (esCreacion.value) {
+    formErrors.value = { cliente: '', vehiculo: '' };
+    if (!clienteSeleccionado.value) formErrors.value.cliente = 'Selecciona el cliente de la orden.';
+    if (!vehiculoSeleccionado.value) formErrors.value.vehiculo = 'Selecciona el vehículo a atender.';
+    if (formErrors.value.cliente || formErrors.value.vehiculo) {
+      saving.value = false;
+      return;
+    }
+
+    const payload = {
+      cliente: clienteSeleccionado.value.id,
+      vehiculo: vehiculoSeleccionado.value.id,
+      estado: form.value.estado,
+      prioridad: form.value.prioridad,
+      tipo_trabajo: form.value.tipo_trabajo,
+      mecanico_principal: form.value.mecanico_principal || null,
+      fecha_entrega: form.value.fecha_entrega ? new Date(form.value.fecha_entrega).toISOString() : null,
+      observaciones_internas: form.value.observaciones_internas || '',
+      motivo_espera: form.value.motivo_espera || null,
+    };
+
+    try {
+      const creada = await ordenesService.create(payload);
+      ordenPersistidaId.value = creada && creada.id;
+      if (!ordenPersistidaId.value) {
+        throw new Error('No se pudo confirmar la orden de trabajo creada.');
+      }
+      await guardarDetalles(ordenPersistidaId.value);
+      await photosGrid.value?.guardarFotos();
+      success.value = true;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => goTo(`/crud/ordenes/ver/?id=${ordenPersistidaId.value}`), 1500);
+    } catch (err) {
+      error.value = err.message || 'No se pudo crear la orden de trabajo.';
+    } finally {
+      saving.value = false;
+    }
+    return;
+  }
+
+  if (!orden.value) {
+    saving.value = false;
+    return;
+  }
 
   const payload = {
     estado: form.value.estado,
@@ -457,7 +542,7 @@ async function handleSubmit() {
           <a href="/" class="inline-flex items-center text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Inicio</a>
         </li>
         <li class="text-gray-400">/ <a href="/crud/ordenes/" class="hover:text-primary-600">Órdenes</a></li>
-        <li class="text-gray-400">/ Editar orden {{ orden?.numero_orden || '' }}</li>
+        <li class="text-gray-400">/ {{ esCreacion ? 'Nueva orden' : `Editar orden ${orden?.numero_orden || ''}` }}</li>
       </ol>
     </nav>
     <div class="flex items-center gap-3 flex-wrap">
@@ -466,7 +551,7 @@ async function handleSubmit() {
           <ArrowLeft class="w-5 h-5" />
         </a>
         <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-          Editar Orden de Trabajo {{ orden?.numero_orden || '' }}
+          {{ esCreacion ? 'Nueva Orden de Trabajo' : `Editar Orden de Trabajo ${orden?.numero_orden || ''}` }}
         </h1>
       </div>
       <EstadoOrdenBadge v-if="orden" :estado="form.estado" size="sm" />
@@ -475,10 +560,10 @@ async function handleSubmit() {
       </span>
       <div class="flex items-center ml-auto gap-2 flex-wrap">
         <FormSaveActions
-          v-if="orden"
+          v-if="!loading"
           :is-loading="saving"
-          :is-edit-mode="true"
-          :cancel-href="`/crud/ordenes/ver/?id=${ordenId}`"
+          :is-edit-mode="isEditMode"
+          :cancel-href="esCreacion ? '/crud/ordenes/' : `/crud/ordenes/ver/?id=${ordenId}`"
           :on-submit="handleSubmit"
         />
       </div>
@@ -497,7 +582,7 @@ async function handleSubmit() {
         Cargando orden de trabajo...
       </div>
 
-      <div v-else-if="!orden && !error" class="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+      <div v-else-if="!esCreacion && !orden && !error" class="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
         Orden de trabajo no encontrada.
       </div>
 
@@ -511,7 +596,7 @@ async function handleSubmit() {
         </h4>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-5 rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-700/40 dark:border-gray-600/60">
-          <div>
+          <div v-if="!esCreacion">
             <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Cliente</h5>
             <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
@@ -533,7 +618,7 @@ async function handleSubmit() {
             </dl>
           </div>
 
-          <div>
+          <div v-if="!esCreacion">
             <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Vehículo</h5>
             <div class="flex flex-col gap-4 sm:flex-row">
               <dl class="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
@@ -575,16 +660,40 @@ async function handleSubmit() {
             </div>
           </div>
 
+          <div v-if="esCreacion">
+            <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Cliente y Vehículo</h5>
+            <label for="cliente-nuevo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente <span class="text-accent-500">*</span></label>
+            <ClienteSearchSelect
+              id="cliente-nuevo"
+              v-model="clienteSearch"
+              :error="Boolean(formErrors.cliente)"
+              :error-message="formErrors.cliente"
+              show-create
+              @select="seleccionarCliente"
+              @clear="limpiarCliente"
+              @create="showClientCreateModal = true"
+            />
+            <label for="vehiculo-nuevo" class="block mt-4 mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo <span class="text-accent-500">*</span></label>
+            <VehiculoSearchSelect
+              id="vehiculo-nuevo"
+              v-model="vehiculoSearch"
+              :cliente-id="clienteSeleccionado?.id || null"
+              :disabled="!clienteSeleccionado"
+              :placeholder="clienteSeleccionado ? 'Buscar por placa...' : 'Selecciona un cliente primero'"
+              @select="seleccionarVehiculo"
+            />
+          </div>
+
           <div class="sm:col-span-2 lg:col-span-2">
             <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Origen y Responsables</h5>
             <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <div>
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° Orden</dt>
-                <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ orden.numero_orden || '—' }}</dd>
+                <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ orden?.numero_orden || '—' }}</dd>
               </div>
               <div>
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Taller</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ orden.sucursal_nombre || '—' }}</dd>
+                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ orden?.sucursal_nombre || '—' }}</dd>
               </div>
               <div>
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Tipo de Trabajo</dt>
@@ -592,21 +701,21 @@ async function handleSubmit() {
               </div>
               <div>
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Asesor</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ orden.asesor_nombre || '—' }}</dd>
+                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ orden?.asesor_nombre || '—' }}</dd>
               </div>
               <div>
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Mecánico Principal</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ orden.mecanico_nombre || 'Sin asignar' }}</dd>
+                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ orden?.mecanico_nombre || 'Sin asignar' }}</dd>
               </div>
               <div>
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de Ingreso</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ formatDate(orden.fecha_ingreso || orden.created_at) }}</dd>
+                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ formatDate(orden?.fecha_ingreso || orden?.created_at) }}</dd>
               </div>
               <div>
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de Entrega</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ formatDate(orden.fecha_entrega) }}</dd>
+                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ formatDate(orden?.fecha_entrega) }}</dd>
               </div>
-              <div v-if="orden.cotizacion_origen">
+              <div v-if="orden?.cotizacion_origen">
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Cotización de Origen</dt>
                 <dd class="mt-0.5 text-sm font-semibold">
                   <a :href="`/crud/cotizaciones/editar/?id=${orden.cotizacion_origen}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
@@ -870,7 +979,7 @@ async function handleSubmit() {
           </div>
           <div>
             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Descuento</dt>
-            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ formatNumber(orden.descuento) }} USD</dd>
+            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ formatNumber(orden?.descuento) }} USD</dd>
           </div>
           <div>
             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Subtotal Neto</dt>
@@ -900,12 +1009,12 @@ async function handleSubmit() {
         <PhotoUploadGrid
           ref="photosGrid"
           v-model="fotosOt"
-          :entity-id="ordenId"
+          :entity-id="photoEntityId"
           entity-field="orden_trabajo"
           :service="ordenesService"
           :max="FOTO_MAX"
           entity-label="orden de trabajo"
-          :disabled="orden.estado === 'CANCELADO'"
+          :disabled="orden?.estado === 'CANCELADO'"
           disabled-message="La orden está cancelada; no se pueden subir fotos."
         />
       </form>
@@ -927,4 +1036,6 @@ async function handleSubmit() {
       <img :src="fotoZoom" alt="Foto ampliada" class="w-full max-h-[85vh] object-contain rounded-lg" />
     </div>
   </div>
+
+  <ClientModal v-model="showClientCreateModal" @created="onClientCreated" />
 </template>
