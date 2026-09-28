@@ -322,20 +322,28 @@ onUnmounted(() => clearTimeout(searchTimer));
         </div>
       </div>
       <EntityTable
-        :columns="['Placa', 'Marca', 'Modelo', 'Año', 'Dueño', 'Estado', 'Acciones']"
+        :columns="['Placa', 'Marca', 'Modelo', 'Año', 'Kilometraje', 'Dueño', 'Estado', 'Acciones']"
         :items="vehicles"
         :loading="isLoading"
         loading-text="Cargando vehículos..."
         empty-text="No se encontraron vehículos."
-        :empty-colspan="7"
+        :empty-colspan="8"
         :wrapper-class="'w-full'"
       >
     <template #row="{ item }">
       <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ formatPlate(item.placa) }}</td>
+        <td class="p-4 whitespace-nowrap">
+          <a
+            :href="`/crud/vehiculos/ver/?id=${encodeURIComponent(item.id)}`"
+            class="font-medium text-gray-800 hover:text-primary-600 dark:text-white dark:hover:text-primary-400"
+          >{{ formatPlate(item.placa) }}</a>
+        </td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.marca }}</td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.modelo }}</td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.anio || '—' }}</td>
+        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">
+          {{ item.kilometraje_actual != null ? `${item.kilometraje_actual.toLocaleString('es-EC')} km` : '—' }}
+        </td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.cliente_nombre || 'Sin dueño' }}</td>
         <td class="p-4 whitespace-nowrap">
           <span v-if="item.is_active" class="inline-flex items-center bg-success-soft border border-success-subtle text-fg-success-strong text-xs font-medium px-1 py-0.5 rounded">
