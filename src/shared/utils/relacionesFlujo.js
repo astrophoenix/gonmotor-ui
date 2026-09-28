@@ -80,3 +80,46 @@ export function relacionesDeInspeccion(item) {
     }),
   ];
 }
+
+/** Cotización: la recepción/inspección de origen y la orden generada. */
+export function relacionesDeCotizacion(item) {
+  return [
+    paso('recepcion', {
+      id: item?.recepcion_origen,
+      numero: item?.recepcion_numero,
+      estado: item?.recepcion_estado_display,
+    }),
+    paso('inspeccion', {
+      id: item?.inspeccion_origen,
+      numero: item?.inspeccion_numero,
+      estado: item?.inspeccion_estado_display,
+    }),
+    paso('orden', {
+      id: item?.orden_generada_id ?? item?.orden_trabajo_origen,
+      numero: item?.orden_generada_numero ?? item?.orden_trabajo_numero,
+      estado: item?.orden_trabajo_estado_display,
+    }),
+  ];
+}
+
+/** Orden: la recepción/inspección y la cotización de la que surgió. */
+export function relacionesDeOrden(item) {
+  const recepcion = item?.recepciones?.[0];
+  return [
+    paso('recepcion', {
+      id: recepcion?.id,
+      numero: recepcion?.numero_recepcion,
+      estado: item?.recepcion_estado_display,
+    }),
+    paso('inspeccion', {
+      id: item?.inspeccion?.id,
+      numero: item?.inspeccion?.numero_inspeccion,
+      estado: item?.inspeccion_estado_display,
+    }),
+    paso('cotizacion', {
+      id: item?.cotizacion_id,
+      numero: item?.cotizacion_numero,
+      estado: item?.cotizacion_estado_display,
+    }),
+  ];
+}

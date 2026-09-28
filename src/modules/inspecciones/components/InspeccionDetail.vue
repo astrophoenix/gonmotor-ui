@@ -578,7 +578,7 @@ onMounted(async () => {
 
           <div v-show="activeTab === 'informacion'" class="p-4 space-y-6">
             <div>
-              <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Tipo de inspección</dt>
                   <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white"><TipoTrabajoBadge :tipo="inspeccion.tipo_inspeccion" size="md" /></dd>
@@ -607,19 +607,27 @@ onMounted(async () => {
                     <span v-else>—</span>
                   </dd>
                 </div>
-                <div class="sm:col-span-2 lg:col-span-3">
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Kilometraje</dt>
+                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">
+                    {{ inspeccion.kilometraje_diagnostico != null
+                      ? `${formatNumber(inspeccion.kilometraje_diagnostico)} km`
+                      : '—' }}
+                  </dd>
+                </div>
+                <div class="sm:col-span-2 lg:col-span-4">
                   <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Códigos de falla (DTC)</dt>
                   <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ inspeccion.codigos_dtc || '—' }}</dd>
                 </div>
-                <div class="sm:col-span-2 lg:col-span-3">
+                <div class="sm:col-span-2 lg:col-span-4">
                   <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Motivo de ingreso</dt>
                   <dd class="mt-0.5 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ inspeccion.motivo_ingreso || '—' }}</dd>
                 </div>
-                <div class="sm:col-span-2 lg:col-span-3">
+                <div class="sm:col-span-2 lg:col-span-4">
                   <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Diagnóstico</dt>
                   <dd class="mt-0.5 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ inspeccion.diagnostico_tecnico || '—' }}</dd>
                 </div>
-                <div class="sm:col-span-2 lg:col-span-3">
+                <div class="sm:col-span-2 lg:col-span-4">
                   <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Recomendaciones</dt>
                   <dd class="mt-0.5 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ inspeccion.recomendaciones || '—' }}</dd>
                 </div>

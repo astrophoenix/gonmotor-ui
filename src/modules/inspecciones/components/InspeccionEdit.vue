@@ -48,6 +48,7 @@ const form = reactive({
   codigos_dtc: '',
   diagnostico_tecnico: '',
   recomendaciones: '',
+  kilometraje_diagnostico: null,
   responsable: null,
   ...testigoDefaults(),
 });
@@ -151,6 +152,7 @@ const TAB_ERROR_MAP = {
   motivo_ingreso: 'Inspección',
   diagnostico_tecnico: 'Inspección',
   recomendaciones: 'Inspección',
+  kilometraje_diagnostico: 'Inspección',
   fecha_inspeccion: 'Inspección',
   cliente: 'Información General',
   vehiculo: 'Información General',
@@ -266,6 +268,7 @@ function onClientCreated(cliente) {
 function selectVehiculo(vehiculo) {
   vehiculoSeleccionado.value = vehiculo;
   vehiculoSearch.value = formatPlaca(vehiculo.placa || '');
+  precargarKilometraje();
 }
 
 function clearVehiculo() {
@@ -291,6 +294,42 @@ const vehiculoInfo = computed(() => {
 });
 
 const tipoInspeccionLabel = computed(() => getTipoTrabajoLabel(form.tipo_inspeccion));
+
+/** Odómetro vigente del vehículo: referencia para no retroceder el kilometraje. */
+const kmReferencia = computed(() => {  const vehiculo = recepcion.value?.vehiculo
+    || vehiculoSeleccionado.value
+    || inspeccionData.value?.vehiculo
+    || null;
+  const km = vehiculo?.kilometraje_actual;
+  if (km === null || km === undefined || km === '') return null;
+  const numero = Number(km);
+  return Number.isNaN(numero) ? null : numero;
+});
+
+const kmReferenciaDisplay = computed(() => (
+  kmReferencia.value == null ? '' : kmReferencia.value.toLocaleString('es-EC')
+));
+
+/** Texto crudo del input, ya normalizado a solo dígitos por el setter. */
+const kmTexto = computed(() => (
+  form.kilometraje_diagnostico == null ? '' : String(form.kilometraje_diagnostico).trim()
+));
+
+const kilometrajeDisplay = computed({
+  get() {
+    return form.kilometraje_diagnostico == null ? '' : String(form.kilometraje_diagnostico);
+  },
+  set(value) {
+    form.kilometraje_diagnostico = String(value).replace(/\D/g, '');
+  },
+});
+
+/** Precarga la lectura con el odómetro vigente si el campo sigue vacío. */
+function precargarKilometraje() {
+  if (form.kilometraje_diagnostico === '' || form.kilometraje_diagnostico === null) {
+    form.kilometraje_diagnostico = kmReferencia.value;
+  }
+}
 
 const transmisionLabel = computed(() => {
   const map = { M: 'Manual / Mecánica', A: 'Automática', C: 'CVT' };
@@ -671,6 +710,22 @@ function validateForm() {
     }
   }
 
+  if (kmTexto.value !== '') {
+    const km = Number(kmTexto.value);
+    if (Number.isNaN(km) || !Number.isInteger(km) || km < 0) {
+      errors.kilometraje_diagnostico = 'Ingresa un kilometraje válido, mayor o igual a 0.';
+    } else if (kmReferencia.value != null) {
+      // A diferencia de la recepción, aquí el kilometraje puede ser IGUAL al del
+      // vehículo: sale a prueba de ruta y puede no haber regresar al taller.
+      // Solo se bloquea bajar, salvo que se conserve la lectura ya guardada.
+      const conservaLectura = isEditMode
+        && km === Number(inspeccionData.value?.kilometraje_diagnostico);
+      if (km < kmReferencia.value && !conservaLectura) {
+        errors.kilometraje_diagnostico = `El kilometraje no puede ser menor al registrado del vehículo (${kmReferenciaDisplay.value} km).`;
+      }
+    }
+  }
+
   formErrors.value = errors;
   return Object.keys(errors).length === 0;
 }
@@ -717,6 +772,7 @@ async function loadRecepcion() {
       form.fecha_inspeccion = toLocalDatetimeInput(data.fecha_ingreso) || localDatetimeNow();
       Object.assign(form, testigoPayload(data));
       syncTestigosDesdeForm();
+      precargarKilometraje();
     }
   } catch (error) {
     console.error('No se pudo cargar la recepción:', error);
@@ -744,6 +800,7 @@ async function loadInspeccion() {
       codigos_dtc: data.codigos_dtc || '',
       diagnostico_tecnico: data.diagnostico_tecnico || '',
       recomendaciones: data.recomendaciones || '',
+      kilometraje_diagnostico: data.kilometraje_diagnostico ?? null,
       responsable: data.responsable || null,
       ...testigoPayload(data),
     });
@@ -760,6 +817,9 @@ async function loadInspeccion() {
         vehiculoSearch.value = formatPlaca(data.vehiculo.placa);
       }
     }
+    // Las inspecciones anteriores a este campo no tienen lectura: se precarga
+    // con el odómetro vigente del vehículo.
+    precargarKilometraje();
   } catch (error) {
     showError(error);
   } finally {
@@ -804,6 +864,7 @@ async function submit() {
       codigos_dtc: sanitizeDtc(form.codigos_dtc, 255),
       diagnostico_tecnico: sanitizeObservaciones(form.diagnostico_tecnico || '').slice(0, 1000).trim(),
       recomendaciones: sanitizeObservaciones(form.recomendaciones || '').slice(0, 1000).trim(),
+      kilometraje_diagnostico: kmTexto.value === '' ? null : Number(kmTexto.value),
       otros_testigos_observaciones: sanitizeObservaciones(String(form.otros_testigos_observaciones || '')).slice(0, 255),
     };
 
@@ -1114,8 +1175,8 @@ onMounted(() => {
 
             <form class="p-4 space-y-6" novalidate @submit.prevent="submit">
               <div v-show="activeTab === 'informacion'" class="col-span-1 space-y-4">
-                <div class="p-4">
-                  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="p-1">
+                  <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                   <div class="col-span-1">
                     <label for="tipo_inspeccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de Inspección</label>
                     <select id="tipo_inspeccion" v-model="form.tipo_inspeccion" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white">
@@ -1156,20 +1217,39 @@ onMounted(() => {
                       La registra el sistema al finalizar el diagnóstico.
                     </p>
                   </div>
-                  <div class="col-span-1 md:col-span-3">
+                  <div class="col-span-1">
+                    <label for="kilometraje_diagnostico" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                      Kilometraje <span class="text-accent-500">*</span>
+                    </label>
+                    <input
+                      id="kilometraje_diagnostico"
+                      v-model="kilometrajeDisplay"
+                      type="text"
+                      inputmode="numeric"
+                      autocomplete="off"
+                      placeholder=""
+                      :class="['block w-full p-2.5 text-sm rounded shadow-xs focus:ring-4 focus:ring-primary-300 dark:text-white', formErrors.kilometraje_diagnostico ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                    >
+                    <span v-if="kmReferenciaDisplay" class="mt-1 block text-xs text-gray-500 dark:text-gray-400">
+                      Kilometraje actual:
+                      {{ kmReferenciaDisplay }} km
+                    </span>
+                    <p v-if="formErrors.kilometraje_diagnostico" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.kilometraje_diagnostico }}</p>
+                  </div>
+                  <div class="col-span-1 md:col-span-4">
                     <label for="codigos_dtc" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Códigos de Falla (DTC OBD2)</label>
                     <input id="codigos_dtc" v-model="form.codigos_dtc" maxlength="255" placeholder="Ej: P0300, P0171..." class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
                   </div>
                   </div>
                 </div>
 
-                <div class="p-4">
+                <div class="p-1">
                   <label for="motivo_ingreso" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Motivo <span class="text-accent-500">*</span></label>
                   <textarea id="motivo_ingreso" v-model="form.motivo_ingreso" rows="3" maxlength="500" placeholder="Razón por la cual el cliente trae el vehículo o falla reportada..." :class="['block w-full p-2.5 text-sm rounded shadow-xs focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.motivo_ingreso ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
                   <p v-if="formErrors.motivo_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.motivo_ingreso }}</p>
                 </div>
 
-                <div class="p-4">
+                <div class="p-1">
                   <TextImprover
                     v-model="form.diagnostico_tecnico"
                     contexto="diagnóstico técnico de una inspección vehicular"
@@ -1202,12 +1282,11 @@ onMounted(() => {
                   </TextImprover>
                 </div>
 
-                <div class="p-4">
+                <div class="p-1">
                   <TextImprover
                     v-model="form.recomendaciones"
                     contexto="recomendaciones y plan de acción de una inspección vehicular"
-                    v-slot="{ mejorar, restaurar, mejorando, error, mejorado, tieneOriginal }"
-                  >
+                    v-slot="{ mejorar, restaurar, mejorando, error, mejorado, tieneOriginal }">
                     <div class="flex items-center justify-between gap-2 mb-2">
                       <label for="recomendaciones" class="block text-sm font-medium text-gray-900 dark:text-white">Recomendaciones <span class="text-accent-500">*</span></label>
                       <button
@@ -1215,8 +1294,7 @@ onMounted(() => {
                         title="Mejorar el texto con IA"
                         :disabled="mejorando"
                         class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-primary-blue-700 text-primary-blue-700 hover:bg-primary-blue-50 focus:ring-4 focus:ring-primary-blue-300 dark:border-primary-blue-400 dark:text-primary-blue-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                        @click="mejorar"
-                      >
+                        @click="mejorar">
                         <Wand2 v-if="!mejorando" class="w-4 h-4" />
                         <Loader2 v-else class="w-4 h-4 animate-spin" />
                         {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
@@ -1237,13 +1315,10 @@ onMounted(() => {
               </div>
 
               <div v-show="activeTab === 'testigos'" class="col-span-1">
-                <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4">
                   <TestigosTablero v-model="testigos" />
-                </div>
               </div>
 
               <div v-show="activeTab === 'fotos'" class="col-span-1">
-                <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4">
                   <p class="mb-3 text-sm text-gray-500 dark:text-gray-400">
                     Opcional: hasta {{ FOTO_MAX }} fotos de evidencia de los hallazgos (DTC en pantalla, desgastes, fugas, testigos encendidos).
                     JPG, PNG o WebP de máximo 5 MB.
@@ -1260,7 +1335,6 @@ onMounted(() => {
                     :disabled="isEditMode && estadoInspeccion === 'FINALIZADA'"
                     disabled-message="La inspección está finalizada; reábrela para poder modificar las fotos."
                   />
-                </div>
               </div>
 
               <div v-show="activeTab === 'servicios'" class="col-span-1 space-y-4">
@@ -1271,15 +1345,15 @@ onMounted(() => {
                       Servicios
                     </span>
                   </h5>
-                  <div class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-x-visible">
+                  <div class="relative overflow-x-visible bg-neutral-primary-soft shadow-xs rounded-base border border-default">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
                       <thead class="bg-gray-100 dark:bg-gray-900">
                         <tr>
-                          <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Servicio</th>
+                          <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Servicio</th>
                           <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Horas</th>
                           <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Prioridad</th>
-                          <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Opcional</th>
-                          <th class="p-2"></th>
+                          <th class="p-2 text-xs font-medium text-center text-gray-700 uppercase dark:text-gray-300">Opcional</th>
+                          <th class="p-2 text-center"></th>
                         </tr>
                       </thead>
                       <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
@@ -1296,8 +1370,7 @@ onMounted(() => {
                               mensaje-sin-resultados="Sin coincidencias. Puedes escribir un servicio libre."
                               :error="!!s.error"
                               :error-message="s.error"
-                              @select="(item) => seleccionarServicio(item, s)"
-                            />
+                              @select="(item) => seleccionarServicio(item, s)"/>
                           </td>
                           <td class="p-2">
                             <input :id="`svc-horas-${s.sufijo}`" v-model="s.horas_estimadas" type="number" step="0.25" min="0" max="999.99" class="block w-20 p-2 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white">
@@ -1310,7 +1383,7 @@ onMounted(() => {
                           <td class="p-2 text-center">
                             <input v-model="s.es_sugerido" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600">
                           </td>
-                          <td class="p-2 text-right">
+                          <td class="p-2 text-center">
                             <button type="button" title="Quitar servicio" aria-label="Quitar servicio" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarServicio(index)">
                               <Trash2 class="w-4 h-4" />
                             </button>
@@ -1325,10 +1398,9 @@ onMounted(() => {
                       title="Añadir servicio detectado"
                       aria-label="Añadir servicio"
                       class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-blue-700 hover:bg-primary-blue-800 focus:ring-4 focus:ring-primary-blue-300 dark:bg-primary-blue-600 dark:hover:bg-primary-blue-700"
-                      @click="agregarServicioVacio"
-                    >
+                      @click="agregarServicioVacio">
                       <Plus class="w-4 h-4" />
-                      Añadir
+                      Agregar
                     </button>
                   </div>
                 </div>
@@ -1340,15 +1412,15 @@ onMounted(() => {
                       Repuestos
                     </span>
                   </h5>
-                  <div class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-x-visible">
+                  <div class="relative overflow-x-visible bg-neutral-primary-soft shadow-xs rounded-base border border-default">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-                      <thead class="bg-gray-100 dark:bg-gray-900">
+                      <thead class="text-sm text-body bg-neutral-secondary-soft border-b rounded-base border-default">
                         <tr>
-                          <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Repuesto</th>
+                          <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Repuesto</th>
                           <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Cant.</th>
                           <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Prioridad</th>
-                          <th class="p-2 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Opcional</th>
-                          <th class="p-2"></th>
+                          <th class="p-2 text-xs font-medium text-center text-gray-700 uppercase dark:text-gray-300">Opcional</th>
+                          <th class="p-2 text-center"></th>
                         </tr>
                       </thead>
                       <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
@@ -1380,7 +1452,7 @@ onMounted(() => {
                           <td class="p-2 text-center">
                             <input v-model="r.es_sugerido" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600">
                           </td>
-                          <td class="p-2 text-right">
+                          <td class="p-2 text-center">
                             <button type="button" title="Quitar repuesto" aria-label="Quitar repuesto" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarRepuesto(index)">
                               <Trash2 class="w-4 h-4" />
                             </button>
@@ -1395,15 +1467,13 @@ onMounted(() => {
                       title="Añadir repuesto sugerido"
                       aria-label="Añadir repuesto"
                       class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-blue-700 hover:bg-primary-blue-800 focus:ring-4 focus:ring-primary-blue-300 dark:bg-primary-blue-600 dark:hover:bg-primary-blue-700"
-                      @click="agregarRepuestoVacio"
-                    >
+                      @click="agregarRepuestoVacio">
                       <Plus class="w-4 h-4" />
-                      Añadir
+                      Agregar
                     </button>
                   </div>
                 </div>
               </div>
-
             </form>
           </div>
           <div class="flex items-center justify-end gap-3 mt-4">
@@ -1411,8 +1481,7 @@ onMounted(() => {
               type="button"
               class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
               :disabled="activeTabIndex <= 0"
-              @click="goToTab(-1)"
-            >
+              @click="goToTab(-1)">
               <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12l4-4m-4 4 4 4"/>
               </svg>
@@ -1422,8 +1491,7 @@ onMounted(() => {
               type="button"
               class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
               :disabled="activeTabIndex >= TAB_ORDER.length - 1"
-              @click="goToTab(1)"
-            >
+              @click="goToTab(1)">
               Siguiente
               <svg class="w-6 h-6 text-gray-800 dark:text-white ml-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12H5m14 0-4 4m4-4-4-4"/>

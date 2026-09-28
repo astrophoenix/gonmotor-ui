@@ -17,16 +17,18 @@ export function useCotizaciones() {
 
   const listRequest = createLatestRequest();
 
-  async function loadCotizaciones(page = 1) {
+  async function loadCotizaciones(page = 1, filters = {}) {
     const { signal, id } = listRequest.begin();
     loading.value = true;
     error.value = null;
     currentPage.value = page;
 
     try {
+      const { search = '', ...resto } = filters;
       const data = await cotizacionesService.list({
         page,
-        search: search.value,
+        search,
+        filters: resto,
         ordering: '-created_at',
         signal,
       });

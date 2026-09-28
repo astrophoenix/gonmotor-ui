@@ -104,8 +104,10 @@ function clienteUrl(item) {
   return id ? `/crud/clientes/ver/?id=${encodeURIComponent(id)}` : null;
 }
 
+// La lectura propia del diagnóstico manda: el vehículo pudo salir a prueba de
+// ruta. Se cae al odómetro del vehículo cuando la inspección aún no tiene captura.
 function kmDisplay(item) {
-  const km = vehiculoDe(item)?.kilometraje_actual;
+  const km = item.kilometraje_diagnostico ?? vehiculoDe(item)?.kilometraje_actual;
   if (km === null || km === undefined || km === '') return 'Sin km registrado';
   const numero = Number(km);
   if (Number.isNaN(numero)) return 'Sin km registrado';
@@ -301,22 +303,21 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="p-4 bg-white block sm:flex items-center justify-between border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
-    <div class="w-full mb-1">
-      <div class="mb-4">
-        <nav class="flex mb-5" aria-label="Breadcrumb">
-          <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
-            <li class="inline-flex items-center">
-              <a href="/" class="inline-flex items-center text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Inicio</a>
-            </li>
-            <li class="text-gray-400" aria-current="page">/ Inspecciones</li>
-          </ol>
-        </nav>
-        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-          <FileSearchCorner class="w-6 h-6 inline-block text-gray-900 dark:text-gray-400" />
-          Inspecciones
-        </h1>
-      </div>
+  <div class="p-4 py-3 bg-white block sm:flex items-center justify-between border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
+    <div class="w-full">
+      <nav class="flex mb-1.5" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
+          <li class="inline-flex items-center">
+            <a href="/" class="inline-flex items-center text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Inicio</a>
+          </li>
+          <li class="text-gray-400" aria-current="page">/ Inspecciones</li>
+        </ol>
+      </nav>
+      <h1 class="inline-flex items-center gap-2 text-lg font-semibold text-gray-900 sm:text-xl dark:text-white">
+        <FileSearchCorner class="w-5 h-5 inline-block text-gray-900 dark:text-gray-400" />
+        Inspecciones
+      </h1>
+      
       <Alert
         :type="alert.type"
         :title="alert.title"
@@ -446,11 +447,10 @@ onUnmounted(() => {
       </div>
       <EntityTable
         :columns="[
-          'Nº Inspección',
-          { key: 'vehiculo', label: 'Vehículo', thClass: 'w-44' },
+          { key: 'numero', label: 'Nº Inspección', thClass: 'w-48 whitespace-nowrap' },
+          { key: 'vehiculo', label: 'Vehículo', thClass: 'w-42' },
           'Cliente',
-          'Tipo',
-          { key: 'fechas', label: 'Fechas', thClass: 'w-64' },
+          'Tipo', { key: 'fechas', label: 'Fechas', thClass: 'w-64' },
           'Estado',
           'Relaciones',
           'Acciones',

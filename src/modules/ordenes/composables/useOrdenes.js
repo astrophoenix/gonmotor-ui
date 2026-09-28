@@ -19,16 +19,18 @@ export function useOrdenes() {
 
   const listRequest = createLatestRequest();
 
-  async function loadOrdenes(page = 1) {
+  async function loadOrdenes(page = 1, filters = {}) {
     const { signal, id } = listRequest.begin();
     loading.value = true;
     error.value = null;
     currentPage.value = page;
 
     try {
+      const { search = '', ...resto } = filters;
       const data = await ordenesService.list({
         page,
-        search: search.value,
+        search,
+        filters: resto,
         ordering: '-created_at',
         signal,
       });

@@ -1291,35 +1291,33 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 bg-white border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
-    <nav class="flex mb-5" aria-label="Breadcrumb">
-      <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
-        <li>
-          <a href="/" class="text-gray-700 hover:text-primary-600 dark:text-gray-300" >Inicio</a>
-        </li>
-        <li class="text-gray-400">/<a href="/crud/recepciones/" class="hover:text-primary-600">Recepciones</a>
-        </li>
-        <li class="text-gray-400">/ {{ isEditMode ? "Editar" : "Nueva" }}</li>
-      </ol>
-    </nav>
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <a href="/crud/recepciones/" title="Volver al listado" class="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-          <ArrowLeft class="w-5 h-5" />
-        </a>
-        <h1
-          class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white"
-        >
-          {{ isEditMode ? "Editar recepción" : "Nueva recepción" }}
-        </h1>
+  <div class="p-4 bg-white border-b border-gray-200 lg:mt-1 dark:bg-gray-800 dark:border-gray-700">
+    <div class="w-full">
+      <nav class="flex mb-1.5" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
+          <li>
+            <a href="/" class="text-gray-700 hover:text-primary-600 dark:text-gray-300">Inicio</a>
+          </li>
+          <li class="text-gray-400">/ <a href="/crud/recepciones/" class="hover:text-primary-600">Recepciones</a></li>
+          <li class="text-gray-400">/ {{ isEditMode ? "Editar" : "Nueva" }}</li>
+        </ol>
+      </nav>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <a href="/crud/recepciones/" title="Volver al listado" class="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+            <ArrowLeft class="w-5 h-5" />
+          </a>
+          <h1 class="inline-flex items-center gap-2 text-lg font-semibold text-gray-900 sm:text-xl dark:text-white">
+            {{ isEditMode ? "Editar recepción" : "Nueva recepción" }}
+          </h1>
+        </div>
+        <FormSaveActions
+          :is-loading="isSaving"
+          :is-edit-mode="isEditMode"
+          :disabled="readOnly"
+          cancel-href="/crud/recepciones/"
+          :on-submit="submit"/>
       </div>
-      <FormSaveActions
-        :is-loading="isSaving"
-        :is-edit-mode="isEditMode"
-        :disabled="readOnly"
-        cancel-href="/crud/recepciones/"
-        :on-submit="submit"
-      />
     </div>
   </div>
   <div class="relative mx-auto max-w-6xl p-4 rounded-lg">
@@ -1432,29 +1430,17 @@ onMounted(() => {
                     >{{ form.vehiculo ? form.vehiculo.marca : "—" }}</span
                   >
                 </div>
-                <div
-                  class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400"
-                >
+                <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
                   <Shapes class="w-3.5 h-3.5 shrink-0" />
                   Modelo:
-                  <span
-                    class="truncate font-bold text-gray-900 dark:text-white"
-                    >{{ form.vehiculo ? form.vehiculo.modelo : "—" }}</span
-                  >
+                  <span class="truncate font-bold text-gray-900 dark:text-white">{{ form.vehiculo ? form.vehiculo.modelo : "—" }}</span>
                 </div>
-                <div
-                  class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400"
-                >
+                <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
                   <PaintBucket class="w-3.5 h-3.5 shrink-0" />
                   Color:
-                  <span
-                    class="truncate font-bold text-gray-900 dark:text-white"
-                    >{{ form.vehiculo_color || "—" }}</span
-                  >
+                  <span class="truncate font-bold text-gray-900 dark:text-white">{{ form.vehiculo_color || "—" }}</span>
                   {{
-                    form.kilometraje_actual
-                      ? `(${form.vehiculo.kilometraje_actual} km)`
-                      : ""
+                    form.kilometraje_actual ? `(${form.vehiculo.kilometraje_actual} km)` : ""
                   }}
                 </div>
               </div>
@@ -1576,16 +1562,12 @@ onMounted(() => {
               </div>
               <div>
                 <div v-show="activeTab === 'informacion'" class="p-4 space-y-4">
-                  <div
-                    class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4"
-                  >
+                  <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <label
-                          for="fecha_ingreso"
-                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                          >Fecha Ingreso <span class="text-accent-500">*</span></label
-                        >
+                        <label for="fecha_ingreso" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                          Fecha Ingreso <span class="text-accent-500">*</span>
+                        </label>
                         <input
                           id="fecha_ingreso"
                           v-model="form.fecha_ingreso"
@@ -1596,21 +1578,13 @@ onMounted(() => {
                             formErrors.fecha_ingreso
                               ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
                               : '',
-                          ]"
-                        />
-                        <p
-                          v-if="formErrors.fecha_ingreso"
-                          class="mt-2 text-sm text-red-600 dark:text-red-500"
-                        >
+                          ]"/>
+                        <p v-if="formErrors.fecha_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">
                           {{ formErrors.fecha_ingreso }}
                         </p>
                       </div>
                       <div>
-                        <label
-                          for="fecha_salida"
-                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                          >Fecha de Salida</label
-                        >
+                        <label for="fecha_salida" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Fecha de Salida</label>
                         <input
                           id="fecha_salida"
                           v-model="form.fecha_salida"
@@ -1623,19 +1597,12 @@ onMounted(() => {
                               : '',
                           ]"
                         />
-                        <p
-                          v-if="formErrors.fecha_salida"
-                          class="mt-2 text-sm text-red-600 dark:text-red-500"
-                        >
+                        <p v-if="formErrors.fecha_salida" class="mt-2 text-sm text-red-600 dark:text-red-500">
                           {{ formErrors.fecha_salida }}
                         </p>
                       </div>
                       <div>
-                        <label
-                          for="tipo_recepcion"
-                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                          >Tipo de Recepción</label
-                        >
+                        <label for="tipo_recepcion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de Recepción</label>
                         <select
                           id="tipo_recepcion"
                           v-model="form.tipo_recepcion"
@@ -1645,20 +1612,14 @@ onMounted(() => {
                             formErrors.tipo_recepcion
                               ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
                               : '',
-                          ]"
-                        >
-                          <option
-                            v-for="item in TIPOS_TRABAJO_OPCIONES"
+                          ]">
+                          <option v-for="item in TIPOS_TRABAJO_OPCIONES"
                             :key="item.value"
-                            :value="item.value"
-                          >
+                            :value="item.value">
                             {{ item.label }}
                           </option>
                         </select>
-                        <p
-                          v-if="formErrors.tipo_recepcion"
-                          class="mt-2 text-sm text-red-600 dark:text-red-500"
-                        >
+                        <p v-if="formErrors.tipo_recepcion" class="mt-2 text-sm text-red-600 dark:text-red-500">
                           {{ formErrors.tipo_recepcion }}
                         </p>
                       </div>
@@ -1688,8 +1649,7 @@ onMounted(() => {
                               title="Mejorar el texto con IA"
                               :disabled="mejorando || readOnly"
                               class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-primary-blue-700 text-primary-blue-700 hover:bg-primary-blue-50 focus:ring-4 focus:ring-primary-blue-300 dark:border-primary-blue-400 dark:text-primary-blue-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                              @click="mejorar"
-                            >
+                              @click="mejorar">
                               <Wand2 v-if="!mejorando" class="w-4 h-4" />
                               <Loader2 v-else class="w-4 h-4 animate-spin" />
                               {{ mejorando ? "Mejorando..." : "Mejorar texto" }}
@@ -1708,21 +1668,13 @@ onMounted(() => {
                                 ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
                                 : '',
                             ]"></textarea>
-                          <p
-                            v-if="formErrors.motivo_ingreso"
-                            class="mt-2 text-sm text-red-600 dark:text-red-500">
+                          <p v-if="formErrors.motivo_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">
                             {{ formErrors.motivo_ingreso }}
                           </p>
-                          <p
-                            v-if="error"
-                            class="mt-2 text-sm text-red-600 dark:text-red-500"
-                          >
+                          <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-500">
                             {{ error }}
                           </p>
-                          <div
-                            v-if="mejorado && !error"
-                            class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400"
-                          >
+                          <div v-if="mejorado && !error" class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
                             <CheckCircle2 class="w-5 h-5 shrink-0" />
                             <div class="flex flex-wrap items-center gap-x-2">
                               <p>Texto mejorado. Revisa antes de guardar.</p>
@@ -1731,8 +1683,7 @@ onMounted(() => {
                                 type="button"
                                 class="text-sm font-medium underline hover:no-underline"
                                 @click="restaurar"
-                                :disabled="readOnly"
-                              >
+                                :disabled="readOnly">
                                 Restaurar original
                               </button>
                             </div>
@@ -1741,138 +1692,95 @@ onMounted(() => {
                       </div>
                     </div>
 
-                    <div
-                      class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4"
-                    >
-                      <div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                          <div class="space-y-4">
-                            <div>
-                              <label
-                                for="kilometraje_ingreso"
-                                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                                >Kilometraje <span class="text-accent-500">*</span></label
-                              >
+                    <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4">
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div class="space-y-4">
+                            <label for="kilometraje_ingreso" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                              Kilometraje <span class="text-accent-500">*</span>
+                            </label>
+                            <input
+                              id="kilometraje_ingreso"
+                              v-model="kilometrajeDisplay"
+                              type="text"
+                              inputmode="numeric"
+                              :disabled="readOnly"
+                              placeholder="Ingresa el kilometraje"
+                              :class="[
+                                'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
+                                formErrors.kilometraje_ingreso
+                                  ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
+                                  : '',
+                              ]"
+                            />
+                            <p v-if="formErrors.kilometraje_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">
+                              {{ formErrors.kilometraje_ingreso }}
+                            </p>
+                            <span v-if="vehiculoKilometrajeText" class="mt-1 block text-xs text-gray-500 dark:text-gray-400">
+                              Kilometraje actual:
+                              {{ vehiculoKilometrajeText }} km
+                            </span>
+                          <div class="flex items-center gap-2 mt-10">
+                            <label class="relative inline-flex items-center cursor-pointer">
                               <input
-                                id="kilometraje_ingreso"
-                                v-model="kilometrajeDisplay"
-                                type="text"
-                                inputmode="numeric"
-                                :disabled="readOnly"
-                                placeholder="Ingresa el kilometraje"
-                                :class="[
-                                  'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
-                                  formErrors.kilometraje_ingreso
-                                    ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
-                                    : '',
-                                ]"
-                              />
-                              <p
-                                v-if="formErrors.kilometraje_ingreso"
-                                class="mt-2 text-sm text-red-600 dark:text-red-500"
-                              >
-                                {{ formErrors.kilometraje_ingreso }}
-                              </p>
-                              <span
-                                v-if="vehiculoKilometrajeText"
-                                class="mt-1 block text-xs text-gray-500 dark:text-gray-400"
-                              >
-                                Kilometraje actual:
-                                {{ vehiculoKilometrajeText }} km
+                                v-model="form.ingreso_en_grua"
+                                type="checkbox"
+                                class="sr-only peer"
+                                :disabled="readOnly"/>
+                              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600">
+                              </div>
+                              <span class="ml-3 text-sm font-medium text-gray-900 dark:text-white">¿Ingresó en grúa?</span>
+                            </label>
+                          </div>
+                        </div>
+                        <div class="space-y-4">
+                          <div>
+                            <label
+                              id="nivel_combustible_label"
+                              class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nivel Combustible <span class="text-accent-500">*</span></label>
+                            <div
+                              id="nivel_combustible"
+                              role="radiogroup"
+                              aria-labelledby="nivel_combustible_label"
+                              class="flex flex-col gap-2">
+                              <div class="flex w-full gap-1 p-1 rounded bg-gray-100 border border-gray-300 dark:bg-gray-800 dark:border-gray-600">
+                                <button
+                                  v-for="(opcion, index) in FUEL_LEVELS"
+                                  :key="opcion.value"
+                                  type="button"
+                                  role="radio"
+                                  :disabled="readOnly"
+                                  :aria-checked="form.nivel_combustible === opcion.value"
+                                  :title="opcion.label"
+                                  class="h-7 flex-1 rounded-md transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                                  :class="opcion.fill <= fuelFill && fuelFill > 0 ? `${SEGMENT_COLORS[index]} shadow-inner`: 'bg-white dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'"
+                                  @click="form.nivel_combustible = opcion.value"
+                                  @keydown="onFuelKeydown($event, index)"></button>
+                              </div>
+                              <span class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white">
+                                <Fuel class="w-4 h-4 transition-colors duration-300" :class="fuelIcon"/>
+                                {{ fuelLabel }}
                               </span>
                             </div>
-                            <div class="flex items-center gap-2 mt-10">
-                              <label
-                                class="relative inline-flex items-center cursor-pointer"
-                              >
-                                <input
-                                  v-model="form.ingreso_en_grua"
-                                  type="checkbox"
-                                  class="sr-only peer"
-                                  :disabled="readOnly"
-                                />
-                                <div
-                                  class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"
-                                ></div>
-                                <span
-                                  class="ml-3 text-sm font-medium text-gray-900 dark:text-white"
-                                  >¿Ingresó en grúa?</span
-                                >
-                              </label>
-                            </div>
                           </div>
-                          <div class="space-y-4">
-                            <div>
-                              <label
-                                id="nivel_combustible_label"
-                                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nivel Combustible <span class="text-accent-500">*</span></label>
-                              <div
-                                id="nivel_combustible"
-                                role="radiogroup"
-                                aria-labelledby="nivel_combustible_label"
-                                class="flex flex-col gap-2">
-                                <div class="flex w-full gap-1 p-1 rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-800 dark:border-gray-600">
-                                  <button
-                                    v-for="(opcion, index) in FUEL_LEVELS"
-                                    :key="opcion.value"
-                                    type="button"
-                                    role="radio"
-                                    :disabled="readOnly"
-                                    :aria-checked="
-                                      form.nivel_combustible === opcion.value
-                                    "
-                                    :title="opcion.label"
-                                    class="h-7 flex-1 rounded-md transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
-                                    :class="
-                                      opcion.fill <= fuelFill && fuelFill > 0
-                                        ? `${SEGMENT_COLORS[index]} shadow-inner`
-                                        : 'bg-white dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
-                                    "
-                                    @click="
-                                      form.nivel_combustible = opcion.value
-                                    "
-                                    @keydown="onFuelKeydown($event, index)"
-                                  ></button>
-                                </div>
-                                <span
-                                  class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white"
-                                >
-                                  <Fuel
-                                    class="w-4 h-4 transition-colors duration-300"
-                                    :class="fuelIcon"
-                                  />
-                                  {{ fuelLabel }}
-                                </span>
-                              </div>
-                            </div>
-                            <div v-if="form.ingreso_en_grua">
-                              <label
-                                for="datos_grua"
-                                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                                >Datos de la grúa / Chófer</label
-                              >
-                              <textarea
-                                id="datos_grua"
-                                :value="form.datos_grua"
-                                @input="sanitizeDatosGrua($event.target.value)"
-                                :disabled="readOnly"
-                                placeholder="Datos Grúa / chófer"
-                                maxlength="80"
-                                rows="3"
-                                :class="[
-                                  'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
-                                  formErrors.datos_grua
-                                    ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
-                                    : '',
-                                ]"
-                              ></textarea>
-                              <p
-                                v-if="formErrors.datos_grua"
-                                class="mt-2 text-sm text-red-600 dark:text-red-500"
-                              >
-                                {{ formErrors.datos_grua }}
-                              </p>
-                            </div>
+                          <div v-if="form.ingreso_en_grua">
+                            <label for="datos_grua" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Datos de la grúa / Chófer</label>
+                            <textarea
+                              id="datos_grua"
+                              :value="form.datos_grua"
+                              @input="sanitizeDatosGrua($event.target.value)"
+                              :disabled="readOnly"
+                              placeholder="Datos Grúa / chófer"
+                              maxlength="80"
+                              rows="3"
+                              :class="[
+                                'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
+                                formErrors.datos_grua
+                                  ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
+                                  : '',
+                              ]"></textarea>
+                            <p v-if="formErrors.datos_grua" class="mt-2 text-sm text-red-600 dark:text-red-500">
+                              {{ formErrors.datos_grua }}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -1880,44 +1788,31 @@ onMounted(() => {
                   </div>
 
                   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div
-                      class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4"
-                    >
-                      <h5
-                        class="mb-4 font-semibold text-gray-900 dark:text-white"
-                      >
+                    <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4">
+                      <h5 class="mb-4 font-semibold text-gray-900 dark:text-white">
                         Custodia y pertenencias
                       </h5>
                       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
-                          <label
-                            for="cantidad_llaves"
-                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                            >Cantidad de llaves</label
-                          >
+                          <label for="cantidad_llaves" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cantidad de llaves</label>
                           <select
                             id="cantidad_llaves"
                             v-model="form.cantidad_llaves"
                             :disabled="readOnly"
-                            class="block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand"
-                          >
+                            class="block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand">
                             <option :value="0">0</option>
                             <option :value="1">1</option>
                             <option :value="2">2</option>
-                            <option :value="3">3</option>
-                            <option :value="4">4 o más</option>
+                            <option :value="3">3 o más</option>
                           </select>
                         </div>
                         <div class="flex items-end pb-2.5">
-                          <label
-                            class="inline-flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white"
-                          >
+                          <label class="inline-flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
                             <input
                               v-model="form.tiene_llave_control"
                               type="checkbox"
                               :disabled="readOnly"
-                              class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"
-                            />
+                              class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"/>
                             Llave de control / Control remoto
                           </label>
                         </div>
@@ -2054,291 +1949,276 @@ onMounted(() => {
                 </div>
 
                 <div v-show="activeTab === 'inspeccion'" class="p-4">
-                  <h5 class="mb-2 font-semibold dark:text-white">
-                    <span class="inline-flex items-center gap-2">
-                      <FileCheck
-                        class="w-6 h-6 text-gray-800 dark:text-white"
-                      />
-                      Inventario
-                    </span>
-                  </h5>
-                  <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
-                    Registra los accesorios y objetos presentes en el vehículo
-                    al momento de la recepción.
-                  </p>
-
-                  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                      <p
-                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                      >
-                        Elementos Exteriores / Mecánicos
+                  <div class="space-y-4">
+                    <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4">
+                      <h5 class="font-semibold dark:text-white">
+                        <span class="inline-flex items-center gap-2">
+                          <FileCheck class="w-5 h-5 text-gray-800 dark:text-white"/>
+                          Inventario
+                        </span>
+                      </h5>
+                      <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+                        Registra los accesorios y objetos presentes en el vehículo al momento de la recepción.
                       </p>
-                      <div class="space-y-2">
-                        <label
-                          v-for="field in [
-                            {
-                              key: 'tiene_espejo_izquierdo',
-                              label: 'Espejo Izquierdo',
-                            },
-                            {
-                              key: 'tiene_espejo_derecho',
-                              label: 'Espejo Derecho',
-                            },
-                            {
-                              key: 'tiene_vidrios',
-                              label: 'Vidrios / Cristales',
-                            },
-                            {
-                              key: 'tiene_faros_lunas',
-                              label: 'Faros / Lunas',
-                            },
-                            {
-                              key: 'tiene_tapa_gasolina',
-                              label: 'Tapa de Gasolina',
-                            },
-                            {
-                              key: 'tiene_placas',
-                              label: 'Placas de Circulación',
-                            },
-                          ]"
-                          :key="field.key"
-                          class="flex items-center"
-                        >
-                          <input
-                            v-model="form[field.key]"
-                            type="checkbox"
-                            :disabled="readOnly"
-                            class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                          />
-                          <span
-                            class="ml-2 text-sm text-gray-900 dark:text-white"
-                            >{{ field.label }}</span
+
+                      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                          <p
+                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                           >
-                        </label>
-                      </div>
-                    </div>
-
-                    <div>
-                      <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Interiores / Confort</p>
-                      <div class="space-y-2">
-                        <label
-                          v-for="field in [
-                            { key: 'tiene_radio', label: 'Radio / Mascarilla' },
-                            {
-                              key: 'tiene_pantalla',
-                              label: 'Pantalla / Multimedia',
-                            },
-                            { key: 'tiene_encendedor', label: 'Encendedor' },
-                            {
-                              key: 'tiene_control_puertas',
-                              label: 'Control de Puertas',
-                            },
-                            {
-                              key: 'tiene_cargador_celular',
-                              label: 'Cargador de Celular',
-                            },
-                            {
-                              key: 'tiene_tapetes',
-                              label: 'Tapetes / Alfombras',
-                            },
-                            { key: 'tiene_cubresol', label: 'Cubresol' },
-                          ]"
-                          :key="field.key"
-                          class="flex items-center"
-                        >
-                          <input
-                            v-model="form[field.key]"
-                            type="checkbox"
-                            :disabled="readOnly"
-                            class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                          />
-                          <span
-                            class="ml-2 text-sm text-gray-900 dark:text-white"
-                            >{{ field.label }}</span
-                          >
-                        </label>
-                      </div>
-                    </div>
-
-                    <div>
-                      <p
-                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                      >
-                        Seguridad y Emergencia
-                      </p>
-                      <div class="space-y-2">
-                        <label
-                          v-for="field in [
-                            {
-                              key: 'tiene_llanta_repuesto',
-                              label: 'Llanta de Repuesto',
-                            },
-                            {
-                              key: 'tiene_gata_palanca',
-                              label: 'Gata y Palanca',
-                            },
-                            {
-                              key: 'tiene_herramientas',
-                              label: 'Juego de Herramientas',
-                            },
-                            { key: 'tiene_extintor', label: 'Extintor' },
-                            { key: 'tiene_botiquin', label: 'Botiquín' },
-                            {
-                              key: 'tiene_triangulos',
-                              label: 'Triángulos de Seguridad',
-                            },
-                            {
-                              key: 'tiene_llave_tuercas',
-                              label: 'Llave de Tuercas',
-                            },
-                          ]"
-                          :key="field.key"
-                          class="flex items-center"
-                        >
-                          <input
-                            v-model="form[field.key]"
-                            type="checkbox"
-                            :disabled="readOnly"
-                            class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                          />
-                          <span
-                            class="ml-2 text-sm text-gray-900 dark:text-white"
-                            >{{ field.label }}</span
-                          >
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <hr class="my-6 border-gray-200 dark:border-gray-700" />
-
-                  <h5 class="mb-2 font-semibold dark:text-white">
-                    <span class="inline-flex items-center gap-2">
-                      <TriangleAlert
-                        class="w-6 h-6 text-gray-800 dark:text-white"
-                      />
-                      Testigos luminosos
-                    </span>
-                  </h5>
-                  <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
-                    Señala los testigos con problemas, daños o averías que se
-                    encuentren encendidos en el tablero del vehículo.
-                  </p>
-                  <TestigosTablero v-model="testigos" :disabled="readOnly" />
-
-                  <hr class="my-6 border-gray-200 dark:border-gray-700" />
-
-                  <h5 class="mb-2 mt-4 font-semibold dark:text-white">
-                    <span class="inline-flex items-center gap-2">
-                      <FileSearch
-                        class="w-6 h-6 text-gray-800 dark:text-white"
-                      />
-                      Inspección Física
-                    </span>
-                  </h5>
-                  <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
-                    Marca sobre el diagrama la ubicación de daños en el
-                    vehículo, como rayones, golpes u otros detalles, y describe
-                    cada uno.
-                  </p>
-
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="col-span-1">
-                      <p
-                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                      >
-                        Marcación de Daños (Clic en el diagrama)
-                      </p>
-                      <p
-                        v-if="blueprintError"
-                        class="mb-2 text-sm text-red-600 dark:text-red-500"
-                      >
-                        {{ blueprintError }}
-                      </p>
-                      <div
-                        class="relative bg-white border border-gray-300 rounded-lg dark:bg-white dark:border-gray-600 overflow-hidden"
-                      >
-                        <button
-                          v-if="!readOnly && form.vehiculo && marcas.length"
-                          type="button"
-                          title="Limpiar marcaciones"
-                          class="absolute top-2 right-2 z-10 inline-flex items-center gap-1 px-2 py-1.5 text-sm font-medium text-red-700 border border-red-400 rounded hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-900/20"
-                          @click="clearMarcas"
-                        >
-                          <BrushCleaning class="w-4 h-4" />
-                        </button>
-                        <div
-                          v-if="!form.vehiculo"
-                          class="flex items-center justify-center h-64 text-sm text-gray-500 dark:text-gray-400"
-                        >
-                          Selecciona un vehículo para cargar el diagrama.
-                        </div>
-                        <div v-else class="relative" style="aspect-ratio: 4/3">
-                          <img
-                            v-if="blueprintImageUrl"
-                            :src="blueprintImageUrl"
-                            class="absolute inset-0 w-full h-full object-contain"
-                            @click="onBlueprintClick"
-                          />
-                          <div class="absolute inset-0 pointer-events-none">
-                            <span
-                              v-for="(punto, idx) in marcas"
-                              :key="punto.id"
-                              class="absolute inline-flex items-center justify-center w-6 h-6 text-xs font-semibold text-blue-800 bg-blue-200 rounded-full -translate-x-1/2 -translate-y-1/2"
-                              :style="{
-                                left: punto.x + '%',
-                                top: punto.y + '%',
-                              }"
-                            >
-                              {{ idx + 1 }}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="col-span-1">
-                      <label for="detalles_carroceria" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Detalles</label>
-                      <div class="mt-2 space-y-2">
-                        <div v-for="(punto, idx) in marcas" :key="punto.id" class="flex items-start gap-2">
-                          <span class="inline-flex items-center justify-center w-5 h-5 text-xs font-semibold text-blue-800 bg-blue-200 rounded-full mt-1">{{ idx + 1 }}</span>
-                          <div class="flex-1">
-                            <input
-                              :value="punto.descripcion"
-                              @input="sanitizeDetalleCarroceria(punto, $event.target.value,)"
-                              :disabled="readOnly"
-                              type="text"
-                              :name="`detalle_carroceria_${punto.id}`"
-                              placeholder="Descripción del daño..."
-                              maxlength="80"
-                              :class="[
-                                'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
-                                detallesErrors[idx]
-                                  ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
-                                  : '',
+                            Elementos Exteriores / Mecánicos
+                          </p>
+                          <div class="space-y-2">
+                            <label
+                              v-for="field in [
+                                {
+                                  key: 'tiene_espejo_izquierdo',
+                                  label: 'Espejo Izquierdo',
+                                },
+                                {
+                                  key: 'tiene_espejo_derecho',
+                                  label: 'Espejo Derecho',
+                                },
+                                {
+                                  key: 'tiene_vidrios',
+                                  label: 'Vidrios / Cristales',
+                                },
+                                {
+                                  key: 'tiene_faros_lunas',
+                                  label: 'Faros / Lunas',
+                                },
+                                {
+                                  key: 'tiene_tapa_gasolina',
+                                  label: 'Tapa de Gasolina',
+                                },
+                                {
+                                  key: 'tiene_placas',
+                                  label: 'Placas de Circulación',
+                                },
                               ]"
-                            />
-                            <p v-if="detallesErrors[idx]" class="mt-1 text-sm text-red-600 dark:text-red-500">
-                              {{ detallesErrors[idx] }}
-                            </p>
+                              :key="field.key"
+                              class="flex items-center"
+                            >
+                              <input
+                                v-model="form[field.key]"
+                                type="checkbox"
+                                :disabled="readOnly"
+                                class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                              />
+                              <span
+                                class="ml-2 text-sm text-gray-900 dark:text-white"
+                                >{{ field.label }}</span
+                              >
+                            </label>
                           </div>
-                          <button
-                            v-if="!readOnly"
-                            type="button"
-                            class="inline-flex items-center justify-center w-8 h-8 text-red-700 border border-red-400 rounded hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-900/20 mt-1"
-                            @click="marcas = marcas.filter((m) => m.id !== punto.id)">
-                            <Trash2 class="w-5 h-5 text-red-700 dark:text-red-400"/>
-                          </button>
+                        </div>
+
+                        <div>
+                          <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Interiores / Confort</p>
+                          <div class="space-y-2">
+                            <label
+                              v-for="field in [
+                                { key: 'tiene_radio', label: 'Radio / Mascarilla' },
+                                {
+                                  key: 'tiene_pantalla',
+                                  label: 'Pantalla / Multimedia',
+                                },
+                                { key: 'tiene_encendedor', label: 'Encendedor' },
+                                {
+                                  key: 'tiene_control_puertas',
+                                  label: 'Control de Puertas',
+                                },
+                                {
+                                  key: 'tiene_cargador_celular',
+                                  label: 'Cargador de Celular',
+                                },
+                                {
+                                  key: 'tiene_tapetes',
+                                  label: 'Tapetes / Alfombras',
+                                },
+                                { key: 'tiene_cubresol', label: 'Cubresol' },
+                              ]"
+                              :key="field.key"
+                              class="flex items-center"
+                            >
+                              <input
+                                v-model="form[field.key]"
+                                type="checkbox"
+                                :disabled="readOnly"
+                                class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                              />
+                              <span
+                                class="ml-2 text-sm text-gray-900 dark:text-white"
+                                >{{ field.label }}</span
+                              >
+                            </label>
+                          </div>
+                        </div>
+
+                        <div>
+                          <p
+                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                          >
+                            Seguridad y Emergencia
+                          </p>
+                          <div class="space-y-2">
+                            <label
+                              v-for="field in [
+                                {
+                                  key: 'tiene_llanta_repuesto',
+                                  label: 'Llanta de Repuesto',
+                                },
+                                {
+                                  key: 'tiene_gata_palanca',
+                                  label: 'Gata y Palanca',
+                                },
+                                {
+                                  key: 'tiene_herramientas',
+                                  label: 'Juego de Herramientas',
+                                },
+                                { key: 'tiene_extintor', label: 'Extintor' },
+                                { key: 'tiene_botiquin', label: 'Botiquín' },
+                                {
+                                  key: 'tiene_triangulos',
+                                  label: 'Triángulos de Seguridad',
+                                },
+                                {
+                                  key: 'tiene_llave_tuercas',
+                                  label: 'Llave de Tuercas',
+                                },
+                              ]"
+                              :key="field.key"
+                              class="flex items-center"
+                            >
+                              <input
+                                v-model="form[field.key]"
+                                type="checkbox"
+                                :disabled="readOnly"
+                                class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                              />
+                              <span
+                                class="ml-2 text-sm text-gray-900 dark:text-white"
+                                >{{ field.label }}</span
+                              >
+                            </label>
+                          </div>
                         </div>
                       </div>
-                      <textarea
-                        id="detalles_carroceria"
-                        v-model="form.detalles_carroceria"
-                        hidden
-                        rows="8"
-                        placeholder="Describe golpes, rayones o estado de pintura..."
-                        class="block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand"></textarea>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4">
+                      <h5 class="font-semibold dark:text-white">
+                        <span class="inline-flex items-center gap-2">
+                          <TriangleAlert class="w-5 h-5 text-gray-800 dark:text-white"/>
+                          Testigos luminosos
+                        </span>
+                      </h5>
+                      <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+                        Señala los testigos con problemas, daños o averías que se
+                        encuentren encendidos en el tablero del vehículo.
+                      </p>
+                      <TestigosTablero v-model="testigos" :disabled="readOnly" />
+                    </div>
+                    
+                    <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4">
+                        <h5 class="font-semibold dark:text-white">
+                          <span class="inline-flex items-center gap-2">
+                            <FileSearch class="w-5 h-5 text-gray-800 dark:text-white"/>
+                            Inspección Física
+                          </span>
+                        </h5>
+                        <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+                          Marca sobre el diagrama la ubicación de daños en el
+                          vehículo, como rayones, golpes u otros detalles, y describe
+                          cada uno.
+                        </p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div class="col-span-1">
+                            <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                              Marcación de Daños (Clic en el diagrama)
+                            </p>
+                            <p v-if="blueprintError" class="mb-2 text-sm text-red-600 dark:text-red-500">
+                              {{ blueprintError }}
+                            </p>
+                            <div class="relative bg-white border border-gray-300 rounded-lg dark:bg-white dark:border-gray-600 overflow-hidden">
+                              <button v-if="!readOnly && form.vehiculo && marcas.length"
+                                type="button"
+                                title="Limpiar marcaciones"
+                                class="absolute top-2 right-2 z-10 inline-flex items-center gap-1 px-2 py-1.5 text-sm font-medium text-red-700 border border-red-400 rounded hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-900/20"
+                                @click="clearMarcas">
+                                <BrushCleaning class="w-4 h-4" />
+                              </button>
+                              <div v-if="!form.vehiculo" class="flex items-center justify-center h-64 text-sm text-gray-500 dark:text-gray-400">
+                                Selecciona un vehículo para cargar el diagrama.
+                              </div>
+                              <div v-else class="relative" style="aspect-ratio: 4/3">
+                                <img
+                                  v-if="blueprintImageUrl"
+                                  :src="blueprintImageUrl"
+                                  class="absolute inset-0 w-full h-full object-contain"
+                                  @click="onBlueprintClick"
+                                />
+                                <div class="absolute inset-0 pointer-events-none">
+                                  <span
+                                    v-for="(punto, idx) in marcas"
+                                    :key="punto.id"
+                                    class="absolute inline-flex items-center justify-center w-6 h-6 text-xs font-semibold text-blue-800 bg-blue-200 rounded-full -translate-x-1/2 -translate-y-1/2"
+                                    :style="{
+                                      left: punto.x + '%',
+                                      top: punto.y + '%',
+                                    }"
+                                  >
+                                    {{ idx + 1 }}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="col-span-1">
+                            <label for="detalles_carroceria" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Detalles</label>
+                            <div class="mt-2 space-y-2">
+                              <div v-for="(punto, idx) in marcas" :key="punto.id" class="flex items-start gap-2">
+                                <span class="inline-flex items-center justify-center w-5 h-5 text-xs font-semibold text-blue-800 bg-blue-200 rounded-full mt-1">{{ idx + 1 }}</span>
+                                <div class="flex-1">
+                                  <input
+                                    :value="punto.descripcion"
+                                    @input="sanitizeDetalleCarroceria(punto, $event.target.value,)"
+                                    :disabled="readOnly"
+                                    type="text"
+                                    :name="`detalle_carroceria_${punto.id}`"
+                                    placeholder="Descripción del daño..."
+                                    maxlength="80"
+                                    :class="[
+                                      'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
+                                      detallesErrors[idx]
+                                        ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
+                                        : '',
+                                    ]"
+                                  />
+                                  <p v-if="detallesErrors[idx]" class="mt-1 text-sm text-red-600 dark:text-red-500">
+                                    {{ detallesErrors[idx] }}
+                                  </p>
+                                </div>
+                                <button
+                                  v-if="!readOnly"
+                                  type="button"
+                                  class="inline-flex items-center justify-center w-8 h-8 text-red-700 border border-red-400 rounded hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-900/20 mt-1"
+                                  @click="marcas = marcas.filter((m) => m.id !== punto.id)">
+                                  <Trash2 class="w-5 h-5 text-red-700 dark:text-red-400"/>
+                                </button>
+                              </div>
+                            </div>
+                            <textarea
+                              id="detalles_carroceria"
+                              v-model="form.detalles_carroceria"
+                              hidden
+                              rows="8"
+                              placeholder="Describe golpes, rayones o estado de pintura..."
+                              class="block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand"></textarea>
+                          </div>
+                        </div>
                     </div>
                   </div>
                 </div>
@@ -2346,7 +2226,7 @@ onMounted(() => {
                 <div v-show="activeTab === 'evidencias'" class="p-4">
                   <h5 class="mb-1 font-semibold dark:text-white">
                     <span class="inline-flex items-center gap-2">
-                      <Camera class="w-6 h-6 text-gray-800 dark:text-white" />
+                      <Camera class="w-5 h-5 text-gray-800 dark:text-white" />
                       Evidencia Fotográfica
                     </span>
                   </h5>
@@ -2366,25 +2246,20 @@ onMounted(() => {
                       :errors="fotoErrors"
                       :disabled="readOnly"
                       previewable
-                      @change="onFotosChange"
-                    />
+                      @change="onFotosChange"/>
                   </div>
                 </div>
 
                 <div v-show="activeTab === 'autorizacion'" class="p-4">
                   <h5 class="mb-4 font-semibold dark:text-white">
                     <span class="inline-flex items-center gap-2">
-                      <Signature
-                        class="w-6 h-6 text-gray-800 dark:text-white"
-                      />
+                      <Signature class="w-5 h-5 text-gray-800 dark:text-white"/>
                       Firma y Aceptación
                     </span>
                   </h5>
 
                   <div class="max-w-2xl">
-                    <p
-                      class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >
+                    <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                       Firma del Cliente
                     </p>
                     <div v-if="form.fecha_firma_cliente" class="mb-2 text-xs text-gray-500 dark:text-gray-400">
@@ -2405,8 +2280,7 @@ onMounted(() => {
                         type="button"
                         title="Borrar firma"
                         class="absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-1.5 text-sm font-medium text-red-700 border border-red-400 rounded hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-900/20"
-                        @click="borrarFirmaCliente"
-                      >
+                        @click="borrarFirmaCliente">
                         <BrushCleaning class="w-4 h-4" />
                       </button>
                     </div>
@@ -2423,31 +2297,21 @@ onMounted(() => {
                         "
                         class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                       />
-                      <span
-                        class="text-sm font-medium text-gray-900 dark:text-white"
-                      >
+                      <span class="text-sm font-medium text-gray-900 dark:text-white">
                         El cliente acepta las condiciones de recepción y el
                         estado reportado del vehículo.
                       </span>
                     </label>
-                    <p
-                      v-if="isEditMode && form.estado !== 'PENDIENTE'"
-                      class="mt-1 text-xs text-gray-500 dark:text-gray-400"
-                    >
+                    <p v-if="isEditMode && form.estado !== 'PENDIENTE'"
+                      class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       Esta opción no se puede modificar una vez creada la
                       recepción.
                     </p>
                   </div>
 
-                  <div
-                    class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4"
-                  >
-                    <div
-                      class="p-4 bg-yellow-50 border border-yellow-300 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-500"
-                    >
-                      <p
-                        class="mb-2 text-sm font-medium text-yellow-900 dark:text-yellow-200"
-                      >
+                  <div class="mt-6 border-gray-200 dark:border-gray-700 pt-4">
+                    <div class="p-4 bg-yellow-50 border border-yellow-300 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-500">
+                      <p class="mb-2 text-sm font-medium text-yellow-900 dark:text-yellow-200">
                         El cliente no firmará la recepción. Registra el motivo y
                         guarda para dejar la recepción como "No Aceptada / Sin
                         Firma".

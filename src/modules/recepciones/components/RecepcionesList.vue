@@ -497,8 +497,7 @@ onUnmounted(() => {
           <span
             class="mt-1.5 flex items-center gap-1.5 text-xs font-medium"
             :class="item.ingreso_en_grua ? 'text-green-700 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'"
-            :title="item.ingreso_en_grua ? (item.datos_grua || 'Ingresó en grúa') : 'No ingresó en grúa'"
-          >
+            :title="item.ingreso_en_grua ? (item.datos_grua || 'Ingresó en grúa') : 'No ingresó en grúa'">
             <MdiIcon :path="mdiTowTruck" class="w-5 h-5 shrink-0" />
             {{ item.ingreso_en_grua ? 'Ingresó en grúa' : 'Sin grúa' }}
           </span>
