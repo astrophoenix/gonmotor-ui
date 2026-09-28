@@ -405,23 +405,8 @@ onMounted(async () => {
       <FlowSteps :steps="pasosFlujo" />
     </div>
     <div class="relative mx-auto max-w-8xl">
-      <Alert
-        v-if="error"
-        type="error"
-        :title="error"
-        message=""
-        dismissible
-        @dismiss="error = ''"
-      />
-
-      <Alert
-        v-if="successMessage"
-        type="success"
-        :title="successMessage"
-        message=""
-        dismissible
-        @dismiss="successMessage = ''"
-      />
+      <Alert v-if="error" type="error" :title="error" message="" dismissible @dismiss="error = ''"/>
+      <Alert v-if="successMessage" type="success" :title="successMessage" message="" dismissible @dismiss="successMessage = ''"/>
 
       <div v-if="loading" class="p-6 text-center text-sm text-gray-500 bg-white rounded-lg shadow dark:bg-gray-800 dark:text-gray-400">
         Cargando inspección...
@@ -541,8 +526,7 @@ onMounted(async () => {
                 type="button"
                 class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
                 :class="activeTab === 'informacion' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-                @click="activeTab = 'informacion'"
-              >
+                @click="activeTab = 'informacion'">
                 <FileText class="w-4 h-4" />
                 1. Diagnóstico
               </button>
@@ -550,8 +534,7 @@ onMounted(async () => {
                 type="button"
                 class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
                 :class="activeTab === 'testigos' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-                @click="activeTab = 'testigos'"
-              >
+                @click="activeTab = 'testigos'">
                 <TriangleAlert class="w-4 h-4" />
                 2. Testigos
               </button>
@@ -559,8 +542,7 @@ onMounted(async () => {
                 type="button"
                 class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
                 :class="activeTab === 'evidencias' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-                @click="activeTab = 'evidencias'"
-              >
+                @click="activeTab = 'evidencias'">
                 <ImageIcon class="w-4 h-4" />
                 3. Evidencias
               </button>
@@ -568,8 +550,7 @@ onMounted(async () => {
                 type="button"
                 class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
                 :class="activeTab === 'servicios' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-                @click="activeTab = 'servicios'"
-              >
+                @click="activeTab = 'servicios'">
                 <Toolbox class="w-4 h-4" />
                 4. Servicios &amp; Repuestos
               </button>
@@ -822,7 +803,9 @@ onMounted(async () => {
           </button>
         </div>
         </div>
+        <!--Columna derecha-->
         <div class="lg:col-span-1 space-y-4">
+          <!-- Resumen de la inspección-->
           <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
             <div class="flex items-center gap-2 mb-3">
               <ClipboardList class="w-5 h-5 text-gray-900 dark:text-gray-900" />
@@ -860,7 +843,7 @@ onMounted(async () => {
               </div>
             </dl>
           </div>
-
+          <!-- Datos del Vehículo-->
           <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
             <div class="flex items-center gap-2 mb-3">
               <Car class="w-5 h-5 text-gray-900 dark:text-gray-900" />
