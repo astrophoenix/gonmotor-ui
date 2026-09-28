@@ -18,11 +18,12 @@ const ESTADOS_DISPLAY = {
     CONVERTIDA: 'Convertida a orden',
   },
   orden: {
-    INGRESADO: 'En recepción / diagnóstico',
-    EN_PROCESO: 'En trabajo / ejecución',
-    COMPLETADO: 'Trabajo listo',
-    ENTREGADO: 'Entregado y cerrado',
-    CANCELADO: 'Anulado / cancelado',
+    PENDIENTE: 'Pendiente',
+    EN_ESPERA: 'En espera',
+    EN_PROCESO: 'En proceso',
+    COMPLETADO: 'Completado',
+    ENTREGADO: 'Entregado',
+    CANCELADO: 'Anulado',
   },
 };
 

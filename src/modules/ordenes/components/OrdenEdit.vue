@@ -9,6 +9,7 @@ import TextImprover from '../../../shared/components/TextImprover.vue';
 import CatalogoSelect from '../../../shared/components/CatalogoSelect.vue';
 import PhotoUploadGrid from '../../../shared/components/PhotoUploadGrid.vue';
 import FlowSteps from '../../../shared/components/FlowSteps.vue';
+import EstadoOrdenBadge from './EstadoOrdenBadge.vue';
 import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 import { sanitizeObservaciones } from '../../../shared/utils/sanitize';
 import {
@@ -42,31 +43,23 @@ const ordenId = computed(() => {
 });
 
 const form = ref({
-  estado: 'INGRESADO',
+  estado: 'PENDIENTE',
   prioridad: 'MEDIA',
   tipo_trabajo: 'MANTENIMIENTO',
   mecanico_principal: '',
   fecha_entrega: '',
   observaciones_internas: '',
+  motivo_espera: '',
 });
 
 const ESTADOS = [
-  { value: 'INGRESADO', label: 'En Recepción / Diagnóstico' },
-  { value: 'EN_PROCESO', label: 'En Trabajo / Ejecución' },
-  { value: 'COMPLETADO', label: 'Trabajo Listo' },
-  { value: 'ENTREGADO', label: 'Entregado y Cerrado' },
-  { value: 'CANCELADO', label: 'Anulado / Cancelado' },
+  { value: 'PENDIENTE', label: 'Pendiente' },
+  { value: 'EN_ESPERA', label: 'En espera' },
+  { value: 'EN_PROCESO', label: 'En proceso' },
+  { value: 'COMPLETADO', label: 'Completado' },
+  { value: 'ENTREGADO', label: 'Entregado' },
+  { value: 'CANCELADO', label: 'Anulado' },
 ];
-
-const ESTADO_BADGES = {
-  INGRESADO: { label: 'En Recepción / Diagnóstico', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' },
-  EN_PROCESO: { label: 'En Trabajo / Ejecución', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
-  COMPLETADO: { label: 'Trabajo Listo', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' },
-  ENTREGADO: { label: 'Entregado y Cerrado', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
-  CANCELADO: { label: 'Anulado / Cancelado', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' },
-};
-
-const estadoBadge = computed(() => ESTADO_BADGES[form.value.estado] || { label: form.value.estado || '—', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' });
 
 const PRIORIDADES = [
   { value: 'BAJA', label: 'Baja' },
@@ -311,12 +304,13 @@ function aplicarOrden(data) {
     descripcionOriginal: f.descripcion || '',
   }));
   form.value = {
-    estado: data.estado || 'INGRESADO',
+    estado: data.estado || 'PENDIENTE',
     prioridad: data.prioridad || 'MEDIA',
     tipo_trabajo: normalizarTipoTrabajo(data.tipo_trabajo) || 'MANTENIMIENTO',
     mecanico_principal: data.mecanico_principal || '',
     fecha_entrega: toDateTimeLocal(data.fecha_entrega),
     observaciones_internas: data.observaciones_internas || '',
+    motivo_espera: data.motivo_espera || '',
   };
 }
 
@@ -427,6 +421,7 @@ async function handleSubmit() {
     prioridad: form.value.prioridad,
     tipo_trabajo: form.value.tipo_trabajo,
     observaciones_internas: form.value.observaciones_internas,
+    motivo_espera: form.value.motivo_espera || null,
   };
   if (form.value.mecanico_principal) {
     payload.mecanico_principal = form.value.mecanico_principal;
@@ -474,9 +469,7 @@ async function handleSubmit() {
           Editar Orden de Trabajo {{ orden?.numero_orden || '' }}
         </h1>
       </div>
-      <span v-if="orden" class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium" :class="estadoBadge.color">
-        {{ estadoBadge.label }}
-      </span>
+      <EstadoOrdenBadge v-if="orden" :estado="form.estado" size="sm" />
       <span v-if="orden" class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium" :class="prioridadBadge.color">
         Prioridad {{ prioridadBadge.label }}
       </span>
@@ -660,6 +653,10 @@ async function handleSubmit() {
             <select id="estado" v-model="form.estado" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
               <option v-for="estado in ESTADOS" :key="estado.value" :value="estado.value">{{ estado.label }}</option>
             </select>
+          </div>
+          <div v-if="form.estado === 'EN_ESPERA'">
+            <label for="motivo_espera" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Motivo de Espera</label>
+            <input id="motivo_espera" v-model="form.motivo_espera" type="text" placeholder="Ej.: esperando repuestos, aprobación del cliente..." class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
           </div>
           <div>
             <label for="prioridad" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Prioridad</label>

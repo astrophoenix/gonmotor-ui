@@ -1,10 +1,33 @@
+import { Clock, CircleCheck, CircleSlash, Hourglass, Truck, Wrench } from 'lucide-vue-next';
 import { estadoADisplay } from '../../../shared/utils/estadoFlujo';
 
 /**
  * Estados de la orden de trabajo (apps/ordenes/models.py → EstadoOrden).
- * Los listados reutilizan los labels de `estadoFlujo.js` para no duplicarlos.
+ * Color + icono + etiqueta en un solo lugar, reutilizado por listado, edición
+ * y detalle a través de `EstadoOrdenBadge.vue`.
  */
-export const ESTADOS_ORDEN_FILTRABLE = ['INGRESADO', 'EN_PROCESO', 'COMPLETADO', 'ENTREGADO', 'CANCELADO'];
+export const ESTADOS_ORDEN = {
+  PENDIENTE: { icon: Clock, color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200' },
+  EN_ESPERA: { icon: Hourglass, color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200' },
+  EN_PROCESO: { icon: Wrench, color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200' },
+  COMPLETADO: { icon: CircleCheck, color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200' },
+  ENTREGADO: { icon: Truck, color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
+  CANCELADO: { icon: CircleSlash, color: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200' },
+};
+
+/** Estados ofrecidos en los filtros. */
+export const ESTADOS_ORDEN_FILTRABLE = ['PENDIENTE', 'EN_ESPERA', 'EN_PROCESO', 'COMPLETADO', 'ENTREGADO', 'CANCELADO'];
+
+/**
+ * @param {string} estado         Estado crudo (PENDIENTE | EN_ESPERA | EN_PROCESO | ...).
+ * @param {string} [estadoDisplay] `estado_display` del backend; si falta se usa
+ *                                 el label de `estadoFlujo.js`.
+ */
+export function getEstadoOrden(estado, estadoDisplay) {
+  const actual = estado || 'PENDIENTE';
+  const config = ESTADOS_ORDEN[actual] || ESTADOS_ORDEN.PENDIENTE;
+  return { ...config, label: estadoDisplay || estadoADisplay('orden', actual) };
+}
 
 /** Prioridades de la orden (apps/ordenes/models.py → Prioridad). */
 export const PRIORIDADES_ORDEN = [

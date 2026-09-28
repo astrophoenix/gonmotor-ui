@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted } from 'vue';
-import { Eye, Pencil, Trash2, Filter, Search, CalendarDays, Wrench, Car, Gauge, IdCard, Phone } from 'lucide-vue-next';
+import { Eye, Pencil, Trash2, Filter, Search, CalendarDays, Wrench, Car, Gauge, IdCard, Phone, ArrowDown, Minus, ArrowUp, Flame } from 'lucide-vue-next';
 import { Icon } from '@iconify/vue';
 import filePdfIcon from '@iconify-icons/fa6-regular/file-pdf';
 import { useOrdenes } from '../composables/useOrdenes';
@@ -19,6 +19,7 @@ import Pagination from '../../../shared/components/Pagination.vue';
 import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
 import { relacionesDeOrden } from '../../../shared/utils/relacionesFlujo';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
+import EstadoOrdenBadge from './EstadoOrdenBadge.vue';
 
 const {
   ordenes,
@@ -201,25 +202,14 @@ function handleExcelError(message) {
   showAlert('error', '', message || 'No se pudo generar el Excel.');
 }
 
-function prioridadBadge(prioridad) {
+function prioridadConfig(prioridad) {
   const map = {
-    BAJA: { label: 'Baja', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
-    MEDIA: { label: 'Media', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
-    ALTA: { label: 'Alta', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' },
-    URGENTE: { label: 'Urgente', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' },
+    BAJA: { label: 'Baja', icon: ArrowDown, color: 'text-gray-500 dark:text-gray-400' },
+    MEDIA: { label: 'Media', icon: Minus, color: 'text-blue-600 dark:text-blue-400' },
+    ALTA: { label: 'Alta', icon: ArrowUp, color: 'text-amber-600 dark:text-amber-400' },
+    URGENTE: { label: 'Urgente', icon: Flame, color: 'text-red-600 dark:text-red-400' },
   };
-  return map[prioridad] || { label: prioridad || '-', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' };
-}
-
-function estadoBadge(estado) {
-  const map = {
-    INGRESADO: { label: 'En Recepción / Diagnóstico', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' },
-    EN_PROCESO: { label: 'En Trabajo / Ejecución', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
-    COMPLETADO: { label: 'Trabajo Listo', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' },
-    ENTREGADO: { label: 'Entregado y Cerrado', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
-    CANCELADO: { label: 'Anulado / Cancelado', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' },
-  };
-  return map[estado] || { label: estado || '-', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' };
+  return map[prioridad] || { label: prioridad || '-', icon: Minus, color: 'text-gray-500 dark:text-gray-400' };
 }
 
 function scheduleSearch() {
@@ -396,31 +386,26 @@ onUnmounted(() => {
         </div>
       </div>
       <EntityTable
-        :columns="['#', 'Nº Orden', 'Vehículo', 'Cliente', 'Tipo', 'Prioridad', 'Estado', 'Fecha', 'Relaciones', 'Acciones']"
+        :columns="['Nº Orden', 'Vehículo', 'Cliente', 'Tipo', 'Estado', 'Fecha', 'Relaciones', 'Acciones']"
         :items="ordenes"
         :loading="loading"
         loading-text="Cargando órdenes de trabajo..."
         empty-text="No se encontraron órdenes de trabajo."
-        :empty-colspan="10"
+        :empty-colspan="8"
         :wrapper-class="'w-full'"
       >
     <template #row="{ item, index }">
       <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ index + 1 }}</td>
         <td class="p-4 whitespace-nowrap">
-          <a
-            :href="`/crud/ordenes/ver/?id=${encodeURIComponent(item.id)}`"
-            class="font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
-          >
+          <a :href="`/crud/ordenes/ver/?id=${encodeURIComponent(item.id)}`"
+            class="font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
             {{ item.numero_orden || `#${item.id}` }}
           </a>
         </td>
         <td class="p-4 whitespace-nowrap align-top">
-          <a
-            v-if="vehiculoUrl(item)"
-            :href="vehiculoUrl(item)"
-            class="font-medium text-gray-800 hover:text-primary-600 dark:text-white dark:hover:text-primary-400"
-          >{{ item.vehiculo?.placa || '-' }}</a>
+          <a v-if="vehiculoUrl(item)" :href="vehiculoUrl(item)" class="font-medium text-gray-800 hover:text-primary-600 dark:text-white dark:hover:text-primary-400">
+            {{ item.vehiculo?.placa || '-' }}
+          </a>
           <span v-else class="font-medium text-gray-800 dark:text-white">{{ item.vehiculo?.placa || '-' }}</span>
           <div class="mt-1 flex flex-col gap-1 ps-0.5 text-xs text-gray-500 dark:text-gray-400">
             <span class="flex items-center gap-1.5">
@@ -437,11 +422,9 @@ onUnmounted(() => {
           </div>
         </td>
         <td class="p-4 whitespace-nowrap align-top">
-          <a
-            v-if="clienteUrl(item)"
-            :href="clienteUrl(item)"
-            class="font-medium text-gray-800 hover:text-primary-600 dark:text-white dark:hover:text-primary-400"
-          >{{ item.cliente?.nombre || '-' }}</a>
+          <a v-if="clienteUrl(item)" :href="clienteUrl(item)" class="font-medium text-gray-800 hover:text-primary-600 dark:text-white dark:hover:text-primary-400">
+            {{ item.cliente?.nombre || '-' }}
+          </a>
           <span v-else class="font-medium text-gray-800 dark:text-white">{{ item.cliente?.nombre || '-' }}</span>
           <div class="mt-1 flex flex-col gap-1 ps-0.5 text-xs text-gray-500 dark:text-gray-400">
             <span v-if="item.cliente?.identificacion" class="flex items-center gap-1.5">
@@ -457,14 +440,14 @@ onUnmounted(() => {
         <td class="p-4 whitespace-nowrap">
           <TipoTrabajoBadge :tipo="item.tipo_trabajo" size="sm" />
         </td>
-        <td class="p-4 whitespace-nowrap">
-          <span :class="['px-2 py-1 rounded-full text-xs font-medium', prioridadBadge(item.prioridad).color]">
-            {{ prioridadBadge(item.prioridad).label }}
-          </span>
-        </td>
-        <td class="p-4 whitespace-nowrap">
-          <span :class="['px-2 py-1 rounded-full text-xs font-medium', estadoBadge(item.estado).color]">
-            {{ estadoBadge(item.estado).label }}
+        <td class="p-4 whitespace-nowrap align-top">
+          <EstadoOrdenBadge :estado="item.estado" :estado-display="item.estado_display" size="sm" />
+          <span
+            class="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300"
+            :title="`Prioridad: ${prioridadConfig(item.prioridad).label}`"
+          >
+            <component :is="prioridadConfig(item.prioridad).icon" class="w-3.5 h-3.5 shrink-0" :class="prioridadConfig(item.prioridad).color" />
+            {{ prioridadConfig(item.prioridad).label }}
           </span>
         </td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ formatDate(item.created_at) }}</td>
@@ -473,9 +456,6 @@ onUnmounted(() => {
         </td>
         <td class="p-4 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <button type="button" title="Ver orden" aria-label="Ver orden" class="inline-flex items-center p-2 text-gray-900 rounded hover:bg-primary-100 hover:text-primary-600 dark:text-gray-100 dark:hover:bg-gray-700 dark:hover:text-primary-400" @click="handleVer(item.id)">
-              <Eye class="w-5 h-5" />
-            </button>
             <button type="button" title="Editar orden" aria-label="Editar orden" class="inline-flex items-center p-2 text-primary-600 rounded hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700" @click="handleEditar(item.id)">
               <Pencil class="w-5 h-5" />
             </button>

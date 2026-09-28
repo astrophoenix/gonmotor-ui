@@ -5,6 +5,7 @@ import { request } from '../../../shared/services/httpClient';
 import { ordenesService } from '../services/ordenesService';
 import Alert from '../../../shared/components/Alert.vue';
 import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
+import EstadoOrdenBadge from './EstadoOrdenBadge.vue';
 
 const orden = ref(null);
 const loading = ref(true);
@@ -33,17 +34,6 @@ function abrirFoto(url) {
 function cerrarFoto() {
   previewFoto.value = null;
 }
-
-const estadoBadge = computed(() => {
-  const map = {
-    INGRESADO: { label: 'En Recepción / Diagnóstico', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' },
-    EN_PROCESO: { label: 'En Trabajo / Ejecución', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
-    COMPLETADO: { label: 'Trabajo Listo', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' },
-    ENTREGADO: { label: 'Entregado y Cerrado', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
-    CANCELADO: { label: 'Anulado / Cancelado', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' },
-  };
-  return map[orden.value?.estado] || { label: orden.value?.estado || '-', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' };
-});
 
 const prioridadBadge = computed(() => {
   const map = {
@@ -110,9 +100,7 @@ onMounted(async () => {
       <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
         Orden de Trabajo {{ orden?.numero_orden || '' }}
       </h1>
-      <span v-if="orden" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium" :class="estadoBadge.color">
-        {{ estadoBadge.label }}
-      </span>
+      <EstadoOrdenBadge v-if="orden" :estado="orden.estado" :estado-display="orden.estado_display" size="lg" />
       <span v-if="orden" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium" :class="prioridadBadge.color">
         Prioridad {{ prioridadBadge.label }}
       </span>
@@ -230,6 +218,10 @@ onMounted(async () => {
           <div>
             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de Entrega</dt>
             <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ formatDate(orden.fecha_entrega) }}</dd>
+          </div>
+          <div v-if="orden.estado === 'EN_ESPERA'">
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Motivo de Espera</dt>
+            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ orden.motivo_espera || '—' }}</dd>
           </div>
           <div>
             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Cotización de Origen</dt>
