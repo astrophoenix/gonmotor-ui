@@ -1,0 +1,23 @@
+{{ define "main" }}
+{{ partial "navbar-dashboard" . }}
+<div class="flex pt-16 overflow-hidden bg-gray-50 dark:bg-gray-900">
+
+  {{ partial "sidebar" . }}
+
+  <div id="main-content" class="relative w-full h-full overflow-y-auto bg-gray-50 lg:ml-64 transition-width dark:bg-gray-900">
+    <main>
+      {{/*
+        Home del sistema ("/"). Este template tiene prioridad sobre
+        `layouts/_default/dashboard.html` para el kind `home` + `layout: dashboard`,
+        de modo que la pantalla de plantilla de `content/_index.html` queda
+        desvinculada de la raíz sin tocar ese archivo: el cuerpo de `_index.html`
+        (`.Content`) ya no se renderiza aquí y su lugar lo ocupa la isla Vue
+        del dashboard principal.
+      */}}
+      <div id="dashboard-app" class="w-full"></div>
+    </main>
+  </div>
+
+</div>
+
+{{ end }}

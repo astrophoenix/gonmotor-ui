@@ -18,6 +18,7 @@ import { mountServicios } from './modules/inventario/servicios';
 import { mountProfileEdit } from './modules/auth';
 import { mountEmpresaConfig, mountTalleresConfig } from './modules/configuracion';
 import { mountNotificaciones } from './modules/notificaciones';
+import { mountDashboard } from './modules/dashboard';
 import UserMenu from './shared/components/UserMenu.vue';
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
@@ -33,6 +34,12 @@ if (document.getElementById("default-table") && typeof simpleDatatables.DataTabl
 }
 
 const pinia = createPinia();
+
+const dashboardApp = document.getElementById('dashboard-app');
+
+if (dashboardApp) {
+  mountDashboard(dashboardApp, pinia);
+}
 
 const loginApp = document.getElementById('login-app');
 
