@@ -659,8 +659,7 @@ async function handleSubmit() {
                   show-create
                   @select="seleccionarCliente"
                   @clear="limpiarCliente"
-                  @create="showClientCreateModal = true"
-                />
+                  @create="showClientCreateModal = true"/>
               </div>
               <div class="min-w-0">
                 <label for="vehiculo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo <span class="text-accent-500">*</span></label>
@@ -673,8 +672,7 @@ async function handleSubmit() {
                   :error="Boolean(formErrors.vehiculo)"
                   :error-message="formErrors.vehiculo"
                   @select="seleccionarVehiculo"
-                  @clear="limpiarVehiculo"
-                />
+                  @clear="limpiarVehiculo"/>
               </div>
               <div class="min-w-0">
                 <label for="mecanico" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Mecánico</label>
@@ -683,8 +681,7 @@ async function handleSubmit() {
                   v-model="mecanicoSearch"
                   placeholder="Buscar mecánico..."
                   @select="seleccionarMecanico"
-                  @clear="limpiarMecanico"
-                />
+                  @clear="limpiarMecanico"/>
               </div>
             </div>
 
@@ -699,8 +696,7 @@ async function handleSubmit() {
                   readonly
                   disabled
                   placeholder="Se registra al crear"
-                  class="block w-full p-2.5 text-sm text-gray-500 bg-gray-100 rounded shadow-xs border border-gray-300 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600"
-                >
+                  class="block w-full p-2.5 text-sm text-gray-500 bg-gray-100 rounded shadow-xs border border-gray-300 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600">
               </div>
               <div class="min-w-0">
                 <label for="fecha_entrega" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Fecha de Entrega</label>
@@ -708,8 +704,7 @@ async function handleSubmit() {
                   id="fecha_entrega"
                   v-model="form.fecha_entrega"
                   type="datetime-local"
-                  class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                >
+                  class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
               </div>
               <div class="min-w-0">
                 <label for="tipo_trabajo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de Trabajo</label>
@@ -747,278 +742,276 @@ async function handleSubmit() {
         </div>
 
         <!-- Panel Body: pestañas Trabajo / Evidencia -->
-        <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
-          <div class="border-b border-gray-200 dark:border-gray-700">
-            <nav class="flex flex-wrap -mb-px">
-              <button
-                type="button"
-                class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
-                :class="activeTab === 'trabajo' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-                @click="activeTab = 'trabajo'"
-              >
-                <Package class="w-4 h-4" />
-                1. Trabajo
-              </button>
-              <button
-                type="button"
-                class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
-                :class="activeTab === 'evidencia' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-                @click="activeTab = 'evidencia'"
-              >
-                <Camera class="w-4 h-4" />
-                2. Evidencia
-              </button>
-            </nav>
-          </div>
-
-          <div v-show="activeTab === 'trabajo'" class="pt-4 space-y-6">
-            <div class="flex gap-4 mb-4 border-b border-gray-200 dark:border-gray-600">
-              <button
-                type="button"
-                :class="[mostrarServicios ? 'pb-2 text-sm font-medium border-b-2 border-primary-blue-700 text-primary-blue-700 dark:border-primary-blue-400 dark:text-primary-blue-400' : 'pb-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white']"
-                @click="mostrarServicios = true">Servicios</button>
-              <button
-                type="button"
-                :class="[!mostrarServicios ? 'pb-2 text-sm font-medium border-b-2 border-primary-blue-700 text-primary-blue-700 dark:border-primary-blue-400 dark:text-primary-blue-400' : 'pb-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white']"
-                @click="mostrarServicios = false">Repuestos</button>
-            </div>
-
-            <!-- Servicios -->
-            <div v-show="mostrarServicios">
-              <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
-                <table class="w-full text-sm text-left text-gray-900 dark:text-white">
-                  <thead class="text-xs uppercase bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                    <tr>
-                      <th class="px-4 py-3">Servicio</th>
-                      <th class="px-4 py-3 w-24">Horas</th>
-                      <th class="px-4 py-3 w-36">P. unitario</th>
-                      <th class="px-4 py-3 w-28">Descuento</th>
-                      <th class="px-4 py-3 w-20">IVA</th>
-                      <th class="px-4 py-3 w-32">Neto</th>
-                      <th class="px-4 py-3 w-14"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-if="!servicios.length">
-                      <td colspan="7" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No hay servicios de mano de obra.</td>
-                    </tr>
-                    <tr v-for="(servicio, index) in servicios" :key="servicio.sufijo || servicio.id" class="border-t border-gray-200 dark:border-gray-600">
-                      <td class="px-4 py-2.5">
-                        <div class="relative">
-                          <CatalogoSelect
-                            :input-id="`svc-desc-${servicio.sufijo}`"
-                            v-model="servicio.descripcion"
-                            :catalogo="catalogoServicios"
-                            placeholder="Busca y selecciona..."
-                            mensaje-sin-resultados="Sin coincidencias. Puedes escribir un servicio libre."
-                            @select="(item) => seleccionarServicio(item, servicio)"
-                          />
-                        </div>
-                      </td>
-                      <td class="px-4 py-2.5">
-                        <input :id="`svc-horas-${servicio.sufijo}`" v-model="servicio.horas_aplicadas" type="number" min="0" step="0.5" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
-                      </td>
-                      <td class="px-4 py-2.5">
-                        <input v-model="servicio.precio_unitario" type="number" min="0" step="0.01" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
-                      </td>
-                      <td class="px-4 py-2.5">
-                        <input v-model="servicio.descuento" type="number" min="0" step="0.01" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
-                      </td>
-                      <td class="px-4 py-2.5">
-                        <select v-model="servicio.iva_porcentaje" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
-                          <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
-                        </select>
-                      </td>
-                      <td class="px-4 py-2.5 font-medium">$ {{ formatNumber(netoServicio(servicio)) }}</td>
-                      <td class="px-4 py-2.5">
-                        <button type="button" title="Quitar servicio" aria-label="Quitar servicio" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarServicio(index)">
-                          <X class="w-5 h-5" />
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div class="flex justify-end mt-3">
+        <div class="relative p-6 bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700">
+          <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700">
+            <div class="border-b border-gray-200 dark:border-gray-700">
+              <nav class="flex flex-wrap -mb-px">
                 <button
                   type="button"
-                  title="Añadir servicio o mano de obra"
-                  aria-label="Añadir servicio"
-                  class="add-row-btn inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-primary-blue-700 text-white hover:bg-primary-blue-800 dark:bg-primary-blue-600 dark:hover:bg-primary-blue-700"
-                  @click="agregarServicioVacio"
-                >
-                  <Plus class="w-4 h-4" />
-                  Añadir servicio
+                  class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
+                  :class="activeTab === 'trabajo' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+                  @click="activeTab = 'trabajo'">
+                  <Package class="w-4 h-4" />
+                  1. Trabajo
                 </button>
-              </div>
-            </div>
-
-            <!-- Repuestos -->
-            <div v-show="!mostrarServicios">
-              <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
-                <table class="w-full text-sm text-left text-gray-900 dark:text-white">
-                  <thead class="text-xs uppercase bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                    <tr>
-                      <th class="px-4 py-3">Repuesto</th>
-                      <th class="px-4 py-3 w-24">Cant.</th>
-                      <th class="px-4 py-3 w-36">P. unitario</th>
-                      <th class="px-4 py-3 w-28">Descuento</th>
-                      <th class="px-4 py-3 w-20">IVA</th>
-                      <th class="px-4 py-3 w-32">Neto</th>
-                      <th class="px-4 py-3 w-14"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-if="!repuestos.length">
-                      <td colspan="7" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No hay repuestos o materiales.</td>
-                    </tr>
-                    <tr v-for="(repuesto, index) in repuestos" :key="repuesto.sufijo || repuesto.id" class="border-t border-gray-200 dark:border-gray-600">
-                      <td class="px-4 py-2.5">
-                        <div class="relative">
-                          <CatalogoSelect
-                            :input-id="`rpt-desc-${repuesto.sufijo}`"
-                            v-model="repuesto.descripcion"
-                            :catalogo="catalogoRepuestos"
-                            placeholder="Busca y selecciona..."
-                            mostrar-stock
-                            mensaje-sin-resultados="Sin coincidencias. Puedes escribir un repuesto libre."
-                            @select="(item) => seleccionarRepuesto(item, repuesto)"
-                          />
-                        </div>
-                      </td>
-                      <td class="px-4 py-2.5">
-                        <input :id="`rpt-cant-${repuesto.sufijo}`" v-model="repuesto.cantidad" type="number" min="1" step="1" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
-                      </td>
-                      <td class="px-4 py-2.5">
-                        <input v-model="repuesto.precio_unitario" type="number" min="0" step="0.01" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
-                      </td>
-                      <td class="px-4 py-2.5">
-                        <input v-model="repuesto.descuento" type="number" min="0" step="0.01" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
-                      </td>
-                      <td class="px-4 py-2.5">
-                        <select v-model="repuesto.iva_porcentaje" class="w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
-                          <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
-                        </select>
-                      </td>
-                      <td class="px-4 py-2.5 font-medium">$ {{ formatNumber(netoRepuesto(repuesto)) }}</td>
-                      <td class="px-4 py-2.5">
-                        <button type="button" title="Quitar repuesto" aria-label="Quitar repuesto" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarRepuesto(index)">
-                          <X class="w-5 h-5" />
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div class="flex justify-end mt-3">
                 <button
                   type="button"
-                  title="Añadir repuesto o material"
-                  aria-label="Añadir repuesto"
-                  class="add-row-btn inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-primary-blue-700 text-white hover:bg-primary-blue-800 dark:bg-primary-blue-600 dark:hover:bg-primary-blue-700"
-                  @click="agregarRepuestoVacio"
-                >
-                  <Plus class="w-4 h-4" />
-                  Añadir repuesto
+                  class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
+                  :class="activeTab === 'evidencia' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+                  @click="activeTab = 'evidencia'">
+                  <Camera class="w-4 h-4" />
+                  2. Evidencia
                 </button>
+              </nav>
+            </div>
+
+            <div v-show="activeTab === 'trabajo'" class="p-4 space-y-6">
+              <div class="flex gap-4 mb-4 border-b border-gray-200 dark:border-gray-600">
+                <button
+                  type="button"
+                  :class="[mostrarServicios ? 'pb-2 text-sm font-medium border-b-2 border-primary-blue-700 text-primary-blue-700 dark:border-primary-blue-400 dark:text-primary-blue-400' : 'pb-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white']"
+                  @click="mostrarServicios = true">Servicios</button>
+                <button
+                  type="button"
+                  :class="[!mostrarServicios ? 'pb-2 text-sm font-medium border-b-2 border-primary-blue-700 text-primary-blue-700 dark:border-primary-blue-400 dark:text-primary-blue-400' : 'pb-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white']"
+                  @click="mostrarServicios = false">Repuestos</button>
+              </div>
+
+              <!-- Servicios -->
+              <div v-show="mostrarServicios">
+                <div class="relative overflow-x-visible bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+                  <table class="w-full text-sm text-left text-gray-900 dark:text-white">
+                    <thead class="text-xs uppercase bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                      <tr>
+                        <th class="px-4 py-3">Servicio</th>
+                        <th class="px-4 py-3 w-24 text-center">Horas</th>
+                        <th class="px-4 py-3 w-36 text-center">P. unitario</th>
+                        <th class="px-4 py-3 w-28 text-center">Descuento</th>
+                        <th class="px-4 py-3 w-28 text-center">IVA</th>
+                        <th class="px-4 py-3 w-32 text-center">Neto</th>
+                        <th class="px-4 py-3 w-14 text-center"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-if="!servicios.length">
+                        <td colspan="7" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No hay servicios de mano de obra.</td>
+                      </tr>
+                      <tr v-for="(servicio, index) in servicios" :key="servicio.sufijo || servicio.id" class="border-t border-gray-200 dark:border-gray-600">
+                        <td class="px-4 py-2.5">
+                          <div class="relative">
+                            <CatalogoSelect
+                              :input-id="`svc-desc-${servicio.sufijo}`"
+                              v-model="servicio.descripcion"
+                              :catalogo="catalogoServicios"
+                              placeholder="Busca y selecciona..."
+                              mensaje-sin-resultados="Sin coincidencias. Puedes escribir un servicio libre."
+                              @select="(item) => seleccionarServicio(item, servicio)"
+                            />
+                          </div>
+                        </td>
+                        <td class="px-4 py-2.5 text-center">
+                          <input :id="`svc-horas-${servicio.sufijo}`" v-model="servicio.horas_aplicadas" type="number" min="0" step="0.5" class="w-full p-2 text-center text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
+                        </td>
+                        <td class="px-4 py-2.5 text-center">
+                          <input v-model="servicio.precio_unitario" type="number" min="0" step="0.01" class="w-full p-2 text-center text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
+                        </td>
+                        <td class="px-4 py-2.5 text-center">
+                          <input v-model="servicio.descuento" type="number" min="0" step="0.01" class="w-full p-2 text-center text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
+                        </td>
+                        <td class="px-4 py-2.5 text-center">
+                          <select v-model="servicio.iva_porcentaje" class="w-full p-2 text-center text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                            <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
+                          </select>
+                        </td>
+                        <td class="px-4 py-2.5 font-medium text-center">$ {{ formatNumber(netoServicio(servicio)) }}</td>
+                        <td class="px-4 py-2.5 text-center">
+                          <button type="button" title="Quitar servicio" aria-label="Quitar servicio" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarServicio(index)">
+                            <Trash2 class="w-5 h-5" />
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="flex justify-end mt-3">
+                  <button
+                    type="button"
+                    title="Añadir servicio o mano de obra"
+                    aria-label="Añadir servicio"
+                    class="add-row-btn inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-primary-blue-700 text-white hover:bg-primary-blue-800 dark:bg-primary-blue-600 dark:hover:bg-primary-blue-700"
+                    @click="agregarServicioVacio"
+                  >
+                    <Plus class="w-4 h-4" />
+                    Añadir servicio
+                  </button>
+                </div>
+              </div>
+
+              <!-- Repuestos -->
+              <div v-show="!mostrarServicios">
+                <div class="relative overflow-x-visible bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+                  <table class="w-full text-sm text-left text-gray-900 dark:text-white">
+                    <thead class="text-xs uppercase bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                      <tr>
+                        <th class="px-4 py-3">Repuesto</th>
+                        <th class="px-4 py-3 w-24 text-center">Cant.</th>
+                        <th class="px-4 py-3 w-36 text-center">P. unitario</th>
+                        <th class="px-4 py-3 w-28 text-center">Descuento</th>
+                        <th class="px-4 py-3 w-20 text-center">IVA</th>
+                        <th class="px-4 py-3 w-32 text-center">Neto</th>
+                        <th class="px-4 py-3 w-14 text-center"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-if="!repuestos.length">
+                        <td colspan="7" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No hay repuestos o materiales.</td>
+                      </tr>
+                      <tr v-for="(repuesto, index) in repuestos" :key="repuesto.sufijo || repuesto.id" class="border-t border-gray-200 dark:border-gray-600">
+                        <td class="px-4 py-2.5">
+                          <div class="relative">
+                            <CatalogoSelect
+                              :input-id="`rpt-desc-${repuesto.sufijo}`"
+                              v-model="repuesto.descripcion"
+                              :catalogo="catalogoRepuestos"
+                              placeholder="Busca y selecciona..."
+                              mostrar-stock
+                              mensaje-sin-resultados="Sin coincidencias. Puedes escribir un repuesto libre."
+                              @select="(item) => seleccionarRepuesto(item, repuesto)"
+                            />
+                          </div>
+                        </td>
+                        <td class="px-4 py-2.5">
+                          <input :id="`rpt-cant-${repuesto.sufijo}`" v-model="repuesto.cantidad" type="number" min="1" step="1" class="w-full p-2 text-center text-center text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
+                        </td>
+                        <td class="px-4 py-2.5">
+                          <input v-model="repuesto.precio_unitario" type="number" min="0" step="0.01" class="w-full p-2 text-center text-center text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
+                        </td>
+                        <td class="px-4 py-2.5">
+                          <input v-model="repuesto.descuento" type="number" min="0" step="0.01" class="w-full p-2 text-center text-center text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
+                        </td>
+                        <td class="px-4 py-2.5">
+                          <select v-model="repuesto.iva_porcentaje" class="w-full p-2 text-center text-center text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                            <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
+                          </select>
+                        </td>
+                        <td class="px-4 py-2.5 font-medium text-center">$ {{ formatNumber(netoRepuesto(repuesto)) }}</td>
+                        <td class="px-4 py-2.5 text-center">
+                          <button type="button" title="Quitar repuesto" aria-label="Quitar repuesto" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarRepuesto(index)">
+                            <Trash2 class="w-5 h-5" />
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="flex justify-end mt-3">
+                  <button
+                    type="button"
+                    title="Añadir repuesto o material"
+                    aria-label="Añadir repuesto"
+                    class="add-row-btn inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-primary-blue-700 text-white hover:bg-primary-blue-800 dark:bg-primary-blue-600 dark:hover:bg-primary-blue-700"
+                    @click="agregarRepuestoVacio"
+                  >
+                    <Plus class="w-4 h-4" />
+                    Añadir repuesto
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div v-show="activeTab === 'evidencia'" class="pt-4">
-            <!-- Fotos de la orden: subida -->
-            <h4 class="mb-4 text-xl font-semibold dark:text-white">
-              <span class="inline-flex items-center gap-2">
-                <Camera class="w-6 h-6 text-gray-800 dark:text-white" />
-                Fotos de la Orden
-              </span>
-            </h4>
-            <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
-              Adjunta evidencia del trabajo realizado (hasta {{ FOTO_MAX }} fotos). Solo JPG, PNG o WebP de máximo 5 MB.
-            </p>
+            <div v-show="activeTab === 'evidencia'" class="p-4">
+              <!-- Fotos de la orden: subida -->
+              <h4 class="mb-4 text-xl font-semibold dark:text-white">
+                <span class="inline-flex items-center gap-2">
+                  <Camera class="w-6 h-6 text-gray-800 dark:text-white" />
+                  Fotos de la Orden
+                </span>
+              </h4>
+              <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+                Adjunta evidencia del trabajo realizado (hasta {{ FOTO_MAX }} fotos). Solo JPG, PNG o WebP de máximo 5 MB.
+              </p>
 
-            <PhotoUploadGrid
-              ref="photosGrid"
-              v-model="fotosOt"
-              :entity-id="photoEntityId"
-              entity-field="orden_trabajo"
-              :service="ordenesService"
-              :max="FOTO_MAX"
-              entity-label="orden de trabajo"
-              :disabled="form.estado === 'CANCELADO'"
-              disabled-message="La orden está cancelada; no se pueden subir fotos."
-            />
+              <PhotoUploadGrid
+                ref="photosGrid"
+                v-model="fotosOt"
+                :entity-id="photoEntityId"
+                entity-field="orden_trabajo"
+                :service="ordenesService"
+                :max="FOTO_MAX"
+                entity-label="orden de trabajo"
+                :disabled="form.estado === 'CANCELADO'"
+                disabled-message="La orden está cancelada; no se pueden subir fotos."
+              />
+            </div>
+            <!-- Observaciones y Resumen (siempre visibles, fuera de pestañas) -->
+            <div class="p-4 grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <!-- Columna izquierda: Observaciones -->
+              <div class="p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600">
+                <TextImprover
+                  v-model="form.observaciones"
+                  contexto="observaciones de una orden de trabajo de un taller mecánico"
+                  v-slot="{ mejorar, restaurar, mejorando, error: errorMejora, mejorado, tieneOriginal }">
+                  <div class="flex items-center justify-between gap-2 mb-2">
+                    <label for="observaciones" class="block text-sm font-medium text-gray-900 dark:text-white">Observaciones</label>
+                    <button
+                      type="button"
+                      title="Mejorar el texto con IA"
+                      :disabled="mejorando"
+                      class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-primary-blue-700 text-primary-blue-700 hover:bg-primary-blue-50 dark:border-primary-blue-400 dark:text-primary-blue-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      @click="mejorar">
+                      <Loader2 v-if="mejorando" class="w-4 h-4 animate-spin" />
+                      <Wand2 v-else class="w-4 h-4" />
+                      {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
+                    </button>
+                  </div>
+                  <textarea id="observaciones" v-model="form.observaciones" rows="6" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder=""></textarea>
+                  <p v-if="errorMejora" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ errorMejora }}</p>
+                  <div v-if="mejorado && !errorMejora" class="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-emerald-700 dark:text-emerald-400">
+                    <p>Texto mejorado. Revisa antes de guardar.</p>
+                    <button v-if="tieneOriginal" type="button" class="font-medium underline hover:no-underline" @click="restaurar">Restaurar original</button>
+                  </div>
+                </TextImprover>
+              </div>
+    
+              <!-- Columna derecha: Resumen (igual que Cotización) -->
+              <div class="p-5 space-y-2 text-sm rounded-lg border border-gray-200 dark:bg-gray-700/40 dark:border-gray-600/60">
+                <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                  <span>Subtotal servicios</span>
+                  <span class="font-medium tabular-nums">$ {{ formatNumber(subtotalServicios) }}</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                  <span>Subtotal repuestos </span>
+                  <span class="font-medium tabular-nums">$ {{ formatNumber(subtotalRepuestos) }}</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                  <span>Subtotal neto</span>
+                  <span class="font-medium tabular-nums">$ {{ formatNumber(subtotalNeto) }}</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                  <span>Descuento total</span>
+                  <span class="font-medium tabular-nums text-accent-600 dark:text-accent-400">$ {{ formatNumber(descuentoTotal) }}</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                  <span>Subtotal base 0%</span>
+                  <span class="font-medium tabular-nums">$ {{ formatNumber(subtotalBase0) }}</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                  <span>Subtotal base gravada</span>
+                  <span class="font-medium tabular-nums">$ {{ formatNumber(subtotalBaseGravada) }}</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                  <span>IVA total</span>
+                  <span class="font-medium tabular-nums">$ {{ formatNumber(montoIva) }}</span>
+                </div>
+                <div class="flex items-center justify-between pt-3 mt-3 text-base font-bold border-t border-gray-200 text-gray-900 dark:border-gray-600 dark:text-white">
+                  <span>Total</span>
+                  <span class="tabular-nums">$ {{ formatNumber(totalOt) }}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Observaciones y Resumen (siempre visibles, fuera de pestañas) -->
-        <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <!-- Columna izquierda: Observaciones -->
-          <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
-            <TextImprover
-              v-model="form.observaciones"
-              contexto="observaciones de una orden de trabajo de un taller mecánico"
-              v-slot="{ mejorar, restaurar, mejorando, error: errorMejora, mejorado, tieneOriginal }"
-            >
-              <div class="flex items-center justify-between gap-2 mb-2">
-                <label for="observaciones" class="block text-sm font-medium text-gray-900 dark:text-white">Observaciones</label>
-                <button
-                  type="button"
-                  title="Mejorar el texto con IA"
-                  :disabled="mejorando"
-                  class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-primary-blue-700 text-primary-blue-700 hover:bg-primary-blue-50 dark:border-primary-blue-400 dark:text-primary-blue-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  @click="mejorar"
-                >
-                  <Loader2 v-if="mejorando" class="w-4 h-4 animate-spin" />
-                  <Wand2 v-else class="w-4 h-4" />
-                  {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
-                </button>
-              </div>
-              <textarea id="observaciones" v-model="form.observaciones" rows="4" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="Notas visibles para el cliente"></textarea>
-              <p v-if="errorMejora" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ errorMejora }}</p>
-              <div v-if="mejorado && !errorMejora" class="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-emerald-700 dark:text-emerald-400">
-                <p>Texto mejorado. Revisa antes de guardar.</p>
-                <button v-if="tieneOriginal" type="button" class="font-medium underline hover:no-underline" @click="restaurar">Restaurar original</button>
-              </div>
-            </TextImprover>
-          </div>
-
-          <!-- Columna derecha: Resumen (igual que Cotización) -->
-          <div class="p-5 space-y-2 text-sm rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-700/40 dark:border-gray-600/60">
-            <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-              <span>Subtotal servicios</span>
-              <span class="font-medium tabular-nums">$ {{ formatNumber(subtotalServicios) }}</span>
-            </div>
-            <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-              <span>Subtotal repuestos / materiales</span>
-              <span class="font-medium tabular-nums">$ {{ formatNumber(subtotalRepuestos) }}</span>
-            </div>
-            <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-              <span>Subtotal neto</span>
-              <span class="font-medium tabular-nums">$ {{ formatNumber(subtotalNeto) }}</span>
-            </div>
-            <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-              <span>Descuento total</span>
-              <span class="font-medium tabular-nums text-accent-600 dark:text-accent-400">$ {{ formatNumber(descuentoTotal) }}</span>
-            </div>
-            <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-              <span>Subtotal base 0%</span>
-              <span class="font-medium tabular-nums">$ {{ formatNumber(subtotalBase0) }}</span>
-            </div>
-            <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-              <span>Subtotal base gravada</span>
-              <span class="font-medium tabular-nums">$ {{ formatNumber(subtotalBaseGravada) }}</span>
-            </div>
-            <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-              <span>IVA total</span>
-              <span class="font-medium tabular-nums">$ {{ formatNumber(montoIva) }}</span>
-            </div>
-            <div class="flex items-center justify-between pt-3 mt-3 text-base font-bold border-t border-gray-200 text-gray-900 dark:border-gray-600 dark:text-white">
-              <span>Total</span>
-              <span class="tabular-nums">$ {{ formatNumber(totalOt) }}</span>
-            </div>
-          </div>
-        </div>
 
       </div>
 

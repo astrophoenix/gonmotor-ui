@@ -1373,10 +1373,10 @@ onMounted(() => {
                               @select="(item) => seleccionarServicio(item, s)"/>
                           </td>
                           <td class="p-2">
-                            <input :id="`svc-horas-${s.sufijo}`" v-model="s.horas_estimadas" type="number" step="0.25" min="0" max="999.99" class="block w-20 p-2 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white">
+                            <input :id="`svc-horas-${s.sufijo}`" v-model="s.horas_estimadas" type="number" step="0.25" min="0" max="999.99" class="block w-20 p-2 text-center text-sm bg-gray-50 rounded-base shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white">
                           </td>
                           <td class="p-2">
-                            <select v-model="s.prioridad" class="block w-24 p-2 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white">
+                            <select v-model="s.prioridad" class="block w-24 p-2 text-sm bg-gray-50 rounded-base shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white">
                               <option v-for="p in PRIORIDADES" :key="p.value" :value="p.value">{{ p.label }}</option>
                             </select>
                           </td>
@@ -1385,7 +1385,7 @@ onMounted(() => {
                           </td>
                           <td class="p-2 text-center">
                             <button type="button" title="Quitar servicio" aria-label="Quitar servicio" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarServicio(index)">
-                              <Trash2 class="w-4 h-4" />
+                              <Trash2 class="w-5 h-5" />
                             </button>
                           </td>
                         </tr>
@@ -1442,10 +1442,10 @@ onMounted(() => {
                             />
                           </td>
                           <td class="p-2">
-                            <input :id="`rpt-cant-${r.sufijo}`" v-model="r.cantidad" type="number" step="0.5" min="0" max="9999.99" class="block w-20 p-2 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white">
+                            <input :id="`rpt-cant-${r.sufijo}`" v-model="r.cantidad" type="number" step="0.5" min="0" max="9999.99" class="block w-20 p-2 text-center text-sm bg-gray-50 rounded-base shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white">
                           </td>
                           <td class="p-2">
-                            <select v-model="r.prioridad" class="block w-24 p-2 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white">
+                            <select v-model="r.prioridad" class="block w-24 p-2 text-sm bg-gray-50 rounded-base shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white">
                               <option v-for="p in PRIORIDADES" :key="p.value" :value="p.value">{{ p.label }}</option>
                             </select>
                           </td>
@@ -1454,7 +1454,7 @@ onMounted(() => {
                           </td>
                           <td class="p-2 text-center">
                             <button type="button" title="Quitar repuesto" aria-label="Quitar repuesto" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarRepuesto(index)">
-                              <Trash2 class="w-4 h-4" />
+                              <Trash2 class="w-5 h-5" />
                             </button>
                           </td>
                         </tr>

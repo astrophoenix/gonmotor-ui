@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
-import { Image as ImageIcon, Plus, X, ZoomIn, ZoomOut } from 'lucide-vue-next';
+import { Image as ImageIcon, Plus, RefreshCw, Trash2, X, ZoomIn, ZoomOut } from 'lucide-vue-next';
 
 const props = defineProps({
   imageUrl: {
@@ -60,6 +60,10 @@ const props = defineProps({
     default: true,
   },
   disabled: {
+    type: Boolean,
+    default: false,
+  },
+  compact: {
     type: Boolean,
     default: false,
   },
@@ -282,22 +286,42 @@ defineExpose({ resetPreview, clearImage, hasImage, currentSrc });
       <button
         v-if="!disabled"
         type="button"
-        class="absolute top-1.5 right-1.5 inline-flex items-center justify-center w-7 h-7 rounded-full bg-danger text-white shadow-xs hover:bg-danger-strong"
+        class="absolute top-1.5 right-1.5 inline-flex items-center justify-center rounded-full bg-danger text-white shadow-xs hover:bg-danger-strong"
+        :class="compact ? 'w-6 h-6' : 'w-7 h-7'"
         aria-label="Quitar imagen"
         @click.stop="clearImage"
       >
-        <X class="w-4 h-4" />
+        <Trash2 class="w-4 h-4" />
       </button>
+      <label
+        v-if="compact && !disabled"
+        class="absolute bottom-1.5 left-1.5 inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white shadow-xs transition hover:bg-black/70"
+        title="Reemplazar imagen"
+        aria-label="Reemplazar imagen"
+        @click.stop
+      >
+        <RefreshCw class="w-3.5 h-3.5" />
+        <input
+          type="file"
+          class="sr-only"
+          :accept="allowedTypes.join(',')"
+          @change="onFileChange"
+        />
+      </label>
     </div>
 
     <label
       v-else
-      class="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded border border-dashed border-default bg-neutral-secondary-medium px-3 text-center transition hover:bg-neutral-tertiary"
-      :class="[aspectClass, disabled ? 'cursor-not-allowed opacity-60' : '']"
+      class="flex w-full cursor-pointer flex-col items-center justify-center rounded border border-dashed border-default bg-neutral-secondary-medium text-center transition hover:bg-neutral-tertiary"
+      :class="[
+        aspectClass,
+        compact ? 'gap-1 px-1' : 'gap-2 px-3',
+        disabled ? 'cursor-not-allowed opacity-60' : '',
+      ]"
     >
-      <ImageIcon class="w-8 h-8 text-body" />
-      <span class="text-sm font-medium text-heading">{{ emptyLabel }}</span>
-      <span v-if="showHint" class="text-xs text-body">{{ hintText }}</span>
+      <ImageIcon :class="compact ? 'w-5 h-5 text-body' : 'w-8 h-8 text-body'" />
+      <span :class="compact ? 'text-xs font-medium leading-tight text-heading' : 'text-sm font-medium text-heading'">{{ emptyLabel }}</span>
+      <span v-if="showHint && !compact" class="text-xs text-body">{{ hintText }}</span>
       <input
         type="file"
         class="sr-only"
@@ -308,7 +332,7 @@ defineExpose({ resetPreview, clearImage, hasImage, currentSrc });
     </label>
 
     <label
-      v-if="hasImage && !disabled"
+      v-if="hasImage && !disabled && !compact"
       class="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded border border-default bg-neutral-secondary-medium px-3 py-2 text-sm font-medium text-heading shadow-xs transition hover:bg-neutral-tertiary"
     >
       <Plus class="w-4 h-4" />
