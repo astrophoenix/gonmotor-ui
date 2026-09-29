@@ -5,6 +5,7 @@ import './charts';
 import './dark-mode';
 import { mountLogin, mountRegister } from './modules/auth';
 import { mountClients, mountClientEdit, mountClientDetail } from './modules/clientes';
+import { mountProveedores, mountProveedorEdit, mountProveedorDetail } from './modules/proveedores';
 import { mountVehicles, mountVehicleEdit, mountVehicleDetail } from './modules/vehiculos';
 import { mountRecepciones, mountRecepcionDetail, mountRecepcionEdit } from './modules/recepciones';
 import { mountInspecciones, mountInspeccionEdit, mountInspeccionDetail } from './modules/inspecciones';
@@ -61,6 +62,24 @@ const clientDetailApp = document.getElementById('client-detail-app');
 
 if (clientDetailApp) {
   mountClientDetail(clientDetailApp, pinia);
+}
+
+const proveedoresApp = document.getElementById('proveedores-app');
+
+if (proveedoresApp) {
+  mountProveedores(proveedoresApp, pinia);
+}
+
+const proveedorEditApp = document.getElementById('proveedor-edit-app');
+
+if (proveedorEditApp) {
+  mountProveedorEdit(proveedorEditApp, pinia);
+}
+
+const proveedorDetailApp = document.getElementById('proveedor-detail-app');
+
+if (proveedorDetailApp) {
+  mountProveedorDetail(proveedorDetailApp, pinia);
 }
 
 const vehiclesApp = document.getElementById('vehicles-app');

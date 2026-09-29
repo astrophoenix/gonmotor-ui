@@ -9,6 +9,7 @@ export const ADD_MODE = {
 // /crud/<entidad>/agregar/.
 export const ENTITY_ADD_MODES = {
   clientes: ADD_MODE.modal,
+  proveedores: ADD_MODE.modal,
   vehiculos: ADD_MODE.modal,
   empleados: ADD_MODE.modal,
   talleres: ADD_MODE.modal,

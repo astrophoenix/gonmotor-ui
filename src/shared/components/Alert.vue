@@ -48,13 +48,7 @@ function dismiss() {
 
 <template>
   <div
-    v-if="message"
-    :class="[
-      'flex items-center p-4 mb-4 text-sm rounded-lg',
-      typeClasses[type] || typeClasses.default,
-    ]"
-    role="alert"
-  >
+    v-if="message" :class="['flex items-center p-4 mt-1 mb-1 text-sm rounded-lg', typeClasses[type] || typeClasses.default,]" role="alert">
     <component :is="alertIcon" class="shrink-0 w-4 h-4 me-3" aria-hidden="true" />
     <span class="sr-only">{{ type }}</span>
     <div>
@@ -74,8 +68,7 @@ function dismiss() {
         type === 'error' ? 'text-red-500 bg-red-50 hover:bg-red-200 focus:ring-red-400' : '',
       ]"
       @click="dismiss"
-      aria-label="Close"
-    >
+      aria-label="Close">
       <span class="sr-only">Cerrar notificación</span>
       <X class="w-3 h-3" />
     </button>
