@@ -2,11 +2,16 @@ import { ref, computed, onScopeDispose } from 'vue';
 import { citasService } from '../services/citasService';
 import { createLatestRequest, isAbortError } from '../../../shared/utils/search';
 
-export function useCitas() {
+/**
+ * @param {{ search?: import('vue').Ref, estadoFiltro?: import('vue').Ref, fechaFiltro?: import('vue').Ref }} [externos]
+ *   Filtros compartidos con la cabecera de la pantalla unificada de citas.
+ *   Si no se pasan, el composable crea los suyos (modo aislado).
+ */
+export function useCitas(externos = {}) {
   const citas = ref([]);
-  const search = ref('');
-  const estadoFiltro = ref('');
-  const fechaFiltro = ref('');
+  const search = externos.search || ref('');
+  const estadoFiltro = externos.estadoFiltro || ref('');
+  const fechaFiltro = externos.fechaFiltro || ref('');
   const currentPage = ref(1);
   const total = ref(0);
   const nextUrl = ref(null);

@@ -61,11 +61,29 @@ function aEventos(citas) {
   });
 }
 
-export function useCalendario() {
+/**
+ * Próxima hora futura válida para agendar hoy (múltiplo de 15 min,
+ * dentro del rango visible 08:00–19:45). `null` si ya no queda hueco hoy.
+ */
+export function proximaHoraFutura() {
+  const ahora = new Date();
+  const minutos = Math.ceil((ahora.getHours() * 60 + ahora.getMinutes() + 15) / 15) * 15;
+  const limitados = Math.min(Math.max(minutos, 8 * 60), 19 * 60 + 45);
+  if (limitados <= ahora.getHours() * 60 + ahora.getMinutes()) return null;
+  const hh = String(Math.floor(limitados / 60)).padStart(2, '0');
+  const mm = String(limitados % 60).padStart(2, '0');
+  return `${hh}:${mm}`;
+}
+
+/**
+ * @param {{ fechaSeleccionada?: { value: string } }} [opciones]
+ *   Fecha seleccionada compartida con la cabecera de la pantalla unificada de citas.
+ */
+export function useCalendario(opciones = {}) {
   const citas = ref([]);
   const isLoading = ref(false);
   const errorMessage = ref('');
-  const fechaSeleccionada = ref(fechaLocal(new Date()));
+  const fechaSeleccionada = opciones.fechaSeleccionada || ref(fechaLocal(new Date()));
   const rangoActual = ref(null);
   const disponibilidad = ref(null);
   const disponibilidadLoading = ref(false);

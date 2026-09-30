@@ -259,3 +259,8 @@ select option:checked {
   background-color: var(--color-primary-600);
   color: #fff;
 }
+
+/* ===== Citas: anillo de resaltado de la cita elegida en el buscador ===== */
+.fc-event.cita-resaltada {
+  box-shadow: 0 0 0 3px #d9011b;
+}

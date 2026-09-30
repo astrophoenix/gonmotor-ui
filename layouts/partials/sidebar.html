@@ -3,7 +3,9 @@
 {{- if ge (len $path) 2 -}}{{- $mod = index $path 1 -}}{{- end -}}
 {{- $sub := "" -}}
 {{- if ge (len $path) 3 -}}{{- $sub = index $path 2 -}}{{- end -}}
-{{- $subsOperacion := slice "citas" "calendario" "recepciones" "inspecciones" "cotizaciones" "ordenes" -}}
+{{- /* El calendario dejó de ser una página propia: es una vista de Citas. */ -}}
+{{- if eq $sub "calendario" -}}{{- $sub = "citas" -}}{{- end -}}
+{{- $subsOperacion := slice "citas" "recepciones" "inspecciones" "cotizaciones" "ordenes" -}}
 {{- $subsInventario := slice "repuestos" "servicios" -}}
 {{- $subsConfiguracion := slice "empresa" "talleres" "usuarios" "roles" -}}
 {{- $enOperacion := or (eq .Params.group "operacion") (in $subsOperacion $sub) -}}
@@ -59,12 +61,6 @@
                   <a href="{{ "crud/citas/" | relURL }}" class="flex items-center gap-2.5 py-2.5 pl-10 pr-2 text-base text-white hover:bg-brand-400 transition duration-75 dark:text-white dark:hover:bg-brand-400 {{ if eq $sub "citas" }}is-current{{ end }}" {{ if eq $sub "citas" }}aria-current="page"{{ end }}>
                     <svg class="flex-shrink-0 w-4 h-4 text-white/80" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
                     Citas
-                  </a>
-               </li>
-              <li>
-                  <a href="{{ "crud/calendario/" | relURL }}" class="flex items-center gap-2.5 py-2.5 pl-10 pr-2 text-base text-white hover:bg-brand-400 transition duration-75 dark:text-white dark:hover:bg-brand-400 {{ if eq $sub "calendario" }}is-current{{ end }}" {{ if eq $sub "calendario" }}aria-current="page"{{ end }}>
-                    <svg class="flex-shrink-0 w-4 h-4 text-white/80" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4M16 2v4M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/></svg>
-                    Calendario
                   </a>
                </li>
               <li>

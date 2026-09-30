@@ -1,7 +1,7 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
-import AppointmentsView from './components/AppointmentsView.vue';
+import CitasView from './components/CitasView.vue';
 
 export function mountCitas(element, pinia = createPinia()) {
-  createApp(AppointmentsView).use(pinia).mount(element);
+  createApp(CitasView).use(pinia).mount(element);
 }

@@ -169,22 +169,49 @@ watch(
   fetchDisponibilidad
 );
 
+function fechaHoraLocal(fecha, hora) {
+  const [anio, mes, dia] = String(fecha || '').split('-').map(Number);
+  const [hh, mm] = String(hora || '00:00').split(':').map(Number);
+  if (!anio || !mes || !dia || Number.isNaN(hh) || Number.isNaN(mm)) return null;
+  return new Date(anio, mes - 1, dia, hh, mm, 0, 0);
+}
+
 function validateForm() {
   formErrors.value = {};
   const errors = {};
 
   if (!form.value.cliente) errors.cliente = 'Selecciona o crea un cliente.';
   if (!form.value.vehiculo) errors.vehiculo = 'Selecciona o crea un vehículo.';
+
+  // En edición solo se bloquea el pasado si el usuario mueve el horario:
+  // una cita ya agendada debe poder actualizarse aunque su hora haya pasado.
+  let horarioModificado = true;
+  if (isEditMode.value && formSnapshot.value) {
+    horarioModificado = form.value.fecha_cita !== formSnapshot.value.fecha_cita
+      || form.value.hora_cita !== formSnapshot.value.hora_cita;
+  }
+
   if (!form.value.fecha_cita) {
     errors.fecha_cita = 'La fecha de la cita es obligatoria.';
-  } else {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (new Date(form.value.fecha_cita) < today) {
+  } else if (horarioModificado) {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const fechaElegida = fechaHoraLocal(form.value.fecha_cita, '00:00');
+    if (!fechaElegida || fechaElegida < hoy) {
       errors.fecha_cita = 'La fecha de la cita no puede ser anterior a hoy.';
     }
   }
-  if (!form.value.hora_cita) errors.hora_cita = 'La hora de la cita es obligatoria.';
+
+  if (!form.value.hora_cita) {
+    errors.hora_cita = 'La hora de la cita es obligatoria.';
+  } else if (horarioModificado && form.value.fecha_cita && !errors.fecha_cita) {
+    // El usuario puede tardar en completar el formulario: si la hora de inicio
+    // ya pasó al momento de guardar, se bloquea antes de llamar al backend.
+    const inicio = fechaHoraLocal(form.value.fecha_cita, form.value.hora_cita);
+    if (inicio && inicio <= new Date()) {
+      errors.hora_cita = 'La hora de la cita ya pasó. Selecciona un horario futuro.';
+    }
+  }
 
   const duracion = Number(form.value.duracion_minutos);
   if (!Number.isInteger(duracion) || duracion < 15 || duracion > 1440) {
@@ -200,13 +227,18 @@ function validateForm() {
   return Object.keys(errors).length === 0;
 }
 
+// Campos del backend que no existen en el formulario.
+const CAMPOS_ALIAS = {
+  fecha_hora_programada: 'hora_cita',
+};
+
 function applyBackendErrors(data) {
   if (!data || typeof data !== 'object') return;
   const newErrors = { ...formErrors.value };
   Object.entries(data).forEach(([key, value]) => {
     const message = Array.isArray(value) ? value[0] : (typeof value === 'string' ? value : null);
     if (message && key !== 'non_field_errors') {
-      newErrors[key] = message;
+      newErrors[CAMPOS_ALIAS[key] || key] = message;
     } else if (typeof value === 'string' && key === 'detail') {
       errorMessage.value = value;
     }
