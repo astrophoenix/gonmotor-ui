@@ -1,12 +1,13 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted, computed } from 'vue';
-import { Car, CalendarDays, Pencil, Trash2, Clock, User, ArrowRightLeft, Search } from 'lucide-vue-next';
+import { Car, CalendarDays, CalendarPlus, Pencil, Trash2, Clock, User, ArrowRightLeft, Search } from 'lucide-vue-next';
 import { useCitas } from '../composables/useCitas';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
 import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
 import { SEARCH_DEBOUNCE_MS, isSearchable } from '../../../shared/utils/search';
+import CitaCalendarModal from './CitaCalendarModal.vue';
 import CitaModal from './CitaModal.vue';
 
 const {
@@ -41,6 +42,14 @@ const citaToDelete = ref(null);
 
 const showCitaModal = ref(false);
 const citaModalId = ref(null);
+
+const showCalendarModal = ref(false);
+const calendarCita = ref(null);
+
+function openCalendarModal(cita) {
+  calendarCita.value = cita;
+  showCalendarModal.value = true;
+}
 
 const showConvertModal = ref(false);
 const citaToConvert = ref(null);
@@ -319,6 +328,15 @@ onUnmounted(() => {
         <td class="p-4 whitespace-nowrap">
           <button
             type="button"
+            title="Agregar al calendario"
+            aria-label="Agregar al calendario"
+            class="inline-flex items-center p-2 text-primary-600 rounded-lg hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-gray-700"
+            @click="openCalendarModal(item)"
+          >
+            <CalendarPlus class="w-5 h-5" />
+          </button>
+          <button
+            type="button"
             title="Convertir a recepción"
             aria-label="Convertir a recepción"
             :disabled="!item.es_convertible || isConverting"
@@ -367,6 +385,8 @@ onUnmounted(() => {
     @created="onCitaCreated"
     @updated="onCitaUpdated"
   />
+
+  <CitaCalendarModal v-model="showCalendarModal" :cita="calendarCita" />
 
   <div
     v-if="showConvertModal && citaToConvert"

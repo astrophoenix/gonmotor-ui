@@ -45,6 +45,10 @@ const form = reactive({
   direccion: '',
   telefono: '',
   is_active: true,
+  capacidad_citas_dia: 0,
+  capacidad_simultanea: 0,
+  hora_apertura: '08:00',
+  hora_cierre: '17:00',
   ...secuenciaFormDefaults(),
 });
 
@@ -63,6 +67,10 @@ function getComparableState() {
     direccion: form.direccion,
     telefono: form.telefono,
     is_active: form.is_active,
+    capacidad_citas_dia: form.capacidad_citas_dia,
+    capacidad_simultanea: form.capacidad_simultanea,
+    hora_apertura: form.hora_apertura,
+    hora_cierre: form.hora_cierre,
     ...SECUENCIA_TIPOS.reduce((acc, { tipo }) => {
       acc[`prefijo_${tipo}`] = form[`prefijo_${tipo}`];
       acc[`siguiente_${tipo}`] = form[`siguiente_${tipo}`];
@@ -86,6 +94,10 @@ function createEmptyForm() {
     direccion: '',
     telefono: '',
     is_active: true,
+    capacidad_citas_dia: 0,
+    capacidad_simultanea: 0,
+    hora_apertura: '08:00',
+    hora_cierre: '17:00',
     ...secuenciaFormDefaults(),
   };
 }
@@ -105,6 +117,10 @@ async function open() {
     isLoading.value = true;
     try {
       const data = await talleresService.getTaller(props.tallerId);
+      if (data.hora_apertura) data.hora_apertura = String(data.hora_apertura).slice(0, 5);
+      if (data.hora_cierre) data.hora_cierre = String(data.hora_cierre).slice(0, 5);
+      data.capacidad_citas_dia = Number(data.capacidad_citas_dia) || 0;
+      data.capacidad_simultanea = Number(data.capacidad_simultanea) || 0;
       SECUENCIA_TIPOS.forEach(({ tipo }) => {
         if (data[`siguiente_${tipo}`] != null) data[`siguiente_${tipo}`] = String(data[`siguiente_${tipo}`]);
         if (data[`digitos_${tipo}`] != null) data[`digitos_${tipo}`] = String(data[`digitos_${tipo}`]);
@@ -154,6 +170,23 @@ function validateTaller() {
     errors.direccion = 'La dirección es obligatoria.';
   }
 
+  ['capacidad_citas_dia', 'capacidad_simultanea'].forEach((campo) => {
+    const valor = Number(form[campo]);
+    if (!Number.isInteger(valor) || valor < 0) {
+      errors[campo] = 'Debe ser un número entero igual o mayor a 0 (0 = sin límite).';
+    }
+  });
+
+  if (!form.hora_apertura) {
+    errors.hora_apertura = 'La hora de apertura es obligatoria.';
+  }
+  if (!form.hora_cierre) {
+    errors.hora_cierre = 'La hora de cierre es obligatoria.';
+  }
+  if (form.hora_apertura && form.hora_cierre && form.hora_cierre <= form.hora_apertura) {
+    errors.hora_cierre = 'La hora de cierre debe ser posterior a la hora de apertura.';
+  }
+
   SECUENCIA_TIPOS.forEach(({ tipo, etiqueta }) => {
     const prefijo = (form[`prefijo_${tipo}`] || '').trim();
     if (!prefijo) {
@@ -186,6 +219,10 @@ function applyBackendErrors(data) {
     ciudad: 'ciudad',
     direccion: 'direccion',
     telefono: 'telefono',
+    capacidad_citas_dia: 'capacidad_citas_dia',
+    capacidad_simultanea: 'capacidad_simultanea',
+    hora_apertura: 'hora_apertura',
+    hora_cierre: 'hora_cierre',
     prefijo_recepcion: 'prefijo_recepcion',
     siguiente_recepcion: 'siguiente_recepcion',
     digitos_recepcion: 'digitos_recepcion',
@@ -219,6 +256,10 @@ function buildPayload() {
     direccion: form.direccion.trim(),
     telefono: form.telefono,
     is_active: form.is_active,
+    capacidad_citas_dia: Number(form.capacidad_citas_dia) || 0,
+    capacidad_simultanea: Number(form.capacidad_simultanea) || 0,
+    hora_apertura: form.hora_apertura,
+    hora_cierre: form.hora_cierre,
   };
   SECUENCIA_TIPOS.forEach(({ tipo }) => {
     payload[`prefijo_${tipo}`] = (form[`prefijo_${tipo}`] || '').trim();
@@ -375,6 +416,68 @@ watch(() => props.modelValue, (val) => {
                   <div class="relative w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-600"></div>
                   <span class="ms-3 text-sm text-gray-900 dark:text-white">{{ form.is_active ? 'Activo' : 'Inactivo' }}</span>
                 </label>
+              </div>
+            </div>
+
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+              <div class="mb-3">
+                <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Capacidad y horario de atención</h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Define cuántos vehículos puede recibir este taller y en qué franja se agendan las citas.
+                  Un valor en 0 desactiva ese límite.
+                </p>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label for="modal_taller_cap_dia" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Citas máximas por día</label>
+                  <input
+                    id="modal_taller_cap_dia"
+                    v-model.number="form.capacidad_citas_dia"
+                    type="number"
+                    min="0"
+                    step="1"
+                    :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors.capacidad_citas_dia ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                  >
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">0 = sin límite de citas al día.</p>
+                  <p v-if="tallerErrors.capacidad_citas_dia" class="mt-1 text-xs text-red-600 dark:text-red-500">{{ tallerErrors.capacidad_citas_dia }}</p>
+                </div>
+
+                <div>
+                  <label for="modal_taller_cap_sim" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Atenciones simultáneas máximas</label>
+                  <input
+                    id="modal_taller_cap_sim"
+                    v-model.number="form.capacidad_simultanea"
+                    type="number"
+                    min="0"
+                    step="1"
+                    :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors.capacidad_simultanea ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                  >
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Vehículos atendiéndose al mismo tiempo (bahías). 0 = sin límite.</p>
+                  <p v-if="tallerErrors.capacidad_simultanea" class="mt-1 text-xs text-red-600 dark:text-red-500">{{ tallerErrors.capacidad_simultanea }}</p>
+                </div>
+
+                <div>
+                  <label for="modal_taller_apertura" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Hora de apertura</label>
+                  <input
+                    id="modal_taller_apertura"
+                    v-model="form.hora_apertura"
+                    type="time"
+                    :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors.hora_apertura ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                  >
+                  <p v-if="tallerErrors.hora_apertura" class="mt-1 text-xs text-red-600 dark:text-red-500">{{ tallerErrors.hora_apertura }}</p>
+                </div>
+
+                <div>
+                  <label for="modal_taller_cierre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Hora de cierre</label>
+                  <input
+                    id="modal_taller_cierre"
+                    v-model="form.hora_cierre"
+                    type="time"
+                    :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors.hora_cierre ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                  >
+                  <p v-if="tallerErrors.hora_cierre" class="mt-1 text-xs text-red-600 dark:text-red-500">{{ tallerErrors.hora_cierre }}</p>
+                </div>
               </div>
             </div>
 

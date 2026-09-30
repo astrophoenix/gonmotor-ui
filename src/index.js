@@ -12,6 +12,7 @@ import { mountInspecciones, mountInspeccionEdit, mountInspeccionDetail } from '.
 import { mountCotizaciones, mountCotizacionEdit, mountCotizacionDetail } from './modules/cotizaciones';
 import { mountOrdenes, mountOrdenDetail, mountOrdenEdit } from './modules/ordenes';
 import { mountCitas } from './modules/citas';
+import { mountCalendario } from './modules/calendario';
 import { mountEmpleados, mountEmpleadoDetail } from './modules/empleados';
 import { mountRepuestos } from './modules/inventario/repuestos';
 import { mountServicios } from './modules/inventario/servicios';
@@ -196,6 +197,12 @@ const citasApp = document.getElementById('citas-app');
 
 if (citasApp) {
   mountCitas(citasApp, pinia);
+}
+
+const calendarioApp = document.getElementById('calendario-app');
+
+if (calendarioApp) {
+  mountCalendario(calendarioApp, pinia);
 }
 
 const profileEditApp = document.getElementById('profile-edit-app');

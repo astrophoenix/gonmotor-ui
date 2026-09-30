@@ -7,18 +7,23 @@ function buildUrl(id) {
 }
 
 export const citasService = {
-  list({ page = 1, search = '', estado = '', fecha = '', desde = '', hasta = '', ordering = 'fecha_cita', signal } = {}) {
+  list({ page = 1, search = '', estado = '', fecha = '', desde = '', hasta = '', ordering = 'fecha_cita', pageSize = '', signal } = {}) {
     const params = new URLSearchParams({ page: String(page), ordering });
     if (search) params.set('search', search);
     if (estado) params.set('estado', estado);
     if (fecha) params.set('fecha', fecha);
     if (desde) params.set('desde', desde);
     if (hasta) params.set('hasta', hasta);
+    if (pageSize) params.set('page_size', String(pageSize));
     return request(`${ENDPOINT}?${params.toString()}`, { signal });
   },
 
   getById(id) {
     return request(buildUrl(id));
+  },
+
+  disponibilidad(query = '') {
+    return request(`${ENDPOINT}disponibilidad/${query ? `?${query}` : ''}`);
   },
 
   create(payload) {

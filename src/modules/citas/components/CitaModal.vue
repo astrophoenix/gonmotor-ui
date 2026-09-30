@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { Car, X, Save, Search, Plus, UserPlus } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
 import { citasService } from '../services/citasService';
@@ -8,6 +8,8 @@ import Alert from '../../../shared/components/Alert.vue';
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   citaId: { type: [Number, String], default: null },
+  // Valores iniciales al crear (usado por el calendario al hacer clic en un hueco)
+  prefill: { type: Object, default: null },
 });
 
 const emit = defineEmits(['update:modelValue', 'created', 'updated']);
@@ -34,15 +36,16 @@ const MOTIVOS = [
 const form = ref({
   cliente: null,
   vehiculo: null,
+  taller: null,
   fecha_cita: '',
   hora_cita: '',
+  duracion_minutos: 60,
   estado: 'PROGRAMADA',
   motivo: 'MANTENIMIENTO',
   motivo_descripcion: '',
   kilometraje_aproximado: null,
   notas_internas: '',
   asesor: null,
-  taller: null,
 });
 
 const isLoading = ref(false);
@@ -51,6 +54,15 @@ const errorMessage = ref('');
 const formErrors = ref({});
 const formSnapshot = ref(null);
 const showDiscardWarning = ref(false);
+
+// --- Agenda / capacidad del taller ---
+const talleres = ref([]);
+const talleresCargados = ref(false);
+const disponibilidad = ref(null);
+const disponibilidadLoading = ref(false);
+let disponibilidadTimer = null;
+
+const TALLERES_ENDPOINT = '/api/configuracion/sucursales/';
 
 // --- Búsqueda de cliente ---
 const clientsList = ref([]);
@@ -79,8 +91,10 @@ function getComparableState() {
   return {
     cliente: form.value.cliente ? form.value.cliente.id : null,
     vehiculo: form.value.vehiculo ? form.value.vehiculo.id : null,
+    taller: form.value.taller,
     fecha_cita: form.value.fecha_cita,
     hora_cita: form.value.hora_cita,
+    duracion_minutos: form.value.duracion_minutos,
     estado: form.value.estado,
     motivo: form.value.motivo,
     motivo_descripcion: form.value.motivo_descripcion,
@@ -91,6 +105,68 @@ function getComparableState() {
 
 const hasChanges = computed(() =>
   JSON.stringify(formSnapshot.value) !== JSON.stringify(getComparableState())
+);
+
+const horaFin = computed(() => {
+  if (!form.value.hora_cita) return '';
+  const partes = String(form.value.hora_cita).split(':');
+  const minutosInicio = Number(partes[0]) * 60 + Number(partes[1]);
+  const duracion = Number(form.value.duracion_minutos);
+  if (Number.isNaN(minutosInicio) || Number.isNaN(duracion)) return '';
+  const total = minutosInicio + Math.max(duracion, 0);
+  const excedeDia = total >= 24 * 60;
+  const fin = total % (24 * 60);
+  const hh = String(Math.floor(fin / 60)).padStart(2, '0');
+  const mm = String(fin % 60).padStart(2, '0');
+  return `${hh}:${mm}${excedeDia ? ' (día siguiente)' : ''}`;
+});
+
+async function ensureTalleres() {
+  if (talleresCargados.value) return;
+  try {
+    const data = await request(`${TALLERES_ENDPOINT}?estado=activo&page=1`);
+    talleres.value = Array.isArray(data) ? data : (data.results || []);
+  } catch (error) {
+    talleres.value = [];
+  } finally {
+    talleresCargados.value = true;
+  }
+}
+
+function fetchDisponibilidad() {
+  clearTimeout(disponibilidadTimer);
+  if (!props.modelValue || !form.value.fecha_cita) {
+    disponibilidad.value = null;
+    return;
+  }
+  const params = new URLSearchParams({ fecha: form.value.fecha_cita });
+  if (form.value.taller) params.set('taller', String(form.value.taller));
+  if (form.value.hora_cita) {
+    params.set('hora', form.value.hora_cita);
+    params.set('duracion', String(Number(form.value.duracion_minutos) || 60));
+  }
+  if (props.citaId) params.set('cita', String(props.citaId));
+
+  disponibilidadTimer = setTimeout(async () => {
+    disponibilidadLoading.value = true;
+    try {
+      disponibilidad.value = await citasService.disponibilidad(params.toString());
+    } catch (error) {
+      disponibilidad.value = null;
+    } finally {
+      disponibilidadLoading.value = false;
+    }
+  }, 300);
+}
+
+watch(
+  [
+    () => form.value.fecha_cita,
+    () => form.value.hora_cita,
+    () => form.value.duracion_minutos,
+    () => form.value.taller,
+  ],
+  fetchDisponibilidad
 );
 
 function validateForm() {
@@ -109,6 +185,16 @@ function validateForm() {
     }
   }
   if (!form.value.hora_cita) errors.hora_cita = 'La hora de la cita es obligatoria.';
+
+  const duracion = Number(form.value.duracion_minutos);
+  if (!Number.isInteger(duracion) || duracion < 15 || duracion > 1440) {
+    errors.duracion_minutos = 'La duración debe estar entre 15 y 1440 minutos.';
+  }
+
+  const consulta = disponibilidad.value && disponibilidad.value.solicitud;
+  if (consulta && consulta.disponible === false) {
+    errors[consulta.campo || 'hora_cita'] = consulta.motivo;
+  }
 
   formErrors.value = errors;
   return Object.keys(errors).length === 0;
@@ -318,15 +404,16 @@ function resetForm() {
   form.value = {
     cliente: null,
     vehiculo: null,
+    taller: null,
     fecha_cita: '',
     hora_cita: '',
+    duracion_minutos: 60,
     estado: 'PROGRAMADA',
     motivo: 'MANTENIMIENTO',
     motivo_descripcion: '',
     kilometraje_aproximado: null,
     notas_internas: '',
     asesor: null,
-    taller: null,
   };
   clientSearch.value = '';
   vehicleSearch.value = '';
@@ -337,19 +424,32 @@ function resetForm() {
   formErrors.value = {};
   errorMessage.value = '';
   showDiscardWarning.value = false;
+  clearTimeout(disponibilidadTimer);
+  disponibilidad.value = null;
+  disponibilidadLoading.value = false;
 }
 
 async function open() {
   resetForm();
-  formSnapshot.value = getComparableState();
+  await ensureTalleres();
 
   if (!isEditMode.value) {
-    const today = new Date();
-    const local = new Date(today.getTime() - today.getTimezoneOffset() * 60000)
+    const hoy = new Date();
+    const local = new Date(hoy.getTime() - hoy.getTimezoneOffset() * 60000)
       .toISOString()
       .slice(0, 10);
-    form.value.fecha_cita = local;
-    nextTick().then(() => { formSnapshot.value = getComparableState(); });
+    form.value.fecha_cita = (props.prefill && props.prefill.fecha_cita) || local;
+    if (!form.value.taller && talleres.value.length) {
+      form.value.taller = talleres.value[0].id;
+    }
+    if (props.prefill) {
+      if (props.prefill.hora_cita) form.value.hora_cita = props.prefill.hora_cita;
+      if (props.prefill.duracion_minutos) {
+        form.value.duracion_minutos = Number(props.prefill.duracion_minutos);
+      }
+      if (props.prefill.taller) form.value.taller = props.prefill.taller;
+    }
+    formSnapshot.value = getComparableState();
     return;
   }
 
@@ -359,15 +459,16 @@ async function open() {
     form.value = {
       cliente: data.cliente || null,
       vehiculo: data.vehiculo || null,
+      taller: data.taller || null,
       fecha_cita: data.fecha_cita || '',
       hora_cita: data.hora_cita || '',
+      duracion_minutos: Number(data.duracion_minutos) || 60,
       estado: data.estado || 'PROGRAMADA',
       motivo: data.motivo || 'MANTENIMIENTO',
       motivo_descripcion: data.motivo_descripcion || '',
       kilometraje_aproximado: data.kilometraje_aproximado,
       notas_internas: data.notas_internas || '',
       asesor: data.asesor || null,
-      taller: data.taller || null,
     };
     nextTick().then(() => { formSnapshot.value = getComparableState(); });
   } catch (error) {
@@ -376,6 +477,10 @@ async function open() {
     isLoading.value = false;
   }
 }
+
+watch(() => props.modelValue, (abierto) => {
+  if (abierto) open();
+});
 
 async function submit() {
   errorMessage.value = '';
@@ -388,8 +493,10 @@ async function submit() {
   const payload = {
     cliente: form.value.cliente ? form.value.cliente.id : null,
     vehiculo: form.value.vehiculo ? form.value.vehiculo.id : null,
+    taller: form.value.taller || null,
     fecha_cita: form.value.fecha_cita,
     hora_cita: form.value.hora_cita,
+    duracion_minutos: Number(form.value.duracion_minutos) || 60,
     estado: form.value.estado,
     motivo: form.value.motivo,
     motivo_descripcion: form.value.motivo_descripcion || '',
@@ -649,6 +756,18 @@ function formatHour(value) {
 
           <h4 class="mt-6 mb-4 text-base font-semibold dark:text-white">Programación</h4>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="md:col-span-2">
+              <label for="cita_taller" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Taller</label>
+              <select
+                id="cita_taller"
+                v-model="form.taller"
+                :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.taller ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+              >
+                <option :value="null">Sin taller asignado</option>
+                <option v-for="t in talleres" :key="t.id" :value="t.id">{{ t.nombre }}</option>
+              </select>
+              <p v-if="formErrors.taller" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.taller }}</p>
+            </div>
             <div>
               <label for="cita_fecha" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Fecha *</label>
               <input
@@ -670,6 +789,30 @@ function formatHour(value) {
               <p v-if="formErrors.hora_cita" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.hora_cita }}</p>
             </div>
             <div>
+              <label for="cita_duracion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Duración (minutos) *</label>
+              <input
+                id="cita_duracion"
+                v-model.number="form.duracion_minutos"
+                type="number"
+                min="15"
+                max="1440"
+                step="15"
+                :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.duracion_minutos ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+              >
+              <p v-if="formErrors.duracion_minutos" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.duracion_minutos }}</p>
+            </div>
+            <div>
+              <label for="cita_hora_fin" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Termina a las</label>
+              <input
+                id="cita_hora_fin"
+                :value="horaFin"
+                type="text"
+                readonly
+                placeholder="--:--"
+                class="block w-full p-2.5 text-sm bg-gray-100 border border-gray-300 rounded-lg text-gray-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400"
+              >
+            </div>
+            <div>
               <label for="cita_motivo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Motivo *</label>
               <select id="cita_motivo" v-model="form.motivo" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
                 <option v-for="m in MOTIVOS" :key="m.value" :value="m.value">{{ m.label }}</option>
@@ -679,6 +822,61 @@ function formatHour(value) {
               <label for="cita_kilometraje" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kilometraje aproximado</label>
               <input id="cita_kilometraje" v-model="form.kilometraje_aproximado" type="number" min="0" placeholder="Ej: 45200" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
             </div>
+
+            <!-- Disponibilidad de la agenda del taller -->
+            <div v-if="disponibilidad || disponibilidadLoading" class="md:col-span-2">
+              <div
+                :class="[
+                  'rounded-lg border p-3 text-sm',
+                  disponibilidad && disponibilidad.solicitud && disponibilidad.solicitud.disponible === false
+                    ? 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/30'
+                    : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/40',
+                ]"
+              >
+                <p v-if="disponibilidadLoading" class="text-gray-500 dark:text-gray-400">
+                  Consultando disponibilidad...
+                </p>
+                <template v-else-if="disponibilidad">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p class="font-medium text-gray-900 dark:text-white">
+                        {{ disponibilidad.taller ? `Taller ${disponibilidad.taller.nombre}` : 'Sin taller configurado' }}
+                        <span v-if="disponibilidad.horario" class="font-normal text-gray-500 dark:text-gray-400">
+                          · Horario {{ disponibilidad.horario.apertura }}–{{ disponibilidad.horario.cierre }}
+                        </span>
+                      </p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        <template v-if="!disponibilidad.aplicable">
+                          No hay límites configurados: la cita se guardará sin validar cupo.
+                        </template>
+                        <template v-else-if="disponibilidad.capacidad_dia">
+                          {{ disponibilidad.citas_ocupadas }} de {{ disponibilidad.capacidad_dia }} citas ocupadas
+                          · {{ disponibilidad.citas_disponibles }} disponibles
+                        </template>
+                        <template v-else>
+                          Sin límite de citas por día.
+                        </template>
+                        <template v-if="disponibilidad.capacidad_simultanea">
+                          · Máximo {{ disponibilidad.capacidad_simultanea }} vehículos a la vez
+                        </template>
+                      </p>
+                    </div>
+                    <span
+                      v-if="disponibilidad.solicitud"
+                      :class="[
+                        'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold',
+                        disponibilidad.solicitud.disponible
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+                      ]"
+                    >
+                      {{ disponibilidad.solicitud.disponible ? 'Hora disponible' : 'Sin cupo' }}
+                    </span>
+                  </div>
+                </template>
+              </div>
+            </div>
+
             <div class="md:col-span-2">
               <label for="cita_motivo_desc" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Descripción del motivo / falla reportada</label>
               <textarea id="cita_motivo_desc" v-model="form.motivo_descripcion" rows="2" placeholder="Detalla el servicio solicitado o la falla..." class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"></textarea>
