@@ -19,6 +19,7 @@ import { mountProfileEdit } from './modules/auth';
 import { mountEmpresaConfig, mountTalleresConfig } from './modules/configuracion';
 import { mountNotificaciones } from './modules/notificaciones';
 import { mountDashboard } from './modules/dashboard';
+import { mountDashboardV2 } from './modules/dashboard-v2';
 import UserMenu from './shared/components/UserMenu.vue';
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
@@ -39,6 +40,12 @@ const dashboardApp = document.getElementById('dashboard-app');
 
 if (dashboardApp) {
   mountDashboard(dashboardApp, pinia);
+}
+
+const dashboardV2App = document.getElementById('dashboard-v2-app');
+
+if (dashboardV2App) {
+  mountDashboardV2(dashboardV2App, pinia);
 }
 
 const loginApp = document.getElementById('login-app');
