@@ -18,12 +18,7 @@ if (sidebar) {
     const sidebarBackdrop = document.getElementById('sidebarBackdrop');
     const toggleSidebarMobileHamburger = document.getElementById('toggleSidebarMobileHamburger');
     const toggleSidebarMobileClose = document.getElementById('toggleSidebarMobileClose');
-    const toggleSidebarMobileSearch = document.getElementById('toggleSidebarMobileSearch');
     const sidebarCloseMobile = document.getElementById('sidebarCloseMobile');
-
-    toggleSidebarMobileSearch.addEventListener('click', () => {
-        toggleSidebarMobile(sidebar, sidebarBackdrop, toggleSidebarMobileHamburger, toggleSidebarMobileClose);
-    });
 
     toggleSidebarMobileEl.addEventListener('click', () => {
         toggleSidebarMobile(sidebar, sidebarBackdrop, toggleSidebarMobileHamburger, toggleSidebarMobileClose);
@@ -55,11 +50,10 @@ if (sidebar) {
             collapseIcon.classList.toggle('hidden', activo);
         }
         if (toggleSidebarDesktop) {
+            const etiqueta = activo ? 'Expandir menú' : 'Contraer menú';
             toggleSidebarDesktop.setAttribute('aria-expanded', String(!activo));
-            toggleSidebarDesktop.setAttribute(
-                'aria-label',
-                activo ? 'Expandir sidebar' : 'Colapsar sidebar'
-            );
+            toggleSidebarDesktop.setAttribute('aria-label', etiqueta);
+            toggleSidebarDesktop.setAttribute('title', etiqueta);
         }
         if (persist) {
             localStorage.setItem(COLLAPSED_KEY, collapsed ? '1' : '0');

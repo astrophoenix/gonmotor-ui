@@ -7,8 +7,10 @@ function initializeDarkMode() {
         return;
     }
 
-    // Change the icons inside the button based on previous settings
-    if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    // Aplicar la preferencia persistida al cargar (el layout arranca con class="dark")
+    const oscuro = localStorage.getItem('color-theme') !== 'light';
+    document.documentElement.classList.toggle('dark', oscuro);
+    if (oscuro) {
         themeToggleLightIcon.classList.remove('hidden');
     } else {
         themeToggleDarkIcon.classList.remove('hidden');

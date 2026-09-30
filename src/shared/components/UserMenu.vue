@@ -7,7 +7,7 @@
         :aria-expanded="isOpen"
         @click="toggleDropdown"
       >
-        <span class="sr-only">Open user menu</span>
+        <span class="sr-only">Abrir menú de usuario</span>
         <img class="w-8 h-8 rounded-full object-cover" :src="avatar" alt="user photo">
       </button>
     </div>
@@ -45,7 +45,7 @@
           </a>
         </li>
         <li>
-          <a href="#" @click.prevent="handleSignout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Sign out</a>
+          <a href="#" @click.prevent="handleSignout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">Cerrar sesión</a>
         </li>
       </ul>
     </div>
