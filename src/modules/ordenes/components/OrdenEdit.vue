@@ -921,12 +921,12 @@ async function handleSubmit() {
 
             <div v-show="activeTab === 'evidencia'" class="p-4">
               <!-- Fotos de la orden: subida -->
-              <h4 class="mb-4 text-xl font-semibold dark:text-white">
+              <!--h4 class="mb-4 text-xl font-semibold dark:text-white">
                 <span class="inline-flex items-center gap-2">
                   <Camera class="w-6 h-6 text-gray-800 dark:text-white" />
                   Fotos de la Orden
                 </span>
-              </h4>
+              </h4-->
               <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
                 Adjunta evidencia del trabajo realizado (hasta {{ FOTO_MAX }} fotos). Solo JPG, PNG o WebP de máximo 5 MB.
               </p>

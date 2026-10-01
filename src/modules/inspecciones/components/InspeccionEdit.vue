@@ -109,7 +109,7 @@ const activeTabIndex = computed(() => TAB_ORDER.indexOf(activeTab.value));
 const pasosFlujo = computed(() => {
   const rec = recepcion.value || null;
   const data = inspeccionData.value || {};
-  const estadoCotizacion = data.cotizacion_estado || (data.tiene_cotizacion_activa ? 'BORRADOR' : null);
+  const estadoCotizacion = data.cotizacion_estado || (data.tiene_cotizacion_activa ? 'PENDIENTE' : null);
   return buildPasosFlujo([
     {
       entidad: 'recepcion',

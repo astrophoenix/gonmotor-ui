@@ -26,7 +26,7 @@ import FlowSteps from '../../../shared/components/FlowSteps.vue';
 import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 
 const ESTADOS = {
-  BORRADOR: { label: 'Borrador', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', icon: FileText },
+  PENDIENTE: { label: 'Pendiente', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', icon: FileText },
   ENVIADA: { label: 'Enviada al cliente', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300', icon: Send },
   ACEPTADA: { label: 'Aceptada', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300', icon: CheckCircle2 },
   RECHAZADA: { label: 'Rechazada', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300', icon: XCircle },
@@ -58,7 +58,7 @@ const mostrarModalGenerarOrden = ref(false);
 const procesandoReapertura = ref(false);
 const procesandoGeneracionOrden = ref(false);
 
-const estadoBadge = computed(() => ESTADOS[cotizacion.value?.estado] || ESTADOS.BORRADOR);
+const estadoBadge = computed(() => ESTADOS[cotizacion.value?.estado] || ESTADOS.PENDIENTE);
 
 const ordenGenerada = computed(() => cotizacion.value?.orden_generada_numero || '');
 

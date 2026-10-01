@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import {
   CheckCircle2,
   ArrowLeft,
@@ -12,11 +12,9 @@ import {
   Package,
   Wrench,
   CircleDollarSign,
-  User,
   IdCardIcon,
   Phone,
   Mail,
-  Car,
   TagIcon,
   Shapes,
   PaintBucket,
@@ -40,6 +38,7 @@ import FlowSteps from '../../../shared/components/FlowSteps.vue';
 import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 import ClientModal from '../../clientes/components/ClientModal.vue';
 import ClienteSearchSelect from '../../../shared/components/ClienteSearchSelect.vue';
+import VehiculoSearchSelect from '../../../shared/components/VehiculoSearchSelect.vue';
 import EmpleadoSearchSelect from '../../../shared/components/EmpleadoSearchSelect.vue';
 import CatalogoSelect from '../../../shared/components/CatalogoSelect.vue';
 
@@ -51,7 +50,7 @@ const isEditMode = Boolean(cotizacionParamId);
 const inspeccionId = inspeccionParamId ? Number(inspeccionParamId) : null;
 
 const ESTADOS = {
-  BORRADOR: { label: 'Borrador', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
+  PENDIENTE: { label: 'Pendiente', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
   ENVIADA: { label: 'Enviada al cliente', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
   ACEPTADA: { label: 'Aceptada', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' },
   RECHAZADA: { label: 'Rechazada', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' },
@@ -76,7 +75,7 @@ const errorMessage = ref('');
 const successMessage = ref('');
 const formErrors = ref({});
 
-const estado = ref('BORRADOR');
+const estado = ref('PENDIENTE');
 const numeroCotizacion = ref('');
 const sucursalNombre = ref('');
 const createdAt = ref('');
@@ -98,12 +97,14 @@ const form = reactive({
   asesor: null,
   clienteSearch: '',
   vehiculoSearch: '',
+  cliente_identificacion: '',
+  cliente_telefono: '',
+  cliente_email: '',
+  vehiculo_color: '',
   validez_dias: 15,
   observaciones: '',
 });
 
-const vehiculoOptions = ref([]);
-const showVehiculoDropdown = ref(false);
 const showClientCreateModal = ref(false);
 
 // Asesor (reemplaza inspector)
@@ -128,8 +129,15 @@ const modal = reactive({
   error: '',
 });
 
-const esEditable = computed(() => ['BORRADOR', 'ENVIADA'].includes(estado.value));
-const estadoInfo = computed(() => ESTADOS[estado.value] || ESTADOS.BORRADOR);
+const esEditable = computed(() => ['PENDIENTE', 'ENVIADA'].includes(estado.value));
+const estadoInfo = computed(() => ESTADOS[estado.value] || ESTADOS.PENDIENTE);
+
+// Cliente y vehículo quedan bloqueados cuando la cotización proviene de una
+// inspección (datos precargados) o cuando ya no es editable (PENDIENTE /
+// ENVIADA son los estados en los que el usuario puede cambiarlos).
+const bloqueadoClienteVehiculo = computed(
+  () => Boolean(inspeccionOrigen.value) || !esEditable.value
+);
 
 const pasosFlujo = computed(() => {
   const cot = cotizacion.value || {};
@@ -273,6 +281,27 @@ const asesorInfo = computed(() => {
   }) || null;
 });
 
+const asesorDetalles = computed(() => {
+  if (!form.asesor) return null;
+  const info = asesorInfo.value;
+  if (info && info.user) {
+    return {
+      identificacion: info.user.identificacion,
+      telefono: info.user.telefono,
+      email: info.user.email,
+    };
+  }
+  const cot = cotizacion.value;
+  if (cot && cot.asesor_nombre) {
+    return {
+      identificacion: cot.asesor_identificacion,
+      telefono: cot.asesor_telefono,
+      email: cot.asesor_email,
+    };
+  }
+  return null;
+});
+
 async function loadEmpleados() {
   try {
     const data = await request('/api/auth/empleados/?page=1&page_size=100');
@@ -374,51 +403,42 @@ function seleccionarRepuesto(item, fila) {
   focusInput(`rpt-cant-${fila.sufijo}`);
 }
 
-// ---------- Cliente / Vehículo (solo creación independiente) ----------
+// ---------- Cliente / Vehículo (mismo patrón que RecepcionEdit) ----------
+function formatPlaca(placa) {
+  if (!placa) return '';
+  const cleaned = String(placa).replace(/-/g, '').toUpperCase();
+  if (cleaned.length <= 3) return cleaned;
+  return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}`;
+}
+
 function selectCliente(cliente) {
   form.cliente = cliente;
+  form.cliente_identificacion = cliente.identificacion || '';
+  form.cliente_telefono = cliente.telefono || '';
+  form.cliente_email = cliente.email || '';
   form.clienteSearch = cliente.nombre || '';
-  form.vehiculo = null;
-  form.vehiculoSearch = '';
-  searchVehiculos();
+  clearVehiculo();
 }
 
 function clearCliente() {
   form.cliente = null;
+  form.cliente_identificacion = '';
+  form.cliente_telefono = '';
+  form.cliente_email = '';
   form.clienteSearch = '';
   clearVehiculo();
 }
 
-async function searchVehiculos() {
-  const term = form.vehiculoSearch.trim();
-  const params = new URLSearchParams({ ordering: 'placa', page: '1' });
-  if (term) params.set('search', term);
-  if (form.cliente?.id) params.set('cliente', String(form.cliente.id));
-  if (!term && !form.cliente?.id) {
-    vehiculoOptions.value = [];
-    showVehiculoDropdown.value = false;
-    return;
-  }
-  try {
-    const data = await request(`/api/vehiculos/?${params.toString()}`);
-    vehiculoOptions.value = Array.isArray(data?.results) ? data.results : [];
-    showVehiculoDropdown.value = true;
-  } catch (error) {
-    vehiculoOptions.value = [];
-  }
-}
-
 function selectVehiculo(vehiculo) {
   form.vehiculo = vehiculo;
-  form.vehiculoSearch = vehiculo.placa || '';
-  showVehiculoDropdown.value = false;
+  form.vehiculo_color = vehiculo.color || '';
+  form.vehiculoSearch = formatPlaca(vehiculo.placa);
 }
 
 function clearVehiculo() {
   form.vehiculo = null;
+  form.vehiculo_color = '';
   form.vehiculoSearch = '';
-  vehiculoOptions.value = [];
-  showVehiculoDropdown.value = false;
 }
 
 function onClientCreated(cliente) {
@@ -431,7 +451,7 @@ function onClientCreated(cliente) {
 // ---------- Carga ----------
 function aplicarCotizacion(data) {
   cotizacion.value = data;
-  estado.value = data.estado || 'BORRADOR';
+  estado.value = data.estado || 'PENDIENTE';
   numeroCotizacion.value = data.numero_cotizacion || '';
   sucursalNombre.value = data.sucursal_nombre || '';
   createdAt.value = data.created_at || '';
@@ -444,12 +464,27 @@ function aplicarCotizacion(data) {
   inspeccionTipo.value = data.inspeccion_tipo || '';
   form.validez_dias = Number(data.validez_dias) || 15;
   form.observaciones = data.observaciones || '';
-  form.cliente = data.cliente ? { id: Number(data.cliente) } : null;
-  form.vehiculo = data.vehiculo ? { id: Number(data.vehiculo) } : null;
-  form.asesor = data.asesor ? { id: Number(data.asesor) } : null;
+  form.cliente = data.cliente
+    ? { id: Number(data.cliente), nombre: data.cliente_nombre || '' }
+    : null;
+  form.vehiculo = data.vehiculo
+    ? {
+        id: Number(data.vehiculo),
+        placa: data.vehiculo_placa || '',
+        marca: data.vehiculo_marca || '',
+        modelo: data.vehiculo_modelo || '',
+        color: data.vehiculo_color || '',
+      }
+    : null;
+  form.asesor = data.asesor ? Number(data.asesor) : null;
   form.clienteSearch = data.cliente_nombre || '';
-  form.vehiculoSearch = data.vehiculo_placa || '';
-  form.asesorSearch = data.asesor_nombre || '';
+  form.vehiculoSearch = formatPlaca(data.vehiculo_placa);
+  form.cliente_identificacion = data.cliente_identificacion || '';
+  form.cliente_telefono = data.cliente_telefono || '';
+  form.cliente_email = data.cliente_email || '';
+  form.vehiculo_color = data.vehiculo_color || '';
+  asesorSeleccionado.value = null;
+  asesorSearch.value = data.asesor_nombre || '';
   servicios.value = (data.servicios || []).map((s) => ({
     id: s.id,
     sufijo: Date.now() + Math.random(),
@@ -717,14 +752,34 @@ async function crearCotizacionIndependiente() {
     const creada = await cotizacionesService.create({
       cliente: form.cliente.id,
       vehiculo: form.vehiculo.id,
+      asesor: form.asesor || null,
       validez_dias: Number(form.validez_dias) || 15,
       observaciones: (form.observaciones || '').trim(),
     });
-    cotizacionId.value = creada && creada.id;
-    isEditModeFlag.value = true;
-    await cargarCotizacion(cotizacionId.value);
-    successMessage.value = `Cotización "${creada.numero_cotizacion}" creada. Agrega los servicios y repuestos.`;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const nuevoId = creada && creada.id;
+    if (!nuevoId) throw new Error('No se pudo crear la cotización. Intenta nuevamente.');
+    cotizacionId.value = nuevoId;
+
+    // Si el usuario ya agregó servicios/repuestos antes de crear, se persisten
+    // antes de redirigir para no perderlos al recargar desde el servidor.
+    const teniaDetalles = servicios.value.length > 0 || repuestos.value.length > 0;
+    let errorDetalles = '';
+    if (teniaDetalles) {
+      try {
+        await guardarDetalles(nuevoId);
+      } catch (error) {
+        errorDetalles = error.message || '';
+      }
+    }
+
+    sessionStorage.setItem(
+      'cotizacion_exito',
+      teniaDetalles
+        ? `Cotización "${creada.numero_cotizacion}" creada correctamente.`
+        : `Cotización "${creada.numero_cotizacion}" creada. Agrega los servicios y repuestos.`
+    );
+    if (errorDetalles) sessionStorage.setItem('cotizacion_error', errorDetalles);
+    window.location.assign(`/crud/cotizaciones/editar/?id=${encodeURIComponent(nuevoId)}`);
   } catch (error) {
     showError(error);
   } finally {
@@ -737,12 +792,27 @@ async function submit() {
   if (!esEditable.value || !cotizacionId.value) return;
   errorMessage.value = '';
   successMessage.value = '';
+  formErrors.value = {};
+
+  const payload = {
+    validez_dias: Number(form.validez_dias) || 15,
+    observaciones: (form.observaciones || '').trim(),
+    asesor: form.asesor || null,
+  };
+
+  if (!bloqueadoClienteVehiculo.value) {
+    if (!validateForm()) {
+      errorMessage.value = 'Completa correctamente los campos de: Información General';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    payload.cliente = form.cliente.id;
+    payload.vehiculo = form.vehiculo.id;
+  }
+
   isSaving.value = true;
   try {
-    await cotizacionesService.update(cotizacionId.value, {
-      validez_dias: Number(form.validez_dias) || 15,
-      observaciones: (form.observaciones || '').trim(),
-    });
+    await cotizacionesService.update(cotizacionId.value, payload);
     await guardarDetalles(cotizacionId.value);
     await cargarCotizacion(cotizacionId.value);
     successMessage.value = 'Cotización actualizada correctamente.';
@@ -769,7 +839,7 @@ watch([
   () => form.validez_dias,
   () => form.observaciones,
 ], () => {
-  if (estado.value === 'BORRADOR') formErrors.value = {};
+  if (estado.value === 'PENDIENTE') formErrors.value = {};
 });
 
 watch(() => form.observaciones, (val) => {
@@ -778,17 +848,19 @@ watch(() => form.observaciones, (val) => {
 });
 
 // ---------- Ciclo de vida ----------
-function cerrarPopups(event) {
-  const target = event.target;
-  if (target && !target.closest('.vehiculo-dropdown')) {
-    showVehiculoDropdown.value = false;
-  }
-}
-
 onMounted(() => {
+  const mensajeExito = sessionStorage.getItem('cotizacion_exito');
+  if (mensajeExito) {
+    successMessage.value = mensajeExito;
+    sessionStorage.removeItem('cotizacion_exito');
+  }
+  const mensajeError = sessionStorage.getItem('cotizacion_error');
+  if (mensajeError) {
+    errorMessage.value = mensajeError;
+    sessionStorage.removeItem('cotizacion_error');
+  }
   loadCatalogo();
   loadEmpleados();
-  document.addEventListener('click', cerrarPopups);
   if (isEditMode && cotizacionId.value) {
     cargarCotizacion(cotizacionId.value);
   } else if (inspeccionId) {
@@ -796,10 +868,6 @@ onMounted(() => {
   } else {
     isLoading.value = false;
   }
-});
-
-onBeforeUnmount(() => {
-  document.removeEventListener('click', cerrarPopups);
 });
 </script>
 
@@ -853,7 +921,7 @@ onBeforeUnmount(() => {
           Marcar rechazada
         </button>
         <button
-          v-if="estado === 'BORRADOR'"
+          v-if="estado === 'PENDIENTE'"
           type="button"
           class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
           @click="abrirModal('ENVIAR')"
@@ -897,57 +965,8 @@ onBeforeUnmount(() => {
       </div>
 
       <template v-else>
-        <!-- Cierre: datos de cliente y vehículo (solo cotización independiente en borrador) -->
-        <div v-if="!isEditModeFlag && !inspeccionOrigen" class="mb-6 p-5 bg-gray-50 rounded-lg border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 dark:text-white">Datos del cliente y vehículo</h3>
-          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div class="relative cliente-dropdown">
-              <label for="cliente" class="block text-sm font-medium text-gray-900 mb-1 dark:text-white">Cliente *</label>
-              <ClienteSearchSelect
-                id="cliente"
-                v-model="form.clienteSearch"
-                placeholder="Buscar por nombre, cédula o teléfono"
-                :error="Boolean(formErrors.cliente)"
-                :error-message="formErrors.cliente"
-                @select="selectCliente"
-                @clear="clearCliente"
-                @create="showClientCreateModal = true"
-              />
-              <button v-if="form.cliente" type="button" class="mt-2 text-sm text-red-600 hover:underline dark:text-red-400" @click="clearCliente">Quitar cliente</button>
-              <button type="button" class="mt-2 ml-3 text-sm text-primary-blue-700 hover:underline dark:text-primary-blue-300" @click="showClientCreateModal = true">Crear cliente</button>
-            </div>
-
-            <div class="relative vehiculo-dropdown">
-              <label for="vehiculo" class="block text-sm font-medium text-gray-900 mb-1 dark:text-white">Vehículo *</label>
-              <input
-                id="vehiculo"
-                v-model="form.vehiculoSearch"
-                type="text"
-                placeholder="Buscar por placa o marca"
-                class="block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
-                @input="searchVehiculos"
-                @focus="searchVehiculos"
-              >
-              <ul v-if="showVehiculoDropdown && vehiculoOptions.length" class="absolute z-20 w-full mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
-                <li v-for="vehiculo in vehiculoOptions" :key="vehiculo.id">
-                  <button
-                    type="button"
-                    class="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600"
-                    @click="selectVehiculo(vehiculo)"
-                  >
-                    <span class="font-medium block">{{ vehiculo.placa }}</span>
-                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ vehiculo.marca }} {{ vehiculo.modelo }} · {{ vehiculo.color }}</span>
-                  </button>
-                </li>
-              </ul>
-              <button v-if="form.vehiculo" type="button" class="mt-2 text-sm text-red-600 hover:underline dark:text-red-400" @click="clearVehiculo">Quitar vehículo</button>
-              <p v-if="formErrors.vehiculo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.vehiculo }}</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Información General (estilo InspeccionEdit) -->
-        <div v-if="isEditModeFlag && cotizacion" class="mb-6">
+        <!-- Información General: cliente / vehículo / asesor -->
+        <div class="mb-6">
           <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">
             <div class="flex items-center gap-2 mb-4">
               <FileText class="w-5 h-5 text-gray-900 dark:text-white" />
@@ -957,156 +976,97 @@ onBeforeUnmount(() => {
             <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_0.7fr_1fr]">
               <!-- Cliente -->
               <div class="min-w-0">
-                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente</label>
-                <div class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                  {{ cotizacion.cliente_nombre || '—' }}
-                </div>
+                <label for="cliente" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                  Cliente <span v-if="!bloqueadoClienteVehiculo" class="text-accent-500">*</span>
+                </label>
+                <ClienteSearchSelect
+                  id="cliente"
+                  v-model="form.clienteSearch"
+                  placeholder="Buscar por nombre, cédula o teléfono"
+                  :error="Boolean(formErrors.cliente)"
+                  :error-message="formErrors.cliente"
+                  :show-create="!bloqueadoClienteVehiculo"
+                  :disabled="bloqueadoClienteVehiculo"
+                  @select="selectCliente"
+                  @clear="clearCliente"
+                  @create="showClientCreateModal = true"
+                />
                 <div class="mt-3 space-y-1.5">
                   <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
                     <IdCardIcon class="w-3.5 h-3.5 shrink-0" /> Identificación:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.cliente_identificacion || '—' }}</span>
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ form.cliente_identificacion || '—' }}</span>
                   </div>
                   <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
                     <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.cliente_telefono || '—' }}</span>
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ form.cliente_telefono || '—' }}</span>
                   </div>
                   <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
                     <Mail class="w-3.5 h-3.5 shrink-0" /> Correo:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.cliente_email || '—' }}</span>
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ form.cliente_email || '—' }}</span>
                   </div>
                 </div>
               </div>
 
               <!-- Vehículo -->
               <div class="relative min-w-0">
-                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo</label>
-                <div class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                  {{ cotizacion.vehiculo_placa || '—' }}
-                </div>
+                <label for="vehiculo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                  Vehículo <span v-if="!bloqueadoClienteVehiculo" class="text-accent-500">*</span>
+                </label>
+                <VehiculoSearchSelect
+                  id="vehiculo"
+                  v-model="form.vehiculoSearch"
+                  :cliente-id="form.cliente?.id || null"
+                  :disabled="bloqueadoClienteVehiculo || !form.cliente"
+                  :placeholder="form.cliente ? 'Buscar placa...' : 'Selecciona un cliente primero'"
+                  :error="Boolean(formErrors.vehiculo)"
+                  :error-message="formErrors.vehiculo"
+                  class="relative"
+                  @select="selectVehiculo"
+                  @clear="clearVehiculo"
+                />
                 <div class="mt-3 space-y-1.5">
                   <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
                     <TagIcon class="w-3.5 h-3.5 shrink-0" /> Marca:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_marca || '—' }}</span>
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ form.vehiculo?.marca || '—' }}</span>
                   </div>
                   <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
                     <Shapes class="w-3.5 h-3.5 shrink-0" /> Modelo:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_modelo || '—' }}</span>
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ form.vehiculo?.modelo || '—' }}</span>
                   </div>
                   <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
                     <PaintBucket class="w-3.5 h-3.5 shrink-0" /> Color:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_color || '—' }}</span>
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ form.vehiculo_color || '—' }}</span>
                   </div>
                 </div>
               </div>
 
               <!-- Asesor (reemplaza Inspector) -->
               <div class="min-w-0">
-                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Asesor</label>
-                <div class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                  {{ cotizacion.asesor_nombre || '—' }}
+                <label for="asesor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Asesor</label>
+                <EmpleadoSearchSelect
+                  v-if="esEditable"
+                  id="asesor"
+                  v-model="asesorSearch"
+                  placeholder="Buscar asesor..."
+                  @select="selectAsesor"
+                  @clear="clearAsesor"
+                />
+                <div v-else class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                  {{ asesorSearch || cotizacion?.asesor_nombre || '—' }}
                 </div>
                 <div class="mt-3 space-y-1.5">
                   <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
                     <IdCardIcon class="w-3.5 h-3.5 shrink-0" /> Identificación:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.asesor_identificacion || '—' }}</span>
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ asesorDetalles?.identificacion || '—' }}</span>
                   </div>
                   <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
                     <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.asesor_telefono || '—' }}</span>
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ asesorDetalles?.telefono || '—' }}</span>
                   </div>
                   <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
                     <Mail class="w-3.5 h-3.5 shrink-0" /> Correo:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.asesor_email || '—' }}</span>
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ asesorDetalles?.email || '—' }}</span>
                   </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Resumen de Cotización (estilo CotizacionDetail con icono $) -->
-          <div class="mt-4 p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
-            <div class="flex items-center gap-2 mb-4">
-              <CircleDollarSign class="w-5 h-5 text-gray-900 dark:text-white" />
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Resumen de Cotización</h3>
-            </div>
-            <div class="p-5 space-y-2 text-sm rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-700/40 dark:border-gray-600/60">
-              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                <span>Subtotal servicios</span>
-                <span class="font-medium tabular-nums">$ {{ formatMoney(subtotalServicios) }}</span>
-              </div>
-              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                <span>Subtotal repuestos / materiales</span>
-                <span class="font-medium tabular-nums">$ {{ formatMoney(subtotalRepuestos) }}</span>
-              </div>
-              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                <span>Subtotal neto</span>
-                <span class="font-medium tabular-nums">$ {{ formatMoney(subtotal) }}</span>
-              </div>
-              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                <span>Descuento total</span>
-                <span class="font-medium tabular-nums text-accent-600 dark:text-accent-400">$ {{ formatMoney(descuentoTotal) }}</span>
-              </div>
-              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                <span>Subtotal base 0%</span>
-                <span class="font-medium tabular-nums">$ {{ formatMoney(subtotalBase0) }}</span>
-              </div>
-              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                <span>Subtotal base gravada</span>
-                <span class="font-medium tabular-nums">$ {{ formatMoney(subtotalBaseGravada) }}</span>
-              </div>
-              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                <span>IVA total</span>
-                <span class="font-medium tabular-nums">$ {{ formatMoney(totalIva) }}</span>
-              </div>
-              <div class="flex items-center justify-between pt-3 mt-3 text-base font-bold border-t border-gray-200 text-gray-900 dark:border-gray-600 dark:text-white">
-                <span>Total</span>
-                <span class="tabular-nums">$ {{ formatMoney(total) }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Datos y foto del vehículo (debajo del resumen) -->
-          <div class="mt-4 p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
-            <div class="flex items-center gap-2 mb-4">
-              <Car class="w-5 h-5 text-gray-900 dark:text-white" />
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Datos del Vehículo</h3>
-            </div>
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 p-5 rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-700/40 dark:border-gray-600/60">
-              <div class="lg:col-span-3">
-                <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Placa</dt>
-                    <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_placa || '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Marca</dt>
-                    <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_marca || '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Modelo</dt>
-                    <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_modelo || '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Color</dt>
-                    <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ cotizacion.vehiculo_color || '—' }}</dd>
-                  </div>
-                  <div class="lg:col-span-4">
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Kilometraje</dt>
-                    <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.kilometraje_actual ? cotizacion.kilometraje_actual.toLocaleString('es-EC') + ' km' : '—' }}</dd>
-                  </div>
-                </dl>
-              </div>
-              <div class="w-full shrink-0 lg:w-36">
-                <button
-                  v-if="cotizacion.vehiculo_imagen"
-                  type="button"
-                  title="Ver foto del vehículo"
-                  class="block w-full overflow-hidden rounded-lg border border-gray-200 cursor-zoom-in dark:border-gray-600"
-                  @click="abrirFoto(cotizacion.vehiculo_imagen)">
-                  <img :src="cotizacion.vehiculo_imagen" alt="Foto del vehículo" class="h-28 w-full object-cover" />
-                </button>
-                <div v-else class="flex h-28 w-full items-center justify-center rounded-lg border border-dashed border-gray-300 text-xs text-gray-500 dark:border-gray-600 dark:text-gray-400">
-                  Sin foto
                 </div>
               </div>
             </div>

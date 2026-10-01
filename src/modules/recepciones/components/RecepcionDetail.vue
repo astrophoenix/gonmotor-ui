@@ -214,7 +214,7 @@ const pasosFlujo = computed(() => {
     },
     {
       entidad: 'cotizacion',
-      estado: cotizacion?.estado || (cotizacion ? 'BORRADOR' : null),
+      estado: cotizacion?.estado || (cotizacion ? 'PENDIENTE' : null),
       estadoDisplay: cotizacion?.estado_display,
       id: cotizacion?.id,
       numero: cotizacion?.numero_cotizacion,

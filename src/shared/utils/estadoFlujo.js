@@ -10,7 +10,7 @@ const ESTADOS_DISPLAY = {
     FINALIZADA: 'Finalizada',
   },
   cotizacion: {
-    BORRADOR: 'Borrador',
+    PENDIENTE: 'Pendiente',
     ENVIADA: 'Enviada al cliente',
     ACEPTADA: 'Aceptada',
     RECHAZADA: 'Rechazada',

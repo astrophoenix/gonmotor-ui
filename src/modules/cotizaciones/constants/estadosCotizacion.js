@@ -7,7 +7,7 @@ import { estadoADisplay } from '../../../shared/utils/estadoFlujo';
  * través de `EstadoCotizacionBadge.vue`.
  */
 export const ESTADOS_COTIZACION = {
-  BORRADOR: { icon: FileText, color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
+  PENDIENTE: { icon: FileText, color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
   ENVIADA: { icon: Send, color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200' },
   ACEPTADA: { icon: CheckCircle2, color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200' },
   RECHAZADA: { icon: XCircle, color: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200' },
@@ -16,15 +16,15 @@ export const ESTADOS_COTIZACION = {
 };
 
 /** Estados ofrecidos en los filtros. */
-export const ESTADOS_COTIZACION_FILTRABLE = ['BORRADOR', 'ENVIADA', 'ACEPTADA', 'RECHAZADA', 'VENCIDA', 'CONVERTIDA'];
+export const ESTADOS_COTIZACION_FILTRABLE = ['PENDIENTE', 'ENVIADA', 'ACEPTADA', 'RECHAZADA', 'VENCIDA', 'CONVERTIDA'];
 
 /**
- * @param {string} estado         Estado crudo (BORRADOR | ENVIADA | ...).
+ * @param {string} estado         Estado crudo (PENDIENTE | ENVIADA | ...).
  * @param {string} [estadoDisplay] `estado_display` del backend; si falta se usa
  *                                 el label de `estadoFlujo.js`.
  */
 export function getEstadoCotizacion(estado, estadoDisplay) {
-  const actual = estado || 'BORRADOR';
-  const config = ESTADOS_COTIZACION[actual] || ESTADOS_COTIZACION.BORRADOR;
+  const actual = estado || 'PENDIENTE';
+  const config = ESTADOS_COTIZACION[actual] || ESTADOS_COTIZACION.PENDIENTE;
   return { ...config, label: estadoDisplay || estadoADisplay('cotizacion', actual) };
 }

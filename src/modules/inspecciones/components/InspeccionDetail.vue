@@ -156,7 +156,7 @@ const estaFinalizada = computed(() => inspeccion.value?.estado === 'FINALIZADA')
 const pasosFlujo = computed(() => {
   const ins = inspeccion.value || {};
   const recepcion = ins.recepcion || null;
-  const estadoCotizacion = ins.cotizacion_estado || (ins.tiene_cotizacion_activa ? 'BORRADOR' : null);
+  const estadoCotizacion = ins.cotizacion_estado || (ins.tiene_cotizacion_activa ? 'PENDIENTE' : null);
   return buildPasosFlujo([
     {
       entidad: 'recepcion',

@@ -25,7 +25,7 @@ defineProps({
   },
   previewable: {
     type: Boolean,
-    default: false,
+    default: true,
   },
   imgAlt: {
     type: String,
