@@ -20,6 +20,7 @@ const emit = defineEmits(['update:modelValue', 'select']);
 const abierto = ref(false);
 const sel = ref(0);
 const rootRef = ref(null);
+const estiloDropdown = ref({});
 
 const sugerencias = computed(() => {
   const term = (props.modelValue || '').trim().toLowerCase();
@@ -40,13 +41,51 @@ function selValido() {
   return Math.min(Math.max(0, sel.value || 0), Math.max(sugerencias.value.length - 1, 0));
 }
 
+function posicionar() {
+  const input = rootRef.value ? rootRef.value.querySelector('input') : null;
+  if (!input) return;
+  const r = input.getBoundingClientRect();
+  const ALTO_MAX = 208;
+  const espacioAbajo = window.innerHeight - r.bottom;
+  const espacioArriba = r.top;
+  const arriba = espacioAbajo < ALTO_MAX && espacioArriba > espacioAbajo;
+  estiloDropdown.value = arriba
+    ? { position: 'fixed', left: `${r.left}px`, width: `${r.width}px`, top: 'auto', bottom: `${window.innerHeight - r.top + 4}px`, zIndex: 50 }
+    : { position: 'fixed', left: `${r.left}px`, width: `${r.width}px`, top: `${r.bottom + 4}px`, bottom: 'auto', zIndex: 50 };
+}
+
+function reposicionar() {
+  const input = rootRef.value ? rootRef.value.querySelector('input') : null;
+  if (!input) return;
+  const r = input.getBoundingClientRect();
+  if (r.bottom < 0 || r.top > window.innerHeight) {
+    cerrar();
+    return;
+  }
+  posicionar();
+}
+
+function agregarListeners() {
+  window.addEventListener('scroll', reposicionar, true);
+  window.addEventListener('resize', reposicionar);
+}
+
+function quitarListeners() {
+  window.removeEventListener('scroll', reposicionar, true);
+  window.removeEventListener('resize', reposicionar);
+}
+
 function abrir() {
   sel.value = 0;
+  posicionar();
   abierto.value = true;
+  agregarListeners();
 }
 
 function cerrar() {
+  if (!abierto.value) return;
   abierto.value = false;
+  quitarListeners();
 }
 
 function onInput(event) {
@@ -91,14 +130,14 @@ function onKeydown(event) {
 
 function onBlur() {
   setTimeout(() => {
-    abierto.value = false;
+    cerrar();
   }, 120);
 }
 
 function handleOutsideClick(event) {
   const root = rootRef.value;
   if (root && !root.contains(event.target)) {
-    abierto.value = false;
+    cerrar();
   }
 }
 
@@ -107,6 +146,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  quitarListeners();
   document.removeEventListener('click', handleOutsideClick);
 });
 </script>
@@ -122,7 +162,7 @@ onBeforeUnmount(() => {
       :maxlength="maxLength"
       :aria-invalid="error"
       :class="[
-        'w-full p-2 text-sm rounded-lg',
+        'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body',
         error
           ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500'
           : 'bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white',
@@ -136,7 +176,8 @@ onBeforeUnmount(() => {
     <p v-if="error && errorMessage" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ errorMessage }}</p>
     <ul
       v-if="abierto && !disabled && sugerencias.length"
-      class="absolute left-0 right-0 z-50 mt-1 max-h-52 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl dark:bg-gray-700 dark:border-gray-600"
+      :style="estiloDropdown"
+      class="max-h-52 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl dark:bg-gray-700 dark:border-gray-600"
     >
       <li v-for="(item, index) in sugerencias" :key="item.id">
         <button
@@ -154,7 +195,8 @@ onBeforeUnmount(() => {
     </ul>
     <div
       v-else-if="abierto && !disabled"
-      class="absolute left-0 right-0 z-50 mt-1 px-4 py-3 text-sm text-gray-500 bg-white border border-gray-200 rounded-lg shadow-xl dark:text-gray-400 dark:bg-gray-700 dark:border-gray-600"
+      :style="estiloDropdown"
+      class="px-4 py-3 text-sm text-gray-500 bg-white border border-gray-200 rounded-lg shadow-xl dark:text-gray-400 dark:bg-gray-700 dark:border-gray-600"
     >
       {{ mensajeSinResultados }}
     </div>

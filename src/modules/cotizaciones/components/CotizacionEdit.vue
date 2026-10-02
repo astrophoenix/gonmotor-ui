@@ -19,10 +19,17 @@ import {
   Shapes,
   PaintBucket,
   Trash2,
+  CalendarDays,
+  ClipboardList,
+  Store,
+  UserCheck,
+  ArrowLeftRight,
 } from 'lucide-vue-next';
+import { IconBrandWhatsapp } from '@tabler/icons-vue';
 import { request } from '../../../shared/services/httpClient';
+import { formatDateTime } from '../../../shared/utils/datetime';
 import { cotizacionesService } from '../services/cotizacionesService';
-import { sanitizeObservaciones } from '../../../shared/utils/sanitize';
+import { sanitizeObservaciones, normalizarDecimal } from '../../../shared/utils/sanitize';
 import {
   IVA_DEFECTO,
   IVA_OPCIONES,
@@ -32,15 +39,18 @@ import {
   round2,
 } from '../../../shared/utils/impuestos';
 import Alert from '../../../shared/components/Alert.vue';
+import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TextImprover from '../../../shared/components/TextImprover.vue';
 import FlowSteps from '../../../shared/components/FlowSteps.vue';
 import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 import ClientModal from '../../clientes/components/ClientModal.vue';
+import { useAuthStore } from '../../auth/stores/authStore';
 import ClienteSearchSelect from '../../../shared/components/ClienteSearchSelect.vue';
 import VehiculoSearchSelect from '../../../shared/components/VehiculoSearchSelect.vue';
 import EmpleadoSearchSelect from '../../../shared/components/EmpleadoSearchSelect.vue';
 import CatalogoSelect from '../../../shared/components/CatalogoSelect.vue';
+import EstadoCotizacionBadge from './EstadoCotizacionBadge.vue';
 
 const urlParams = new URLSearchParams(window.location.search);
 const cotizacionParamId = urlParams.get('id');
@@ -48,15 +58,6 @@ const inspeccionParamId = urlParams.get('inspeccion');
 
 const isEditMode = Boolean(cotizacionParamId);
 const inspeccionId = inspeccionParamId ? Number(inspeccionParamId) : null;
-
-const ESTADOS = {
-  PENDIENTE: { label: 'Pendiente', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
-  ENVIADA: { label: 'Enviada al cliente', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
-  ACEPTADA: { label: 'Aceptada', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' },
-  RECHAZADA: { label: 'Rechazada', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' },
-  VENCIDA: { label: 'Vencida', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' },
-  CONVERTIDA: { label: 'Convertida a orden', color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300' },
-};
 
 const VALIDEZ_OPCIONES = [7, 15, 30, 60];
 const METODOS_ACEPTACION = [
@@ -83,11 +84,16 @@ const fechaAceptacion = ref(null);
 const metodoAceptacion = ref('');
 const inspeccionOrigen = ref(null);
 const recepcionOrigen = ref(null);
+const inspeccionNumero = ref('');
+const recepcionNumero = ref('');
 const ordenTrabajoNumero = ref('');
 const ordenGeneradaNumero = ref('');
 const inspeccionTipo = ref('');
 const previewImg = ref('');
 const showImageModal = ref(false);
+
+const mostrarModalGenerarOrden = ref(false);
+const procesandoGeneracionOrden = ref(false);
 
 const cotizacion = ref(null);
 
@@ -130,7 +136,12 @@ const modal = reactive({
 });
 
 const esEditable = computed(() => ['PENDIENTE', 'ENVIADA'].includes(estado.value));
-const estadoInfo = computed(() => ESTADOS[estado.value] || ESTADOS.PENDIENTE);
+
+const authStore = useAuthStore();
+const tallerSesion = computed(() => authStore.user?.taller_nombre || '');
+
+// Emisión: si la cotización aún no existe se calcula con la fecha/hora actual local.
+const fechaEmision = computed(() => formatDateTime(createdAt.value || new Date()));
 
 // Cliente y vehículo quedan bloqueados cuando la cotización proviene de una
 // inspección (datos precargados) o cuando ya no es editable (PENDIENTE /
@@ -138,6 +149,17 @@ const estadoInfo = computed(() => ESTADOS[estado.value] || ESTADOS.PENDIENTE);
 const bloqueadoClienteVehiculo = computed(
   () => Boolean(inspeccionOrigen.value) || !esEditable.value
 );
+
+const metodoAceptacionLabel = computed(() => {
+  const metodo = metodoAceptacion.value;
+  if (!metodo) return '';
+  return (METODOS_ACEPTACION.find((m) => m.value === metodo) || {}).label || metodo;
+});
+
+const iconoMetodoAceptacion = computed(() => {
+  const iconos = { WHATSAPP: IconBrandWhatsapp, EMAIL: Mail, TELEFONO: Phone, PRESENCIAL: UserCheck };
+  return iconos[metodoAceptacion.value] || UserCheck;
+});
 
 const pasosFlujo = computed(() => {
   const cot = cotizacion.value || {};
@@ -231,10 +253,18 @@ function formatMoney(value) {
   return Number(value || 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function formatDate(dateString) {
-  if (!dateString) return '-';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+// Fecha y hora en formato 12 h local: '01/10/2026, 10:23 p. m.'
+function formatFechaHora12(value) {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleString('es-EC', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
 }
 
 function abrirFoto(url) {
@@ -459,6 +489,8 @@ function aplicarCotizacion(data) {
   metodoAceptacion.value = data.metodo_aceptacion || '';
   inspeccionOrigen.value = data.inspeccion_origen ? Number(data.inspeccion_origen) : null;
   recepcionOrigen.value = data.recepcion_origen ? Number(data.recepcion_origen) : null;
+  inspeccionNumero.value = data.inspeccion_numero || '';
+  recepcionNumero.value = data.recepcion_numero || '';
   ordenTrabajoNumero.value = data.orden_trabajo_numero || '';
   ordenGeneradaNumero.value = data.orden_generada_numero || '';
   inspeccionTipo.value = data.inspeccion_tipo || '';
@@ -546,7 +578,9 @@ async function crearCotizacionDesdeInspeccion() {
       inspeccion_origen: inspeccionId,
       recepcion_origen: data.recepcion?.id || null,
       validez_dias: 15,
-      observaciones: data.recepcion?.motivo_ingreso ? `Motivo de ingreso: ${data.recepcion.motivo_ingreso}` : '',
+      observaciones: sanitizeObservaciones(
+        data.recepcion?.motivo_ingreso ? `Motivo de ingreso: ${data.recepcion.motivo_ingreso}` : ''
+      ).slice(0, 2000),
     });
     cotizacionId.value = creada && creada.id;
     isEditModeFlag.value = true;
@@ -615,11 +649,11 @@ async function guardarDetalles(idCotizacion) {
 
   async function guardarServicio(s) {
     const payload = {
-      codigo: s.codigo || '',
-      descripcion: s.descripcion || '',
-      horas_estimadas: String(s.horas_estimadas ?? '1.00'),
-      precio_unitario: String(s.precio_unitario ?? '0.00'),
-      descuento: String(s.descuento ?? '0.00'),
+      codigo: String(s.codigo || '').slice(0, 50),
+      descripcion: sanitizeObservaciones(String(s.descripcion || '')).slice(0, 255) || '',
+      horas_estimadas: normalizarDecimal(s.horas_estimadas, 0, 999.99, '1.00'),
+      precio_unitario: normalizarDecimal(s.precio_unitario, 0, 99999999.99, '0.00'),
+      descuento: normalizarDecimal(s.descuento, 0, 99999999.99, '0.00'),
       iva_porcentaje: normalizarIva(s.iva_porcentaje),
       es_opcional: Boolean(s.es_opcional),
     };
@@ -637,11 +671,11 @@ async function guardarDetalles(idCotizacion) {
 
   async function guardarRepuesto(r) {
     const payload = {
-      codigo_repuesto: r.codigo_repuesto || '',
-      descripcion: r.descripcion || '',
-      cantidad: String(r.cantidad ?? '1'),
-      precio_unitario_referencial: String(r.precio_unitario_referencial ?? '0.00'),
-      descuento: String(r.descuento ?? '0.00'),
+      codigo_repuesto: String(r.codigo_repuesto || '').slice(0, 50),
+      descripcion: sanitizeObservaciones(String(r.descripcion || '')).slice(0, 255) || '',
+      cantidad: String(Math.max(1, Math.round(Number(r.cantidad) || 1))),
+      precio_unitario_referencial: normalizarDecimal(r.precio_unitario_referencial, 0, 99999999.99, '0.00'),
+      descuento: normalizarDecimal(r.descuento, 0, 99999999.99, '0.00'),
       iva_porcentaje: normalizarIva(r.iva_porcentaje),
       es_opcional: Boolean(r.es_opcional),
     };
@@ -728,6 +762,25 @@ async function confirmarModal() {
   }
 }
 
+async function confirmarGenerarOrden() {
+  if (!cotizacionId.value || !cotizacion.value || procesandoGeneracionOrden.value) return;
+  procesandoGeneracionOrden.value = true;
+  errorMessage.value = '';
+  try {
+    const resultado = await cotizacionesService.generarOrden(cotizacionId.value, {
+      metodo_aceptacion: metodoAceptacion.value || 'PRESENCIAL',
+    });
+    mostrarModalGenerarOrden.value = false;
+    successMessage.value = `Orden de trabajo N° ${resultado.numero_orden} generada correctamente.`;
+    await cargarCotizacion(cotizacionId.value);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (error) {
+    showError(error);
+  } finally {
+    procesandoGeneracionOrden.value = false;
+  }
+}
+
 // ---------- Creación independiente ----------
 function validateForm() {
   formErrors.value = {};
@@ -754,7 +807,7 @@ async function crearCotizacionIndependiente() {
       vehiculo: form.vehiculo.id,
       asesor: form.asesor || null,
       validez_dias: Number(form.validez_dias) || 15,
-      observaciones: (form.observaciones || '').trim(),
+      observaciones: sanitizeObservaciones(form.observaciones || '').slice(0, 2000).trim(),
     });
     const nuevoId = creada && creada.id;
     if (!nuevoId) throw new Error('No se pudo crear la cotización. Intenta nuevamente.');
@@ -796,7 +849,7 @@ async function submit() {
 
   const payload = {
     validez_dias: Number(form.validez_dias) || 15,
-    observaciones: (form.observaciones || '').trim(),
+    observaciones: sanitizeObservaciones(form.observaciones || '').slice(0, 2000).trim(),
     asesor: form.asesor || null,
   };
 
@@ -890,9 +943,7 @@ onMounted(() => {
           {{ isEditModeFlag ? (numeroCotizacion ? `Cotización ${numeroCotizacion}` : 'Cotización') : 'Nueva Cotización' }}
         </h1>
       </div>
-      <span :class="['inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium', estadoInfo.color]">
-        {{ estadoInfo.label }}
-      </span>
+      <EstadoCotizacionBadge :estado="estado" size="lg" />
       <div class="flex items-center ml-auto gap-2 flex-wrap">
         <template v-if="isEditModeFlag && cotizacionId">
         <FormSaveActions
@@ -900,21 +951,19 @@ onMounted(() => {
           :is-loading="isSaving"
           :is-edit-mode="isEditModeFlag"
           cancel-href="/crud/cotizaciones/"
-          :on-submit="submit"
-        />
+          :on-submit="submit"/>
         <button
           v-if="estado === 'ENVIADA'"
           type="button"
-          class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
-          @click="abrirModal('ACEPTAR')"
-        >
+          class="inline-flex items-center px-5 py-2.5 text-sm font-medium font-semibold text-white rounded-base bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
+          @click="abrirModal('ACEPTAR')">
           <CheckCircle2 class="w-4 h-4 mr-2" />
           Marcar aceptada
         </button>
         <button
           v-if="estado === 'ENVIADA'"
           type="button"
-          class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-red-600 hover:bg-red-700 focus:ring-4 focus:ring-red-300 dark:bg-red-700 dark:hover:bg-red-800"
+          class="inline-flex items-center px-5 py-2.5 text-sm font-medium font-semibold text-white rounded-base bg-red-600 hover:bg-red-700 focus:ring-4 focus:ring-red-300 dark:bg-red-700 dark:hover:bg-red-800"
           @click="abrirModal('RECHAZAR')"
         >
           <X class="w-4 h-4 mr-2" />
@@ -923,20 +972,29 @@ onMounted(() => {
         <button
           v-if="estado === 'PENDIENTE'"
           type="button"
-          class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
+          class="inline-flex items-center px-5 py-2.5 text-sm font-medium font-semibold text-white rounded-base bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
           @click="abrirModal('ENVIAR')"
         >
           <Send class="w-4 h-4 mr-2" />
-          Enviar al cliente
+          Enviar Cliente
         </button>
         <button
           v-if="estado === 'RECHAZADA'"
           type="button"
-          class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 dark:bg-primary-700 dark:hover:bg-primary-800"
+          class="inline-flex items-center px-5 py-2.5 text-sm font-medium font-semibold text-white rounded-base bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 dark:bg-primary-700 dark:hover:bg-primary-800"
           @click="abrirModal('REENVIAR')"
         >
           <Send class="w-4 h-4 mr-2" />
           Reenviar al cliente
+        </button>
+        <button
+          v-if="estado === 'ACEPTADA'"
+          type="button"
+          class="inline-flex items-center px-5 py-2.5 text-sm font-medium font-semibold text-white rounded-base bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
+          @click="mostrarModalGenerarOrden = true"
+        >
+          <ArrowLeftRight class="w-4 h-4 mr-2" />
+          Generar orden de trabajo
         </button>
         </template>
         <FormSaveActions
@@ -970,7 +1028,7 @@ onMounted(() => {
           <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">
             <div class="flex items-center gap-2 mb-4">
               <FileText class="w-5 h-5 text-gray-900 dark:text-white" />
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Información General</h3>
+              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Información General</h2>
             </div>
 
             <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_0.7fr_1fr]">
@@ -1042,7 +1100,9 @@ onMounted(() => {
 
               <!-- Asesor (reemplaza Inspector) -->
               <div class="min-w-0">
-                <label for="asesor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Asesor</label>
+                <label for="asesor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                  Asesor <span class="text-accent-500">*</span>
+                </label>
                 <EmpleadoSearchSelect
                   v-if="esEditable"
                   id="asesor"
@@ -1070,13 +1130,52 @@ onMounted(() => {
                 </div>
               </div>
             </div>
+            <!-- Metadatos de la cotización (siempre visibles) -->
+            <div class="flex flex-wrap items-center gap-x-6 gap-y-2 pt-4 mt-4 text-sm text-gray-600 border-t border-gray-200 dark:border-gray-600 dark:text-gray-300">
+              <span class="inline-flex items-center gap-1.5" title="Fecha y hora de emisión">
+                <CalendarDays class="w-4 h-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                <span class="font-medium text-gray-900 dark:text-white">Emisión:</span>
+                {{ fechaEmision }}
+              </span>
+              <span class="inline-flex items-center gap-1.5 md:border-l md:border-gray-200 md:pl-6 md:dark:border-gray-600" title="Taller donde se creó la cotización">
+                <Store class="w-4 h-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                <span class="font-medium text-gray-900 dark:text-white">Taller:</span>
+                {{ sucursalNombre || tallerSesion || '—' }}
+              </span>
+              <span class="inline-flex items-center gap-1.5 md:border-l md:border-gray-200 md:pl-6 md:dark:border-gray-600" title="Origen de la cotización">
+                <ClipboardList class="w-4 h-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                <span class="font-medium text-gray-900 dark:text-white">Origen:</span>
+                <template v-if="inspeccionOrigen">
+                  <a
+                    :href="`/crud/inspecciones/editar/?id=${encodeURIComponent(inspeccionOrigen)}`"
+                    class="font-medium text-primary-blue-700 hover:underline dark:text-primary-blue-400">Cod Inspección {{ inspeccionNumero || `#${inspeccionOrigen}` }}</a>
+                  <span v-if="recepcionOrigen" class="font-medium text-primary-blue-700 dark:text-primary-blue-400">
+                    / Recepción {{ recepcionNumero || `#${recepcionOrigen}` }}
+                  </span>
+                </template>
+                <span v-else-if="recepcionOrigen" class="font-medium text-primary-blue-700 hover:underline dark:text-primary-blue-400">
+                  Recepción {{ recepcionNumero || `#${recepcionOrigen}` }}
+                </span>
+                <span v-else>Independiente</span>
+              </span>
+              <span
+                v-if="fechaAceptacion"
+                class="inline-flex items-center gap-1.5 md:border-l md:border-gray-200 md:pl-6 md:dark:border-gray-600"
+                title="Aceptación de la cotización por parte del cliente">
+                <CheckCircle2 class="w-4 h-4 shrink-0 text-green-600 dark:text-green-400" />
+                <span class="font-medium text-gray-900 dark:text-white">Aceptada el:</span>
+                {{ formatFechaHora12(fechaAceptacion) }} -
+                <component :is="iconoMetodoAceptacion" class="w-4 h-4 shrink-0 text-green-600 dark:text-green-400" />
+                {{ metodoAceptacionLabel || '—' }}
+              </span>
+            </div>
           </div>
         </div>
 
         <fieldset :disabled="!esEditable" class="grid grid-cols-1 gap-8">
           <div>
             <label for="validez_dias" class="block text-sm font-medium text-gray-900 dark:text-white">Validez de la oferta (días)</label>
-            <select id="validez_dias" v-model="form.validez_dias" class="mt-1 block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+            <select id="validez_dias" v-model="form.validez_dias" class="mt-1 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body">
               <option v-for="dias in VALIDEZ_OPCIONES" :key="dias" :value="dias">{{ dias }} días</option>
             </select>
           </div>
@@ -1103,10 +1202,10 @@ onMounted(() => {
               </nav>
             </div>
 
-            <div class="p-4 space-y-6">
+            <div class="p-4 space-y-1">
               <!-- Servicios -->
               <div v-show="activeTab === 'servicios'" class="col-span-1">
-                <div class="relative overflow-x-visible bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+                <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
                   <table class="w-full text-sm text-left text-gray-900 dark:text-white">
                     <thead class="text-xs uppercase bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
                       <tr>
@@ -1134,24 +1233,24 @@ onMounted(() => {
                               placeholder="Busca y selecciona..."
                               :disabled="!esEditable"
                               mensaje-sin-resultados="Sin coincidencias. Puedes escribir un servicio libre."
-                              @select="(item) => seleccionarServicio(item, servicio)"
-                            />
+                              @select="(item) => seleccionarServicio(item, servicio)"/>
                           </div>
                         </td>
                         <td class="px-4 py-2.5 text-center">
                           <input v-model="servicio.es_opcional" type="checkbox" class="w-4 h-4 text-primary-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-blue-500 focus:ring-2" :disabled="!esEditable" />
                         </td>
                         <td class="px-4 py-2.5">
-                          <input :id="`svc-horas-${servicio.sufijo}`" v-model="servicio.horas_estimadas" type="number" min="0" step="0.5" class="text-center w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" :disabled="!esEditable" />
+                          <input :id="`svc-horas-${servicio.sufijo}`" v-model="servicio.horas_estimadas" type="number" min="0" step="0.5" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
                         </td>
                         <td class="px-4 py-2.5 text-center">
-                          <input v-model="servicio.precio_unitario" type="number" min="0" step="0.01" class="text-center w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" :disabled="!esEditable" />
+                          <input v-model="servicio.precio_unitario" type="number" min="0" step="0.01" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
                         </td>
                         <td class="px-4 py-2.5 text-center">
-                          <input v-model="servicio.descuento" type="number" min="0" step="0.01" class="text-center w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" :disabled="!esEditable" />
+                          <input v-model="servicio.descuento" type="number" min="0" step="0.01" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
                         </td>
                         <td class="px-4 py-2.5 text-center">
-                          <select v-model="servicio.iva_porcentaje" class="text-center w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" :disabled="!esEditable">
+                          <select v-model="servicio.iva_porcentaje" 
+                            class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable">
                             <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
                           </select>
                         </td>
@@ -1181,7 +1280,7 @@ onMounted(() => {
 
               <!-- Repuestos -->
               <div v-show="activeTab === 'repuestos'" class="col-span-1">
-                <div class="relative overflow-x-visible bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+                <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
                   <table class="w-full text-sm text-left text-gray-900 dark:text-white">
                     <thead class="text-xs uppercase bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
                       <tr>
@@ -1210,24 +1309,23 @@ onMounted(() => {
                               :disabled="!esEditable"
                               mostrar-stock
                               mensaje-sin-resultados="Sin coincidencias. Puedes escribir un repuesto libre."
-                              @select="(item) => seleccionarRepuesto(item, repuesto)"
-                            />
+                              @select="(item) => seleccionarRepuesto(item, repuesto)"/>
                           </div>
                         </td>
                         <td class="px-4 py-2.5 text-center">
                           <input v-model="repuesto.es_opcional" type="checkbox" class="w-4 h-4 text-primary-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-blue-500 focus:ring-2" :disabled="!esEditable" />
                         </td>
                         <td class="px-4 py-2.5 text-center">
-                          <input :id="`rpt-cant-${repuesto.sufijo}`" v-model="repuesto.cantidad" type="number" min="1" step="1" class="text-center w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" :disabled="!esEditable" />
+                          <input :id="`rpt-cant-${repuesto.sufijo}`" v-model="repuesto.cantidad" type="number" min="1" step="1" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
                         </td>
                         <td class="px-4 py-2.5 text-center">
-                          <input v-model="repuesto.precio_unitario_referencial" type="number" min="0" step="0.01" class="text-center w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" :disabled="!esEditable" />
+                          <input v-model="repuesto.precio_unitario_referencial" type="number" min="0" step="0.01" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
                         </td>
                         <td class="px-4 py-2.5 text-center">
-                          <input v-model="repuesto.descuento" type="number" min="0" step="0.01" class="text-center w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" :disabled="!esEditable" />
+                          <input v-model="repuesto.descuento" type="number" min="0" step="0.01" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
                         </td>
                         <td class="px-4 py-2.5 text-center">
-                          <select v-model="repuesto.iva_porcentaje" class="text-center w-full p-2 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white" :disabled="!esEditable">
+                          <select v-model="repuesto.iva_porcentaje" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable">
                             <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
                           </select>
                         </td>
@@ -1282,7 +1380,7 @@ onMounted(() => {
                   {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
                 </button>
               </div>
-              <textarea id="observaciones" v-model="form.observaciones" rows="4" placeholder="Condiciones, garantías, notas para el cliente..." class="block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white"></textarea>
+              <textarea id="observaciones" v-model="form.observaciones" rows="4" maxlength="2000" placeholder="Condiciones, garantías, notas para el cliente..." class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body"></textarea>
               <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error }}</p>
               <div v-if="mejorado && !error" class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
                 <CheckCircle2 class="w-5 h-5 shrink-0" />
@@ -1394,6 +1492,21 @@ onMounted(() => {
       </div>
     </div>
   </div>
+
+  <!-- Confirmación para generar orden de trabajo -->
+  <ConfirmModal
+    v-model="mostrarModalGenerarOrden"
+    title="Generar orden de trabajo"
+    message="Se generará una orden de trabajo a partir de esta cotización aceptada."
+    :icon="ArrowLeftRight"
+    icon-class="text-green-600 dark:text-green-400"
+    confirm-text="Generar orden"
+    confirming-text="Generando..."
+    confirm-class="bg-green-600 hover:bg-green-700 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
+    variant="primary"
+    :is-deleting="procesandoGeneracionOrden"
+    @confirm="confirmarGenerarOrden"
+  />
 
   <ClientModal
     v-model="showClientCreateModal"

@@ -147,7 +147,7 @@ defineExpose({ focusInput, clearAll });
         autocomplete="off"
         :placeholder="placeholder"
         :class="[
-          'block w-full p-2.5 pl-9 pr-3 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
+          'block w-full p-2.5 pl-9 pr-3 text-sm rounded-base shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
           error
             ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
             : '',
@@ -162,8 +162,7 @@ defineExpose({ focusInput, clearAll });
     <div
       v-if="showDropdown && (options.length || isSearching || (modelValue || '').trim())"
       ref="dropdownRef"
-      class="absolute z-10 w-full mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600"
-    >
+      class="absolute z-10 w-full mt-1 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
       <div v-if="isSearching" class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">Buscando...</div>
       <div v-else-if="!options.length" class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">Sin coincidencias.</div>
       <template v-else>

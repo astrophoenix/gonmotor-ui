@@ -765,7 +765,7 @@ async function handleSubmit() {
               </nav>
             </div>
 
-            <div v-show="activeTab === 'trabajo'" class="p-4 space-y-6">
+            <div v-show="activeTab === 'trabajo'" class="p-4 space-y-1">
               <div class="flex gap-4 mb-4 border-b border-gray-200 dark:border-gray-600">
                 <button
                   type="button"

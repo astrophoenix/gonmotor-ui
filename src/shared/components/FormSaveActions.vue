@@ -40,18 +40,16 @@ function handleSubmit() {
       :href="disabled ? undefined : cancelHref"
       :aria-disabled="disabled"
       :tabindex="disabled ? -1 : undefined"
-      class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded dark:bg-gray-700 dark:text-gray-300"
-      :class="{ 'pointer-events-none opacity-60 cursor-not-allowed': disabled }"
-      >
+      class="inline-flex items-center gap-2 px-5 py-2.5 text-body bg-neutral-primary border border-default shadow-xs hover:bg-neutral-secondary-soft hover:text-heading focus:ring-4 focus:ring-neutral-tertiary font-medium leading-5 rounded-base text-sm focus:outline-none"
+      :class="{ 'pointer-events-none opacity-60 cursor-not-allowed': disabled }">
       <IconX class="w-5 h-5 text-gray-900" />
-      Cancelar</a
-    >
+      Cancelar
+    </a>
     <button
       type="button"
       :disabled="isLoading || disabled"
       @click="handleSubmit"
-      class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded bg-primary-500 border border-primary-500 hover:bg-primary-600 focus:ring-4 focus:ring-primary-300 disabled:opacity-50 disabled:cursor-not-allowed"
-    >
+      class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-base bg-primary-500 border border-primary-500 hover:bg-primary-600 focus:ring-4 focus:ring-primary-300 disabled:opacity-50 disabled:cursor-not-allowed">
       <Save class="w-5 h-5 text-white" />
       {{ isLoading ? 'Guardando...' : 'Guardar' }}
     </button>

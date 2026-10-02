@@ -138,7 +138,7 @@ defineExpose({ focusInput, clearAll });
         autocomplete="off"
         :placeholder="placeholder"
         :class="[
-          'block w-full p-2.5 pl-9 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
+          'block w-full p-2.5 pl-9 text-sm rounded-base shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
           showCreate ? 'pr-16' : 'pr-3',
           error
             ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'

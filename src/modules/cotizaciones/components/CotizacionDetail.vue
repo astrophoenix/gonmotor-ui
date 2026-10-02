@@ -3,18 +3,14 @@ import { computed, onMounted, ref } from 'vue';
 import {
   ArrowLeft,
   ArrowLeftRight,
-  CheckCircle2,
   CircleDollarSign,
-  Clock,
   FileText,
   Image as ImageIcon,
   Loader2,
   MessageSquareText,
   Package,
   Pencil,
-  Send,
   Wrench,
-  XCircle,
   X,
 } from 'lucide-vue-next';
 import { IconLockOpen2 } from '@tabler/icons-vue';
@@ -24,15 +20,7 @@ import Alert from '../../../shared/components/Alert.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import FlowSteps from '../../../shared/components/FlowSteps.vue';
 import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
-
-const ESTADOS = {
-  PENDIENTE: { label: 'Pendiente', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', icon: FileText },
-  ENVIADA: { label: 'Enviada al cliente', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300', icon: Send },
-  ACEPTADA: { label: 'Aceptada', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300', icon: CheckCircle2 },
-  RECHAZADA: { label: 'Rechazada', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300', icon: XCircle },
-  VENCIDA: { label: 'Vencida', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300', icon: Clock },
-  CONVERTIDA: { label: 'Convertida a orden', color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300', icon: ArrowLeftRight },
-};
+import EstadoCotizacionBadge from './EstadoCotizacionBadge.vue';
 
 const METODOS_ACEPTACION = [
   { value: 'PRESENCIAL', label: 'Presencial en taller' },
@@ -57,8 +45,6 @@ const mostrarModalReabrir = ref(false);
 const mostrarModalGenerarOrden = ref(false);
 const procesandoReapertura = ref(false);
 const procesandoGeneracionOrden = ref(false);
-
-const estadoBadge = computed(() => ESTADOS[cotizacion.value?.estado] || ESTADOS.PENDIENTE);
 
 const ordenGenerada = computed(() => cotizacion.value?.orden_generada_numero || '');
 
@@ -240,10 +226,7 @@ onMounted(cargar);
         <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
           Cotización {{ cotizacion.numero_cotizacion }}
         </h1>
-        <span :class="['inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium', estadoBadge.color]">
-          <component :is="estadoBadge.icon" class="w-4 h-4" aria-hidden="true" />
-          {{ estadoBadge.label }}
-        </span>
+        <EstadoCotizacionBadge :estado="cotizacion.estado" size="lg" />
         <div class="flex items-center ml-auto gap-2 flex-wrap">
         <button
           v-if="puedeGenerarOrden"
