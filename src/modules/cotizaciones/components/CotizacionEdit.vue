@@ -1066,9 +1066,17 @@ onMounted(() => {
         <!-- Información General: cliente / vehículo / asesor -->
         <div class="mb-6">
           <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">
-            <div class="flex items-center gap-2 mb-4">
-              <FileText class="w-5 h-5 text-gray-900 dark:text-white" />
-              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Información General</h2>
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <div class="flex items-center gap-2">
+                <FileText class="w-5 h-5 text-gray-900 dark:text-white" />
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Información General</h2>
+              </div>
+              <div class="flex items-center gap-2">
+                <label for="validez_dias" class="text-sm font-medium text-gray-900 dark:text-white">Validez</label>
+                <select id="validez_dias" v-model="form.validez_dias" :disabled="!esEditable" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand px-6 py-2 shadow-xs">
+                  <option v-for="dias in VALIDEZ_OPCIONES" :key="dias" :value="dias">{{ dias }} días</option>
+                </select>
+              </div>
             </div>
 
             <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_0.7fr_1fr]">
@@ -1232,13 +1240,6 @@ onMounted(() => {
         </div>
 
         <fieldset :disabled="!esEditable" class="grid grid-cols-1 gap-8">
-          <div>
-            <label for="validez_dias" class="block text-sm font-medium text-gray-900 dark:text-white">Validez de la oferta (días)</label>
-            <select id="validez_dias" v-model="form.validez_dias" class="mt-1 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body">
-              <option v-for="dias in VALIDEZ_OPCIONES" :key="dias" :value="dias">{{ dias }} días</option>
-            </select>
-          </div>
-
           <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700">
             <div class="border-b border-gray-200 dark:border-gray-700">
               <nav class="flex flex-wrap -mb-px">
@@ -1439,7 +1440,7 @@ onMounted(() => {
                   {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
                 </button>
               </div>
-              <textarea id="observaciones" v-model="form.observaciones" rows="4" maxlength="2000" placeholder="Condiciones, garantías, notas para el cliente..." class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body"></textarea>
+              <textarea id="observaciones" v-model="form.observaciones" rows="6" maxlength="2000" placeholder="Condiciones, garantías, notas para el cliente..." class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body"></textarea>
               <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error }}</p>
               <div v-if="mejorado && !error" class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
                 <CheckCircle2 class="w-5 h-5 shrink-0" />

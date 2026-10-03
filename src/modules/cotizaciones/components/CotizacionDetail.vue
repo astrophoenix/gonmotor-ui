@@ -309,7 +309,7 @@ onMounted(cargar);
                 v-if="cotizacion.validez_dias"
                 class="ml-auto text-sm text-gray-600 dark:text-gray-300"
               >
-                <span class="font-medium text-gray-900 dark:text-white">Validez de la oferta:</span>
+                <span class="font-medium text-gray-900 dark:text-white">Validez:</span>
                 {{ cotizacion.validez_dias }} días
               </span>
             </div>
