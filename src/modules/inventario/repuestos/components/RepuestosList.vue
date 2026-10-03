@@ -7,6 +7,7 @@ import Alert from '../../../../shared/components/Alert.vue';
 import EntityActionButtons from '../../../../shared/components/EntityActionButtons.vue';
 import FilterActions from '../../../../shared/components/FilterActions.vue';
 import EntityTable from '../../../../shared/components/EntityTable.vue';
+import Pagination from '../../../../shared/components/Pagination.vue';
 import RepuestoModal from './RepuestoModal.vue';
 import { formatCurrency } from '../../../../shared/utils/format';
 import { vSanitizeSearch } from '../../../../shared/directives/sanitizeSearch';
@@ -22,35 +23,11 @@ const {
   estado,
   currentPage,
   total,
-  firstItem,
-  lastItem,
-  totalPages,
   nextUrl,
   previousUrl,
   fetchRepuestos,
   removeRepuesto,
 } = useRepuestos();
-
-const pageList = computed(() => {
-  const pages = totalPages.value;
-  const current = currentPage.value;
-  if (pages <= 7) {
-    return Array.from({ length: pages }, (_, i) => i + 1);
-  }
-  const candidates = new Set([1, pages, current - 1, current, current + 1]);
-  const sorted = Array.from(candidates)
-    .filter((page) => page >= 1 && page <= pages)
-    .sort((a, b) => a - b);
-  const result = [];
-  let prev = 0;
-  for (const page of sorted) {
-    if (page - prev === 2) result.push(prev + 1);
-    else if (page - prev > 2) result.push('…');
-    result.push(page);
-    prev = page;
-  }
-  return result;
-});
 
 const CATEGORIAS = [
   { value: 'FILTROS', label: 'Filtros' },
@@ -333,50 +310,16 @@ onUnmounted(() => clearTimeout(searchTimer));
       </tr>
     </template>
     <template #pagination>
-      <nav class="flex items-center flex-column flex-wrap md:flex-row justify-between p-4 gap-3" aria-label="Table navigation">
-        <span v-if="total" class="text-sm font-normal text-body mb-4 md:mb-0 block w-full md:inline md:w-auto">
-          Mostrando <span class="font-semibold text-heading">{{ firstItem }}-{{ lastItem }}</span> de <span class="font-semibold text-heading">{{ total }}</span> repuesto{{ total === 1 ? '' : 's' }}
-        </span>
-        <span v-else class="text-sm font-normal text-body mb-4 md:mb-0 block w-full md:inline md:w-auto">No se encontraron repuestos.</span>
-        <ul class="flex -space-x-px text-sm flex-wrap">
-          <li>
-            <button
-              type="button"
-              :disabled="!previousUrl || isLoading"
-              class="flex items-center justify-center text-body bg-neutral-secondary-medium box-border border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading font-medium rounded-s-base text-sm px-3 h-9 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
-              @click="loadRepuestos(currentPage - 1)"
-            >
-              Previous
-            </button>
-          </li>
-          <template v-for="item in pageList" :key="item">
-            <li v-if="item === '…'">
-              <span class="flex items-center justify-center text-body bg-neutral-secondary-medium box-border border border-default-medium font-medium text-sm px-3 h-9">…</span>
-            </li>
-            <li v-else>
-              <button
-                type="button"
-                :aria-current="item === currentPage ? 'page' : null"
-                class="flex items-center justify-center box-border border font-medium text-sm w-9 h-9 focus:outline-none cursor-pointer"
-                :class="item === currentPage ? 'text-fg-brand bg-brand-softer border-default-medium hover:bg-brand-soft hover:text-fg-brand' : 'text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading'"
-                @click="loadRepuestos(item)"
-              >
-                {{ item }}
-              </button>
-            </li>
-          </template>
-          <li>
-            <button
-              type="button"
-              :disabled="!nextUrl || isLoading"
-              class="flex items-center justify-center text-body bg-neutral-secondary-medium box-border border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading font-medium rounded-e-base text-sm px-3 h-9 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
-              @click="loadRepuestos(currentPage + 1)"
-            >
-              Next
-            </button>
-          </li>
-        </ul>
-      </nav>
+      <Pagination
+        :total="total"
+        :current-page="currentPage"
+        :next-url="nextUrl"
+        :previous-url="previousUrl"
+        :disabled="isLoading"
+        item-word="repuesto"
+        empty-text="No se encontraron repuestos."
+        @page="loadRepuestos"
+      />
     </template>
     </EntityTable>
     </div>

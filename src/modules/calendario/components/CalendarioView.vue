@@ -23,7 +23,7 @@ const props = defineProps({
   recargarToken: { type: Number, default: 0 },
 });
 
-const emit = defineEmits(['crear', 'accion', 'alert']);
+const emit = defineEmits(['crear', 'accion', 'alert', 'coincidencias']);
 
 const search = defineModel('search', { type: String, default: '' });
 const estadoFiltro = defineModel('estadoFiltro', { type: String, default: '' });
@@ -287,6 +287,10 @@ watch(fechaSeleccionada, (valor) => {
 watch(() => props.recargarToken, (valor) => {
   if (valor > 0) refrescar();
 });
+
+// El panel de CitasView indica cuántas citas del rango visible resaltan la
+// búsqueda, para que en modo Calendario el criterio se vea aplicado.
+watch(resaltadas, (set) => emit('coincidencias', set.size), { immediate: true });
 
 watch(errorMessage, (valor) => {
   if (valor) {

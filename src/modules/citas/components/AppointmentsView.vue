@@ -1,21 +1,22 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { Car, Clock, User } from 'lucide-vue-next';
+import { computed, onMounted, onUnmounted, watch } from 'vue';
+import { Car, Clock, Pencil, Trash2, User } from 'lucide-vue-next';
 import { useCitas } from '../composables/useCitas';
 import EntityTable from '../../../shared/components/EntityTable.vue';
+import Pagination from '../../../shared/components/Pagination.vue';
 import { SEARCH_DEBOUNCE_MS, isSearchable } from '../../../shared/utils/search';
 import CitaAccionesMenu from './CitaAccionesMenu.vue';
 
 /**
- * Panel de listado de la pantalla unificada de citas.
- * La cabecera, los filtros, el menú de acciones y los modales viven en CitasView;
- * este componente solo renderiza la tabla y notifica las acciones elegidas.
+ * Tabla de la pantalla unificada de citas (vista lista).
+ * La cabecera, los filtros, las acciones de la tabla y los modales viven en
+ * CitasView; este componente solo renderiza la tabla y notifica las acciones.
  */
 const props = defineProps({
   recargarToken: { type: Number, default: 0 },
 });
 
-const emit = defineEmits(['accion', 'alert']);
+const emit = defineEmits(['accion', 'alert', 'cargando', 'resumen']);
 
 const search = defineModel('search', { type: String, default: '' });
 const estadoFiltro = defineModel('estadoFiltro', { type: String, default: '' });
@@ -27,9 +28,9 @@ const {
   isDeleting,
   isConverting,
   currentPage,
+  total,
   nextUrl,
   previousUrl,
-  rangeLabel,
   fetchCitas,
 } = useCitas({ search, estadoFiltro, fechaFiltro });
 
@@ -70,6 +71,13 @@ watch(() => props.recargarToken, (valor) => {
   if (valor > 0) loadCitas(currentPage.value);
 });
 
+// El panel de CitasView necesita el estado de carga (para deshabilitar
+// Limpiar/Buscar) y el resumen de la página para la cabecera del listado.
+watch(isLoading, (valor) => emit('cargando', valor), { immediate: true });
+watch([activeCount, total], ([activas, totalCitas]) => {
+  emit('resumen', { activas, total: totalCitas });
+}, { immediate: true });
+
 function onAccion(cita, tipo) {
   emit('accion', { cita, tipo });
 }
@@ -98,26 +106,17 @@ onUnmounted(() => clearTimeout(searchTimer));
 </script>
 
 <template>
-  <div class="px-4 pt-4 text-sm text-gray-500 dark:text-gray-400">
-    {{ activeCount }} activa{{ activeCount === 1 ? '' : 's' }}
-  </div>
-
   <EntityTable
     :columns="['Cita', 'Cliente', 'Vehículo', 'Motivo', 'Estado', 'Acciones']"
     :items="citas"
     :loading="isLoading"
     loading-text="Cargando citas..."
     empty-text="No se encontraron citas."
-    :empty-colspan="7"
-    :show-pagination="true"
-    :previous-url="previousUrl"
-    :next-url="nextUrl"
-    :pagination-disabled="isLoading"
-    :range-label="rangeLabel"
-    @page-change="(delta) => loadCitas(currentPage + delta)"
+    :empty-colspan="6"
+    :wrapper-class="'w-full'"
   >
     <template #row="{ item }">
-      <tr class="hover:bg-gray-100 dark:hover:bg-gray-700">
+      <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
         <td class="p-4 whitespace-nowrap">
           <div class="flex items-center gap-2">
             <Clock class="w-4 h-4 text-gray-400 dark:text-gray-500" />
@@ -164,13 +163,46 @@ onUnmounted(() => clearTimeout(searchTimer));
           </p>
         </td>
         <td class="p-4 whitespace-nowrap">
-          <CitaAccionesMenu
-            :cita="item"
-            :disabled="isDeleting || isConverting"
-            @accion="(tipo) => onAccion(item, tipo)"
-          />
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              title="Editar cita"
+              aria-label="Editar cita"
+              class="inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700"
+              @click="onAccion(item, 'editar')"
+            >
+              <Pencil class="w-5 h-5" />
+            </button>
+            <button
+              type="button"
+              title="Eliminar cita"
+              aria-label="Eliminar cita"
+              :disabled="isDeleting || isConverting"
+              class="inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700"
+              @click="onAccion(item, 'eliminar')"
+            >
+              <Trash2 class="w-5 h-5" />
+            </button>
+            <CitaAccionesMenu
+              :cita="item"
+              :disabled="isDeleting || isConverting"
+              @accion="(tipo) => onAccion(item, tipo)"
+            />
+          </div>
         </td>
       </tr>
+    </template>
+    <template #pagination>
+      <Pagination
+        :total="total"
+        :current-page="currentPage"
+        :next-url="nextUrl"
+        :previous-url="previousUrl"
+        :disabled="isLoading"
+        item-word="cita"
+        empty-text="No se encontraron citas."
+        @page="loadCitas"
+      />
     </template>
   </EntityTable>
 </template>

@@ -99,6 +99,28 @@ async function delay(ms) {
 }
 
 /**
+ * Lee el cuerpo de una respuesta como JSON o como binario.
+ *
+ * Las descargas de PDF/XLSX piden `responseType: 'blob'`; en ese caso se
+ * devuelve el binario junto al `Content-Disposition` para respetar el nombre
+ * de archivo que propone el backend.
+ *
+ * @param {Response} response - Respuesta de fetch
+ * @param {'json'|'blob'} responseType - Tipo de cuerpo esperado
+ * @returns {Promise<object|Blob|{ blob: Blob, contentDisposition: string }>}
+ */
+async function readBody(response, responseType) {
+  if (responseType === 'blob') {
+    return {
+      blob: await response.blob(),
+      contentDisposition: response.headers.get('Content-Disposition') || '',
+    };
+  }
+
+  return response.json().catch(() => ({}));
+}
+
+/**
  * Solicita un nuevo access token al endpoint de refresh usando el refresh token almacenado.
  * Actualiza el storage con el nuevo access token y, si aplica, con el refresh token rotado.
  *
@@ -148,30 +170,32 @@ async function refreshAccessToken() {
  *   y reintenta la petición original una sola vez.
  * - Si el refresh también falla, limpia la sesión y lanza un error controlado.
  *
- * @param {string} path - Ruta del endpoint relativa a API_BASE_URL
- * @param {RequestInit} [options={}] - Opciones adicionales de fetch
+* @param {string} path - Ruta del endpoint relativa a API_BASE_URL
+ * @param {RequestInit} [options={}] - Opciones adicionales de fetch. `responseType: 'blob'`
+ *   devuelve `{ blob, contentDisposition }` para las descargas de archivos.
  * @returns {Promise<object>} Datos de la respuesta parseada
  * @throws {Error} Error de red, HTTP o sesión expirada
  */
 export async function request(path, options = {}) {
   const token = getAccessToken();
   const empresaId = getEmpresaId();
+  const responseType = options.responseType || 'json';
 
   const isFormData = options.body instanceof FormData;
   const config = {
     ...options,
     headers: {
-      Accept: 'application/json',
+      Accept: responseType === 'blob' ? '*/*' : 'application/json',
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(empresaId ? { 'X-Empresa-ID': empresaId } : {}),
       ...(options.headers || {})
     }
   };
+  delete config.responseType;
 
   try {
     const response = await fetch(`${API_BASE_URL}${path}`, config);
-    const data = await response.json().catch(() => ({}));
 
     if (response.status === 401 && token) {
       if (!isRefreshing) {
@@ -191,17 +215,15 @@ export async function request(path, options = {}) {
         config.headers.Authorization = `Bearer ${newToken}`;
 
         const retryResponse = await fetch(`${API_BASE_URL}${path}`, config);
-        const retryData = await retryResponse.json().catch(() => ({}));
 
         if (!retryResponse.ok) {
-          const message = getErrorMessage(retryData);
+          const message = getErrorMessage(await retryResponse.json().catch(() => ({})));
           const error = new Error(message);
           error.status = retryResponse.status;
-          error.data = retryData;
           throw error;
         }
 
-        return retryData;
+        return await readBody(retryResponse, responseType);
       } catch (refreshError) {
         if (isAbortError(refreshError)) {
           throw refreshError;
@@ -217,6 +239,7 @@ export async function request(path, options = {}) {
     }
 
     if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
       const message = getErrorMessage(data);
       const error = new Error(message);
       error.status = response.status;
@@ -224,7 +247,7 @@ export async function request(path, options = {}) {
       throw error;
     }
 
-    return data;
+    return await readBody(response, responseType);
   } catch (error) {
     if (isAbortError(error)) {
       throw error;

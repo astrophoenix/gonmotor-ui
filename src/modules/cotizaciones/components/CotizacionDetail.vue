@@ -3,22 +3,33 @@ import { computed, onMounted, ref } from 'vue';
 import {
   ArrowLeft,
   ArrowLeftRight,
+  CalendarDays,
+  CheckCircle2,
   CircleDollarSign,
+  ClipboardList,
   FileText,
-  Image as ImageIcon,
+  IdCardIcon,
   Loader2,
+  Mail,
   MessageSquareText,
   Package,
+  PaintBucket,
   Pencil,
+  Phone,
+  Shapes,
+  Store,
+  TagIcon,
+  UserCheck,
   Wrench,
-  X,
 } from 'lucide-vue-next';
-import { IconLockOpen2 } from '@tabler/icons-vue';
+import { IconBrandWhatsapp, IconLockOpen2 } from '@tabler/icons-vue';
 import { cotizacionesService } from '../services/cotizacionesService';
 import { formatPlate } from '../../../shared/utils/formatPlate';
+import { formatDateTime } from '../../../shared/utils/datetime';
 import Alert from '../../../shared/components/Alert.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import FlowSteps from '../../../shared/components/FlowSteps.vue';
+import PdfExportButton from '../../../shared/components/PdfExportButton.vue';
 import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 import EstadoCotizacionBadge from './EstadoCotizacionBadge.vue';
 
@@ -38,8 +49,6 @@ const cotizacion = ref(null);
 const loading = ref(true);
 const errorMessage = ref('');
 const successMessage = ref('');
-const previewImg = ref('');
-const showImageModal = ref(false);
 
 const mostrarModalReabrir = ref(false);
 const mostrarModalGenerarOrden = ref(false);
@@ -65,6 +74,25 @@ const metodoAceptacionLabel = computed(() => {
   if (!metodo) return '';
   return (METODOS_ACEPTACION.find((m) => m.value === metodo) || {}).label || metodo;
 });
+
+const iconoMetodoAceptacion = computed(() => {
+  const iconos = { WHATSAPP: IconBrandWhatsapp, EMAIL: Mail, TELEFONO: Phone, PRESENCIAL: UserCheck };
+  return iconos[cotizacion.value?.metodo_aceptacion] || UserCheck;
+});
+
+// Mismo criterio que CotizacionEdit: '02/10/2026, 09:56 p. m.'
+function formatFechaHora12(value) {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleString('es-EC', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
 
 const pasosFlujo = computed(() => {
   const cot = cotizacion.value || {};
@@ -120,26 +148,10 @@ function ivaLabel(valor) {
   return `${(tasa * 100).toFixed(0)}%`;
 }
 
-function formatDate(dateString) {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
+const fechaEmision = computed(() => formatDateTime(cotizacion.value?.created_at));
 
 function goTo(path) {
   window.location.assign(path);
-}
-
-function abrirFoto(url) {
-  if (!url) return;
-  previewImg.value = url;
-  showImageModal.value = true;
-}
-
-function cerrarFoto() {
-  showImageModal.value = false;
-  previewImg.value = '';
 }
 
 function abrirModalReabrir() {
@@ -153,6 +165,12 @@ function abrirModalGenerarOrden() {
 function irAEditar() {
   if (!cotizacionId.value) return;
   goTo(`/crud/cotizaciones/editar/?id=${encodeURIComponent(cotizacionId.value)}`);
+}
+
+// El PDF se genera en el backend y está disponible en cualquier estado de la
+// cotización: el botón depende únicamente de que exista una cotización guardada.
+function descargarPdf() {
+  return cotizacionesService.exportarPdf(cotizacionId.value);
 }
 
 async function confirmarGenerarOrden() {
@@ -256,6 +274,10 @@ onMounted(cargar);
           <Pencil class="w-4 h-4" />
           Editar
         </button>
+        <PdfExportButton
+          :descargador="descargarPdf"
+          @error="errorMessage = $event"
+        />
         </div>
       </div>
     </template>
@@ -277,133 +299,132 @@ onMounted(cargar);
       </div>
 
       <template v-else-if="cotizacion">
-        <!-- ===== 1. HEADER DE LA COTIZACIÓN ===== -->
-        <header class="flex flex-col gap-3 pb-5 border-b border-gray-200 dark:border-gray-600">
-          <div class="flex items-center gap-3">
-            <span class="inline-flex items-center justify-center w-11 h-11 rounded-lg bg-gray-100 dark:bg-gray-700">
-              <FileText class="w-6 h-6 text-gray-800 dark:text-white" />
-            </span>
-            <div class="min-w-0">
-              <h2 class="text-lg font-semibold text-gray-900 sm:text-xl dark:text-white">
-                Cotización {{ cotizacion.numero_cotizacion }}
-              </h2>
-              <p class="text-sm text-gray-500 dark:text-gray-400">
-                Emitida el {{ formatDate(cotizacion.created_at) || '—' }}
-                <span v-if="cotizacion.validez_dias" class="ml-2">· Vigencia: {{ cotizacion.validez_dias }} días</span>
-              </p>
-            </div>
-            <div class="flex items-center gap-2 ml-auto flex-wrap">
+        <!-- ===== 1. INFORMACIÓN GENERAL: cliente / vehículo / asesor ===== -->
+        <div class="mb-6">
+          <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">
+            <div class="flex items-center gap-2 mb-4">
+              <FileText class="w-5 h-5 text-gray-900 dark:text-white" />
+              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Información General</h2>
               <span
-                v-if="ordenGenerada"
-                class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300"
+                v-if="cotizacion.validez_dias"
+                class="ml-auto text-sm text-gray-600 dark:text-gray-300"
               >
-                Orden de trabajo {{ ordenGenerada }}
+                <span class="font-medium text-gray-900 dark:text-white">Validez de la oferta:</span>
+                {{ cotizacion.validez_dias }} días
+              </span>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_0.7fr_1fr]">
+              <!-- Cliente -->
+              <div class="min-w-0">
+                <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente</p>
+                <p class="truncate text-sm font-bold text-gray-900 dark:text-white">{{ cotizacion.cliente_nombre || '—' }}</p>
+                <div class="mt-3 space-y-1.5">
+                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                    <IdCardIcon class="w-3.5 h-3.5 shrink-0" /> Identificación:
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.cliente_identificacion || '—' }}</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                    <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono:
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.cliente_telefono || '—' }}</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                    <Mail class="w-3.5 h-3.5 shrink-0" /> Correo:
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.cliente_email || '—' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Vehículo -->
+              <div class="min-w-0">
+                <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo</p>
+                <p class="truncate text-sm font-bold text-gray-900 dark:text-white">{{ formatPlate(cotizacion.vehiculo_placa) || '—' }}</p>
+                <div class="mt-3 space-y-1.5">
+                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                    <TagIcon class="w-3.5 h-3.5 shrink-0" /> Marca:
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_marca || '—' }}</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                    <Shapes class="w-3.5 h-3.5 shrink-0" /> Modelo:
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_modelo || '—' }}</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                    <PaintBucket class="w-3.5 h-3.5 shrink-0" /> Color:
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_color || '—' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Asesor -->
+              <div class="min-w-0">
+                <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Asesor</p>
+                <p class="truncate text-sm font-bold text-gray-900 dark:text-white">{{ cotizacion.asesor_nombre || '—' }}</p>
+                <div class="mt-3 space-y-1.5">
+                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                    <IdCardIcon class="w-3.5 h-3.5 shrink-0" /> Identificación:
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.asesor_identificacion || '—' }}</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                    <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono:
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.asesor_telefono || '—' }}</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                    <Mail class="w-3.5 h-3.5 shrink-0" /> Correo:
+                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.asesor_email || '—' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Metadatos de la cotización (siempre visibles) -->
+            <div class="flex flex-wrap items-center gap-x-6 gap-y-2 pt-4 mt-4 text-sm text-gray-600 border-t border-gray-200 dark:border-gray-600 dark:text-gray-300">
+              <span class="inline-flex items-center gap-1.5" title="Fecha y hora de emisión">
+                <CalendarDays class="w-4 h-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                <span class="font-medium text-gray-900 dark:text-white">Emisión:</span>
+                {{ fechaEmision }}
+              </span>
+              <span class="inline-flex items-center gap-1.5 md:border-l md:border-gray-200 md:pl-6 md:dark:border-gray-600" title="Taller donde se creó la cotización">
+                <Store class="w-4 h-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                <span class="font-medium text-gray-900 dark:text-white">Taller:</span>
+                {{ cotizacion.sucursal_nombre || '—' }}
+              </span>
+              <span class="inline-flex items-center gap-1.5 md:border-l md:border-gray-200 md:pl-6 md:dark:border-gray-600" title="Origen de la cotización">
+                <ClipboardList class="w-4 h-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                <span class="font-medium text-gray-900 dark:text-white">Origen:</span>
+                <template v-if="cotizacion.inspeccion_origen">
+                  <a
+                    :href="`/crud/inspecciones/ver/?id=${encodeURIComponent(cotizacion.inspeccion_origen)}`"
+                    class="font-medium text-primary-blue-700 hover:underline dark:text-primary-blue-400">Cod Inspección {{ cotizacion.inspeccion_numero || `#${cotizacion.inspeccion_origen}` }}</a>
+                  <a
+                    v-if="cotizacion.recepcion_origen"
+                    :href="`/crud/recepciones/ver/?id=${encodeURIComponent(cotizacion.recepcion_origen)}`"
+                    class="font-medium text-primary-blue-700 hover:underline dark:text-primary-blue-400">
+                    / Recepción {{ cotizacion.recepcion_numero || `#${cotizacion.recepcion_origen}` }}
+                  </a>
+                </template>
+                <a
+                  v-else-if="cotizacion.recepcion_origen"
+                  :href="`/crud/recepciones/ver/?id=${encodeURIComponent(cotizacion.recepcion_origen)}`"
+                  class="font-medium text-primary-blue-700 hover:underline dark:text-primary-blue-400">
+                  Recepción {{ cotizacion.recepcion_numero || `#${cotizacion.recepcion_origen}` }}
+                </a>
+                <span v-else>Independiente</span>
+              </span>
+              <span
+                v-if="cotizacion.fecha_aceptacion"
+                class="inline-flex basis-full items-center gap-1.5 pt-1"
+                title="Aceptación de la cotización por parte del cliente">
+                <CheckCircle2 class="w-4 h-4 shrink-0 text-green-600 dark:text-green-400" />
+                <span class="font-medium text-gray-900 dark:text-white">Aceptada:</span>
+                {{ formatFechaHora12(cotizacion.fecha_aceptacion) }} -
+                <component :is="iconoMetodoAceptacion" class="w-4 h-4 shrink-0 text-green-600 dark:text-green-400" />
+                {{ metodoAceptacionLabel || '—' }}
               </span>
             </div>
           </div>
-        </header>
-
-        <!-- ===== 2. CLIENTE + VEHÍCULO + FOTOGRAFÍA ===== -->
-        <section class="grid grid-cols-1 gap-6 p-5 mt-5 rounded-lg bg-gray-50 border border-gray-200 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_10rem] dark:bg-gray-700/40 dark:border-gray-600/60">
-          <div>
-            <h3 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Cliente</h3>
-            <dl class="grid grid-cols-1 gap-x-4 gap-y-2.5 sm:grid-cols-2">
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Cliente / Razón Social</dt>
-                <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.cliente_nombre || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Teléfono</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ cotizacion.cliente_telefono || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Identificación</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ cotizacion.cliente_identificacion || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Correo</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ cotizacion.cliente_email || '—' }}</dd>
-              </div>
-            </dl>
-          </div>
-
-          <div>
-            <h3 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Datos del Vehículo</h3>
-            <dl class="grid grid-cols-1 gap-x-4 gap-y-2.5 sm:grid-cols-2">
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Placa</dt>
-                <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ formatPlate(cotizacion.vehiculo_placa) || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Modelo</dt>
-                <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_modelo || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Marca</dt>
-                <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_marca || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Color</dt>
-                <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ cotizacion.vehiculo_color || '—' }}</dd>
-              </div>
-            </dl>
-          </div>
-
-          <div>
-            <h3 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200"></h3>
-            <button
-              v-if="cotizacion.vehiculo_imagen"
-              type="button"
-              title="Ver foto del vehículo"
-              class="block w-full max-w-[10rem] overflow-hidden rounded-lg border border-gray-200 cursor-zoom-in dark:border-gray-600"
-              @click="abrirFoto(cotizacion.vehiculo_imagen)"
-            >
-              <img
-                :src="cotizacion.vehiculo_imagen"
-                alt="Foto del vehículo"
-                class="h-28 w-full object-cover"
-              />
-            </button>
-            <div
-              v-else
-              class="flex h-28 w-full max-w-[10rem] flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-gray-300 text-xs text-gray-500 dark:border-gray-600 dark:text-gray-400"
-            >
-              <ImageIcon class="w-5 h-5" />
-              Sin foto
-            </div>
-          </div>
-        </section>
-
-        <!-- ===== 3. INFORMACIÓN SECUNDARIA ===== -->
-        <div class="flex flex-wrap gap-x-6 gap-y-1.5 py-4 text-sm text-gray-500 border-b border-gray-200 dark:border-gray-600 dark:text-gray-400">
-          <div>
-            <span class="font-medium text-gray-600 dark:text-gray-300">Taller:</span>
-            <span class="ml-1">{{ cotizacion.sucursal_nombre || '—' }}</span>
-          </div>
-          <div>
-            <span class="font-medium text-gray-600 dark:text-gray-300">Origen:</span>
-            <span class="ml-1">
-              <a
-                v-if="cotizacion.inspeccion_origen"
-                :href="`/crud/inspecciones/ver/?id=${encodeURIComponent(cotizacion.inspeccion_origen)}`"
-                class="text-primary-blue-700 hover:underline dark:text-primary-blue-400"
-              >Inspección {{ cotizacion.inspeccion_numero || `#${cotizacion.inspeccion_origen}` }}</a>
-              <a
-                v-if="cotizacion.recepcion_origen"
-                :href="`/crud/recepciones/ver/?id=${encodeURIComponent(cotizacion.recepcion_origen)}`"
-                class="text-primary-blue-700 hover:underline dark:text-primary-blue-400"
-              ><span v-if="cotizacion.inspeccion_origen"> / </span>Recepción {{ cotizacion.recepcion_numero || `#${cotizacion.recepcion_origen}` }}</a>
-              <span v-if="!cotizacion.inspeccion_origen && !cotizacion.recepcion_origen">Independiente</span>
-            </span>
-          </div>
-          <div v-if="cotizacion.fecha_aceptacion">
-            <span class="font-medium text-gray-600 dark:text-gray-300">Aceptada el:</span>
-            <span class="ml-1">{{ formatDate(cotizacion.fecha_aceptacion) }}</span>
-            <span v-if="metodoAceptacionLabel" class="ml-1">· {{ metodoAceptacionLabel }}</span>
-          </div>
         </div>
 
-        <!-- ===== 4. SERVICIOS ===== -->
+        <!-- ===== 2. SERVICIOS ===== -->
         <section class="mt-6">
           <h3 class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
             <Wrench class="w-5 h-5 text-gray-800 dark:text-white" />
@@ -444,7 +465,7 @@ onMounted(cargar);
           </div>
         </section>
 
-        <!-- ===== 5. REPUESTOS / MATERIALES ===== -->
+        <!-- ===== 3. REPUESTOS / MATERIALES ===== -->
         <section class="mt-8">
           <h3 class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
             <Package class="w-5 h-5 text-gray-800 dark:text-white" />
@@ -485,7 +506,7 @@ onMounted(cargar);
           </div>
         </section>
 
-        <!-- ===== 6. OBSERVACIONES + RESUMEN ===== -->
+        <!-- ===== 4. OBSERVACIONES + RESUMEN ===== -->
         <section class="grid grid-cols-1 gap-6 mt-8 lg:grid-cols-2">
           <div>
             <h3 class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
@@ -584,23 +605,4 @@ onMounted(cargar);
     :is-deleting="procesandoGeneracionOrden"
     @confirm="confirmarGenerarOrden"
   />
-
-  <!-- Vista ampliada de la fotografía -->
-  <div
-    v-if="showImageModal"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-    @click="cerrarFoto"
-  >
-    <div class="relative max-h-[90vh] max-w-[90vw] overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl" @click.stop>
-      <button
-        type="button"
-        class="absolute top-2 right-2 z-10 inline-flex items-center justify-center w-8 h-8 rounded-full bg-black/50 text-white hover:bg-black/70"
-        aria-label="Cerrar"
-        @click="cerrarFoto"
-      >
-        <X class="w-5 h-5" />
-      </button>
-      <img :src="previewImg" class="max-h-[90vh] max-w-[90vw] object-contain" alt="Imagen ampliada" />
-    </div>
-  </div>
 </template>

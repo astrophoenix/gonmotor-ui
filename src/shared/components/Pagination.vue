@@ -76,7 +76,7 @@ function goTo(page) {
 </script>
 
 <template>
-  <nav class="flex items-center flex-column flex-wrap md:flex-row justify-between p-4 gap-3" aria-label="Table navigation">
+  <nav class="flex items-center flex-column flex-wrap md:flex-row justify-between p-4 gap-3" aria-label="Navegación de tabla">
     <span v-if="total" class="text-sm font-normal text-body mb-4 md:mb-0 block w-full md:inline md:w-auto">
       Mostrando <span class="font-semibold text-heading">{{ firstItem }}-{{ lastItem }}</span> de <span class="font-semibold text-heading">{{ total }}</span> {{ itemLabel }}
     </span>
@@ -86,10 +86,12 @@ function goTo(page) {
         <button
           type="button"
           :disabled="!previousUrl || disabled"
+          title="Página anterior"
+          aria-label="Página anterior"
           class="flex items-center justify-center text-body bg-neutral-secondary-medium box-border border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading font-medium rounded-s-base text-sm px-3 h-9 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
           @click="goTo(currentPage - 1)"
         >
-          Previous
+          Anterior
         </button>
       </li>
       <template v-for="item in pageList" :key="item">
@@ -112,10 +114,12 @@ function goTo(page) {
         <button
           type="button"
           :disabled="!nextUrl || disabled"
+          title="Página siguiente"
+          aria-label="Página siguiente"
           class="flex items-center justify-center text-body bg-neutral-secondary-medium box-border border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading font-medium rounded-e-base text-sm px-3 h-9 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
           @click="goTo(currentPage + 1)"
         >
-          Next
+          Siguiente
         </button>
       </li>
     </ul>

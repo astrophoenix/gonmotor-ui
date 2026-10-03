@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch, nextTick } from "vue";
-import { IconClipboardSearch } from "@tabler/icons-vue";
+import { IconClipboardSearch, IconReportSearch } from "@tabler/icons-vue";
 
 import {
   FileText,
@@ -68,6 +68,8 @@ import {
   normalizarTipoTrabajo,
 } from "../../../shared/config/tiposTrabajo";
 import FormSaveActions from "../../../shared/components/FormSaveActions.vue";
+import ConfirmModal from "../../../shared/components/ConfirmModal.vue";
+import { inspeccionesService } from "../../inspecciones/services/inspeccionesService";
 import FlowSteps from "../../../shared/components/FlowSteps.vue";
 import { buildPasosFlujo } from "../../../shared/utils/estadoFlujo";
 import TestigosTablero from "../../../shared/components/TestigosTablero.vue";
@@ -255,6 +257,65 @@ const firmaClienteCanvas = ref(null);
 const isDrawingCliente = ref(false);
 const clienteNoFirma = ref(false);
 const showContradiccionModal = ref(false);
+
+// Crear inspección desde la recepción (siguiente paso del flujo)
+const showModalCrearInspeccion = ref(false);
+const creandoInspeccion = ref(false);
+const errorCrearInspeccion = ref("");
+
+const inspeccionActual = computed(() => {
+  const inspecciones = Array.isArray(form.inspecciones) ? form.inspecciones : [];
+  return inspecciones[0] || null;
+});
+const cotizacionVigenteRecepcion = computed(() => {
+  const cotizaciones = Array.isArray(form.cotizaciones_generadas)
+    ? form.cotizaciones_generadas
+    : [];
+  return cotizaciones.find((item) => ["PENDIENTE", "ENVIADA", "ACEPTADA"].includes(item.estado)) || null;
+});
+const puedeCrearInspeccion = computed(
+  () => isEditMode && !inspeccionActual.value && form.estado === "ACEPTADA" && !creandoInspeccion.value,
+);
+
+const mensajeCrearInspeccion = computed(() => {
+  if (errorCrearInspeccion.value) return errorCrearInspeccion.value;
+  const base = `Se generará la inspección de la recepción ${form.numero_recepcion || ""} con el cliente y el vehículo ya registrados.`;
+  if (cotizacionVigenteRecepcion.value) {
+    return `${base} Además se copiarán los servicios y repuestos cotizados en ${cotizacionVigenteRecepcion.value.numero_cotizacion}.`;
+  }
+  return `${base} Se creará sin ítems: puedes agregarlos o generar la cotización desde la inspección.`;
+});
+
+async function confirmarCrearInspeccion() {
+  if (creandoInspeccion.value || !form.id) return;
+  creandoInspeccion.value = true;
+  errorCrearInspeccion.value = "";
+  try {
+    const inspeccion = await inspeccionesService.crearDesdeRecepcion(form.id);
+    if (inspeccion?.id) {
+      showModalCrearInspeccion.value = false;
+      window.location.assign(
+        `/crud/inspecciones/editar/?id=${encodeURIComponent(inspeccion.id)}&creada=1`,
+      );
+      return;
+    }
+    errorCrearInspeccion.value = "No se pudo crear la inspección. Intenta nuevamente.";
+  } catch (error) {
+    errorCrearInspeccion.value = error?.message || "No se pudo crear la inspección.";
+  } finally {
+    creandoInspeccion.value = false;
+  }
+}
+
+function abrirModalCrearInspeccion() {
+  errorCrearInspeccion.value = "";
+  showModalCrearInspeccion.value = true;
+}
+
+function cancelarCrearInspeccion() {
+  showModalCrearInspeccion.value = false;
+  errorCrearInspeccion.value = "";
+}
 
 const esNoAceptada = computed(
   () => clienteNoFirma.value || (form.motivo_no_recepcion || "").trim() !== "",
@@ -1311,12 +1372,33 @@ onMounted(() => {
             {{ isEditMode ? "Editar recepción" : "Nueva recepción" }}
           </h1>
         </div>
-        <FormSaveActions
-          :is-loading="isSaving"
-          :is-edit-mode="isEditMode"
-          :disabled="readOnly"
-          cancel-href="/crud/recepciones/"
-          :on-submit="submit"/>
+        <div class="flex items-center gap-2 flex-wrap">
+          <button
+            v-if="puedeCrearInspeccion"
+            type="button"
+            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-brand-700 rounded border border-brand-700 hover:bg-brand-50 dark:text-brand-300 dark:border-brand-300 dark:hover:bg-gray-800"
+            title="Generar Inspección"
+            @click="abrirModalCrearInspeccion"
+          >
+            <Loader2 v-if="creandoInspeccion" class="w-4 h-4 animate-spin" />
+            <IconReportSearch v-else class="w-5 h-5" />
+            Crear Inspección
+          </button>
+          <a
+            v-else-if="inspeccionActual"
+            :href="`/crud/inspecciones/editar/?id=${inspeccionActual.id}`"
+            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-800"
+          >
+            <IconReportSearch class="w-5 h-5" />
+            Ver inspección {{ inspeccionActual.numero_inspeccion || "" }}
+          </a>
+          <FormSaveActions
+            :is-loading="isSaving"
+            :is-edit-mode="isEditMode"
+            :disabled="readOnly"
+            cancel-href="/crud/recepciones/"
+            :on-submit="submit"/>
+        </div>
       </div>
     </div>
   </div>
@@ -2528,6 +2610,19 @@ onMounted(() => {
       </div>
     </div>
   </div>
+
+  <ConfirmModal
+    :model-value="showModalCrearInspeccion"
+    title="¿Crear la inspección de esta recepción?"
+    :message="mensajeCrearInspeccion"
+    :icon="IconReportSearch"
+    variant="primary"
+    confirm-text="Sí, crear inspección"
+    confirming-text="Creando..."
+    :is-deleting="creandoInspeccion"
+    @confirm="confirmarCrearInspeccion"
+    @cancel="cancelarCrearInspeccion"
+  />
 
   <div v-if="showContradiccionModal" class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 p-4">
     <div class="relative w-full max-w-md rounded-lg bg-white shadow-xl dark:bg-gray-800">

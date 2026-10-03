@@ -54,6 +54,19 @@ export const cotizacionesService = {
     });
   },
 
+  /**
+   * Descarga el PDF del documento de cotización.
+   *
+   * Disponible para cualquier estado: el backend no filtra por `estado`, así que
+   * un borrador se exporta igual que una aceptada.
+   *
+   * @param {number|string} id - Id de la cotización
+   * @returns {Promise<{ blob: Blob, contentDisposition: string }>}
+   */
+  exportarPdf(id) {
+    return request(`${buildUrl(id)}exportar-pdf/`, { responseType: 'blob' });
+  },
+
   listServicios(cotizacionId) {
     return request(`/api/cotizaciones/servicios/?cotizacion=${encodeURIComponent(cotizacionId)}`);
   },
