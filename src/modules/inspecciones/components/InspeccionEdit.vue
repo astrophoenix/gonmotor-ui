@@ -22,8 +22,9 @@ import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TestigosTablero from '../../../shared/components/TestigosTablero.vue';
 import TextImprover from '../../../shared/components/TextImprover.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
-import FlowSteps from '../../../shared/components/FlowSteps.vue';
-import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
+// FlowSteps temporalmente desactivado; conservar para reactivarlo más adelante.
+// import FlowSteps from '../../../shared/components/FlowSteps.vue';
+// import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 import { sanitizeDtc, sanitizeObservaciones, normalizarDecimal } from '../../../shared/utils/sanitize';
 import { formatDateTime, formatDuration, localDatetimeNow, minutesBetween, toIsoFromLocalInput, toLocalDatetimeInput } from '../../../shared/utils/datetime';
 
@@ -106,6 +107,7 @@ const activeTab = ref('informacion');
 const TAB_ORDER = ['informacion', 'testigos', 'fotos', 'servicios'];
 const activeTabIndex = computed(() => TAB_ORDER.indexOf(activeTab.value));
 
+/* FlowSteps temporalmente desactivado; conservar la lógica para reactivarla.
 const pasosFlujo = computed(() => {
   const rec = recepcion.value || null;
   const data = inspeccionData.value || {};
@@ -140,6 +142,7 @@ const pasosFlujo = computed(() => {
     },
   ]);
 });
+*/
 
 function goToTab(direction) {
   const next = activeTabIndex.value + direction;
@@ -981,9 +984,11 @@ onMounted(() => {
     </div>
   </div>
 
+  <!-- FlowSteps temporalmente desactivado.
   <div v-if="recepcion" class="relative mx-auto max-w-6xl px-4 pt-4 rounded-lg">
     <FlowSteps :steps="pasosFlujo" />
   </div>
+  -->
 
   <div class="px-4 pt-4">
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">

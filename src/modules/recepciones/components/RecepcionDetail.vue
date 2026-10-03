@@ -36,8 +36,9 @@ import Alert from '../../../shared/components/Alert.vue';
 import EstadoRecepcionBadge from './EstadoRecepcionBadge.vue';
 import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
 import MdiIcon from '../../../shared/components/MdiIcon.vue';
-import FlowSteps from '../../../shared/components/FlowSteps.vue';
-import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
+// FlowSteps temporalmente desactivado; conservar para reactivarlo más adelante.
+// import FlowSteps from '../../../shared/components/FlowSteps.vue';
+// import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 import { TESTIGOS } from '../../../shared/config/testigos';
 import { getTipoTrabajoLabel } from '../../../shared/config/tiposTrabajo';
 import { useRecepciones } from '../composables/useRecepciones';
@@ -198,6 +199,7 @@ const puedeEditar = computed(() => {
   return !(r.aceptacion_condiciones && r.fecha_firma_cliente);
 });
 
+/* FlowSteps temporalmente desactivado; conservar la lógica para reactivarla.
 const pasosFlujo = computed(() => {
   const r = recepcion.value || {};
   const inspec = (r.inspecciones && r.inspecciones[0]) || null;
@@ -228,6 +230,7 @@ const pasosFlujo = computed(() => {
     },
   ]);
 });
+*/
 
 const cliente = computed(() => recepcion.value?.cliente || null);
 
@@ -474,9 +477,11 @@ function irAInspeccion(recepcion) {
   </div>
 
   <div class="p-4">
+    <!-- FlowSteps temporalmente desactivado.
     <div v-if="recepcion" class="relative mx-auto max-w-6xl mb-5">
       <FlowSteps :steps="pasosFlujo" />
     </div>
+    -->
     <div class="relative mx-auto max-w-8xl">
       <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
       <Alert v-if="errorCrearInspeccion" type="error" :message="errorCrearInspeccion" dismissible @dismiss="errorCrearInspeccion = ''" />

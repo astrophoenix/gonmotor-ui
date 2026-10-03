@@ -7,7 +7,7 @@ function buildUrl(id) {
 }
 
 export const citasService = {
-  list({ page = 1, search = '', estado = '', fecha = '', desde = '', hasta = '', ordering = 'fecha_cita', pageSize = '', signal } = {}) {
+  list({ page = 1, search = '', estado = '', fecha = '', desde = '', hasta = '', ordering = 'fecha_cita', pageSize = '', filters = {}, signal } = {}) {
     const params = new URLSearchParams({ page: String(page), ordering });
     if (search) params.set('search', search);
     if (estado) params.set('estado', estado);
@@ -15,6 +15,9 @@ export const citasService = {
     if (desde) params.set('desde', desde);
     if (hasta) params.set('hasta', hasta);
     if (pageSize) params.set('page_size', String(pageSize));
+    Object.entries(filters || {}).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') params.set(key, String(value));
+    });
     return request(`${ENDPOINT}?${params.toString()}`, { signal });
   },
 

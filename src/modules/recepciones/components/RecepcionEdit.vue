@@ -70,8 +70,9 @@ import {
 import FormSaveActions from "../../../shared/components/FormSaveActions.vue";
 import ConfirmModal from "../../../shared/components/ConfirmModal.vue";
 import { inspeccionesService } from "../../inspecciones/services/inspeccionesService";
-import FlowSteps from "../../../shared/components/FlowSteps.vue";
-import { buildPasosFlujo } from "../../../shared/utils/estadoFlujo";
+// FlowSteps temporalmente desactivado; conservar para reactivarlo más adelante.
+// import FlowSteps from "../../../shared/components/FlowSteps.vue";
+// import { buildPasosFlujo } from "../../../shared/utils/estadoFlujo";
 import TestigosTablero from "../../../shared/components/TestigosTablero.vue";
 import PhotoSlotGrid from "../../../shared/components/PhotoSlotGrid.vue";
 import ClientModal from "../../clientes/components/ClientModal.vue";
@@ -79,6 +80,7 @@ import TextImprover from "../../../shared/components/TextImprover.vue";
 import ClienteSearchSelect from "../../../shared/components/ClienteSearchSelect.vue";
 import VehiculoSearchSelect from "../../../shared/components/VehiculoSearchSelect.vue";
 import EmpleadoSearchSelect from "../../../shared/components/EmpleadoSearchSelect.vue";
+import RelacionesFlujoEdit from "../../../shared/components/RelacionesFlujoEdit.vue";
 
 const recepcionId = new URLSearchParams(window.location.search).get("id");
 const isEditMode = Boolean(recepcionId);
@@ -91,6 +93,9 @@ const savedError = ref("");
 const formErrors = ref({});
 const fotoErrors = ref({});
 const fotosPresence = ref({});
+const relacionesRecepcion = ref({ cita: [], inspeccion: [], cotizacion: [], orden: [] });
+const puedeAgregarRelacion = ref({ cita: true, inspeccion: true, cotizacion: true, orden: true });
+const relacionesCargadas = ref(false);
 
 function pad2(n) {
   return String(n).padStart(2, "0");
@@ -203,6 +208,7 @@ const activeTab = ref("informacion");
 const TAB_ORDER = ["informacion", "inspeccion", "evidencias", "autorizacion"];
 const activeTabIndex = computed(() => TAB_ORDER.indexOf(activeTab.value));
 
+/* FlowSteps temporalmente desactivado; conservar la lógica para reactivarla.
 const pasosFlujo = computed(() => {
   const estado = form.estado || "PENDIENTE";
   const inspecciones = Array.isArray(form.inspecciones) ? form.inspecciones : [];
@@ -240,6 +246,7 @@ const pasosFlujo = computed(() => {
     },
   ]);
 });
+*/
 
 function goToTab(direction) {
   const next = activeTabIndex.value + direction;
@@ -775,6 +782,7 @@ async function loadRecepcion() {
         estado: data.estado || "PENDIENTE",
         motivo_no_recepcion: data.motivo_no_recepcion || "",
       });
+      await cargarRelacionesRecepcion(data.id);
       clienteNoFirma.value = data.estado === "NO_ACEPTADA";
       if (data.cliente) {
         form.cliente_identificacion = data.cliente.identificacion || "";
@@ -840,6 +848,31 @@ async function loadRecepcion() {
   } finally {
     isLoading.value = false;
   }
+}
+
+async function cargarRelacionesRecepcion(id = recepcionId) {
+  relacionesCargadas.value = false;
+  if (!id) {
+    relacionesRecepcion.value = { cita: [], inspeccion: [], cotizacion: [], orden: [] };
+    return;
+  }
+  try {
+    const data = await recepcionesService.listarRelaciones(id);
+    relacionesRecepcion.value = data?.relaciones || { cita: [], inspeccion: [], cotizacion: [], orden: [] };
+    puedeAgregarRelacion.value = data?.puede_agregar || { cita: true, inspeccion: true, cotizacion: true, orden: true };
+    relacionesCargadas.value = true;
+  } catch (error) {
+    relacionesRecepcion.value = { cita: [], inspeccion: [], cotizacion: [], orden: [] };
+    errorMessage.value = error.message || 'No se pudieron cargar las relaciones de flujo.';
+  }
+}
+
+function vincularRelacion({ tipo, id }) {
+  return recepcionesService.actualizarRelacion(recepcionId, { tipo, id, accion: 'vincular' });
+}
+
+function desvincularRelacion({ tipo, id }) {
+  return recepcionesService.actualizarRelacion(recepcionId, { tipo, id, accion: 'desvincular' });
 }
 
 async function cargarBlueprint(grupo) {
@@ -1402,9 +1435,11 @@ onMounted(() => {
       </div>
     </div>
   </div>
+  <!-- FlowSteps temporalmente desactivado.
   <div class="relative mx-auto max-w-6xl p-4 rounded-lg">
     <FlowSteps :steps="pasosFlujo" />
   </div>
+  -->
 
   <!--div class="relative mx-auto max-w-8xl mb-5"-->
   <div class="px-4 pt-4">
@@ -2199,7 +2234,7 @@ onMounted(() => {
                         Señala los testigos con problemas, daños o averías que se
                         encuentren encendidos en el tablero del vehículo.
                       </p>
-                      <TestigosTablero v-model="testigos" :disabled="readOnly" />
+                      <TestigosTablero :model-value="testigos" :disabled="readOnly" />
                     </div>
                     
                     <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4">
@@ -2478,9 +2513,7 @@ onMounted(() => {
         </div>
       </div>
       <div class="lg:col-span-1 space-y-4">
-        <div
-          class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4"
-        >
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">
           <div class="flex items-center gap-2 mb-3">
             <ClipboardList class="w-5 h-5 text-gray-900 dark:text-gray-900" />
             <h2 class="text-sm font-semibold text-gray-900 dark:text-white">
@@ -2533,9 +2566,7 @@ onMounted(() => {
           </dl>
         </div>
 
-        <div
-          class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4"
-        >
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">
           <div class="flex items-center gap-2 mb-3">
             <Car class="w-5 h-5 text-gray-900 dark:text-gray-900" />
             <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Vehículo</h2>
@@ -2607,6 +2638,16 @@ onMounted(() => {
             </dl>
           </div>
         </div>
+        <RelacionesFlujoEdit
+          v-if="isEditMode && form.id && relacionesCargadas"
+          class="mt-4"
+          tipo-entidad="recepcion"
+          :entidad-id="form.id"
+          :relaciones="relacionesRecepcion"
+          :puede-agregar="puedeAgregarRelacion"
+          :al-vincular="vincularRelacion"
+          :al-desvincular="desvincularRelacion"
+        />
       </div>
     </div>
   </div>

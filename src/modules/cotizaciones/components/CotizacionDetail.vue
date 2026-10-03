@@ -28,9 +28,10 @@ import { formatPlate } from '../../../shared/utils/formatPlate';
 import { formatDateTime } from '../../../shared/utils/datetime';
 import Alert from '../../../shared/components/Alert.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
-import FlowSteps from '../../../shared/components/FlowSteps.vue';
+// FlowSteps temporalmente desactivado; conservar para reactivarlo más adelante.
+// import FlowSteps from '../../../shared/components/FlowSteps.vue';
 import PdfExportButton from '../../../shared/components/PdfExportButton.vue';
-import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
+// import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 import EstadoCotizacionBadge from './EstadoCotizacionBadge.vue';
 
 const METODOS_ACEPTACION = [
@@ -94,6 +95,7 @@ function formatFechaHora12(value) {
   });
 }
 
+/* FlowSteps temporalmente desactivado; conservar la lógica para reactivarla.
 const pasosFlujo = computed(() => {
   const cot = cotizacion.value || {};
   const ordenId = cot.orden_generada_id || cot.orden_trabajo_origen || null;
@@ -129,6 +131,7 @@ const pasosFlujo = computed(() => {
     },
   ]);
 });
+*/
 
 // Los subtotales por categoría se derivan únicamente del campo `subtotal` que
 // ya calcula el backend en cada servicio/repuesto (sin recalcular precios*horas).
@@ -284,9 +287,11 @@ onMounted(cargar);
   </div>
 
   <div class="p-4">
+    <!-- FlowSteps temporalmente desactivado.
     <div v-if="cotizacion" class="relative mx-auto max-w-6xl mb-5">
       <FlowSteps :steps="pasosFlujo" />
     </div>
+    -->
     <div class="relative mx-auto max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
       <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
       <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />

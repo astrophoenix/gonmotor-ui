@@ -357,7 +357,37 @@ watch(modo, (valor) => {
   }
 });
 
-onMounted(() => document.addEventListener('click', onClickFuera));
+onMounted(async () => {
+  document.addEventListener('click', onClickFuera);
+  const params = new URLSearchParams(window.location.search);
+  const citaId = params.get('id');
+  if (citaId) {
+    params.delete('id');
+    const query = params.toString();
+    window.history.replaceState(
+      window.history.state,
+      '',
+      `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`
+    );
+    try {
+      const cita = await citasService.getById(citaId);
+      onAccion({ cita, tipo: 'editar' });
+    } catch (error) {
+      avisar('error', '', error.message || 'No se pudo cargar la cita.');
+    }
+    return;
+  }
+  if (params.get('crear') === '1') abrirCreacion();
+  if (params.has('crear')) {
+    params.delete('crear');
+    const query = params.toString();
+    window.history.replaceState(
+      window.history.state,
+      '',
+      `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`
+    );
+  }
+});
 
 onUnmounted(() => {
   document.removeEventListener('click', onClickFuera);

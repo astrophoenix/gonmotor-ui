@@ -42,9 +42,10 @@ import Alert from '../../../shared/components/Alert.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TextImprover from '../../../shared/components/TextImprover.vue';
-import FlowSteps from '../../../shared/components/FlowSteps.vue';
+// FlowSteps temporalmente desactivado; conservar para reactivarlo más adelante.
+// import FlowSteps from '../../../shared/components/FlowSteps.vue';
 import PdfExportButton from '../../../shared/components/PdfExportButton.vue';
-import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
+// import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 import ClientModal from '../../clientes/components/ClientModal.vue';
 import { useAuthStore } from '../../auth/stores/authStore';
 import ClienteSearchSelect from '../../../shared/components/ClienteSearchSelect.vue';
@@ -114,10 +115,6 @@ const form = reactive({
 
 const showClientCreateModal = ref(false);
 
-// Un vehículo solo admite una cotización vigente (PENDIENTE / ENVIADA / ACEPTADA).
-const ESTADOS_VIGENTES = ['PENDIENTE', 'ENVIADA', 'ACEPTADA'];
-const cotizacionVigente = ref(null);
-
 // Asesor (reemplaza inspector)
 const asesorSearch = ref('');
 const asesorSeleccionado = ref(null);
@@ -166,6 +163,7 @@ const iconoMetodoAceptacion = computed(() => {
   return iconos[metodoAceptacion.value] || UserCheck;
 });
 
+/* FlowSteps temporalmente desactivado; conservar la lógica para reactivarla.
 const pasosFlujo = computed(() => {
   const cot = cotizacion.value || {};
   const ordenId = cot.orden_generada_id || cot.orden_trabajo_origen || null;
@@ -201,6 +199,7 @@ const pasosFlujo = computed(() => {
     },
   ]);
 });
+*/
 
 function brutoServicio(s) {
   return (Number(s.horas_estimadas) || 0) * (Number(s.precio_unitario) || 0);
@@ -468,34 +467,12 @@ function selectVehiculo(vehiculo) {
   form.vehiculo = vehiculo;
   form.vehiculo_color = vehiculo.color || '';
   form.vehiculoSearch = formatPlaca(vehiculo.placa);
-  consultarCotizacionVigente(vehiculo?.id);
 }
 
 function clearVehiculo() {
   form.vehiculo = null;
   form.vehiculo_color = '';
   form.vehiculoSearch = '';
-  cotizacionVigente.value = null;
-}
-
-/**
- * Avisa (sin bloquear) que el vehículo ya tiene otra cotización vigente: el
- * backend responde 400 al guardar, el aviso solo adelanta el motivo.
- */
-async function consultarCotizacionVigente(vehiculoId) {
-  cotizacionVigente.value = null;
-  const id = Number(vehiculoId);
-  if (!id) return;
-  try {
-    const data = await cotizacionesService.list({ filters: { vehiculo: id } });
-    const items = Array.isArray(data?.results) ? data.results : [];
-    cotizacionVigente.value =
-      items.find(
-        (item) => ESTADOS_VIGENTES.includes(item.estado) && Number(item.id) !== cotizacionId.value
-      ) || null;
-  } catch {
-    cotizacionVigente.value = null;
-  }
 }
 
 function onClientCreated(cliente) {
@@ -542,7 +519,6 @@ function aplicarCotizacion(data) {
   form.cliente_telefono = data.cliente_telefono || '';
   form.cliente_email = data.cliente_email || '';
   form.vehiculo_color = data.vehiculo_color || '';
-  consultarCotizacionVigente(form.vehiculo?.id);
   asesorSeleccionado.value = null;
   asesorSearch.value = data.asesor_nombre || '';
   servicios.value = (data.servicios || []).map((s) => ({
@@ -1048,9 +1024,11 @@ onMounted(() => {
   </div>
 
   <div class="p-4">
+    <!-- FlowSteps temporalmente desactivado.
     <div v-if="cotizacion" class="relative mx-auto max-w-6xl mb-5">
       <FlowSteps :steps="pasosFlujo" />
     </div>
+    -->
     <div class="relative mx-auto max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
       <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
       <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
@@ -1177,25 +1155,6 @@ onMounted(() => {
                   </div>
                 </div>
               </div>
-            </div>
-            <!-- Una sola cotización vigente por vehículo -->
-            <div v-if="cotizacionVigente" class="mt-4">
-              <Alert
-                type="warning"
-                :title="`Este vehículo ya tiene la cotización vigente ${cotizacionVigente.numero_cotizacion}.`"
-                message="Un vehículo no puede tener dos cotizaciones vigentes. Edítala o ciérrala (vencida, rechazada o convertida) antes de guardar esta."
-              />
-              <a
-                :href="`/crud/cotizaciones/editar/?id=${cotizacionVigente.id}`"
-                class="inline-flex items-center gap-2 mt-2 text-sm font-medium text-brand-700 hover:underline dark:text-brand-300"
-              >
-                <EstadoCotizacionBadge
-                  :estado="cotizacionVigente.estado"
-                  :estado-display="cotizacionVigente.estado_display"
-                  size="sm"
-                />
-                Abrir {{ cotizacionVigente.numero_cotizacion }}
-              </a>
             </div>
             <!-- Metadatos de la cotización (siempre visibles) -->
             <div class="flex flex-wrap items-center gap-x-6 gap-y-2 pt-4 mt-4 text-sm text-gray-600 border-t border-gray-200 dark:border-gray-600 dark:text-gray-300">
