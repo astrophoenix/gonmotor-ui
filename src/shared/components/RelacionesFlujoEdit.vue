@@ -1,11 +1,11 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import {
   CalendarDays,
+  ChevronDown,
   ClipboardList,
   FileSearchCorner,
   Link2,
-  Plus,
   Receipt,
   Trash2,
   Wrench,
@@ -13,6 +13,7 @@ import {
 import ConfirmModal from './ConfirmModal.vue';
 import FlowStatusBadge from './FlowStatusBadge.vue';
 import CitaSearchSelect from './CitaSearchSelect.vue';
+import RecepcionSearchSelect from './RecepcionSearchSelect.vue';
 import InspeccionSearchSelect from './InspeccionSearchSelect.vue';
 import CotizacionSearchSelect from './CotizacionSearchSelect.vue';
 import OrdenSearchSelect from './OrdenSearchSelect.vue';
@@ -28,7 +29,7 @@ const props = defineProps({
 
 const CONFIGURACION = [
   { tipo: 'cita', label: 'Cita', icono: CalendarDays, color: 'bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-900/40 dark:text-sky-200 dark:border-sky-800', selector: CitaSearchSelect, multiple: true },
-  { tipo: 'recepcion', label: 'Recepción', icono: ClipboardList, color: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-200 dark:border-blue-800', selector: null, multiple: false },
+  { tipo: 'recepcion', label: 'Recepción', icono: ClipboardList, color: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-200 dark:border-blue-800', selector: RecepcionSearchSelect, multiple: false },
   { tipo: 'inspeccion', label: 'Inspección', icono: FileSearchCorner, color: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-200 dark:border-blue-800', selector: InspeccionSearchSelect, multiple: false },
   { tipo: 'cotizacion', label: 'Cotización', icono: Receipt, color: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-800', selector: CotizacionSearchSelect, multiple: true },
   { tipo: 'orden', label: 'Orden', icono: Wrench, color: 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-800', selector: OrdenSearchSelect, multiple: false },
@@ -36,12 +37,11 @@ const CONFIGURACION = [
 
 const grupos = ref([]);
 const busquedas = reactive({});
-const abierto = ref('');
 const modalVisible = ref(false);
 const procesando = ref(false);
 const errorMessage = ref('');
 const relacionPendiente = ref(null);
-const rootRef = ref(null);
+const abierto = reactive({});
 
 watch(
   () => [props.tipoEntidad, props.relaciones, props.puedeAgregar],
@@ -53,6 +53,9 @@ watch(
         items: [...(props.relaciones?.[grupo.tipo] || [])],
         puedeAgregar: props.puedeAgregar?.[grupo.tipo] ?? true,
       }));
+    grupos.value.forEach((grupo) => {
+      if (abierto[grupo.tipo] === undefined) abierto[grupo.tipo] = true;
+    });
   },
   { immediate: true, deep: true }
 );
@@ -61,10 +64,6 @@ const relacionPendienteLabel = computed(() => {
   const grupo = grupos.value.find((item) => item.tipo === relacionPendiente.value?.tipo);
   return `${grupo?.label || 'relación'} ${relacionPendiente.value?.item?.numero || relacionPendiente.value?.item?.label || ''}`.trim();
 });
-
-function clavePopover(grupo) {
-  return `relacion-${props.tipoEntidad}-${props.entidadId}-${grupo.tipo}`;
-}
 
 function urlItem(item) {
   if (item.url) return item.url;
@@ -82,6 +81,23 @@ function nombreItem(item) {
   if (item.label) return item.label;
   if (item.tipo === 'cita') return `Cita #${item.id}`;
   return item.numero || `#${item.id}`;
+}
+
+function fechaCotizacion(item) {
+  if (!item?.created_at) return '';
+  const fecha = new Date(item.created_at);
+  return Number.isNaN(fecha.getTime()) ? '' : fecha.toLocaleDateString('es-EC');
+}
+
+function totalCotizacion(item) {
+  return Number(item?.total || 0).toLocaleString('es-EC', {
+    style: 'currency',
+    currency: 'USD',
+  });
+}
+
+function toggleGrupo(grupo) {
+  abierto[grupo.tipo] = !abierto[grupo.tipo];
 }
 
 function normalizarSeleccion(grupo, item) {
@@ -102,11 +118,6 @@ function normalizarSeleccion(grupo, item) {
   };
 }
 
-function togglePopover(grupo) {
-  const key = clavePopover(grupo);
-  abierto.value = abierto.value === key ? '' : key;
-}
-
 async function vincular(grupo, item) {
   if (!item?.id || procesando.value) return;
   procesando.value = true;
@@ -116,11 +127,10 @@ async function vincular(grupo, item) {
     if (!grupo.items.some((actual) => String(actual.id) === String(item.id))) {
       grupo.items.push(normalizarSeleccion(grupo, item));
     }
-    if (!grupo.multiple || (grupo.tipo === 'cotizacion' && ['PENDIENTE', 'ENVIADA', 'ACEPTADA'].includes(item.estado))) {
+    if (!grupo.multiple) {
       grupo.puedeAgregar = false;
     }
     busquedas[grupo.tipo] = '';
-    abierto.value = '';
   } catch (error) {
     errorMessage.value = error.message || 'No se pudo crear la relación.';
   } finally {
@@ -148,13 +158,12 @@ async function confirmarDesvinculacion() {
       grupo.items = grupo.items.filter(
         (item) => String(item.id) !== String(relacionPendiente.value.item.id)
       );
-      if (!grupo.items.length || (grupo.tipo === 'cotizacion' && !grupo.items.some((item) => ['PENDIENTE', 'ENVIADA', 'ACEPTADA'].includes(item.estado)))) {
+      if (!grupo.items.length) {
         grupo.puedeAgregar = true;
       }
     }
     modalVisible.value = false;
     relacionPendiente.value = null;
-    abierto.value = '';
   } catch (error) {
     errorMessage.value = error.message || 'No se pudo eliminar la relación.';
     modalVisible.value = false;
@@ -163,27 +172,10 @@ async function confirmarDesvinculacion() {
   }
 }
 
-function onClickOutside(event) {
-  if (rootRef.value && !rootRef.value.contains(event.target)) abierto.value = '';
-}
-
-function onKeydown(event) {
-  if (event.key === 'Escape') abierto.value = '';
-}
-
-onMounted(() => {
-  document.addEventListener('click', onClickOutside);
-  document.addEventListener('keydown', onKeydown);
-});
-
-onBeforeUnmount(() => {
-  document.removeEventListener('click', onClickOutside);
-  document.removeEventListener('keydown', onKeydown);
-});
 </script>
 
 <template>
-  <section ref="rootRef" class="relative rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+  <section class="relative rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
     <div class="mb-3 flex items-center gap-2">
       <Link2 class="h-4 w-4 text-brand-700 dark:text-brand-300" />
       <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Relaciones de flujo</h3>
@@ -193,99 +185,86 @@ onBeforeUnmount(() => {
       {{ errorMessage }}
     </p>
 
-    <div class="flex flex-col items-start gap-3">
-      <div v-for="grupo in grupos" :key="grupo.tipo" class="relative flex min-w-0 flex-wrap items-center gap-2">
-        <template v-if="grupo.items.length">
-          <div class="hidden items-center gap-1 md:inline-flex">
-            <a
-              :href="urlItem({ ...grupo.items[0], tipo: grupo.tipo })"
-              class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium hover:brightness-95"
-              :class="grupo.color"
-            >
-              <component :is="grupo.icono" class="h-3.5 w-3.5 shrink-0" />
-              {{ grupo.label }} · {{ nombreItem(grupo.items[0]) }}
-            </a>
-            <button
-              type="button"
-              class="inline-flex h-7 w-7 items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-400 dark:hover:bg-red-900/30 dark:hover:text-red-300"
-              :disabled="procesando || grupo.items[0].canDelete === false"
-              :title="grupo.items[0].deleteReason || `Quitar relación de ${grupo.label.toLowerCase()}`"
-              :aria-label="`Quitar relación de ${grupo.label.toLowerCase()}`"
-              @click="pedirDesvinculacion(grupo, grupo.items[0])"
-            >
-              <Trash2 class="h-4 w-4" />
-            </button>
-            <button
-              v-if="grupo.items.length > 1"
-              type="button"
-              :data-popover-target="clavePopover(grupo)"
-              data-popover-trigger="click"
-              class="inline-flex items-center rounded-full border px-2 py-1 text-xs font-semibold"
-              :class="grupo.color"
-              :aria-expanded="abierto === clavePopover(grupo)"
-              @click="togglePopover(grupo)"
-            >
-              +{{ grupo.items.length - 1 }}
-            </button>
-          </div>
-
+    <div :id="`accordion-relaciones-${tipoEntidad}-${entidadId}`" data-accordion="open" class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+      <section v-for="(grupo, index) in grupos" :key="grupo.tipo">
+        <h2 :id="`relacion-heading-${tipoEntidad}-${entidadId}-${grupo.tipo}`">
           <button
             type="button"
-            :data-popover-target="clavePopover(grupo)"
-            data-popover-trigger="click"
-            class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium md:hidden"
-            :class="grupo.color"
-            :aria-expanded="abierto === clavePopover(grupo)"
-            @click="togglePopover(grupo)"
+            class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-medium text-gray-800 hover:bg-gray-50 dark:text-gray-100 dark:hover:bg-gray-700/50"
+            :class="index < grupos.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : ''"
+            :data-accordion-target="`#relacion-body-${tipoEntidad}-${entidadId}-${grupo.tipo}`"
+            :aria-expanded="abierto[grupo.tipo]"
+            :aria-controls="`relacion-body-${tipoEntidad}-${entidadId}-${grupo.tipo}`"
+            @click="toggleGrupo(grupo)"
           >
-            <component :is="grupo.icono" class="h-3.5 w-3.5 shrink-0" />
-            {{ grupo.label }}<span v-if="grupo.items.length > 1" class="font-semibold">+{{ grupo.items.length - 1 }}</span>
+            <span class="inline-flex items-center gap-2">
+              <component :is="grupo.icono" class="h-4 w-4 shrink-0" />
+              {{ grupo.label }}
+              <span v-if="grupo.items.length" class="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+                {{ grupo.items.length }}
+              </span>
+            </span>
+            <ChevronDown data-accordion-icon class="h-4 w-4 shrink-0 transition-transform" :class="abierto[grupo.tipo] ? 'rotate-180' : ''" />
           </button>
-        </template>
-
-        <component
-          :is="grupo.selector"
-          v-if="grupo.selector && grupo.puedeAgregar && !grupo.items.length"
-          :id="`relacion-${entidadId}-${grupo.tipo}`"
-          v-model="busquedas[grupo.tipo]"
-          :disabled="procesando"
-          solo-sin-relacion
-          @select="vincular(grupo, $event)"
-        />
-
+        </h2>
         <div
-          v-if="abierto === clavePopover(grupo)"
-          :id="clavePopover(grupo)"
-          data-popover
-          role="dialog"
-          class="absolute left-0 top-full z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800"
+          :id="`relacion-body-${tipoEntidad}-${entidadId}-${grupo.tipo}`"
+          :class="abierto[grupo.tipo] ? 'block' : 'hidden'"
+          :aria-labelledby="`relacion-heading-${tipoEntidad}-${entidadId}-${grupo.tipo}`"
+          role="region"
         >
-          <div class="border-b border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 dark:border-gray-700 dark:text-gray-200">
-            {{ grupo.label }} relacionadas
-          </div>
-          <ul class="max-h-64 overflow-y-auto p-1">
-            <li v-for="item in grupo.items" :key="item.id" class="flex items-center gap-2 rounded-md px-2 py-2 hover:bg-gray-50 dark:hover:bg-gray-700">
-              <a :href="urlItem({ ...item, tipo: grupo.tipo })" class="min-w-0 flex-1 text-sm text-gray-800 hover:text-brand-700 dark:text-gray-100 dark:hover:text-brand-300">
-                <span class="block truncate font-medium">{{ nombreItem(item) }}</span>
-                <span v-if="item.estadoDisplay || item.estado" class="mt-1 block">
-                  <FlowStatusBadge :tipo="grupo.tipo" :estado="item.estado" :estado-display="item.estadoDisplay" />
-                </span>
-              </a>
-              <button
-                type="button"
-                class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-gray-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-400 dark:hover:bg-red-900/30 dark:hover:text-red-300"
-                :disabled="procesando || item.canDelete === false"
-                :title="item.deleteReason || `Quitar relación de ${grupo.label.toLowerCase()}`"
-                :aria-label="`Quitar ${nombreItem(item)} de la relación`"
-                @click="pedirDesvinculacion(grupo, item)"
+          <div class="space-y-3 border-b border-gray-200 p-3 dark:border-gray-700">
+            <div v-if="grupo.items.length" class="space-y-2">
+              <div
+                v-for="item in grupo.items"
+                :key="item.id"
+                class="flex flex-wrap items-center gap-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-700/40"
               >
-                <Trash2 class="h-4 w-4" />
-              </button>
-            </li>
-          </ul>
-          <div data-popper-arrow class="absolute h-2 w-2 rotate-45 border-l border-t border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800"></div>
+                <a
+                  :href="urlItem({ ...item, tipo: grupo.tipo })"
+                  class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium hover:brightness-95"
+                  :class="grupo.color"
+                >
+                  <component :is="grupo.icono" class="h-3.5 w-3.5 shrink-0" />
+                  {{ grupo.label }} · {{ nombreItem(item) }}
+                </a>
+                <FlowStatusBadge :tipo="grupo.tipo" :estado="item.estado" :estado-display="item.estadoDisplay" />
+                <template v-if="grupo.tipo === 'cita'">
+                  <span v-if="item.fecha" class="text-xs text-gray-500 dark:text-gray-400">{{ item.fecha }} {{ item.hora }}</span>
+                </template>
+                <template v-else-if="grupo.tipo === 'cotizacion'">
+                  <span v-if="fechaCotizacion(item)" class="text-xs text-gray-500 dark:text-gray-400">{{ fechaCotizacion(item) }}</span>
+                  <span class="text-xs font-medium tabular-nums text-gray-700 dark:text-gray-200">{{ totalCotizacion(item) }}</span>
+                </template>
+                <button
+                  type="button"
+                  class="inline-flex h-7 w-7 items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-400 dark:hover:bg-red-900/30 dark:hover:text-red-300"
+                  :disabled="procesando || item.canDelete === false"
+                  :title="item.deleteReason || `Quitar relación de ${grupo.label.toLowerCase()}`"
+                  :aria-label="`Quitar relación de ${grupo.label.toLowerCase()}`"
+                  @click="pedirDesvinculacion(grupo, item)"
+                >
+                  <Trash2 class="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            <component
+              :is="grupo.selector"
+              v-if="grupo.selector && grupo.puedeAgregar && (grupo.multiple || !grupo.items.length)"
+              :id="`relacion-${entidadId}-${grupo.tipo}`"
+              v-model="busquedas[grupo.tipo]"
+              :disabled="procesando"
+              :exclude-ids="grupo.items.map((item) => item.id)"
+              solo-sin-relacion
+              @select="vincular(grupo, $event)"
+            />
+            <p v-if="!grupo.items.length && !grupo.selector" class="text-sm text-gray-500 dark:text-gray-400">
+              No hay una recepción relacionada.
+            </p>
+          </div>
         </div>
-      </div>
+      </section>
     </div>
 
     <ConfirmModal

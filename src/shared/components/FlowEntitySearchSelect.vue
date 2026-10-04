@@ -10,6 +10,7 @@ const props = defineProps({
   id: { type: String, default: '' },
   disabled: { type: Boolean, default: false },
   soloSinRelacion: { type: Boolean, default: false },
+  excludeIds: { type: Array, default: () => [] },
   createUrl: { type: String, default: '' },
   buscar: { type: Function, required: true },
 });
@@ -59,7 +60,9 @@ async function loadOptions() {
   try {
     const response = await props.buscar({ search: query.value.trim(), page: 1, pageSize: 10, filters });
     if (sequence !== requestSequence) return;
-    options.value = Array.isArray(response) ? response : (response?.results || []);
+    const results = Array.isArray(response) ? response : (response?.results || []);
+    const excluded = new Set(props.excludeIds.map(String));
+    options.value = results.filter((item) => !excluded.has(String(item.id)));
     activeIndex.value = -1;
   } catch (cause) {
     if (sequence !== requestSequence) return;

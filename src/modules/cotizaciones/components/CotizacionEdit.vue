@@ -636,6 +636,25 @@ function prefillDesdeInspeccion(inspeccion) {
 }
 
 // ---------- Ítems (servicios / repuestos) ----------
+// Una cotización puede llevar solo servicios, solo repuestos o ambos; lo único
+// que no se permite es guardarla sin ningún ítem. Las filas que el usuario dejó
+// a medias (sin descripción ni código) no se envían al backend.
+function descripcionItem(item) {
+  return sanitizeObservaciones(String(item.descripcion || '')).trim();
+}
+
+function serviciosCompletos() {
+  return servicios.value.filter((s) => descripcionItem(s));
+}
+
+function repuestosCompletos() {
+  return repuestos.value.filter((r) => descripcionItem(r) || String(r.codigo_repuesto || '').trim());
+}
+
+function hayItems() {
+  return serviciosCompletos().length > 0 || repuestosCompletos().length > 0;
+}
+
 function quitarServicio(index) {
   const removed = servicios.value.splice(index, 1)[0];
   if (removed && removed.id) serviciosEliminados.value.push(removed.id);
@@ -695,8 +714,8 @@ async function guardarDetalles(idCotizacion) {
     }
   }
 
-  for (const s of servicios.value) await guardarServicio(s);
-  for (const r of repuestos.value) await guardarRepuesto(r);
+  for (const s of serviciosCompletos()) await guardarServicio(s);
+  for (const r of repuestosCompletos()) await guardarRepuesto(r);
   for (const id of serviciosEliminados.value) {
     try {
       await cotizacionesService.deleteServicio(id);
@@ -825,7 +844,7 @@ async function crearCotizacionIndependiente() {
 
     // Si el usuario ya agregó servicios/repuestos antes de crear, se persisten
     // antes de redirigir para no perderlos al recargar desde el servidor.
-    const teniaDetalles = servicios.value.length > 0 || repuestos.value.length > 0;
+    const teniaDetalles = hayItems();
     let errorDetalles = '';
     if (teniaDetalles) {
       try {
@@ -871,6 +890,14 @@ async function submit() {
     }
     payload.cliente = form.cliente.id;
     payload.vehiculo = form.vehiculo.id;
+  }
+
+  if (!hayItems()) {
+    errorMessage.value =
+      'La cotización debe tener al menos un servicio o un repuesto. Agrega los ítems en las pestañas Servicios o Repuestos.';
+    activeTab.value = !servicios.value.length && repuestos.value.length ? 'repuestos' : 'servicios';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
   }
 
   isSaving.value = true;

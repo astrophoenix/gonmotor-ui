@@ -108,6 +108,16 @@ export function sanitizeText(value) {
 }
 
 /**
+ * Recorta únicamente los espacios del inicio y del final de una cadena,
+ * respetando los espacios internos: "  Filtro de aceite  " -> "Filtro de aceite".
+ * Se usa al salir del campo (`@blur`) y al guardar, nunca en cada tecla, para no
+ * impedir escribir un espacio al final mientras se redacta.
+ */
+export function recortarEspacios(value) {
+  return (value == null ? '' : String(value)).replace(/^\s+|\s+$/g, '');
+}
+
+/**
  * Búsqueda libre de vehículos/clientes: permite letras (con acentos), dígitos,
  * espacios y los separadores presentes en los campos filtrados (placa, VIN,
  * motor, marca, modelo, nombre, identificación, razón social, RUC) además de

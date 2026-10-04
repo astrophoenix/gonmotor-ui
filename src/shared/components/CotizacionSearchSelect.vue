@@ -8,6 +8,7 @@ defineProps({
   placeholder: { type: String, default: 'Buscar cotización...' },
   disabled: { type: Boolean, default: false },
   soloSinRelacion: { type: Boolean, default: false },
+  excludeIds: { type: Array, default: () => [] },
   createUrl: { type: String, default: '/crud/cotizaciones/editar/' },
 });
 const emit = defineEmits(['update:modelValue', 'select', 'clear']);

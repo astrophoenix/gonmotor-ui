@@ -4,6 +4,7 @@ import { X, Save } from 'lucide-vue-next';
 import { repuestosService } from '../services/repuestosService';
 import Alert from '../../../../shared/components/Alert.vue';
 import { IVA_OPCIONES, normalizarIva } from '../../../../shared/utils/impuestos';
+import { recortarEspacios } from '../../../../shared/utils/sanitize';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -163,24 +164,28 @@ function applyBackendErrors(data) {
   repuestoErrors.value = newErrors;
 }
 
+function recortar(campo) {
+  form[campo] = recortarEspacios(form[campo]);
+}
+
 function buildPayload() {
   return {
     codigo: (form.codigo || '').trim().toUpperCase(),
-    nombre: (form.nombre || '').trim(),
-    descripcion: form.descripcion || '',
+    nombre: recortarEspacios(form.nombre),
+    descripcion: recortarEspacios(form.descripcion),
     categoria: form.categoria,
-    marca: form.marca || '',
-    numero_parte: form.numero_parte || '',
+    marca: recortarEspacios(form.marca),
+    numero_parte: recortarEspacios(form.numero_parte),
     unidad_medida: form.unidad_medida,
     costo_referencial: String(form.costo_referencial ?? '0.00'),
     precio_venta: String(form.precio_venta ?? '0.00'),
     iva_porcentaje_defecto: normalizarIva(form.iva_porcentaje_defecto),
     stock_actual: String(form.stock_actual ?? '0.00'),
     stock_minimo: String(form.stock_minimo ?? '0.00'),
-    ubicacion: form.ubicacion || '',
-    proveedor: form.proveedor || '',
-    contifico_producto_id: form.contifico_producto_id || '',
-    contifico_cuenta_contable: form.contifico_cuenta_contable || '',
+    ubicacion: recortarEspacios(form.ubicacion),
+    proveedor: recortarEspacios(form.proveedor),
+    contifico_producto_id: recortarEspacios(form.contifico_producto_id),
+    contifico_cuenta_contable: recortarEspacios(form.contifico_cuenta_contable),
   };
 }
 
@@ -256,10 +261,6 @@ watch(() => props.modelValue, (val) => {
 watch(() => form.codigo, (val) => {
   form.codigo = (val || '').trim().toUpperCase();
 });
-
-watch(() => form.nombre, (val) => {
-  if (val && val.length > 1 && val !== val.trim()) form.nombre = val.trim();
-});
 </script>
 
 <template>
@@ -301,7 +302,7 @@ watch(() => form.nombre, (val) => {
             </div>
             <div class="col-span-1 md:col-span-3">
               <label for="rep_nombre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre del Repuesto</label>
-              <input id="rep_nombre" v-model="form.nombre" maxlength="150" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', repuestoErrors.nombre ? 'bg-red-50 border border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']" placeholder="Ej: Filtro de aceite">
+              <input id="rep_nombre" v-model="form.nombre" maxlength="150" @blur="recortar('nombre')" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', repuestoErrors.nombre ? 'bg-red-50 border border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']" placeholder="Ej: Filtro de aceite">
               <p v-if="repuestoErrors.nombre" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ repuestoErrors.nombre }}</p>
             </div>
             <div class="col-span-1">
@@ -312,11 +313,11 @@ watch(() => form.nombre, (val) => {
             </div>
             <div class="col-span-1">
               <label for="rep_marca" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Marca / Fabricante</label>
-              <input id="rep_marca" v-model="form.marca" maxlength="100" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+              <input id="rep_marca" v-model="form.marca" maxlength="100" @blur="recortar('marca')" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
             </div>
             <div class="col-span-1">
               <label for="rep_numero_parte" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Número de Parte</label>
-              <input id="rep_numero_parte" v-model="form.numero_parte" maxlength="100" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+              <input id="rep_numero_parte" v-model="form.numero_parte" maxlength="100" @blur="recortar('numero_parte')" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
             </div>
             <div class="col-span-1">
               <label for="rep_unidad" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Unidad de Medida</label>
@@ -346,11 +347,11 @@ watch(() => form.nombre, (val) => {
             </div>
             <div class="col-span-1">
               <label for="rep_ubicacion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Ubicación / Estante</label>
-              <input id="rep_ubicacion" v-model="form.ubicacion" maxlength="100" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+              <input id="rep_ubicacion" v-model="form.ubicacion" maxlength="100" @blur="recortar('ubicacion')" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
             </div>
             <div class="col-span-1">
               <label for="rep_proveedor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Proveedor Habitual</label>
-              <input id="rep_proveedor" v-model="form.proveedor" maxlength="150" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+              <input id="rep_proveedor" v-model="form.proveedor" maxlength="150" @blur="recortar('proveedor')" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
             </div>
             <div class="col-span-1">
               <label for="rep_iva" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">IVA por defecto</label>
@@ -360,15 +361,15 @@ watch(() => form.nombre, (val) => {
             </div>
             <div class="col-span-1 md:col-span-3">
               <label for="rep_descripcion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Descripción</label>
-              <textarea id="rep_descripcion" v-model="form.descripcion" rows="3" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"></textarea>
+              <textarea id="rep_descripcion" v-model="form.descripcion" rows="3" @blur="recortar('descripcion')" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"></textarea>
             </div>
             <div class="col-span-1 md:col-span-2">
               <label for="rep_contifico_producto" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">ID Producto Contífico</label>
-              <input id="rep_contifico_producto" v-model="form.contifico_producto_id" maxlength="100" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+              <input id="rep_contifico_producto" v-model="form.contifico_producto_id" maxlength="100" @blur="recortar('contifico_producto_id')" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
             </div>
             <div class="col-span-1 md:col-span-2">
               <label for="rep_contifico_cuenta" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cuenta Contable Contífico</label>
-              <input id="rep_contifico_cuenta" v-model="form.contifico_cuenta_contable" maxlength="50" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+              <input id="rep_contifico_cuenta" v-model="form.contifico_cuenta_contable" maxlength="50" @blur="recortar('contifico_cuenta_contable')" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
             </div>
           </div>
         </template>
