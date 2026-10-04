@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { ArrowLeft, Car, Camera, CheckCircle2, ClipboardList, Clock, FolderInput, ShieldCheck, FileText, IdCardIcon, Image as ImageIcon, Mail, PaintBucket, Phone, Shapes, SquarePen, TagIcon, TriangleAlert, WrenchIcon, X, Toolbox } from 'lucide-vue-next';
+import { ArrowLeft, Car, Camera, CheckCircle2, ClipboardList, Clock, FolderInput, ShieldCheck, FileText, IdCardIcon, Image as ImageIcon, Mail, PaintBucket, Phone, Shapes, SquarePen, TagIcon, TriangleAlert, WrenchIcon, Workflow, X, Toolbox } from 'lucide-vue-next';
 import { IconAutomaticGearbox, IconEngine, IconFileInvoice, IconGasStation, IconLockOpen2, IconManualGearbox } from '@tabler/icons-vue';
 import { API_BASE_URL } from '../../../shared/config/env';
 import { request } from '../../../shared/services/httpClient';
@@ -10,8 +10,8 @@ import { TESTIGOS } from '../../../shared/config/testigos';
 import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
-import FlowSteps from '../../../shared/components/FlowSteps.vue';
-import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
+import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
+import { relacionesDeInspeccion } from '../../../shared/utils/relacionesFlujo';
 import { formatDateTime, formatDuration, minutesBetween } from '../../../shared/utils/datetime';
 
 const inspeccion = ref(null);
@@ -153,41 +153,8 @@ const tieneOrdenTrabajo = computed(() => Boolean(inspeccion.value?.tiene_orden_t
 const tieneCotizacionActiva = computed(() => Boolean(inspeccion.value?.tiene_cotizacion_activa));
 const estaFinalizada = computed(() => inspeccion.value?.estado === 'FINALIZADA');
 
-const pasosFlujo = computed(() => {
-  const ins = inspeccion.value || {};
-  const recepcion = ins.recepcion || null;
-  const estadoCotizacion = ins.cotizacion_estado || (ins.tiene_cotizacion_activa ? 'PENDIENTE' : null);
-  return buildPasosFlujo([
-    {
-      entidad: 'recepcion',
-      estado: recepcion?.estado,
-      estadoDisplay: recepcion?.estado_display,
-      id: recepcion?.id,
-      numero: recepcion?.numero_recepcion,
-    },
-    {
-      entidad: 'inspeccion',
-      estado: ins.estado,
-      estadoDisplay: ins.estado_display,
-      id: ins.id,
-      numero: ins.numero_inspeccion,
-    },
-    {
-      entidad: 'cotizacion',
-      estado: estadoCotizacion,
-      estadoDisplay: ins.cotizacion_estado_display,
-      id: ins.cotizacion_id || ins.cotizacion_activa_id,
-      numero: ins.cotizacion_numero || ins.numero_cotizacion,
-    },
-    {
-      entidad: 'orden',
-      estado: ins.orden_trabajo_estado,
-      estadoDisplay: ins.orden_trabajo_estado_display,
-      id: ins.orden_trabajo,
-      numero: ins.orden_trabajo_numero,
-    },
-  ]);
-});
+// Chips de recepción, cotización y orden vinculadas a esta inspección.
+const relacionesInspeccion = computed(() => relacionesDeInspeccion(inspeccion.value));
 
 function formatDate(dateString) {
   if (!dateString) return '-';
@@ -580,9 +547,6 @@ onMounted(async () => {
   </div>
 
   <div class="p-4">
-    <div v-if="inspeccion" class="relative mx-auto max-w-6xl mb-5">
-      <FlowSteps :steps="pasosFlujo" />
-    </div>
     <div class="relative mx-auto max-w-8xl">
       <Alert v-if="error" type="error" :title="error" message="" dismissible @dismiss="error = ''"/>
       <Alert v-if="successMessage" type="success" :title="successMessage" message="" dismissible @dismiss="successMessage = ''"/>
@@ -794,7 +758,7 @@ onMounted(async () => {
                       <span v-if="duracionInspeccionDisplay" class="text-gray-500 dark:text-gray-400">({{ duracionInspeccionDisplay }})</span>
                     </dd>
                   </div>
-                  <div>
+                  <!--div>
                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Cotización</dt>
                     <dd class="mt-0.5 text-sm font-semibold">
                       <a
@@ -806,7 +770,7 @@ onMounted(async () => {
                       </a>
                       <span v-else>—</span>
                     </dd>
-                  </div>
+                  </div-->
                   <div>
                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Kilometraje</dt>
                     <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">
@@ -1114,6 +1078,17 @@ onMounted(async () => {
                 </div>
               </dl>
             </div>
+          </div>
+          <!-- Relaciones del flujo -->
+          <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
+            <div class="flex items-center gap-2 mb-1">
+              <Workflow class="w-5 h-5 text-gray-900 dark:text-gray-900" />
+              <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Relaciones del flujo</h2>
+            </div>
+            <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
+              Recepción de origen, cotización y orden de trabajo.
+            </p>
+            <RelacionesFlujo :pasos="relacionesInspeccion" />
           </div>
         </div>
       </div>

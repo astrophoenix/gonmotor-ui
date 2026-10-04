@@ -24,6 +24,7 @@ import {
   PaintBucket,
   Car,
   ClipboardList,
+  Workflow,
 } from 'lucide-vue-next';
 import {
   IconEngine,
@@ -41,6 +42,8 @@ import MdiIcon from '../../../shared/components/MdiIcon.vue';
 // import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 import { TESTIGOS } from '../../../shared/config/testigos';
 import { getTipoTrabajoLabel } from '../../../shared/config/tiposTrabajo';
+import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
+import { relacionesDeRecepcion } from '../../../shared/utils/relacionesFlujo';
 import { useRecepciones } from '../composables/useRecepciones';
 import { inspeccionesService } from '../../inspecciones/services/inspeccionesService';
 import { request } from '../../../shared/services/httpClient';
@@ -304,6 +307,9 @@ const pasosFlujo = computed(() => {
 const cliente = computed(() => recepcion.value?.cliente || null);
 
 const vehiculo = computed(() => recepcion.value?.vehiculo || null);
+
+// Chips de inspección, cotización y orden enlazadas a esta recepción.
+const relacionesRecepcion = computed(() => relacionesDeRecepcion(recepcion.value));
 
 const numeroRecepcion = computed(
   () => recepcion.value?.numero_recepcion || `#${recepcion.value?.id}`
@@ -585,8 +591,7 @@ function irAInspeccion(recepcion) {
           type="button"
           class="inline-flex items-center justify-center w-8 h-8 rounded-full text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
           aria-label="Cerrar"
-          @click="showModalCrearInspeccion = false"
-        >
+          @click="showModalCrearInspeccion = false">
           <X class="w-5 h-5" />
         </button>
       </div>
@@ -624,15 +629,13 @@ function irAInspeccion(recepcion) {
               class="flex items-start gap-3 p-3 border rounded-lg dark:border-gray-600"
               :class="cotizacionesSeleccionadas.includes(cotizacion.id)
                 ? 'border-green-500 bg-green-50 dark:border-green-600 dark:bg-green-900/30'
-                : 'border-gray-200 dark:border-gray-700'"
-            >
+                : 'border-gray-200 dark:border-gray-700'">
               <input
                 type="checkbox"
                 class="w-4 h-4 mt-1 text-green-600 border-gray-300 rounded focus:ring-green-500 dark:bg-gray-700 dark:border-gray-600"
                 :checked="cotizacionesSeleccionadas.includes(cotizacion.id)"
                 :aria-label="`Cargar los ítems de ${cotizacion.numero}`"
-                @change="alternarCotizacion(cotizacion.id)"
-              >
+                @change="alternarCotizacion(cotizacion.id)">
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
                   <button
@@ -710,10 +713,7 @@ function irAInspeccion(recepcion) {
       <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
       <Alert v-if="errorCrearInspeccion" type="error" :message="errorCrearInspeccion" dismissible @dismiss="errorCrearInspeccion = ''" />
 
-      <div
-        v-if="cotizacionesDisponibles.length > 0"
-        class="p-4 mb-4 border rounded-lg border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-900/30"
-      >
+      <div v-if="cotizacionesDisponibles.length > 0" class="p-4 mb-4 border rounded-lg border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-900/30">
         <div class="flex items-start gap-3">
           <TriangleAlert class="w-5 h-5 mt-0.5 text-green-600 dark:text-green-400" />
           <div class="min-w-0">
@@ -889,7 +889,7 @@ function irAInspeccion(recepcion) {
                     <TipoTrabajoBadge :tipo="recepcion.tipo_recepcion" size="md" />
                   </dd>
                 </div>
-                <div v-if="recepcion.inspecciones?.length">
+                <!--div v-if="recepcion.inspecciones?.length">
                   <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Inspección</dt>
                   <dd class="mt-0.5 text-sm font-semibold">
                     <a
@@ -899,7 +899,7 @@ function irAInspeccion(recepcion) {
                       {{ recepcion.inspecciones[0]?.numero_inspeccion || `#${recepcion.inspecciones[0]?.id}` }}
                     </a>
                   </dd>
-                </div>
+                </div-->
               </div>
             </div>
 
@@ -1317,6 +1317,19 @@ function irAInspeccion(recepcion) {
               </dl>
             </div>
           </div>
+
+          <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
+            <div class="flex items-center gap-2 mb-1">
+              <Workflow class="w-5 h-5 text-gray-900 dark:text-gray-900" />
+              <h4 class="text-sm font-semibold text-gray-900 dark:text-white">
+                Relaciones del flujo
+              </h4>
+            </div>
+            <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
+              Documentos generados a partir de esta recepción.
+            </p>
+            <RelacionesFlujo :pasos="relacionesRecepcion" />
+          </div>
         </div>
       </div>
     </div>
@@ -1325,15 +1338,13 @@ function irAInspeccion(recepcion) {
   <div
     v-if="showImageModal"
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-    @click="cerrarFoto"
-  >
+    @click="cerrarFoto">
     <div class="relative max-h-[90vh] max-w-[90vw] overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl" @click.stop>
       <button
         type="button"
         class="absolute top-2 right-2 z-10 inline-flex items-center justify-center w-8 h-8 rounded-full bg-black/50 text-white hover:bg-black/70"
         aria-label="Cerrar"
-        @click="cerrarFoto"
-      >
+        @click="cerrarFoto">
         <X class="w-5 h-5" />
       </button>
       <img :src="previewImg" class="max-h-[90vh] max-w-[90vw] object-contain" alt="Foto ampliada" />

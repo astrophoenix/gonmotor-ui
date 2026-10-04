@@ -1286,7 +1286,7 @@ onMounted(() => {
                     <span class="font-medium text-gray-900 dark:text-white">Taller:</span>
                     {{ sucursalNombre || tallerSesion || '—' }}
                   </span>
-                  <span class="inline-flex items-center gap-1.5 md:border-l md:border-gray-200 md:pl-6 md:dark:border-gray-600" title="Origen de la cotización">
+                  <!--span class="inline-flex items-center gap-1.5 md:border-l md:border-gray-200 md:pl-6 md:dark:border-gray-600" title="Origen de la cotización">
                     <ClipboardList class="w-4 h-4 shrink-0 text-brand-600 dark:text-brand-400" />
                     <span class="font-medium text-gray-900 dark:text-white">Origen:</span>
                     <template v-if="inspeccionOrigen">
@@ -1301,7 +1301,7 @@ onMounted(() => {
                       Recepción {{ recepcionNumero || `#${recepcionOrigen}` }}
                     </span>
                     <span v-else>Independiente</span>
-                  </span>
+                  </span-->
                   <span
                     v-if="fechaAceptacion"
                     class="inline-flex basis-full items-center gap-1.5 pt-1"

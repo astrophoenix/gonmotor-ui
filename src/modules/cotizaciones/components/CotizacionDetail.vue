@@ -20,6 +20,7 @@ import {
   Store,
   TagIcon,
   UserCheck,
+  Workflow,
   Wrench,
 } from 'lucide-vue-next';
 import { IconBrandWhatsapp, IconLockOpen2 } from '@tabler/icons-vue';
@@ -28,10 +29,9 @@ import { formatPlate } from '../../../shared/utils/formatPlate';
 import { formatDateTime } from '../../../shared/utils/datetime';
 import Alert from '../../../shared/components/Alert.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
-// FlowSteps temporalmente desactivado; conservar para reactivarlo más adelante.
-// import FlowSteps from '../../../shared/components/FlowSteps.vue';
 import PdfExportButton from '../../../shared/components/PdfExportButton.vue';
-// import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
+import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
+import { relacionesDeCotizacion } from '../../../shared/utils/relacionesFlujo';
 import EstadoCotizacionBadge from './EstadoCotizacionBadge.vue';
 
 const METODOS_ACEPTACION = [
@@ -95,43 +95,8 @@ function formatFechaHora12(value) {
   });
 }
 
-/* FlowSteps temporalmente desactivado; conservar la lógica para reactivarla.
-const pasosFlujo = computed(() => {
-  const cot = cotizacion.value || {};
-  const ordenId = cot.orden_generada_id || cot.orden_trabajo_origen || null;
-  const ordenNumero = cot.orden_generada_id ? cot.orden_generada_numero : cot.orden_trabajo_numero;
-  return buildPasosFlujo([
-    {
-      entidad: 'recepcion',
-      estado: cot.recepcion_estado,
-      estadoDisplay: cot.recepcion_estado_display,
-      id: cot.recepcion_origen,
-      numero: cot.recepcion_numero,
-    },
-    {
-      entidad: 'inspeccion',
-      estado: cot.inspeccion_estado,
-      estadoDisplay: cot.inspeccion_estado_display,
-      id: cot.inspeccion_origen,
-      numero: cot.inspeccion_numero,
-    },
-    {
-      entidad: 'cotizacion',
-      estado: cot.estado,
-      estadoDisplay: cot.estado_display,
-      id: cot.id,
-      numero: cot.numero_cotizacion,
-    },
-    {
-      entidad: 'orden',
-      estado: cot.orden_trabajo_estado,
-      estadoDisplay: cot.orden_trabajo_estado_display,
-      id: ordenId,
-      numero: ordenNumero,
-    },
-  ]);
-});
-*/
+// Chips de recepción, inspección y orden vinculadas a esta cotización.
+const relacionesCotizacion = computed(() => relacionesDeCotizacion(cotizacion.value));
 
 // Los subtotales por categoría se derivan únicamente del campo `subtotal` que
 // ya calcula el backend en cada servicio/repuesto (sin recalcular precios*horas).
@@ -287,298 +252,313 @@ onMounted(cargar);
   </div>
 
   <div class="p-4">
-    <!-- FlowSteps temporalmente desactivado.
-    <div v-if="cotizacion" class="relative mx-auto max-w-6xl mb-5">
-      <FlowSteps :steps="pasosFlujo" />
-    </div>
-    -->
-    <div class="relative mx-auto max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
-      <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
-      <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+      <div class="lg:col-span-3 space-y-4">
+        <div class="relative mx-auto max-w-8xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
+          <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
+          <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
 
-      <div v-if="loading" class="flex items-center justify-center py-16">
-        <div class="flex items-center gap-3 text-gray-500 dark:text-gray-400">
-          <Loader2 class="w-6 h-6 animate-spin" />
-          <span>Cargando cotización...</span>
+          <div v-if="loading" class="flex items-center justify-center py-16">
+            <div class="flex items-center gap-3 text-gray-500 dark:text-gray-400">
+              <Loader2 class="w-6 h-6 animate-spin" />
+              <span>Cargando cotización...</span>
+            </div>
+          </div>
+
+          <template v-else-if="cotizacion">
+            <!-- ===== 1. INFORMACIÓN GENERAL: cliente / vehículo / asesor ===== -->
+            <div class="mb-6">
+              <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">
+                <div class="flex items-center gap-2 mb-4">
+                  <FileText class="w-5 h-5 text-gray-900 dark:text-white" />
+                  <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Información General</h2>
+                  <span
+                    v-if="cotizacion.validez_dias"
+                    class="ml-auto text-sm text-gray-600 dark:text-gray-300"
+                  >
+                    <span class="font-medium text-gray-900 dark:text-white">Validez:</span>
+                    {{ cotizacion.validez_dias }} días
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_0.7fr_1fr]">
+                  <!-- Cliente -->
+                  <div class="min-w-0">
+                    <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente</p>
+                    <p class="truncate text-sm font-bold text-gray-900 dark:text-white">{{ cotizacion.cliente_nombre || '—' }}</p>
+                    <div class="mt-3 space-y-1.5">
+                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                        <IdCardIcon class="w-3.5 h-3.5 shrink-0" /> Identificación:
+                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.cliente_identificacion || '—' }}</span>
+                      </div>
+                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                        <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono:
+                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.cliente_telefono || '—' }}</span>
+                      </div>
+                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                        <Mail class="w-3.5 h-3.5 shrink-0" /> Correo:
+                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.cliente_email || '—' }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Vehículo -->
+                  <div class="min-w-0">
+                    <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo</p>
+                    <p class="truncate text-sm font-bold text-gray-900 dark:text-white">{{ formatPlate(cotizacion.vehiculo_placa) || '—' }}</p>
+                    <div class="mt-3 space-y-1.5">
+                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                        <TagIcon class="w-3.5 h-3.5 shrink-0" /> Marca:
+                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_marca || '—' }}</span>
+                      </div>
+                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                        <Shapes class="w-3.5 h-3.5 shrink-0" /> Modelo:
+                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_modelo || '—' }}</span>
+                      </div>
+                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                        <PaintBucket class="w-3.5 h-3.5 shrink-0" /> Color:
+                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_color || '—' }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Asesor -->
+                  <div class="min-w-0">
+                    <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Asesor</p>
+                    <p class="truncate text-sm font-bold text-gray-900 dark:text-white">{{ cotizacion.asesor_nombre || '—' }}</p>
+                    <div class="mt-3 space-y-1.5">
+                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                        <IdCardIcon class="w-3.5 h-3.5 shrink-0" /> Identificación:
+                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.asesor_identificacion || '—' }}</span>
+                      </div>
+                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                        <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono:
+                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.asesor_telefono || '—' }}</span>
+                      </div>
+                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
+                        <Mail class="w-3.5 h-3.5 shrink-0" /> Correo:
+                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.asesor_email || '—' }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Metadatos de la cotización (siempre visibles) -->
+                <div class="flex flex-wrap items-center gap-x-6 gap-y-2 pt-4 mt-4 text-sm text-gray-600 border-t border-gray-200 dark:border-gray-600 dark:text-gray-300">
+                  <span class="inline-flex items-center gap-1.5" title="Fecha y hora de emisión">
+                    <CalendarDays class="w-4 h-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                    <span class="font-medium text-gray-900 dark:text-white">Emisión:</span>
+                    {{ fechaEmision }}
+                  </span>
+                  <span class="inline-flex items-center gap-1.5 md:border-l md:border-gray-200 md:pl-6 md:dark:border-gray-600" title="Taller donde se creó la cotización">
+                    <Store class="w-4 h-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                    <span class="font-medium text-gray-900 dark:text-white">Taller:</span>
+                    {{ cotizacion.sucursal_nombre || '—' }}
+                  </span>
+                  <!--span class="inline-flex items-center gap-1.5 md:border-l md:border-gray-200 md:pl-6 md:dark:border-gray-600" title="Origen de la cotización">
+                    <ClipboardList class="w-4 h-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                    <span class="font-medium text-gray-900 dark:text-white">Origen:</span>
+                    <template v-if="cotizacion.inspeccion_origen">
+                      <a
+                        :href="`/crud/inspecciones/ver/?id=${encodeURIComponent(cotizacion.inspeccion_origen)}`"
+                        class="font-medium text-primary-blue-700 hover:underline dark:text-primary-blue-400">Cod Inspección {{ cotizacion.inspeccion_numero || `#${cotizacion.inspeccion_origen}` }}</a>
+                      <a
+                        v-if="cotizacion.recepcion_origen"
+                        :href="`/crud/recepciones/ver/?id=${encodeURIComponent(cotizacion.recepcion_origen)}`"
+                        class="font-medium text-primary-blue-700 hover:underline dark:text-primary-blue-400">
+                        / Recepción {{ cotizacion.recepcion_numero || `#${cotizacion.recepcion_origen}` }}
+                      </a>
+                    </template>
+                    <a
+                      v-else-if="cotizacion.recepcion_origen"
+                      :href="`/crud/recepciones/ver/?id=${encodeURIComponent(cotizacion.recepcion_origen)}`"
+                      class="font-medium text-primary-blue-700 hover:underline dark:text-primary-blue-400">
+                      Recepción {{ cotizacion.recepcion_numero || `#${cotizacion.recepcion_origen}` }}
+                    </a>
+                    <span v-else>Independiente</span>
+                  </span-->
+                  <span
+                    v-if="cotizacion.fecha_aceptacion"
+                    class="inline-flex basis-full items-center gap-1.5 pt-1"
+                    title="Aceptación de la cotización por parte del cliente">
+                    <CheckCircle2 class="w-4 h-4 shrink-0 text-green-600 dark:text-green-400" />
+                    <span class="font-medium text-gray-900 dark:text-white">Aceptada:</span>
+                    {{ formatFechaHora12(cotizacion.fecha_aceptacion) }} -
+                    <component :is="iconoMetodoAceptacion" class="w-4 h-4 shrink-0 text-green-600 dark:text-green-400" />
+                    {{ metodoAceptacionLabel || '—' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ===== 2. SERVICIOS ===== -->
+            <section class="mt-6">
+              <h3 class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
+                <Wrench class="w-5 h-5 text-gray-800 dark:text-white" />
+                Servicios
+              </h3>
+              <div v-if="cotizacion.servicios?.length" class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
+                <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                  <thead class="text-xs uppercase bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                    <tr>
+                      <th class="px-4 py-3">Descripción</th>
+                      <th class="px-4 py-3 w-24 text-right">Horas</th>
+                      <th class="px-4 py-3 w-32 text-right">P. Unitario</th>
+                      <th class="px-4 py-3 w-28 text-right">Descuento</th>
+                      <th class="px-4 py-3 w-16 text-right">IVA</th>
+                      <th class="px-4 py-3 w-32 text-right">Neto</th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200 dark:divide-gray-600 dark:bg-gray-800">
+                    <tr v-for="(servicio, index) in cotizacion.servicios" :key="servicio.id || index">
+                      <td class="px-4 py-3 text-gray-900 dark:text-white">
+                        {{ servicio.descripcion || '—' }}
+                        <span
+                          v-if="servicio.es_opcional"
+                          class="ml-1.5 inline-block px-1.5 py-0.5 text-[10px] font-medium text-gray-500 bg-gray-100 rounded dark:text-gray-400 dark:bg-gray-700"
+                        >opcional</span>
+                      </td>
+                      <td class="px-4 py-3 text-right tabular-nums">{{ servicio.horas_estimadas ?? '—' }}</td>
+                      <td class="px-4 py-3 text-right tabular-nums">{{ formatMoney(servicio.precio_unitario) }}</td>
+                      <td class="px-4 py-3 text-right tabular-nums">{{ formatMoney(servicio.descuento) }}</td>
+                      <td class="px-4 py-3 text-right tabular-nums">{{ ivaLabel(servicio.iva_porcentaje) }}</td>
+                      <td class="px-4 py-3 text-right font-medium tabular-nums text-gray-900 dark:text-white">{{ formatMoney(servicio.subtotal) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div v-else class="p-5 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
+                Sin servicios registrados en esta cotización.
+              </div>
+            </section>
+
+            <!-- ===== 3. REPUESTOS / MATERIALES ===== -->
+            <section class="mt-8">
+              <h3 class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
+                <Package class="w-5 h-5 text-gray-800 dark:text-white" />
+                Repuestos / Materiales
+              </h3>
+              <div v-if="cotizacion.repuestos?.length" class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
+                <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                  <thead class="text-xs uppercase bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                    <tr>
+                      <th class="px-4 py-3">Descripción</th>
+                      <th class="px-4 py-3 w-24 text-right">Cant.</th>
+                      <th class="px-4 py-3 w-32 text-right">P. Unitario</th>
+                      <th class="px-4 py-3 w-28 text-right">Descuento</th>
+                      <th class="px-4 py-3 w-16 text-right">IVA</th>
+                      <th class="px-4 py-3 w-32 text-right">Neto</th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200 dark:divide-gray-600 dark:bg-gray-800">
+                    <tr v-for="(repuesto, index) in cotizacion.repuestos" :key="repuesto.id || index">
+                      <td class="px-4 py-3 text-gray-900 dark:text-white">
+                        {{ repuesto.descripcion || '—' }}
+                        <span
+                          v-if="repuesto.es_opcional"
+                          class="ml-1.5 inline-block px-1.5 py-0.5 text-[10px] font-medium text-gray-500 bg-gray-100 rounded dark:text-gray-400 dark:bg-gray-700"
+                        >opcional</span>
+                      </td>
+                      <td class="px-4 py-3 text-right tabular-nums">{{ repuesto.cantidad ?? '—' }}</td>
+                      <td class="px-4 py-3 text-right tabular-nums">{{ formatMoney(repuesto.precio_unitario_referencial) }}</td>
+                      <td class="px-4 py-3 text-right tabular-nums">{{ formatMoney(repuesto.descuento) }}</td>
+                      <td class="px-4 py-3 text-right tabular-nums">{{ ivaLabel(repuesto.iva_porcentaje) }}</td>
+                      <td class="px-4 py-3 text-right font-medium tabular-nums text-gray-900 dark:text-white">{{ formatMoney(repuesto.subtotal) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div v-else class="p-5 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
+                Sin repuestos o materiales registrados en esta cotización.
+              </div>
+            </section>
+
+            <!-- ===== 4. OBSERVACIONES + RESUMEN ===== -->
+            <section class="grid grid-cols-1 gap-6 mt-8 lg:grid-cols-2">
+              <div>
+                <h3 class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
+                  <MessageSquareText class="w-5 h-5 text-gray-800 dark:text-white" />
+                  Observaciones
+                </h3>
+                <div
+                  v-if="cotizacion.observaciones"
+                  class="p-4 text-sm whitespace-pre-line rounded-lg bg-gray-50 border border-gray-200 text-gray-800 dark:bg-gray-700/40 dark:border-gray-600/60 dark:text-gray-200"
+                >
+                  {{ cotizacion.observaciones }}
+                </div>
+                <div
+                  v-else
+                  class="p-5 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600"
+                >
+                  Sin observaciones.
+                </div>
+              </div>
+
+              <div>
+                <h3 class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
+                  <CircleDollarSign class="w-5 h-5 text-gray-800 dark:text-white" />
+                  Resumen
+                </h3>
+                <div class="p-5 space-y-2 text-sm rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-700/40 dark:border-gray-600/60">
+                  <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                    <span>Subtotal servicios</span>
+                    <span class="font-medium tabular-nums">$ {{ formatMoney(subtotalServicios) }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                    <span>Subtotal repuestos / materiales</span>
+                    <span class="font-medium tabular-nums">$ {{ formatMoney(subtotalRepuestos) }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                    <span>Subtotal neto</span>
+                    <span class="font-medium tabular-nums">$ {{ formatMoney(cotizacion.subtotal_neto) }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                    <span>Descuento total</span>
+                    <span class="font-medium tabular-nums text-accent-600 dark:text-accent-400">$ {{ formatMoney(cotizacion.descuento) }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                    <span>Subtotal base 0%</span>
+                    <span class="font-medium tabular-nums">$ {{ formatMoney(cotizacion.subtotal_base_0) }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                    <span>Subtotal base gravada</span>
+                    <span class="font-medium tabular-nums">$ {{ formatMoney(cotizacion.subtotal_base_gravada) }}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                    <span>IVA total</span>
+                    <span class="font-medium tabular-nums">$ {{ formatMoney(cotizacion.total_iva) }}</span>
+                  </div>
+                  <div class="flex items-center justify-between pt-3 mt-3 text-base font-bold border-t border-gray-200 text-gray-900 dark:border-gray-600 dark:text-white">
+                    <span>Total</span>
+                    <span class="tabular-nums">$ {{ formatMoney(cotizacion.total) }}</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </template>
+
+          <div v-else-if="!loading" class="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+            Cotización no encontrada.
+          </div>
         </div>
       </div>
 
-      <template v-else-if="cotizacion">
-        <!-- ===== 1. INFORMACIÓN GENERAL: cliente / vehículo / asesor ===== -->
-        <div class="mb-6">
-          <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">
-            <div class="flex items-center gap-2 mb-4">
-              <FileText class="w-5 h-5 text-gray-900 dark:text-white" />
-              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Información General</h2>
-              <span
-                v-if="cotizacion.validez_dias"
-                class="ml-auto text-sm text-gray-600 dark:text-gray-300"
-              >
-                <span class="font-medium text-gray-900 dark:text-white">Validez:</span>
-                {{ cotizacion.validez_dias }} días
-              </span>
-            </div>
-
-            <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_0.7fr_1fr]">
-              <!-- Cliente -->
-              <div class="min-w-0">
-                <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente</p>
-                <p class="truncate text-sm font-bold text-gray-900 dark:text-white">{{ cotizacion.cliente_nombre || '—' }}</p>
-                <div class="mt-3 space-y-1.5">
-                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                    <IdCardIcon class="w-3.5 h-3.5 shrink-0" /> Identificación:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.cliente_identificacion || '—' }}</span>
-                  </div>
-                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                    <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.cliente_telefono || '—' }}</span>
-                  </div>
-                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                    <Mail class="w-3.5 h-3.5 shrink-0" /> Correo:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.cliente_email || '—' }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Vehículo -->
-              <div class="min-w-0">
-                <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo</p>
-                <p class="truncate text-sm font-bold text-gray-900 dark:text-white">{{ formatPlate(cotizacion.vehiculo_placa) || '—' }}</p>
-                <div class="mt-3 space-y-1.5">
-                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                    <TagIcon class="w-3.5 h-3.5 shrink-0" /> Marca:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_marca || '—' }}</span>
-                  </div>
-                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                    <Shapes class="w-3.5 h-3.5 shrink-0" /> Modelo:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_modelo || '—' }}</span>
-                  </div>
-                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                    <PaintBucket class="w-3.5 h-3.5 shrink-0" /> Color:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_color || '—' }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Asesor -->
-              <div class="min-w-0">
-                <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Asesor</p>
-                <p class="truncate text-sm font-bold text-gray-900 dark:text-white">{{ cotizacion.asesor_nombre || '—' }}</p>
-                <div class="mt-3 space-y-1.5">
-                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                    <IdCardIcon class="w-3.5 h-3.5 shrink-0" /> Identificación:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.asesor_identificacion || '—' }}</span>
-                  </div>
-                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                    <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.asesor_telefono || '—' }}</span>
-                  </div>
-                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                    <Mail class="w-3.5 h-3.5 shrink-0" /> Correo:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.asesor_email || '—' }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Metadatos de la cotización (siempre visibles) -->
-            <div class="flex flex-wrap items-center gap-x-6 gap-y-2 pt-4 mt-4 text-sm text-gray-600 border-t border-gray-200 dark:border-gray-600 dark:text-gray-300">
-              <span class="inline-flex items-center gap-1.5" title="Fecha y hora de emisión">
-                <CalendarDays class="w-4 h-4 shrink-0 text-brand-600 dark:text-brand-400" />
-                <span class="font-medium text-gray-900 dark:text-white">Emisión:</span>
-                {{ fechaEmision }}
-              </span>
-              <span class="inline-flex items-center gap-1.5 md:border-l md:border-gray-200 md:pl-6 md:dark:border-gray-600" title="Taller donde se creó la cotización">
-                <Store class="w-4 h-4 shrink-0 text-brand-600 dark:text-brand-400" />
-                <span class="font-medium text-gray-900 dark:text-white">Taller:</span>
-                {{ cotizacion.sucursal_nombre || '—' }}
-              </span>
-              <span class="inline-flex items-center gap-1.5 md:border-l md:border-gray-200 md:pl-6 md:dark:border-gray-600" title="Origen de la cotización">
-                <ClipboardList class="w-4 h-4 shrink-0 text-brand-600 dark:text-brand-400" />
-                <span class="font-medium text-gray-900 dark:text-white">Origen:</span>
-                <template v-if="cotizacion.inspeccion_origen">
-                  <a
-                    :href="`/crud/inspecciones/ver/?id=${encodeURIComponent(cotizacion.inspeccion_origen)}`"
-                    class="font-medium text-primary-blue-700 hover:underline dark:text-primary-blue-400">Cod Inspección {{ cotizacion.inspeccion_numero || `#${cotizacion.inspeccion_origen}` }}</a>
-                  <a
-                    v-if="cotizacion.recepcion_origen"
-                    :href="`/crud/recepciones/ver/?id=${encodeURIComponent(cotizacion.recepcion_origen)}`"
-                    class="font-medium text-primary-blue-700 hover:underline dark:text-primary-blue-400">
-                    / Recepción {{ cotizacion.recepcion_numero || `#${cotizacion.recepcion_origen}` }}
-                  </a>
-                </template>
-                <a
-                  v-else-if="cotizacion.recepcion_origen"
-                  :href="`/crud/recepciones/ver/?id=${encodeURIComponent(cotizacion.recepcion_origen)}`"
-                  class="font-medium text-primary-blue-700 hover:underline dark:text-primary-blue-400">
-                  Recepción {{ cotizacion.recepcion_numero || `#${cotizacion.recepcion_origen}` }}
-                </a>
-                <span v-else>Independiente</span>
-              </span>
-              <span
-                v-if="cotizacion.fecha_aceptacion"
-                class="inline-flex basis-full items-center gap-1.5 pt-1"
-                title="Aceptación de la cotización por parte del cliente">
-                <CheckCircle2 class="w-4 h-4 shrink-0 text-green-600 dark:text-green-400" />
-                <span class="font-medium text-gray-900 dark:text-white">Aceptada:</span>
-                {{ formatFechaHora12(cotizacion.fecha_aceptacion) }} -
-                <component :is="iconoMetodoAceptacion" class="w-4 h-4 shrink-0 text-green-600 dark:text-green-400" />
-                {{ metodoAceptacionLabel || '—' }}
-              </span>
-            </div>
+      <div class="lg:col-span-1 space-y-4">
+        <!-- ===== 0. RELACIONES DEL FLUJO ===== -->
+        <div class="mb-6 p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
+          <div class="flex items-center gap-2 mb-1">
+            <Workflow class="w-5 h-5 text-gray-900 dark:text-white" />
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Relaciones del flujo</h2>
           </div>
+          <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
+            Recepción, inspección y orden de trabajo relacionadas.
+          </p>
+          <RelacionesFlujo :pasos="relacionesCotizacion" />
         </div>
-
-        <!-- ===== 2. SERVICIOS ===== -->
-        <section class="mt-6">
-          <h3 class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-            <Wrench class="w-5 h-5 text-gray-800 dark:text-white" />
-            Servicios
-          </h3>
-          <div v-if="cotizacion.servicios?.length" class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
-            <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-              <thead class="text-xs uppercase bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                <tr>
-                  <th class="px-4 py-3">Descripción</th>
-                  <th class="px-4 py-3 w-24 text-right">Horas</th>
-                  <th class="px-4 py-3 w-32 text-right">P. Unitario</th>
-                  <th class="px-4 py-3 w-28 text-right">Descuento</th>
-                  <th class="px-4 py-3 w-16 text-right">IVA</th>
-                  <th class="px-4 py-3 w-32 text-right">Neto</th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200 dark:divide-gray-600 dark:bg-gray-800">
-                <tr v-for="(servicio, index) in cotizacion.servicios" :key="servicio.id || index">
-                  <td class="px-4 py-3 text-gray-900 dark:text-white">
-                    {{ servicio.descripcion || '—' }}
-                    <span
-                      v-if="servicio.es_opcional"
-                      class="ml-1.5 inline-block px-1.5 py-0.5 text-[10px] font-medium text-gray-500 bg-gray-100 rounded dark:text-gray-400 dark:bg-gray-700"
-                    >opcional</span>
-                  </td>
-                  <td class="px-4 py-3 text-right tabular-nums">{{ servicio.horas_estimadas ?? '—' }}</td>
-                  <td class="px-4 py-3 text-right tabular-nums">{{ formatMoney(servicio.precio_unitario) }}</td>
-                  <td class="px-4 py-3 text-right tabular-nums">{{ formatMoney(servicio.descuento) }}</td>
-                  <td class="px-4 py-3 text-right tabular-nums">{{ ivaLabel(servicio.iva_porcentaje) }}</td>
-                  <td class="px-4 py-3 text-right font-medium tabular-nums text-gray-900 dark:text-white">{{ formatMoney(servicio.subtotal) }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div v-else class="p-5 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
-            Sin servicios registrados en esta cotización.
-          </div>
-        </section>
-
-        <!-- ===== 3. REPUESTOS / MATERIALES ===== -->
-        <section class="mt-8">
-          <h3 class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-            <Package class="w-5 h-5 text-gray-800 dark:text-white" />
-            Repuestos / Materiales
-          </h3>
-          <div v-if="cotizacion.repuestos?.length" class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
-            <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-              <thead class="text-xs uppercase bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                <tr>
-                  <th class="px-4 py-3">Descripción</th>
-                  <th class="px-4 py-3 w-24 text-right">Cant.</th>
-                  <th class="px-4 py-3 w-32 text-right">P. Unitario</th>
-                  <th class="px-4 py-3 w-28 text-right">Descuento</th>
-                  <th class="px-4 py-3 w-16 text-right">IVA</th>
-                  <th class="px-4 py-3 w-32 text-right">Neto</th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200 dark:divide-gray-600 dark:bg-gray-800">
-                <tr v-for="(repuesto, index) in cotizacion.repuestos" :key="repuesto.id || index">
-                  <td class="px-4 py-3 text-gray-900 dark:text-white">
-                    {{ repuesto.descripcion || '—' }}
-                    <span
-                      v-if="repuesto.es_opcional"
-                      class="ml-1.5 inline-block px-1.5 py-0.5 text-[10px] font-medium text-gray-500 bg-gray-100 rounded dark:text-gray-400 dark:bg-gray-700"
-                    >opcional</span>
-                  </td>
-                  <td class="px-4 py-3 text-right tabular-nums">{{ repuesto.cantidad ?? '—' }}</td>
-                  <td class="px-4 py-3 text-right tabular-nums">{{ formatMoney(repuesto.precio_unitario_referencial) }}</td>
-                  <td class="px-4 py-3 text-right tabular-nums">{{ formatMoney(repuesto.descuento) }}</td>
-                  <td class="px-4 py-3 text-right tabular-nums">{{ ivaLabel(repuesto.iva_porcentaje) }}</td>
-                  <td class="px-4 py-3 text-right font-medium tabular-nums text-gray-900 dark:text-white">{{ formatMoney(repuesto.subtotal) }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div v-else class="p-5 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
-            Sin repuestos o materiales registrados en esta cotización.
-          </div>
-        </section>
-
-        <!-- ===== 4. OBSERVACIONES + RESUMEN ===== -->
-        <section class="grid grid-cols-1 gap-6 mt-8 lg:grid-cols-2">
-          <div>
-            <h3 class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-              <MessageSquareText class="w-5 h-5 text-gray-800 dark:text-white" />
-              Observaciones
-            </h3>
-            <div
-              v-if="cotizacion.observaciones"
-              class="p-4 text-sm whitespace-pre-line rounded-lg bg-gray-50 border border-gray-200 text-gray-800 dark:bg-gray-700/40 dark:border-gray-600/60 dark:text-gray-200"
-            >
-              {{ cotizacion.observaciones }}
-            </div>
-            <div
-              v-else
-              class="p-5 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600"
-            >
-              Sin observaciones.
-            </div>
-          </div>
-
-          <div>
-            <h3 class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-              <CircleDollarSign class="w-5 h-5 text-gray-800 dark:text-white" />
-              Resumen
-            </h3>
-            <div class="p-5 space-y-2 text-sm rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-700/40 dark:border-gray-600/60">
-              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                <span>Subtotal servicios</span>
-                <span class="font-medium tabular-nums">$ {{ formatMoney(subtotalServicios) }}</span>
-              </div>
-              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                <span>Subtotal repuestos / materiales</span>
-                <span class="font-medium tabular-nums">$ {{ formatMoney(subtotalRepuestos) }}</span>
-              </div>
-              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                <span>Subtotal neto</span>
-                <span class="font-medium tabular-nums">$ {{ formatMoney(cotizacion.subtotal_neto) }}</span>
-              </div>
-              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                <span>Descuento total</span>
-                <span class="font-medium tabular-nums text-accent-600 dark:text-accent-400">$ {{ formatMoney(cotizacion.descuento) }}</span>
-              </div>
-              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                <span>Subtotal base 0%</span>
-                <span class="font-medium tabular-nums">$ {{ formatMoney(cotizacion.subtotal_base_0) }}</span>
-              </div>
-              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                <span>Subtotal base gravada</span>
-                <span class="font-medium tabular-nums">$ {{ formatMoney(cotizacion.subtotal_base_gravada) }}</span>
-              </div>
-              <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                <span>IVA total</span>
-                <span class="font-medium tabular-nums">$ {{ formatMoney(cotizacion.total_iva) }}</span>
-              </div>
-              <div class="flex items-center justify-between pt-3 mt-3 text-base font-bold border-t border-gray-200 text-gray-900 dark:border-gray-600 dark:text-white">
-                <span>Total</span>
-                <span class="tabular-nums">$ {{ formatMoney(cotizacion.total) }}</span>
-              </div>
-            </div>
-          </div>
-        </section>
-      </template>
-
-      <div v-else-if="!loading" class="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
-        Cotización no encontrada.
       </div>
     </div>
+
+    
   </div>
 
   <!-- Confirmación para reabrir -->
