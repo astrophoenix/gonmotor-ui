@@ -1411,20 +1411,12 @@ onMounted(() => {
             type="button"
             class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-brand-700 rounded border border-brand-700 hover:bg-brand-50 dark:text-brand-300 dark:border-brand-300 dark:hover:bg-gray-800"
             title="Generar Inspección"
-            @click="abrirModalCrearInspeccion"
-          >
+            @click="abrirModalCrearInspeccion">
             <Loader2 v-if="creandoInspeccion" class="w-4 h-4 animate-spin" />
             <IconReportSearch v-else class="w-5 h-5" />
             Crear Inspección
           </button>
-          <a
-            v-else-if="inspeccionActual"
-            :href="`/crud/inspecciones/editar/?id=${inspeccionActual.id}`"
-            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-800"
-          >
-            <IconReportSearch class="w-5 h-5" />
-            Ver inspección {{ inspeccionActual.numero_inspeccion || "" }}
-          </a>
+          
           <FormSaveActions
             :is-loading="isSaving"
             :is-edit-mode="isEditMode"
@@ -1445,20 +1437,8 @@ onMounted(() => {
   <div class="px-4 pt-4">
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
       <div class="lg:col-span-3 space-y-4">
-        <Alert
-          v-if="successMessage"
-          type="success"
-          :message="successMessage"
-          dismissible
-          @dismiss="successMessage = ''"
-        />
-        <Alert
-          v-if="errorMessage"
-          type="error"
-          :message="errorMessage"
-          dismissible
-          @dismiss="errorMessage = ''"
-        />
+        <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
+        <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
         <Alert
           v-if="readOnly"
           type="info"

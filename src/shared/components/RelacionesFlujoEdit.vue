@@ -27,12 +27,17 @@ const props = defineProps({
   alDesvincular: { type: Function, required: true },
 });
 
+// `multiple`: el grupo admite más de una entidad a la vez.
+// `buscarConItems`: el buscador sigue visible aunque el grupo ya tenga elementos.
+// Cita, recepción, inspección y orden son de una sola pieza, así que su buscador
+// solo aparece cuando el grupo está vacío; la cotización es el único caso
+// donde se pueden seguir agregando documentos.
 const CONFIGURACION = [
-  { tipo: 'cita', label: 'Cita', icono: CalendarDays, color: 'bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-900/40 dark:text-sky-200 dark:border-sky-800', selector: CitaSearchSelect, multiple: true },
-  { tipo: 'recepcion', label: 'Recepción', icono: ClipboardList, color: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-200 dark:border-blue-800', selector: RecepcionSearchSelect, multiple: false },
-  { tipo: 'inspeccion', label: 'Inspección', icono: FileSearchCorner, color: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-200 dark:border-blue-800', selector: InspeccionSearchSelect, multiple: false },
-  { tipo: 'cotizacion', label: 'Cotización', icono: Receipt, color: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-800', selector: CotizacionSearchSelect, multiple: true },
-  { tipo: 'orden', label: 'Orden', icono: Wrench, color: 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-800', selector: OrdenSearchSelect, multiple: false },
+  { tipo: 'cita', label: 'Cita', icono: CalendarDays, color: 'bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-900/40 dark:text-sky-200 dark:border-sky-800', selector: CitaSearchSelect, multiple: true, buscarConItems: false },
+  { tipo: 'recepcion', label: 'Recepción', icono: ClipboardList, color: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-200 dark:border-blue-800', selector: RecepcionSearchSelect, multiple: false, buscarConItems: false },
+  { tipo: 'inspeccion', label: 'Inspección', icono: FileSearchCorner, color: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-200 dark:border-blue-800', selector: InspeccionSearchSelect, multiple: false, buscarConItems: false },
+  { tipo: 'cotizacion', label: 'Cotización', icono: Receipt, color: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-800', selector: CotizacionSearchSelect, multiple: true, buscarConItems: true },
+  { tipo: 'orden', label: 'Orden', icono: Wrench, color: 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-800', selector: OrdenSearchSelect, multiple: false, buscarConItems: false },
 ];
 
 const grupos = ref([]);
@@ -220,30 +225,27 @@ async function confirmarDesvinculacion() {
                 :key="item.id"
                 class="flex flex-wrap items-center gap-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-700/40"
               >
-                <a
-                  :href="urlItem({ ...item, tipo: grupo.tipo })"
+                <a :href="urlItem({ ...item, tipo: grupo.tipo })"
                   class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium hover:brightness-95"
-                  :class="grupo.color"
-                >
+                  :class="grupo.color" >
                   <component :is="grupo.icono" class="h-3.5 w-3.5 shrink-0" />
-                  {{ grupo.label }} · {{ nombreItem(item) }}
+                  {{ nombreItem(item) }}
                 </a>
                 <FlowStatusBadge :tipo="grupo.tipo" :estado="item.estado" :estado-display="item.estadoDisplay" />
-                <template v-if="grupo.tipo === 'cita'">
+                <!--template v-if="grupo.tipo === 'cita'">
                   <span v-if="item.fecha" class="text-xs text-gray-500 dark:text-gray-400">{{ item.fecha }} {{ item.hora }}</span>
                 </template>
                 <template v-else-if="grupo.tipo === 'cotizacion'">
                   <span v-if="fechaCotizacion(item)" class="text-xs text-gray-500 dark:text-gray-400">{{ fechaCotizacion(item) }}</span>
                   <span class="text-xs font-medium tabular-nums text-gray-700 dark:text-gray-200">{{ totalCotizacion(item) }}</span>
-                </template>
+                </template-->
                 <button
                   type="button"
-                  class="inline-flex h-7 w-7 items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-400 dark:hover:bg-red-900/30 dark:hover:text-red-300"
+                  class="inline-flex h-7 w-7 items-center justify-center rounded-full text-red-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300"
                   :disabled="procesando || item.canDelete === false"
                   :title="item.deleteReason || `Quitar relación de ${grupo.label.toLowerCase()}`"
                   :aria-label="`Quitar relación de ${grupo.label.toLowerCase()}`"
-                  @click="pedirDesvinculacion(grupo, item)"
-                >
+                  @click="pedirDesvinculacion(grupo, item)">
                   <Trash2 class="h-4 w-4" />
                 </button>
               </div>
@@ -251,7 +253,7 @@ async function confirmarDesvinculacion() {
 
             <component
               :is="grupo.selector"
-              v-if="grupo.selector && grupo.puedeAgregar && (grupo.multiple || !grupo.items.length)"
+              v-if="grupo.selector && grupo.puedeAgregar && (grupo.buscarConItems || !grupo.items.length)"
               :id="`relacion-${entidadId}-${grupo.tipo}`"
               v-model="busquedas[grupo.tipo]"
               :disabled="procesando"
