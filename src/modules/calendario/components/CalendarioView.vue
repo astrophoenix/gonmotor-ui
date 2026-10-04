@@ -358,10 +358,8 @@ watch(errorMessage, (valor) => {
             <span class="text-xs text-gray-500 dark:text-gray-400">
               {{ citasDelDia.length }} cita{{ citasDelDia.length === 1 ? '' : 's' }} el día seleccionado
             </span>
-            <select
-              v-model="vista"
-              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            >
+            <select id="select_periodo" name="select_periodo" v-model="vista"
+              class="px-6 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block dark:bg-gray-700 dark:border-gray-600 dark:text-white">
               <option value="dayGridMonth">Mes</option>
               <option value="timeGridWeek">Semana</option>
               <option value="timeGridDay">Día</option>

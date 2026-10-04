@@ -15,6 +15,7 @@ import VehiculoSearchSelect from '../../../shared/components/VehiculoSearchSelec
 import EmpleadoSearchSelect from '../../../shared/components/EmpleadoSearchSelect.vue';
 import ClientModal from '../../clientes/components/ClientModal.vue';
 import FlowSteps from '../../../shared/components/FlowSteps.vue';
+import RelacionesFlujoEdit from '../../../shared/components/RelacionesFlujoEdit.vue';
 import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 import { sanitizeObservaciones } from '../../../shared/utils/sanitize';
 import {
@@ -56,6 +57,13 @@ const esCreacion = computed(() => !ordenId.value);
 const isEditMode = computed(() => Boolean(ordenId.value));
 
 const ordenPersistidaId = ref(null);
+
+// Relaciones de flujo (cita, recepción, inspección y cotización ligadas por FK).
+const RELACIONES_VACIAS = () => ({ cita: [], recepcion: [], inspeccion: [], cotizacion: [] });
+const PUEDE_AGREGAR = { cita: true, recepcion: true, inspeccion: true, cotizacion: true };
+const relacionesOrden = ref(RELACIONES_VACIAS());
+const puedeAgregarRelacion = ref({ ...PUEDE_AGREGAR });
+const relacionesCargadas = ref(false);
 const photoEntityId = computed(() => (esCreacion.value ? ordenPersistidaId.value : ordenId.value));
 
 const clienteSeleccionado = ref(null);
@@ -223,7 +231,7 @@ const vehiculoImagenSrc = computed(() => resolveMediaUrl(vehiculo.value?.imagen)
 const inspeccion = computed(() => orden.value?.inspeccion || null);
 const recepciones = computed(() => orden.value?.recepciones || []);
 
-const pasosFlujo = computed(() => {
+/*const pasosFlujo = computed(() => {
   const ord = orden.value || {};
   const recepcionOrigen = recepciones.value[0] || null;
   return buildPasosFlujo([
@@ -256,7 +264,7 @@ const pasosFlujo = computed(() => {
       numero: ord.numero_orden,
     },
   ]);
-});
+});*/
 
 function formatDate(dateString) {
   if (!dateString) return '—';
@@ -507,12 +515,46 @@ onMounted(async () => {
   try {
     const data = await ordenesService.getById(ordenId.value);
     aplicarOrden(data);
+    await cargarRelacionesOrden(ordenId.value);
   } catch (err) {
     error.value = err.message || 'Error al cargar la orden de trabajo.';
   } finally {
     loading.value = false;
   }
 });
+
+async function cargarRelacionesOrden(id = ordenId.value) {
+  relacionesCargadas.value = false;
+  if (!id) {
+    relacionesOrden.value = RELACIONES_VACIAS();
+    return;
+  }
+  try {
+    const data = await ordenesService.listarRelaciones(id);
+    relacionesOrden.value = data?.relaciones || RELACIONES_VACIAS();
+    puedeAgregarRelacion.value = data?.puede_agregar || PUEDE_AGREGAR;
+    relacionesCargadas.value = true;
+  } catch (err) {
+    relacionesOrden.value = RELACIONES_VACIAS();
+    error.value = err.message || 'No se pudieron cargar las relaciones de flujo.';
+  }
+}
+
+async function relacionOrden(payload) {
+  const respuesta = await ordenesService.actualizarRelacion(ordenId.value, payload);
+  // El listado se recarga porque las relaciones derivadas (recepciones, citas)
+  // cambian aunque la orden no se haya modificado.
+  await cargarRelacionesOrden(ordenId.value);
+  return respuesta;
+}
+
+function vincularRelacion({ tipo, id }) {
+  return relacionOrden({ tipo, id, accion: 'vincular' });
+}
+
+function desvincularRelacion({ tipo, id }) {
+  return relacionOrden({ tipo, id, accion: 'desvincular' });
+}
 
 async function handleSubmit() {
   if (saving.value) return;
@@ -622,10 +664,9 @@ async function handleSubmit() {
   </div>
 
   <div class="p-4">
-    <div v-if="orden" class="relative mx-auto max-w-6xl mb-5">
+    <!--div v-if="orden" class="relative mx-auto max-w-6xl mb-5">
       <FlowSteps :steps="pasosFlujo" />
-    </div>
-
+    </div-->
     <Alert v-if="successMessage" type="success" title="Guardado correctamente" :message="successMessage" dismissible @dismiss="successMessage = ''" />
     <Alert v-if="error" type="error" title="Error" :message="error" dismissible @dismiss="error = ''" />
 
@@ -1135,6 +1176,17 @@ async function handleSubmit() {
             </dl>
           </div>
         </div>
+
+        <RelacionesFlujoEdit
+          v-if="isEditMode && relacionesCargadas"
+          class="relative mx-auto max-w-6xl mb-5"
+          tipo-entidad="orden"
+          :entidad-id="ordenId"
+          :relaciones="relacionesOrden"
+          :puede-agregar="puedeAgregarRelacion"
+          :al-vincular="vincularRelacion"
+          :al-desvincular="desvincularRelacion"
+        />
       </div>
     </form>
   </div>

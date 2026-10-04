@@ -41,6 +41,17 @@ export const cotizacionesService = {
     });
   },
 
+  listarRelaciones(id) {
+    return request(`${buildUrl(id)}relaciones/`);
+  },
+
+  actualizarRelacion(id, payload) {
+    return request(`${buildUrl(id)}relaciones/`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
   convertirAOrden(id) {
     return request(`${buildUrl(id)}convertir_a_orden/`, {
       method: 'POST',

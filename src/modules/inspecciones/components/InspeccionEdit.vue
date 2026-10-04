@@ -22,6 +22,7 @@ import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TestigosTablero from '../../../shared/components/TestigosTablero.vue';
 import TextImprover from '../../../shared/components/TextImprover.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
+import RelacionesFlujoEdit from '../../../shared/components/RelacionesFlujoEdit.vue';
 // FlowSteps temporalmente desactivado; conservar para reactivarlo más adelante.
 // import FlowSteps from '../../../shared/components/FlowSteps.vue';
 // import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
@@ -38,6 +39,13 @@ const isSaving = ref(false);
 const errorMessage = ref('');
 const successMessage = ref('');
 const formErrors = ref({});
+
+// Relaciones de flujo (cita, recepción, cotización y orden ligadas por FK).
+const RELACIONES_VACIAS = () => ({ cita: [], recepcion: [], cotizacion: [], orden: [] });
+const PUEDE_AGREGAR = { cita: true, recepcion: true, cotizacion: true, orden: true };
+const relacionesInspeccion = ref(RELACIONES_VACIAS());
+const puedeAgregarRelacion = ref({ ...PUEDE_AGREGAR });
+const relacionesCargadas = ref(false);
 
 const form = reactive({
   recepcion: recepcionId || null,
@@ -823,11 +831,58 @@ async function loadInspeccion() {
     // Las inspecciones anteriores a este campo no tienen lectura: se precarga
     // con el odómetro vigente del vehículo.
     precargarKilometraje();
+    await cargarRelacionesInspeccion(data.id || inspeccionId);
   } catch (error) {
     showError(error);
   } finally {
     isLoading.value = false;
   }
+}
+
+async function cargarRelacionesInspeccion(id = inspeccionId) {
+  relacionesCargadas.value = false;
+  if (!id) {
+    relacionesInspeccion.value = RELACIONES_VACIAS();
+    return;
+  }
+  try {
+    const data = await inspeccionesService.listarRelaciones(id);
+    relacionesInspeccion.value = data?.relaciones || RELACIONES_VACIAS();
+    puedeAgregarRelacion.value = data?.puede_agregar || PUEDE_AGREGAR;
+    relacionesCargadas.value = true;
+  } catch (error) {
+    relacionesInspeccion.value = RELACIONES_VACIAS();
+    showError(error);
+  }
+}
+
+// Vincular o desvincular la recepción también actualiza el formulario: si el
+// guardado enviara el valor viejo, borraría el vínculo recién creado.
+async function relacionRecepcion(payload) {
+  const respuesta = await inspeccionesService.actualizarRelacion(inspeccionId, payload);
+  if (payload.tipo === 'recepcion') {
+    if (payload.accion === 'vincular') {
+      form.recepcion = payload.id;
+      try {
+        recepcion.value = await request(`/api/recepciones/${payload.id}/`);
+      } catch (error) {
+        console.error('No se pudo refrescar la recepción vinculada:', error);
+      }
+    } else {
+      form.recepcion = null;
+      recepcion.value = null;
+    }
+  }
+  await cargarRelacionesInspeccion(inspeccionId);
+  return respuesta;
+}
+
+function vincularRelacion({ tipo, id }) {
+  return relacionRecepcion({ tipo, id, accion: 'vincular' });
+}
+
+function desvincularRelacion({ tipo, id }) {
+  return relacionRecepcion({ tipo, id, accion: 'desvincular' });
 }
 
 async function submit() {
@@ -1608,6 +1663,17 @@ onMounted(() => {
               </div>
             </dl>
           </div>
+        </div>
+
+        <div v-if="isEditMode && relacionesCargadas" class="px-4 pt-4">
+          <RelacionesFlujoEdit
+            tipo-entidad="inspeccion"
+            :entidad-id="inspeccionId"
+            :relaciones="relacionesInspeccion"
+            :puede-agregar="puedeAgregarRelacion"
+            :al-vincular="vincularRelacion"
+            :al-desvincular="desvincularRelacion"
+          />
         </div>
       </div>
     </div>

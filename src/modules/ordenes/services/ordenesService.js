@@ -41,6 +41,17 @@ export const ordenesService = {
     });
   },
 
+  listarRelaciones(id) {
+    return request(`${buildUrl(id)}relaciones/`);
+  },
+
+  actualizarRelacion(id, payload) {
+    return request(`${buildUrl(id)}relaciones/`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
   listServicios(ordenId) {
     return request(`/api/ordenes/ot-servicios/?orden=${encodeURIComponent(ordenId)}`);
   },

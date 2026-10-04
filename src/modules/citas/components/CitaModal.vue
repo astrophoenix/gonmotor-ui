@@ -834,7 +834,7 @@ function formatHour(value) {
               <p v-if="formErrors.duracion_minutos" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.duracion_minutos }}</p>
             </div>
             <div>
-              <label for="cita_hora_fin" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Termina a las</label>
+              <label for="cita_hora_fin" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Termina</label>
               <input
                 id="cita_hora_fin"
                 :value="horaFin"

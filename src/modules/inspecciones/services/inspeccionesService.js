@@ -35,6 +35,17 @@ export const inspeccionesService = {
     });
   },
 
+  listarRelaciones(id) {
+    return request(`${buildUrl(id)}relaciones/`);
+  },
+
+  actualizarRelacion(id, payload) {
+    return request(`${buildUrl(id)}relaciones/`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
   delete(id) {
     return request(buildUrl(id), {
       method: 'DELETE',
@@ -45,10 +56,20 @@ export const inspeccionesService = {
     return request(`${ENDPOINT}?recepcion=${encodeURIComponent(recepcionId)}`);
   },
 
-  crearDesdeRecepcion(recepcionId) {
+  crearDesdeRecepcion(recepcionId, cotizaciones = null) {
+    const opciones = { method: 'POST' };
+    if (Array.isArray(cotizaciones)) {
+      opciones.body = JSON.stringify({ cotizaciones });
+    }
     return request(
       `/api/recepciones/${encodeURIComponent(recepcionId)}/crear-inspeccion/`,
-      { method: 'POST' }
+      opciones
+    );
+  },
+
+  cotizacionesCandidatas(recepcionId) {
+    return request(
+      `/api/recepciones/${encodeURIComponent(recepcionId)}/cotizaciones-candidatas/`
     );
   },
 
