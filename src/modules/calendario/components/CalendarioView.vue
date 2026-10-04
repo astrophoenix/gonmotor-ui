@@ -5,7 +5,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import esLocale from '@fullcalendar/core/locales/es';
-import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-vue-next';
+import { ChevronLeft, ChevronRight, ClipboardList, RefreshCw } from 'lucide-vue-next';
 import CitaAccionesMenu from '../../citas/components/CitaAccionesMenu.vue';
 import {
   COLORES_ESTADO,
@@ -137,6 +137,24 @@ const citasDelDia = computed(() => {
     .slice()
     .sort((a, b) => String(a.hora_cita).localeCompare(String(b.hora_cita)));
 });
+
+/**
+ * Recepción generada por una cita completada: sirve de atajo para abrirla
+ * directo desde "Citas del día" sin entrar a la cita.
+ */
+function recepcionDe(cita) {
+  if (!cita || cita.estado !== 'COMPLETADA' || !cita.recepcion_generada) return null;
+  return {
+    id: cita.recepcion_generada,
+    numero: cita.recepcion_generada_numero || `#${cita.recepcion_generada}`,
+  };
+}
+
+function abrirRecepcion(cita) {
+  const recepcion = recepcionDe(cita);
+  if (!recepcion) return;
+  window.location.assign(`/crud/recepciones/editar/?id=${encodeURIComponent(recepcion.id)}`);
+}
 
 const calendarOptions = computed(() => ({
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
@@ -443,8 +461,7 @@ watch(errorMessage, (valor) => {
               <button
                 type="button"
                 class="flex min-w-0 flex-1 items-start gap-2 rounded-lg p-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700"
-                @click="onAccion(cita, 'editar')"
-              >
+                @click="onAccion(cita, 'editar')">
                 <span class="mt-1.5 h-2.5 w-2.5 flex-shrink-0 rounded-full" :style="{ backgroundColor: colorDe(cita).bg }" />
                 <span class="min-w-0 flex-1">
                   <span class="flex items-baseline justify-between gap-2">
@@ -461,9 +478,20 @@ watch(errorMessage, (valor) => {
                   <span class="mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" :class="ESTADO_BADGES[cita.estado] || 'bg-gray-100 text-gray-800'">
                     {{ cita.estado_display }}
                   </span>
+                  <span class="mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium">
+                    <button
+                      v-if="recepcionDe(cita)"
+                      type="button"
+                      :title="`Abrir la recepción ${recepcionDe(cita).numero}`"
+                      class="inline-flex items-center gap-1 rounded-full border border-brand-100 bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-600 transition-colors hover:bg-brand-100 hover:text-brand-700 dark:border-brand-400 dark:bg-brand-500/20 dark:text-brand-50 dark:hover:bg-brand-500/40"
+                      @click.stop="abrirRecepcion(cita)">
+                      <ClipboardList class="h-3 w-3" />
+                      {{ recepcionDe(cita).numero }}
+                    </button>
+                  </span>
                 </span>
               </button>
-              <div class="mt-1.5 flex-shrink-0">
+              <div class="mt-1.5 flex flex-shrink-0 flex-col items-end gap-1.5">
                 <CitaAccionesMenu :cita="cita" @accion="(tipo) => onAccion(cita, tipo)" />
               </div>
             </li>
