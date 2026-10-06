@@ -1,17 +1,16 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import {
-  ArrowLeft,
   Pencil,
   Plus,
   FolderInput,
+  FolderOpen,
   FileCheck,
   FileSearch,
   TriangleAlert,
   Camera,
   Signature,
   X,
-  Eye,
   KeyRound,
   ShieldCheck,
   FileText,
@@ -477,37 +476,49 @@ function irAInspeccion(recepcion) {
 
 <template>
   <div class="p-4 bg-white border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
-    <nav class="flex mb-5" aria-label="Breadcrumb">
-      <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
-        <li class="inline-flex items-center">
-          <a href="/" class="inline-flex items-center text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Inicio</a>
+    <nav class="mb-3" aria-label="Breadcrumb">
+      <ol class="inline-flex flex-wrap items-center gap-x-1 text-sm font-medium md:gap-x-2">
+        <li class="inline-flex items-center gap-x-1 md:gap-x-2">
+          <a href="/" class="text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Inicio</a>
         </li>
-        <li class="text-gray-400">/ <a href="/crud/recepciones/" class="hover:text-primary-600">Recepciones</a></li>
-        <li class="text-gray-400">/ Recepción / {{ numeroRecepcion }}</li>
+        <li class="inline-flex items-center gap-x-1 md:gap-x-2">
+          <span class="text-gray-400" aria-hidden="true">/</span>
+          <a href="/crud/recepciones/" class="text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Recepciones</a>
+        </li>
+        <li class="inline-flex items-center gap-x-1 md:gap-x-2">
+          <span class="text-gray-400" aria-hidden="true">/</span>
+          <span class="text-gray-500 dark:text-gray-400">Recepción</span>
+        </li>
       </ol>
     </nav>
-    <div class="flex items-center gap-3 flex-wrap">
-      <a href="/crud/recepciones/" title="Volver al listado" class="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-        <ArrowLeft class="w-5 h-5" />
-      </a>
-      <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-        Recepción {{ numeroRecepcion }}
-      </h1>
-      <EstadoRecepcionBadge
-        v-if="recepcion"
-        :estado="recepcion.estado"
-        :estado-display="recepcion.estado_display"
-        size="lg"
-      />
-      <div v-if="recepcion" class="flex items-center gap-2 ml-auto flex-wrap">
+
+    <div class="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+      <div class="flex flex-1 min-w-0 items-start gap-3">
+        <FolderOpen class="w-5 h-5 shrink-0 mt-1.5 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
+        <div class="min-w-0">
+          <h1 class="text-lg font-semibold leading-8 text-gray-900 sm:text-xl dark:text-white">
+            Recepción
+          </h1>
+          <div v-if="recepcion" class="flex flex-wrap items-center gap-2 mt-1">
+            <span class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ numeroRecepcion }}</span>
+            <span class="text-sm text-gray-400" aria-hidden="true">&bull;</span>
+            <EstadoRecepcionBadge
+              :estado="recepcion.estado"
+              :estado-display="recepcion.estado_display"
+              size="md"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div v-if="recepcion" class="flex flex-wrap items-center gap-2 ml-auto">
         <button
           v-if="puedeEditar"
           type="button"
           title="Editar recepción"
-          class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-yellow-700 rounded-lg border border-yellow-700 hover:bg-yellow-50 dark:text-yellow-400 dark:border-yellow-400 dark:hover:bg-gray-800"
-          @click="goTo(`/crud/recepciones/editar/?id=${recepcion.id}`)"
-        >
-          <Pencil class="w-4 h-4" />
+          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:text-brand-400 dark:border-brand-400 dark:hover:bg-gray-700"
+          @click="goTo(`/crud/recepciones/editar/?id=${recepcion.id}`)">
+          <Pencil class="w-4 h-4" aria-hidden="true" />
           Editar
         </button>
         <button
@@ -515,50 +526,12 @@ function irAInspeccion(recepcion) {
           type="button"
           :disabled="creandoInspeccion"
           title="Generar Inspección"
-          class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 rounded border border-primary-700 hover:bg-primary-50 disabled:opacity-50 disabled:cursor-not-allowed dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800"
+          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 disabled:opacity-50 disabled:cursor-not-allowed dark:text-brand-400 dark:border-brand-400 dark:hover:bg-gray-700"
           @click="abrirModalCrearInspeccion"
         >
-          <Loader2 v-if="creandoInspeccion" class="w-4 h-4 animate-spin" />
-          <IconReportSearch v-if="!creandoInspeccion" class="w-5.5 h-5.5" />
+          <Loader2 v-if="creandoInspeccion" class="w-4 h-4 animate-spin" aria-hidden="true" />
+          <IconReportSearch v-if="!creandoInspeccion" class="w-4 h-4" aria-hidden="true" />
           {{ creandoInspeccion ? 'Creando...' : 'Crear Inspección' }}
-          <!--svg v-if="!creandoInspeccion" class="w-6 h-6 text-primary-800 dark:text-white ml-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12H5m14 0-4 4m4-4-4-4"/>
-          </svg -->
-        </button>
-        <!--template v-if="tieneInspeccion && recepcion.estado === 'ACEPTADA'">
-          <a
-            v-if="recepcion.inspecciones[0]?.tiene_orden_trabajo || recepcion.inspecciones[0]?.estado === 'FINALIZADA'"
-            :href="`/crud/inspecciones/ver/?id=${recepcion.inspecciones[0].id}`"
-            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-indigo-700 rounded-lg border border-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:border-indigo-400 dark:hover:bg-gray-800"
-          >
-            <Eye class="w-4 h-4" />
-            Ver Inspección
-          </a>
-          <button
-            type="button"
-            title="Ver / Editar Inspección"
-            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-amber-700 rounded-lg border border-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:border-amber-400 dark:hover:bg-gray-800"
-            @click="irAInspeccion(recepcion)"
-          >
-            <Pencil class="w-4 h-4" />
-            Ver / Editar Inspección
-          </button>
-        </template-->
-        <button
-          v-if="recepcion.cotizaciones_generadas?.length"
-          type="button"
-          class="inline-flex items-center px-3 py-2 text-sm font-medium text-emerald-700 rounded-lg border border-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-400 dark:hover:bg-gray-800"
-          @click="goTo(`/crud/cotizaciones/editar/?id=${recepcion.cotizaciones_generadas[0]?.id}`)"
-        >
-          Ver Cotización
-        </button>
-        <button
-          v-if="recepcion.orden_trabajo"
-          type="button"
-          class="inline-flex items-center px-3 py-2 text-sm font-medium text-indigo-700 rounded-lg border border-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:border-indigo-400 dark:hover:bg-gray-800"
-          @click="goTo(`/crud/ordenes/ver/?id=${recepcion.orden_trabajo}`)"
-        >
-          Ver Orden
         </button>
       </div>
     </div>

@@ -4,7 +4,6 @@ import { IconClipboardSearch, IconReportSearch } from "@tabler/icons-vue";
 
 import {
   FileText,
-  ArrowLeft,
   FileCheck,
   TriangleAlert,
   FileSearch,
@@ -62,6 +61,7 @@ import {
 } from "../../../shared/config/testigos";
 import Alert from "../../../shared/components/Alert.vue";
 import EstadoRecepcionBadge from "./EstadoRecepcionBadge.vue";
+import FormHeader from "../../../shared/components/FormHeader.vue";
 import {
   TIPOS_TRABAJO_OPCIONES,
   getTipoTrabajoLabel,
@@ -207,6 +207,14 @@ const detallesErrors = ref({});
 const activeTab = ref("informacion");
 const TAB_ORDER = ["informacion", "inspeccion", "evidencias", "autorizacion"];
 const activeTabIndex = computed(() => TAB_ORDER.indexOf(activeTab.value));
+
+const tituloPagina = computed(() => (isEditMode ? "Editar recepción" : "Nueva recepción"));
+
+const breadcrumb = computed(() => [
+  { label: "Inicio", href: "/" },
+  { label: "Recepciones", href: "/crud/recepciones/" },
+  { label: tituloPagina.value },
+]);
 
 /* FlowSteps temporalmente desactivado; conservar la lógica para reactivarla.
 const pasosFlujo = computed(() => {
@@ -1385,48 +1393,41 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 bg-white border-b border-gray-200 lg:mt-1 dark:bg-gray-800 dark:border-gray-700">
-    <div class="w-full">
-      <nav class="flex mb-1.5" aria-label="Breadcrumb">
-        <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
-          <li>
-            <a href="/" class="text-gray-700 hover:text-primary-600 dark:text-gray-300">Inicio</a>
-          </li>
-          <li class="text-gray-400">/ <a href="/crud/recepciones/" class="hover:text-primary-600">Recepciones</a></li>
-          <li class="text-gray-400">/ {{ isEditMode ? "Editar" : "Nueva" }}</li>
-        </ol>
-      </nav>
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <a href="/crud/recepciones/" title="Volver al listado" class="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-            <ArrowLeft class="w-5 h-5" />
-          </a>
-          <h1 class="inline-flex items-center gap-2 text-lg font-semibold text-gray-900 sm:text-xl dark:text-white">
-            {{ isEditMode ? "Editar recepción" : "Nueva recepción" }}
-          </h1>
-        </div>
-        <div class="flex items-center gap-2 flex-wrap">
-          <button
-            v-if="puedeCrearInspeccion"
-            type="button"
-            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-brand-700 rounded border border-brand-700 hover:bg-brand-50 dark:text-brand-300 dark:border-brand-300 dark:hover:bg-gray-800"
-            title="Generar Inspección"
-            @click="abrirModalCrearInspeccion">
-            <Loader2 v-if="creandoInspeccion" class="w-4 h-4 animate-spin" />
-            <IconReportSearch v-else class="w-5 h-5" />
-            Crear Inspección
-          </button>
-          
-          <FormSaveActions
-            :is-loading="isSaving"
-            :is-edit-mode="isEditMode"
-            :disabled="readOnly"
-            cancel-href="/crud/recepciones/"
-            :on-submit="submit"/>
-        </div>
-      </div>
-    </div>
-  </div>
+  <FormHeader
+    back-href="/crud/recepciones/"
+    :breadcrumb="breadcrumb"
+    entity="Recepción"
+    :title="tituloPagina"
+    :record-number="form.numero_recepcion"
+    :is-edit-mode="isEditMode"
+  >
+    <template #badges>
+      <EstadoRecepcionBadge
+        v-if="isEditMode"
+        :estado="form.estado"
+        :estado-display="form.estado_display"
+        size="md"
+      />
+    </template>
+    <template #actions>
+      <button
+        v-if="puedeCrearInspeccion"
+        type="button"
+        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 dark:text-brand-400 dark:border-brand-400 dark:hover:bg-gray-700"
+        title="Generar Inspección"
+        @click="abrirModalCrearInspeccion">
+        <Loader2 v-if="creandoInspeccion" class="w-4 h-4 animate-spin" />
+        <IconReportSearch v-else class="w-5 h-5" />
+        Crear Inspección
+      </button>
+      <FormSaveActions
+        :is-loading="isSaving"
+        :is-edit-mode="isEditMode"
+        :disabled="readOnly"
+        cancel-href="/crud/recepciones/"
+        :on-submit="submit"/>
+    </template>
+  </FormHeader>
   <!-- FlowSteps temporalmente desactivado.
   <div class="relative mx-auto max-w-6xl p-4 rounded-lg">
     <FlowSteps :steps="pasosFlujo" />
@@ -2531,7 +2532,7 @@ onMounted(() => {
                 {{ tipoRecepcionLabel }}
               </dd>
             </div>
-            <div>
+            <div v-if="isEditMode">
               <dt class="font-medium text-gray-700 dark:text-gray-300">
                 Estado
               </dt>

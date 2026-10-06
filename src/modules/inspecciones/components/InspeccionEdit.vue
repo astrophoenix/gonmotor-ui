@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue';
-import { ArrowLeft, Car, Toolbox, WrenchIcon, TriangleAlert, CheckCircle2, Clock, FileText, Loader2, Plus, Trash2, Wand2, Wrench, ClipboardList, IdCardIcon, TagIcon, Shapes, PaintBucket, Phone, Mail, CameraIcon, Camera, ShieldCheck } from 'lucide-vue-next';
+import { Car, Toolbox, WrenchIcon, TriangleAlert, CheckCircle2, FileText, Loader2, Plus, Trash2, Wand2, ClipboardList, IdCardIcon, TagIcon, Shapes, PaintBucket, Phone, Mail, CameraIcon, Camera, ShieldCheck } from 'lucide-vue-next';
 import { IconClockCheck, IconClockPlay, IconEngine, IconManualGearbox, IconAutomaticGearbox, IconGasStation } from '@tabler/icons-vue';
 import { request } from '../../../shared/services/httpClient';
 import { API_BASE_URL } from '../../../shared/config/env';
@@ -18,6 +18,8 @@ import {
   normalizarTipoTrabajo,
 } from '../../../shared/config/tiposTrabajo';
 import Alert from '../../../shared/components/Alert.vue';
+import FormHeader from '../../../shared/components/FormHeader.vue';
+import EstadoInspeccionBadge from './EstadoInspeccionBadge.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TestigosTablero from '../../../shared/components/TestigosTablero.vue';
 import TextImprover from '../../../shared/components/TextImprover.vue';
@@ -92,6 +94,14 @@ const CAMPO_MAX_CHARS = {
 const recepcion = ref(null);
 const estadoInspeccion = ref('');
 const inspeccionData = ref(null);
+
+const tituloPagina = computed(() => (isEditMode ? 'Editar inspección' : 'Nueva inspección'));
+
+const breadcrumb = computed(() => [
+  { label: 'Inicio', href: '/' },
+  { label: 'Inspecciones', href: '/crud/inspecciones/' },
+  { label: tituloPagina.value },
+]);
 
 const inspeccionFinalizada = computed(() => estadoInspeccion.value === 'FINALIZADA');
 
@@ -420,27 +430,6 @@ async function cambiarEstado(nuevoEstado) {
     transicionEstado.value = false;
   }
 }
-
-const estadoBadge = computed(() => {
-  const map = {
-    PENDIENTE: {
-      label: 'Pendiente',
-      color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-      icon: Clock,
-    },
-    EN_PROCESO: {
-      label: 'En Proceso',
-      color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-      icon: Wrench,
-    },
-    FINALIZADA: {
-      label: 'Finalizada',
-      color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      icon: CheckCircle2,
-    },
-  };
-  return map[estadoInspeccion.value];
-});
 
 const PRIORIDADES = [
   { value: 'ALTA', label: 'Alta' },
@@ -978,66 +967,50 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 bg-white border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
-    <nav class="flex mb-5" aria-label="Breadcrumb">
-      <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
-        <li><a href="/" class="text-gray-700 hover:text-primary-600 dark:text-gray-300">Inicio</a></li>
-        <li class="text-gray-400">/ <a href="/crud/inspecciones/" class="hover:text-primary-600">Inspecciones</a></li>
-        <li v-if="recepcion" class="text-gray-400">/ 
-          <a :href="`/crud/recepciones/ver/?id=${recepcion.id}`" class="hover:text-primary-600">Recepción #{{ recepcion.numero_recepcion || recepcion.id }}</a>
-        </li>
-        <li class="text-gray-400">/ {{ isEditMode ? 'Editar' : 'Nueva' }} Inspección</li>
-      </ol>
-    </nav>
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <a href="/crud/inspecciones/" title="Volver al listado" class="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-          <ArrowLeft class="w-5 h-5" />
-        </a>
-        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-          {{ isEditMode ? (form.numero_inspeccion ? `Editar Inspección ${form.numero_inspeccion}` : 'Editar Inspección') : 'Nueva Inspección' }}
-        </h1>
-      </div>
-      <span
-        v-if="isEditMode && estadoBadge"
-        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium"
-        :class="estadoBadge.color"
+  <FormHeader
+    back-href="/crud/inspecciones/"
+    :breadcrumb="breadcrumb"
+    entity="Inspección"
+    :title="tituloPagina"
+    :record-number="form.numero_inspeccion"
+    :is-edit-mode="isEditMode"
+  >
+    <template #badges>
+      <EstadoInspeccionBadge
+        v-if="isEditMode && estadoInspeccion"
+        :estado="estadoInspeccion"
+        :estado-display="inspeccionData?.estado_display"
+        size="md"/>
+    </template>
+    <template #actions>
+      <button
+        v-if="estadoInspeccion === 'PENDIENTE'"
+        type="button"
+        :disabled="transicionEstado"
+        title="Marcar la inspección como en proceso"
+        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-primary-700 rounded-base shadow-xs border border-primary-700 hover:bg-primary-50 focus:ring-4 focus:ring-primary-300 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+        @click="cambiarEstado('EN_PROCESO')">
+        <IconClockPlay class="w-5 h-5" />
+        Iniciar
+      </button>
+      <button
+        v-if="estadoInspeccion === 'EN_PROCESO'"
+        type="button"
+        :disabled="transicionEstado"
+        title="Cerrar el diagnóstico de la inspección"
+        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-green-700 rounded-base shadow-xs border border-green-700 hover:bg-green-50 focus:ring-4 focus:ring-green-300 dark:text-green-400 dark:border-green-400 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+        @click="solicitarFinalizacion"
       >
-        <component :is="estadoBadge.icon" class="w-4 h-4" aria-hidden="true" />
-        {{ estadoBadge.label }}
-      </span>
-      <div v-if="isEditMode" class="flex items-center gap-2 ml-auto flex-wrap">
-        <button
-          v-if="estadoInspeccion === 'PENDIENTE'"
-          type="button"
-          :disabled="transicionEstado"
-          title="Marcar la inspección como en proceso"
-          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-primary-700 rounded shadow-xs border border-primary-700 hover:bg-primary-50 focus:ring-4 focus:ring-primary-300 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="cambiarEstado('EN_PROCESO')"
-        >
-          <IconClockPlay class="w-5 h-5" />
-          Iniciar
-        </button>
-        <button
-          v-if="estadoInspeccion === 'EN_PROCESO'"
-          type="button"
-          :disabled="transicionEstado"
-          title="Cerrar el diagnóstico de la inspección"
-          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-green-700 rounded shadow-xs border border-green-700 hover:bg-green-50 focus:ring-4 focus:ring-green-300 dark:text-green-400 dark:border-green-400 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="solicitarFinalizacion"
-        >
-          <IconClockCheck class="w-5 h-5" />
-          Finalizar
-        </button>
-          <FormSaveActions
-          :is-loading="isSaving"
-          :is-edit-mode="isEditMode"
-          cancel-href="/crud/inspecciones/"
-          :on-submit="submit"
-        />
-      </div>
-    </div>
-  </div>
+        <IconClockCheck class="w-5 h-5" />
+        Finalizar
+      </button>
+      <FormSaveActions
+        :is-loading="isSaving"
+        :is-edit-mode="isEditMode"
+        cancel-href="/crud/inspecciones/"
+        :on-submit="submit"/>
+    </template>
+  </FormHeader>
 
   <!-- FlowSteps temporalmente desactivado.
   <div v-if="recepcion" class="relative mx-auto max-w-6xl px-4 pt-4 rounded-lg">
@@ -1601,18 +1574,14 @@ onMounted(() => {
                 </span>
               </dd>
             </div>
-            <div>
+            <div v-if="isEditMode">
               <dt class="font-medium text-gray-700 dark:text-gray-300">Estado</dt>
               <dd>
-                <span
-                  v-if="estadoBadge"
-                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
-                  :class="estadoBadge.color"
-                >
-                  <component :is="estadoBadge.icon" class="w-3.5 h-3.5" aria-hidden="true" />
-                  {{ estadoBadge.label }}
-                </span>
-                <span v-else>—</span>
+                <EstadoInspeccionBadge
+                  :estado="estadoInspeccion"
+                  :estado-display="inspeccionData?.estado_display"
+                  size="sm"
+                />
               </dd>
             </div>
           </dl>

@@ -2,7 +2,6 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import {
   CheckCircle2,
-  ArrowLeft,
   FileText,
   Loader2,
   Send,
@@ -42,6 +41,7 @@ import Alert from '../../../shared/components/Alert.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import RelacionesFlujoEdit from '../../../shared/components/RelacionesFlujoEdit.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
+import FormHeader from '../../../shared/components/FormHeader.vue';
 import TextImprover from '../../../shared/components/TextImprover.vue';
 // FlowSteps temporalmente desactivado; conservar para reactivarlo más adelante.
 // import FlowSteps from '../../../shared/components/FlowSteps.vue';
@@ -64,7 +64,7 @@ const complementaIds = complementaParam
   ? complementaParam.split(',').map((valor) => Number(valor)).filter((valor) => Number.isInteger(valor) && valor > 0)
   : [];
 
-const isEditMode = Boolean(cotizacionParamId);
+const isEditModeUrl = Boolean(cotizacionParamId);
 const inspeccionId = inspeccionParamId ? Number(inspeccionParamId) : null;
 
 const VALIDEZ_OPCIONES = [7, 15, 30, 60];
@@ -75,7 +75,7 @@ const METODOS_ACEPTACION = [
   { value: 'TELEFONO', label: 'Teléfono' },
 ];
 
-const isEditModeFlag = ref(isEditMode);
+const isEditMode = ref(isEditModeUrl);
 const cotizacionId = ref(cotizacionParamId ? Number(cotizacionParamId) : null);
 const isLoading = ref(true);
 const isSaving = ref(false);
@@ -103,6 +103,20 @@ const showImageModal = ref(false);
 const mostrarModalGenerarOrden = ref(false);
 const procesandoGeneracionOrden = ref(false);
 const complementaCotizaciones = ref([]);
+
+const tituloPagina = computed(() => (isEditMode.value ? 'Editar cotización' : 'Nueva cotización'));
+
+const breadcrumb = computed(() => [
+  { label: 'Inicio', href: '/' },
+  { label: 'Cotizaciones', href: '/crud/cotizaciones/' },
+  ...(inspeccionOrigen.value
+    ? [{
+        label: `Inspección ${inspeccionNumero.value || `#${inspeccionOrigen.value}`}`,
+        href: `/crud/inspecciones/editar/?id=${inspeccionOrigen.value}`,
+      }]
+    : []),
+  { label: tituloPagina.value },
+]);
 
 // Relaciones de flujo (cita, recepción, inspección y orden ligadas por FK).
 const RELACIONES_VACIAS = () => ({ cita: [], recepcion: [], inspeccion: [], orden: [] });
@@ -563,7 +577,7 @@ async function cargarCotizacion(id) {
   try {
     const data = await cotizacionesService.getById(id);
     cotizacionId.value = Number(id);
-    isEditModeFlag.value = true;
+    isEditMode.value = true;
     aplicarCotizacion(data);
     await cargarRelacionesCotizacion(cotizacionId.value);
   } catch (error) {
@@ -661,7 +675,7 @@ async function crearCotizacionDesdeInspeccion() {
       observaciones: observacionesIniciales(data),
     });
     cotizacionId.value = creada && creada.id;
-    isEditModeFlag.value = true;
+    isEditMode.value = true;
     await guardarDetalles(cotizacionId.value);
     const recargada = await cotizacionesService.getById(cotizacionId.value);
     aplicarCotizacion(recargada);
@@ -1025,7 +1039,7 @@ onMounted(() => {
   }
   loadCatalogo();
   loadEmpleados();
-  if (isEditMode && cotizacionId.value) {
+  if (isEditMode.value && cotizacionId.value) {
     cargarCotizacion(cotizacionId.value);
   } else if (inspeccionId) {
     crearCotizacionDesdeInspeccion();
@@ -1036,75 +1050,68 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 bg-white border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
-    <nav class="flex mb-5" aria-label="Breadcrumb">
-      <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
-        <li><a href="/" class="text-gray-700 hover:text-primary-600 dark:text-gray-300">Inicio</a></li>
-        <li class="text-gray-400">/ <a href="/crud/cotizaciones/" class="hover:text-primary-600">Cotizaciones</a></li>
-        <li v-if="inspeccionOrigen" class="text-gray-400">/ <a :href="`/crud/inspecciones/editar/?id=${inspeccionOrigen}`" class="hover:text-primary-600">Inspección</a></li>
-        <li class="text-gray-400">/ {{ isEditModeFlag ? 'Editar' : 'Nueva' }} Cotización</li>
-      </ol>
-    </nav>
-    <div class="flex items-center gap-3 flex-wrap">
-      <div class="flex items-center gap-3">
-        <a href="/crud/cotizaciones/" title="Volver al listado" class="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-          <ArrowLeft class="w-5 h-5" />
-        </a>
-        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-          {{ isEditModeFlag ? (numeroCotizacion ? `Cotización ${numeroCotizacion}` : 'Cotización') : 'Nueva Cotización' }}
-        </h1>
-      </div>
-      <EstadoCotizacionBadge :estado="estado" size="lg" />
-      <div class="flex items-center ml-auto gap-2 flex-wrap">
-        <template v-if="isEditModeFlag && cotizacionId">
+  <FormHeader
+    back-href="/crud/cotizaciones/"
+    :breadcrumb="breadcrumb"
+    entity="Cotización"
+    :title="tituloPagina"
+    :record-number="numeroCotizacion"
+    :is-edit-mode="isEditMode"
+  >
+    <template #badges>
+      <EstadoCotizacionBadge
+        v-if="isEditMode && cotizacionId"
+        :estado="estado"
+        :estado-display="cotizacion?.estado_display"
+        size="md"
+      />
+    </template>
+    <template #actions>
+      <template v-if="isEditMode && cotizacionId">
         <FormSaveActions
           v-if="esEditable"
           :is-loading="isSaving"
-          :is-edit-mode="isEditModeFlag"
+          :is-edit-mode="isEditMode"
           cancel-href="/crud/cotizaciones/"
           :on-submit="submit"/>
         <button
           v-if="estado === 'ENVIADA'"
           type="button"
-          class="inline-flex items-center px-5 py-2.5 text-sm font-medium font-semibold text-white rounded-base bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
+          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-base bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
           @click="abrirModal('ACEPTAR')">
-          <CheckCircle2 class="w-4 h-4 mr-2" />
+          <CheckCircle2 class="w-5 h-5" />
           Marcar aceptada
         </button>
         <button
           v-if="estado === 'ENVIADA'"
           type="button"
-          class="inline-flex items-center px-5 py-2.5 text-sm font-medium font-semibold text-white rounded-base bg-red-600 hover:bg-red-700 focus:ring-4 focus:ring-red-300 dark:bg-red-700 dark:hover:bg-red-800"
-          @click="abrirModal('RECHAZAR')"
-        >
-          <X class="w-4 h-4 mr-2" />
+          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-base bg-red-600 hover:bg-red-700 focus:ring-4 focus:ring-red-300 dark:bg-red-700 dark:hover:bg-red-800"
+          @click="abrirModal('RECHAZAR')">
+          <X class="w-5 h-5" />
           Marcar rechazada
         </button>
         <button
           v-if="estado === 'PENDIENTE'"
           type="button"
-          class="inline-flex items-center px-5 py-2.5 text-sm font-medium font-semibold text-white rounded-base bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
-          @click="abrirModal('ENVIAR')"
-        >
-          <Send class="w-4 h-4 mr-2" />
+          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-base bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
+          @click="abrirModal('ENVIAR')">
+          <Send class="w-5 h-5" />
           Enviar Cliente
         </button>
         <button
           v-if="estado === 'RECHAZADA'"
           type="button"
-          class="inline-flex items-center px-5 py-2.5 text-sm font-medium font-semibold text-white rounded-base bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 dark:bg-primary-700 dark:hover:bg-primary-800"
-          @click="abrirModal('REENVIAR')"
-        >
-          <Send class="w-4 h-4 mr-2" />
+          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-base bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 dark:bg-primary-700 dark:hover:bg-primary-800"
+          @click="abrirModal('REENVIAR')">
+          <Send class="w-5 h-5" />
           Reenviar al cliente
         </button>
         <button
           v-if="estado === 'ACEPTADA'"
           type="button"
-          class="inline-flex items-center px-5 py-2.5 text-sm font-medium font-semibold text-white rounded-base bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
-          @click="mostrarModalGenerarOrden = true"
-        >
-          <ArrowLeftRight class="w-4 h-4 mr-2" />
+          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-base bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
+          @click="mostrarModalGenerarOrden = true">
+          <ArrowLeftRight class="w-5 h-5" />
           Generar orden de trabajo
         </button>
         <PdfExportButton
@@ -1113,16 +1120,15 @@ onMounted(() => {
           :disabled="isSaving"
           @error="errorMessage = $event"
         />
-        </template>
-        <FormSaveActions
-          v-if="!isEditModeFlag && !inspeccionOrigen"
-          :is-loading="isCreando"
-          cancel-href="/crud/cotizaciones/"
-          :on-submit="crearCotizacionIndependiente"
-        />
-      </div>
-    </div>
-  </div>
+      </template>
+      <FormSaveActions
+        v-if="!isEditMode && !inspeccionOrigen"
+        :is-loading="isCreando"
+        cancel-href="/crud/cotizaciones/"
+        :on-submit="crearCotizacionIndependiente"
+      />
+    </template>
+  </FormHeader>
 
   <div class="p-4">
     <!-- FlowSteps temporalmente desactivado.
@@ -1576,7 +1582,7 @@ onMounted(() => {
       </div>
       <div class="lg:col-span-1 space-y-4">
         <RelacionesFlujoEdit
-            v-if="isEditModeFlag && cotizacionId && relacionesCargadas"
+            v-if="isEditMode && cotizacionId && relacionesCargadas"
             class="relative mx-auto max-w-6xl mb-5"
             tipo-entidad="cotizacion"
             :entidad-id="cotizacionId"

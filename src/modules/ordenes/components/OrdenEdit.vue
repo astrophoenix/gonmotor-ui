@@ -1,10 +1,12 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { ArrowLeft, Package, Wand2, Loader2, Plus, X, Camera, FileText, ClipboardList, Car } from 'lucide-vue-next';
+import { Package, Wand2, Loader2, Plus, X, Camera, FileText, ClipboardList, Car } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
 import { API_BASE_URL } from '../../../shared/config/env';
 import { ordenesService } from '../services/ordenesService';
+import { PRIORIDADES_ORDEN } from '../constants/estadosOrden';
 import Alert from '../../../shared/components/Alert.vue';
+import FormHeader from '../../../shared/components/FormHeader.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TextImprover from '../../../shared/components/TextImprover.vue';
 import CatalogoSelect from '../../../shared/components/CatalogoSelect.vue';
@@ -53,8 +55,15 @@ const ordenId = computed(() => {
   return params.get('id');
 });
 
-const esCreacion = computed(() => !ordenId.value);
 const isEditMode = computed(() => Boolean(ordenId.value));
+
+const tituloPagina = computed(() => (isEditMode.value ? 'Editar orden de trabajo' : 'Nueva orden de trabajo'));
+
+const breadcrumb = computed(() => [
+  { label: 'Inicio', href: '/' },
+  { label: 'Órdenes', href: '/crud/ordenes/' },
+  { label: tituloPagina.value },
+]);
 
 const ordenPersistidaId = ref(null);
 
@@ -64,7 +73,7 @@ const PUEDE_AGREGAR = { cita: true, recepcion: true, inspeccion: true, cotizacio
 const relacionesOrden = ref(RELACIONES_VACIAS());
 const puedeAgregarRelacion = ref({ ...PUEDE_AGREGAR });
 const relacionesCargadas = ref(false);
-const photoEntityId = computed(() => (esCreacion.value ? ordenPersistidaId.value : ordenId.value));
+const photoEntityId = computed(() => (isEditMode.value ? ordenId.value : ordenPersistidaId.value));
 
 const clienteSeleccionado = ref(null);
 const vehiculoSeleccionado = ref(null);
@@ -141,13 +150,6 @@ const form = ref({
   observaciones: '',
   motivo_espera: '',
 });
-
-const PRIORIDADES = [
-  { value: 'BAJA', label: 'Baja' },
-  { value: 'MEDIA', label: 'Media' },
-  { value: 'ALTA', label: 'Alta' },
-  { value: 'URGENTE', label: 'Urgente / Emergencia' },
-];
 
 const PRIORIDAD_BADGES = {
   BAJA: { label: 'Baja', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
@@ -274,7 +276,7 @@ function formatDate(dateString) {
 }
 
 const fechaIngresoDisplay = computed(() => {
-  if (esCreacion.value) return '';
+  if (!isEditMode.value) return '';
   return formatDate(orden.value?.fecha_ingreso || orden.value?.created_at);
 });
 
@@ -508,7 +510,7 @@ async function guardarDetalles(idOrden) {
 
 onMounted(async () => {
   loadCatalogo();
-  if (esCreacion.value) {
+  if (!isEditMode.value) {
     loading.value = false;
     return;
   }
@@ -590,7 +592,7 @@ async function handleSubmit() {
     motivo_espera: form.value.motivo_espera || null,
   };
 
-  if (esCreacion.value) {
+  if (!isEditMode.value) {
     try {
       const creada = await ordenesService.create(datosOrden);
       ordenPersistidaId.value = creada && creada.id;
@@ -628,40 +630,37 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <div class="p-4 bg-white border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
-    <nav class="flex mb-5" aria-label="Breadcrumb">
-      <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
-        <li class="inline-flex items-center">
-          <a href="/" class="inline-flex items-center text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Inicio</a>
-        </li>
-        <li class="text-gray-400">/ <a href="/crud/ordenes/" class="hover:text-primary-600">Órdenes</a></li>
-        <li class="text-gray-400">/ {{ esCreacion ? 'Nueva orden' : `Editar orden ${orden?.numero_orden || ''}` }}</li>
-      </ol>
-    </nav>
-    <div class="flex items-center gap-3 flex-wrap">
-      <div class="flex items-center gap-3">
-        <a href="/crud/ordenes/" title="Volver al listado" class="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-          <ArrowLeft class="w-5 h-5" />
-        </a>
-        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-          {{ esCreacion ? 'Nueva Orden de Trabajo' : `Editar Orden de Trabajo ${orden?.numero_orden || ''}` }}
-        </h1>
-      </div>
-      <EstadoOrdenBadge v-if="orden" :estado="form.estado" size="sm" />
-      <span v-if="orden" class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium" :class="prioridadBadge.color">
-        Prioridad {{ prioridadBadge.label }}
-      </span>
-      <div class="flex items-center ml-auto gap-2 flex-wrap">
-        <FormSaveActions
-          v-if="!loading"
-          :is-loading="saving"
-          :is-edit-mode="isEditMode"
-          :cancel-href="esCreacion ? '/crud/ordenes/' : `/crud/ordenes/ver/?id=${ordenId}`"
-          :on-submit="handleSubmit"
+  <FormHeader
+    back-href="/crud/ordenes/"
+    :breadcrumb="breadcrumb"
+    entity="Orden de trabajo"
+    :title="tituloPagina"
+    :record-number="orden?.numero_orden || ''"
+    :is-edit-mode="isEditMode"
+  >
+    <template #badges>
+      <template v-if="orden">
+        <EstadoOrdenBadge
+          :estado="orden.estado"
+          :estado-display="orden.estado_display"
+          size="md"
         />
-      </div>
-    </div>
-  </div>
+        <span
+          class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium"
+          :class="prioridadBadge.color"
+        >Prioridad {{ prioridadBadge.label }}</span>
+      </template>
+    </template>
+    <template #actions>
+      <FormSaveActions
+        v-if="!loading"
+        :is-loading="saving"
+        :is-edit-mode="isEditMode"
+        :cancel-href="isEditMode ? `/crud/ordenes/ver/?id=${ordenId}` : '/crud/ordenes/'"
+        :on-submit="handleSubmit"
+      />
+    </template>
+  </FormHeader>
 
   <div class="p-4">
     <!--div v-if="orden" class="relative mx-auto max-w-6xl mb-5">
@@ -674,7 +673,7 @@ async function handleSubmit() {
       Cargando orden de trabajo...
     </div>
 
-    <div v-else-if="!esCreacion && !orden && !error" class="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+    <div v-else-if="isEditMode && !orden && !error" class="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
       Orden de trabajo no encontrada.
     </div>
 
@@ -760,7 +759,7 @@ async function handleSubmit() {
               <div class="min-w-0">
                 <label for="prioridad" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Prioridad</label>
                 <select id="prioridad" v-model="form.prioridad" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                  <option v-for="prioridad in PRIORIDADES" :key="prioridad.value" :value="prioridad.value">{{ prioridad.label }}</option>
+                  <option v-for="prioridad in PRIORIDADES_ORDEN" :key="prioridad.value" :value="prioridad.value">{{ prioridad.label }}</option>
                 </select>
               </div>
             </div>
@@ -1058,7 +1057,7 @@ async function handleSubmit() {
 
       <!-- Panel lateral: resumen de la orden -->
       <div class="space-y-4 lg:col-span-1">
-        <div v-if="esCreacion || orden" class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
+        <div v-if="!isEditMode || orden" class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
           <div class="flex items-center gap-2 mb-3">
             <ClipboardList class="w-5 h-5 text-gray-900 dark:text-white" />
             <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Resumen de la orden</h2>
@@ -1100,9 +1099,15 @@ async function handleSubmit() {
               <dt class="font-medium text-gray-700 dark:text-gray-300">Asesor</dt>
               <dd class="font-medium text-sm text-black dark:text-white">{{ orden.asesor_nombre }}</dd>
             </div>
-            <div>
+            <div v-if="orden">
               <dt class="font-medium text-gray-700 dark:text-gray-300">Estado</dt>
-              <dd><EstadoOrdenBadge :estado="orden?.estado || form.estado || 'PENDIENTE'" size="sm" /></dd>
+              <dd>
+                <EstadoOrdenBadge
+                  :estado="orden.estado"
+                  :estado-display="orden.estado_display"
+                  size="sm"
+                />
+              </dd>
             </div>
             <div v-if="orden?.cotizacion_origen">
               <dt class="font-medium text-gray-700 dark:text-gray-300">Cotización de origen</dt>

@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { ArrowLeft, User, Car, ClipboardList, ReceiptText, CircleDollarSign, Wrench, Package, SquarePen, Camera, X } from 'lucide-vue-next';
+import { User, Car, ClipboardList, FolderOpen, ReceiptText, CircleDollarSign, Wrench, Package, SquarePen, Camera, X } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
 import { ordenesService } from '../services/ordenesService';
 import Alert from '../../../shared/components/Alert.vue';
@@ -84,31 +84,52 @@ onMounted(async () => {
 
 <template>
   <div class="p-4 bg-white border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
-    <nav class="flex mb-5" aria-label="Breadcrumb">
-      <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
-        <li class="inline-flex items-center">
-          <a href="/" class="inline-flex items-center text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Inicio</a>
+    <nav class="mb-3" aria-label="Breadcrumb">
+      <ol class="inline-flex flex-wrap items-center gap-x-1 text-sm font-medium md:gap-x-2">
+        <li class="inline-flex items-center gap-x-1 md:gap-x-2">
+          <a href="/" class="text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Inicio</a>
         </li>
-        <li class="text-gray-400">/ <a href="/crud/ordenes/" class="hover:text-primary-600">Órdenes</a></li>
-        <li class="text-gray-400">/ Detalle orden {{ orden?.numero_orden || '' }}</li>
+        <li class="inline-flex items-center gap-x-1 md:gap-x-2">
+          <span class="text-gray-400" aria-hidden="true">/</span>
+          <a href="/crud/ordenes/" class="text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Órdenes</a>
+        </li>
+        <li class="inline-flex items-center gap-x-1 md:gap-x-2">
+          <span class="text-gray-400" aria-hidden="true">/</span>
+          <span class="text-gray-500 dark:text-gray-400">Orden de trabajo</span>
+        </li>
       </ol>
     </nav>
-    <div class="flex items-center gap-3 flex-wrap">
-      <button
-        type="button"
-        title="Volver al listado"
-        class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-        @click="goTo('/crud/ordenes/')"
-      >
-        <ArrowLeft class="w-5 h-5" />
-      </button>
-      <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-        Orden de Trabajo {{ orden?.numero_orden || '' }}
-      </h1>
-      <EstadoOrdenBadge v-if="orden" :estado="orden.estado" :estado-display="orden.estado_display" size="lg" />
-      <span v-if="orden" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium" :class="prioridadBadge.color">
-        Prioridad {{ prioridadBadge.label }}
-      </span>
+
+    <div class="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+      <div class="flex flex-1 min-w-0 items-start gap-3">
+        <FolderOpen class="w-5 h-5 shrink-0 mt-1.5 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
+        <div class="min-w-0">
+          <h1 class="text-lg font-semibold leading-8 text-gray-900 sm:text-xl dark:text-white">
+            Orden de trabajo
+          </h1>
+          <div v-if="orden" class="flex flex-wrap items-center gap-2 mt-1">
+            <span class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ orden.numero_orden }}</span>
+            <span class="text-sm text-gray-400" aria-hidden="true">&bull;</span>
+            <EstadoOrdenBadge :estado="orden.estado" :estado-display="orden.estado_display" size="md" />
+            <span class="text-sm text-gray-400" aria-hidden="true">&bull;</span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium" :class="prioridadBadge.color">
+              Prioridad {{ prioridadBadge.label }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="orden" class="flex flex-wrap items-center gap-2 ml-auto">
+        <button
+          type="button"
+          title="Editar orden de trabajo"
+          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:text-brand-400 dark:border-brand-400 dark:hover:bg-gray-700"
+          @click="goTo(`/crud/ordenes/editar/?id=${orden.id}`)"
+        >
+          <SquarePen class="w-4 h-4" aria-hidden="true" />
+          Editar
+        </button>
+      </div>
     </div>
   </div>
 
@@ -127,18 +148,6 @@ onMounted(async () => {
       </div>
 
       <template v-else>
-        <div class="flex items-center justify-end gap-2 mb-6">
-          <button
-            type="button"
-            title="Editar orden de trabajo"
-            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-yellow-700 rounded-lg border border-yellow-700 hover:bg-yellow-50 dark:text-yellow-400 dark:border-yellow-400 dark:hover:bg-gray-800"
-            @click="goTo(`/crud/ordenes/editar/?id=${orden.id}`)"
-          >
-            <SquarePen class="w-4 h-4" />
-            Editar
-          </button>
-        </div>
-
         <h4 class="mb-4 text-xl font-semibold dark:text-white">
           <span class="inline-flex items-center gap-2">
             <User class="w-6 h-6 text-gray-800 dark:text-white" />

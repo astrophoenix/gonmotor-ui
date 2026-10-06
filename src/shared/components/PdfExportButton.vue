@@ -1,6 +1,6 @@
 <script setup>
 import { Loader2 } from 'lucide-vue-next';
-import { FileDownload } from '@tabler/icons-vue';
+import { IconFileDownload } from '@tabler/icons-vue';
 import { usePdfExport } from '../composables/usePdfExport';
 
 const props = defineProps({
@@ -46,7 +46,7 @@ function handleClick() {
     @click="handleClick"
   >
     <Loader2 v-if="isExportingPdf" class="w-4 h-4 animate-spin" />
-    <FileDownload v-else class="w-4 h-4" />
+    <IconFileDownload v-else class="w-4 h-4" />
     {{ isExportingPdf ? 'Generando...' : label }}
   </button>
 </template>
