@@ -1,9 +1,10 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-import { ArrowLeft, IdCard, Pencil, Truck } from 'lucide-vue-next';
+import { IdCard, Pencil, Truck } from 'lucide-vue-next';
 
 import { proveedoresService } from '../services/proveedoresService';
 import Alert from '../../../shared/components/Alert.vue';
+import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import ProveedorModal from './ProveedorModal.vue';
 
 const TIPOS_IDENTIFICACION = {
@@ -68,28 +69,18 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="p-4 bg-white border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
-    <nav class="flex mb-5" aria-label="Breadcrumb">
-      <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
-        <li class="inline-flex items-center">
-          <a href="/" class="inline-flex items-center text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Inicio</a>
-        </li>
-        <li class="text-gray-400 dark:text-gray-500">/</li>
-        <li class="inline-flex items-center">
-          <a href="/crud/proveedores/" class="text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Proveedores</a>
-        </li>
-        <li class="text-gray-400 dark:text-gray-500" aria-current="page">/ Ver</li>
-      </ol>
-    </nav>
-
-    <template v-if="proveedor">
-      <div class="flex items-center gap-3 flex-wrap">
-        <a href="/crud/proveedores/" title="Volver al listado" class="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-          <ArrowLeft class="w-5 h-5" />
-        </a>
-        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-          {{ proveedor.nombre }}
-        </h1>
+  <EntityHeader
+    mode="detail"
+    entity="Proveedor"
+    :title="proveedor ? proveedor.nombre : ''"
+    :breadcrumb="[
+      { label: 'Inicio', href: '/' },
+      { label: 'Proveedores', href: '/crud/proveedores/' },
+      { label: 'Ver' },
+    ]"
+  >
+    <template #badges>
+      <template v-if="proveedor">
         <span
           v-if="proveedor.is_active !== false"
           class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
@@ -102,19 +93,22 @@ onMounted(async () => {
         >
           Inactivo
         </span>
-        <div class="flex items-center gap-2 ml-auto">
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 rounded border border-primary-700 hover:bg-primary-100 active:bg-primary-200 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800 dark:active:bg-gray-700"
-            @click="abrirEditar"
-          >
-            <Pencil class="w-4 h-4" />
-            Editar
-          </button>
-        </div>
-      </div>
+      </template>
     </template>
-  </div>
+
+    <template #actions>
+      <button
+        v-if="proveedor"
+        type="button"
+        title="Editar proveedor"
+        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:text-brand-400 dark:border-brand-400 dark:hover:bg-gray-700"
+        @click="abrirEditar"
+      >
+        <Pencil class="w-4 h-4" aria-hidden="true" />
+        Editar
+      </button>
+    </template>
+  </EntityHeader>
 
   <div class="p-4">
     <div class="relative mx-auto max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">

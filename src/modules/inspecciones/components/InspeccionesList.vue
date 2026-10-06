@@ -17,6 +17,7 @@ import { SEARCH_DEBOUNCE_MS, isSearchable } from '../../../shared/utils/search';
 import { estadoADisplay } from '../../../shared/utils/estadoFlujo';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
+import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
 import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
 import EstadoInspeccionBadge from './EstadoInspeccionBadge.vue';
@@ -303,31 +304,25 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="p-4 py-3 bg-white block sm:flex items-center justify-between border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
-    <div class="w-full">
-      <nav class="flex mb-1.5" aria-label="Breadcrumb">
-        <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
-          <li class="inline-flex items-center">
-            <a href="/" class="inline-flex items-center text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Inicio</a>
-          </li>
-          <li class="text-gray-400" aria-current="page">/ Inspecciones</li>
-        </ol>
-      </nav>
-      <h1 class="inline-flex items-center gap-2 text-lg font-semibold text-gray-900 sm:text-xl dark:text-white">
-        <FileSearchCorner class="w-5 h-5 inline-block text-gray-900 dark:text-gray-400" />
-        Inspecciones
-      </h1>
-      
-      <Alert
-        :type="alert.type"
-        :title="alert.title"
-        :message="alert.message"
-        dismissible
-        @dismiss="hideAlert"
-      />
-    </div>
-  </div>
+  <EntityHeader
+    mode="list"
+    :icon="FileSearchCorner"
+    entity="Inspecciones"
+    :breadcrumb="[
+      { label: 'Inicio', href: '/' },
+      { label: 'Inspecciones' },
+    ]"
+  />
 
+  <div v-if="alert.message" class="px-4 pt-3">
+    <Alert
+      :type="alert.type"
+      :title="alert.title"
+      :message="alert.message"
+      dismissible
+      @dismiss="hideAlert"
+    />
+  </div>
   <div class="px-4 pb-4 sm:px-6 lg:px-8 mt-4">
     <!-- PANEL DE FILTROS -->
     <div class="bg-neutral-primary-soft shadow-xs rounded-base border border-default mb-4">

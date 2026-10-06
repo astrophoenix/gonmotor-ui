@@ -5,7 +5,7 @@ import {
   ChevronDown,
   ClipboardList,
   FileSearchCorner,
-  Link2,
+  Workflow,
   Receipt,
   Trash2,
   Wrench,
@@ -182,7 +182,7 @@ async function confirmarDesvinculacion() {
 <template>
   <section class="relative rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
     <div class="mb-3 flex items-center gap-2">
-      <Link2 class="h-4 w-4 text-brand-700 dark:text-brand-300" />
+      <Workflow class="h-4 w-4 text-brand-700 dark:text-brand-300" />
       <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Relaciones de flujo</h3>
     </div>
 
@@ -259,8 +259,7 @@ async function confirmarDesvinculacion() {
               :disabled="procesando"
               :exclude-ids="grupo.items.map((item) => item.id)"
               solo-sin-relacion
-              @select="vincular(grupo, $event)"
-            />
+              @select="vincular(grupo, $event)"/>
             <p v-if="!grupo.items.length && !grupo.selector" class="text-sm text-gray-500 dark:text-gray-400">
               No hay una recepción relacionada.
             </p>
@@ -272,12 +271,11 @@ async function confirmarDesvinculacion() {
     <ConfirmModal
       v-model="modalVisible"
       title="Quitar relación"
-      :message="`Se quitará el vínculo con ${relacionPendienteLabel}. La entidad permanecerá en el sistema.`"
+      :message="`Se quitará el vínculo con ${relacionPendienteLabel}. El registro permanecerá en el sistema.`"
       entity-name="relación"
       confirm-text="Quitar relación"
       confirming-text="Quitando..."
       :is-deleting="procesando"
-      @confirm="confirmarDesvinculacion"
-    />
+      @confirm="confirmarDesvinculacion"/>
   </section>
 </template>

@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { Car, Camera, CheckCircle2, ClipboardList, Clock, FolderInput, FolderOpen, ShieldCheck, FileText, IdCardIcon, Image as ImageIcon, Mail, PaintBucket, Phone, Shapes, SquarePen, TagIcon, TriangleAlert, WrenchIcon, Workflow, X, Toolbox } from 'lucide-vue-next';
+import { Car, Camera, CheckCircle2, ClipboardList, Clock, FolderInput, ShieldCheck, FileText, IdCardIcon, Image as ImageIcon, Mail, PaintBucket, Phone, Shapes, SquarePen, TagIcon, TriangleAlert, WrenchIcon, Workflow, X, Toolbox } from 'lucide-vue-next';
 import { IconAutomaticGearbox, IconEngine, IconFileInvoice, IconGasStation, IconLockOpen2, IconManualGearbox } from '@tabler/icons-vue';
 import { API_BASE_URL } from '../../../shared/config/env';
 import { request } from '../../../shared/services/httpClient';
@@ -9,6 +9,7 @@ import MdiIcon from '../../../shared/components/MdiIcon.vue';
 import { TESTIGOS } from '../../../shared/config/testigos';
 import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
 import Alert from '../../../shared/components/Alert.vue';
+import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
 import { relacionesDeInspeccion } from '../../../shared/utils/relacionesFlujo';
@@ -470,77 +471,57 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="p-4 bg-white border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
-<nav class="mb-3" aria-label="Breadcrumb">
-      <ol class="inline-flex flex-wrap items-center gap-x-1 text-sm font-medium md:gap-x-2">
-        <li class="inline-flex items-center gap-x-1 md:gap-x-2">
-          <a href="/" class="text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Inicio</a>
-        </li>
-        <li class="inline-flex items-center gap-x-1 md:gap-x-2">
-          <span class="text-gray-400" aria-hidden="true">/</span>
-          <a href="/crud/inspecciones/" class="text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Inspecciones</a>
-        </li>
-        <li class="inline-flex items-center gap-x-1 md:gap-x-2">
-          <span class="text-gray-400" aria-hidden="true">/</span>
-          <span class="text-gray-500 dark:text-gray-400">Inspección</span>
-        </li>
-      </ol>
-    </nav>
-
-    <template v-if="inspeccion">
-      <div class="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
-        <div class="flex flex-1 min-w-0 items-start gap-3">
-          <FolderOpen class="w-5 h-5 shrink-0 mt-1.5 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
-          <div class="min-w-0">
-            <h1 class="text-lg font-semibold leading-8 text-gray-900 sm:text-xl dark:text-white">
-              Inspección
-            </h1>
-            <div class="flex flex-wrap items-center gap-2 mt-1">
-              <span class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ numeroInspeccion }}</span>
-              <span class="text-sm text-gray-400" aria-hidden="true">&bull;</span>
-              <EstadoInspeccionBadge
-                :estado="inspeccion.estado"
-                :estado-display="inspeccion.estado_display"
-                size="md"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2 ml-auto">
-          <a
-            v-if="!estaFinalizada"
-            :href="`/crud/inspecciones/editar/?id=${encodeURIComponent(inspeccion.id)}`"
-            class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:text-brand-400 dark:border-brand-400 dark:hover:bg-gray-700"
-          >
-            <SquarePen class="w-4 h-4" aria-hidden="true" />
-            Editar
-          </a>
-          <button
-            v-if="estaFinalizada"
-            type="button"
-            :disabled="isReopening"
-            class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-red-700 rounded-base border border-red-600 hover:bg-red-50 focus:outline-none focus:ring-4 focus:ring-red-200 dark:text-red-400 dark:border-red-400 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            @click="solicitarReabrir"
-          >
-            <IconLockOpen2 class="w-4 h-4" aria-hidden="true" />
-            Reabrir
-          </button>
-          <button
-            v-if="estaFinalizada"
-            type="button"
-            :disabled="isSyncingCotizacion"
-            :title="tieneCotizacionActiva ? 'Actualizar la cotización existente para reflejar los cambios de la inspección.' : 'Generar una cotización desde este diagnóstico'"
-            class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white rounded-base bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed"
-            @click="solicitarCrearCotizacion"
-          >
-            <IconFileInvoice class="w-4 h-4" aria-hidden="true" />
-            {{ isSyncingCotizacion ? 'Sincronizando...' : (tieneCotizacionActiva ? 'Actualizar cotización' : 'Generar cotización') }}
-          </button>
-        </div>
-      </div>
+  <EntityHeader
+    mode="detail"
+    entity="Inspección"
+    :record-number="inspeccion ? numeroInspeccion : ''"
+    :breadcrumb="[
+      { label: 'Inicio', href: '/' },
+      { label: 'Inspecciones', href: '/crud/inspecciones/' },
+      { label: 'Inspección' },
+    ]"
+  >
+    <template #badges>
+      <EstadoInspeccionBadge
+        v-if="inspeccion"
+        :estado="inspeccion.estado"
+        :estado-display="inspeccion.estado_display"
+        size="md"
+      />
     </template>
-  </div>
+
+    <template #actions>
+      <a
+        v-if="inspeccion && !estaFinalizada"
+        :href="`/crud/inspecciones/editar/?id=${encodeURIComponent(inspeccion.id)}`"
+        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:text-brand-400 dark:border-brand-400 dark:hover:bg-gray-700"
+      >
+        <SquarePen class="w-4 h-4" aria-hidden="true" />
+        Editar
+      </a>
+      <button
+        v-if="estaFinalizada"
+        type="button"
+        :disabled="isReopening"
+        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-red-700 rounded-base border border-red-600 hover:bg-red-50 focus:outline-none focus:ring-4 focus:ring-red-200 dark:text-red-400 dark:border-red-400 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        @click="solicitarReabrir"
+      >
+        <IconLockOpen2 class="w-4 h-4" aria-hidden="true" />
+        Reabrir
+      </button>
+      <button
+        v-if="estaFinalizada"
+        type="button"
+        :disabled="isSyncingCotizacion"
+        :title="tieneCotizacionActiva ? 'Actualizar la cotización existente para reflejar los cambios de la inspección.' : 'Generar una cotización desde este diagnóstico'"
+        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white rounded-base bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed"
+        @click="solicitarCrearCotizacion"
+      >
+        <IconFileInvoice class="w-4 h-4" aria-hidden="true" />
+        {{ isSyncingCotizacion ? 'Sincronizando...' : (tieneCotizacionActiva ? 'Actualizar cotización' : 'Generar cotización') }}
+      </button>
+    </template>
+  </EntityHeader>
 
   <div class="p-4">
     <div class="relative mx-auto max-w-8xl">

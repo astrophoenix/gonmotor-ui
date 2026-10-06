@@ -6,7 +6,7 @@ import { API_BASE_URL } from '../../../shared/config/env';
 import { ordenesService } from '../services/ordenesService';
 import { PRIORIDADES_ORDEN } from '../constants/estadosOrden';
 import Alert from '../../../shared/components/Alert.vue';
-import FormHeader from '../../../shared/components/FormHeader.vue';
+import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TextImprover from '../../../shared/components/TextImprover.vue';
 import CatalogoSelect from '../../../shared/components/CatalogoSelect.vue';
@@ -630,13 +630,12 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <FormHeader
-    back-href="/crud/ordenes/"
+  <EntityHeader
     :breadcrumb="breadcrumb"
     entity="Orden de trabajo"
     :title="tituloPagina"
     :record-number="orden?.numero_orden || ''"
-    :is-edit-mode="isEditMode"
+    :mode="isEditMode ? 'edit' : 'create'"
   >
     <template #badges>
       <template v-if="orden">
@@ -660,7 +659,7 @@ async function handleSubmit() {
         :on-submit="handleSubmit"
       />
     </template>
-  </FormHeader>
+  </EntityHeader>
 
   <div class="p-4">
     <!--div v-if="orden" class="relative mx-auto max-w-6xl mb-5">

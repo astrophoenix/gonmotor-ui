@@ -1,9 +1,10 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { User, Car, ClipboardList, FolderOpen, ReceiptText, CircleDollarSign, Wrench, Package, SquarePen, Camera, X } from 'lucide-vue-next';
+import { User, Car, ClipboardList, ReceiptText, CircleDollarSign, Wrench, Package, SquarePen, Camera, X } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
 import { ordenesService } from '../services/ordenesService';
 import Alert from '../../../shared/components/Alert.vue';
+import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
 import EstadoOrdenBadge from './EstadoOrdenBadge.vue';
 
@@ -83,55 +84,42 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="p-4 bg-white border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
-    <nav class="mb-3" aria-label="Breadcrumb">
-      <ol class="inline-flex flex-wrap items-center gap-x-1 text-sm font-medium md:gap-x-2">
-        <li class="inline-flex items-center gap-x-1 md:gap-x-2">
-          <a href="/" class="text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Inicio</a>
-        </li>
-        <li class="inline-flex items-center gap-x-1 md:gap-x-2">
-          <span class="text-gray-400" aria-hidden="true">/</span>
-          <a href="/crud/ordenes/" class="text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Órdenes</a>
-        </li>
-        <li class="inline-flex items-center gap-x-1 md:gap-x-2">
-          <span class="text-gray-400" aria-hidden="true">/</span>
-          <span class="text-gray-500 dark:text-gray-400">Orden de trabajo</span>
-        </li>
-      </ol>
-    </nav>
-
-    <div class="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
-      <div class="flex flex-1 min-w-0 items-start gap-3">
-        <FolderOpen class="w-5 h-5 shrink-0 mt-1.5 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
-        <div class="min-w-0">
-          <h1 class="text-lg font-semibold leading-8 text-gray-900 sm:text-xl dark:text-white">
-            Orden de trabajo
-          </h1>
-          <div v-if="orden" class="flex flex-wrap items-center gap-2 mt-1">
-            <span class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ orden.numero_orden }}</span>
-            <span class="text-sm text-gray-400" aria-hidden="true">&bull;</span>
-            <EstadoOrdenBadge :estado="orden.estado" :estado-display="orden.estado_display" size="md" />
-            <span class="text-sm text-gray-400" aria-hidden="true">&bull;</span>
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium" :class="prioridadBadge.color">
-              Prioridad {{ prioridadBadge.label }}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="orden" class="flex flex-wrap items-center gap-2 ml-auto">
-        <button
-          type="button"
-          title="Editar orden de trabajo"
-          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:text-brand-400 dark:border-brand-400 dark:hover:bg-gray-700"
-          @click="goTo(`/crud/ordenes/editar/?id=${orden.id}`)"
+  <EntityHeader
+    mode="detail"
+    entity="Orden de trabajo"
+    :record-number="orden ? orden.numero_orden : ''"
+    :breadcrumb="[
+      { label: 'Inicio', href: '/' },
+      { label: 'Órdenes', href: '/crud/ordenes/' },
+      { label: 'Orden de trabajo' },
+    ]"
+  >
+    <template #badges>
+      <template v-if="orden">
+        <EstadoOrdenBadge :estado="orden.estado" :estado-display="orden.estado_display" size="md" />
+        <span class="text-sm text-gray-400" aria-hidden="true">&bull;</span>
+        <span
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+          :class="prioridadBadge.color"
         >
-          <SquarePen class="w-4 h-4" aria-hidden="true" />
-          Editar
-        </button>
-      </div>
-    </div>
-  </div>
+          Prioridad {{ prioridadBadge.label }}
+        </span>
+      </template>
+    </template>
+
+    <template #actions>
+      <button
+        v-if="orden"
+        type="button"
+        title="Editar orden de trabajo"
+        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:text-brand-400 dark:border-brand-400 dark:hover:bg-gray-700"
+        @click="goTo(`/crud/ordenes/editar/?id=${orden.id}`)"
+      >
+        <SquarePen class="w-4 h-4" aria-hidden="true" />
+        Editar
+      </button>
+    </template>
+  </EntityHeader>
 
   <div class="p-4">
     <div class="relative mx-auto max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">

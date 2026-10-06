@@ -1,8 +1,9 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { ArrowLeft, IdCard, Pencil, Building2, UserRound, Mail, Phone, MapPin, CalendarDays, ShieldCheck } from 'lucide-vue-next';
+import { IdCard, Pencil, Building2, UserRound, Mail, Phone, MapPin, CalendarDays, ShieldCheck } from 'lucide-vue-next';
 import { empleadosService } from '../services/empleadosService';
 import Alert from '../../../shared/components/Alert.vue';
+import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import EmpleadoModal from './EmpleadoModal.vue';
 
 const empleado = ref(null);
@@ -62,28 +63,18 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="p-4 bg-white border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
-    <nav class="flex mb-5" aria-label="Breadcrumb">
-      <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
-        <li class="inline-flex items-center">
-          <a href="/" class="inline-flex items-center text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Inicio</a>
-        </li>
-        <li class="text-gray-400 dark:text-gray-500">/</li>
-        <li class="inline-flex items-center">
-          <a href="/crud/empleados/" class="text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Empleados</a>
-        </li>
-        <li class="text-gray-400 dark:text-gray-500" aria-current="page">/ Ver</li>
-      </ol>
-    </nav>
-
-    <template v-if="empleado">
-      <div class="flex items-center gap-3 flex-wrap">
-        <a href="/crud/empleados/" title="Volver al listado" class="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-          <ArrowLeft class="w-5 h-5" />
-        </a>
-        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">
-          {{ nombreCompleto }}
-        </h1>
+  <EntityHeader
+    mode="detail"
+    entity="Empleado"
+    :title="empleado ? nombreCompleto : ''"
+    :breadcrumb="[
+      { label: 'Inicio', href: '/' },
+      { label: 'Empleados', href: '/crud/empleados/' },
+      { label: 'Ver' },
+    ]"
+  >
+    <template #badges>
+      <template v-if="empleado">
         <span class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
           {{ empleado.rol_display || empleado.rol }}
         </span>
@@ -93,19 +84,22 @@ onMounted(async () => {
         >
           {{ empleado.is_active ? 'Activo' : 'Inactivo' }}
         </span>
-        <div class="flex items-center gap-2 ml-auto">
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300"
-            @click="abrirEditar"
-          >
-            <Pencil class="w-4 h-4" />
-            Editar
-          </button>
-        </div>
-      </div>
+      </template>
     </template>
-  </div>
+
+    <template #actions>
+      <button
+        v-if="empleado"
+        type="button"
+        title="Editar empleado"
+        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:text-brand-400 dark:border-brand-400 dark:hover:bg-gray-700"
+        @click="abrirEditar"
+      >
+        <Pencil class="w-4 h-4" aria-hidden="true" />
+        Editar
+      </button>
+    </template>
+  </EntityHeader>
 
   <div class="p-4">
     <div class="relative mx-auto max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">

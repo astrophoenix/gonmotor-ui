@@ -61,7 +61,7 @@ import {
 } from "../../../shared/config/testigos";
 import Alert from "../../../shared/components/Alert.vue";
 import EstadoRecepcionBadge from "./EstadoRecepcionBadge.vue";
-import FormHeader from "../../../shared/components/FormHeader.vue";
+import EntityHeader from "../../../shared/components/EntityHeader.vue";
 import {
   TIPOS_TRABAJO_OPCIONES,
   getTipoTrabajoLabel,
@@ -1393,13 +1393,12 @@ onMounted(() => {
 </script>
 
 <template>
-  <FormHeader
-    back-href="/crud/recepciones/"
+  <EntityHeader
     :breadcrumb="breadcrumb"
     entity="Recepción"
     :title="tituloPagina"
     :record-number="form.numero_recepcion"
-    :is-edit-mode="isEditMode"
+    :mode="isEditMode ? 'edit' : 'create'"
   >
     <template #badges>
       <EstadoRecepcionBadge
@@ -1427,7 +1426,7 @@ onMounted(() => {
         cancel-href="/crud/recepciones/"
         :on-submit="submit"/>
     </template>
-  </FormHeader>
+  </EntityHeader>
   <!-- FlowSteps temporalmente desactivado.
   <div class="relative mx-auto max-w-6xl p-4 rounded-lg">
     <FlowSteps :steps="pasosFlujo" />
@@ -1518,15 +1517,10 @@ onMounted(() => {
                 @select="selectVehiculo"
               />
               <div class="mt-3 space-y-1.5">
-                <div
-                  class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400"
-                >
+                <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
                   <TagIcon class="w-3.5 h-3.5 shrink-0" />
                   Marca:
-                  <span
-                    class="truncate font-bold text-gray-900 dark:text-white"
-                    >{{ form.vehiculo ? form.vehiculo.marca : "—" }}</span
-                  >
+                  <span class="truncate font-bold text-gray-900 dark:text-white">{{ form.vehiculo ? form.vehiculo.marca : "—" }}</span>
                 </div>
                 <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
                   <Shapes class="w-3.5 h-3.5 shrink-0" />

@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   CircleDollarSign,
   ClipboardList,
-  FolderOpen,
   FileText,
   IdCardIcon,
   Loader2,
@@ -28,6 +27,7 @@ import { cotizacionesService } from '../services/cotizacionesService';
 import { formatPlate } from '../../../shared/utils/formatPlate';
 import { formatDateTime } from '../../../shared/utils/datetime';
 import Alert from '../../../shared/components/Alert.vue';
+import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import PdfExportButton from '../../../shared/components/PdfExportButton.vue';
 import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
@@ -191,76 +191,56 @@ onMounted(cargar);
 </script>
 
 <template>
-  <div class="p-4 bg-white border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
-    <nav class="mb-3" aria-label="Breadcrumb">
-      <ol class="inline-flex flex-wrap items-center gap-x-1 text-sm font-medium md:gap-x-2">
-        <li class="inline-flex items-center gap-x-1 md:gap-x-2">
-          <a href="/" class="text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Inicio</a>
-        </li>
-        <li class="inline-flex items-center gap-x-1 md:gap-x-2">
-          <span class="text-gray-400" aria-hidden="true">/</span>
-          <a href="/crud/cotizaciones/" class="text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Cotizaciones</a>
-        </li>
-        <li class="inline-flex items-center gap-x-1 md:gap-x-2">
-          <span class="text-gray-400" aria-hidden="true">/</span>
-          <span class="text-gray-500 dark:text-gray-400">Cotización</span>
-        </li>
-      </ol>
-    </nav>
-
-    <template v-if="cotizacion">
-      <div class="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
-        <div class="flex flex-1 min-w-0 items-start gap-3">
-          <FolderOpen class="w-5 h-5 shrink-0 mt-1.5 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
-          <div class="min-w-0">
-            <h1 class="text-lg font-semibold leading-8 text-gray-900 sm:text-xl dark:text-white">
-              Cotización
-            </h1>
-            <div class="flex flex-wrap items-center gap-2 mt-1">
-              <span class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ cotizacion.numero_cotizacion }}</span>
-              <span class="text-sm text-gray-400" aria-hidden="true">&bull;</span>
-              <EstadoCotizacionBadge :estado="cotizacion.estado" size="md" />
-            </div>
-          </div>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2 ml-auto">
-          <button
-            v-if="puedeGenerarOrden"
-            type="button"
-            class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white rounded-base bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
-            @click="abrirModalGenerarOrden"
-          >
-            <ArrowLeftRight class="w-4 h-4" aria-hidden="true" />
-            Generar orden de trabajo
-          </button>
-          <button
-            v-if="puedeReabrir"
-            type="button"
-            :disabled="procesandoReapertura"
-            class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-red-700 rounded-base border border-red-600 hover:bg-red-50 focus:outline-none focus:ring-4 focus:ring-red-200 dark:text-red-400 dark:border-red-400 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            @click="abrirModalReabrir"
-          >
-            <IconLockOpen2 class="w-4 h-4" aria-hidden="true" />
-            Reabrir
-          </button>
-          <button
-            v-if="puedeEditar"
-            type="button"
-            class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:text-brand-400 dark:border-brand-400 dark:hover:bg-gray-700"
-            @click="irAEditar"
-          >
-            <Pencil class="w-4 h-4" aria-hidden="true" />
-            Editar
-          </button>
-          <PdfExportButton
-            :descargador="descargarPdf"
-            @error="errorMessage = $event"
-          />
-        </div>
-      </div>
+    <EntityHeader
+    mode="detail"
+    entity="Cotización"
+    :record-number="cotizacion ? cotizacion.numero_cotizacion : ''"
+    :breadcrumb="[
+      { label: 'Inicio', href: '/' },
+      { label: 'Cotizaciones', href: '/crud/cotizaciones/' },
+      { label: 'Cotización' },
+    ]"
+  >
+    <template #badges>
+      <EstadoCotizacionBadge v-if="cotizacion" :estado="cotizacion.estado" size="md" />
     </template>
-  </div>
+
+    <template #actions>
+      <button
+        v-if="puedeGenerarOrden"
+        type="button"
+        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white rounded-base bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
+        @click="abrirModalGenerarOrden"
+      >
+        <ArrowLeftRight class="w-4 h-4" aria-hidden="true" />
+        Generar orden de trabajo
+      </button>
+      <button
+        v-if="puedeReabrir"
+        type="button"
+        :disabled="procesandoReapertura"
+        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-red-700 rounded-base border border-red-600 hover:bg-red-50 focus:outline-none focus:ring-4 focus:ring-red-200 dark:text-red-400 dark:border-red-400 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        @click="abrirModalReabrir"
+      >
+        <IconLockOpen2 class="w-4 h-4" aria-hidden="true" />
+        Reabrir
+      </button>
+      <button
+        v-if="puedeEditar"
+        type="button"
+        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:text-brand-400 dark:border-brand-400 dark:hover:bg-gray-700"
+        @click="irAEditar"
+      >
+        <Pencil class="w-4 h-4" aria-hidden="true" />
+        Editar
+      </button>
+      <PdfExportButton
+        v-if="cotizacion"
+        :descargador="descargarPdf"
+        @error="errorMessage = $event"
+      />
+    </template>
+  </EntityHeader>
 
   <div class="p-4">
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">

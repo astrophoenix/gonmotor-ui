@@ -41,7 +41,7 @@ import Alert from '../../../shared/components/Alert.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import RelacionesFlujoEdit from '../../../shared/components/RelacionesFlujoEdit.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
-import FormHeader from '../../../shared/components/FormHeader.vue';
+import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import TextImprover from '../../../shared/components/TextImprover.vue';
 // FlowSteps temporalmente desactivado; conservar para reactivarlo más adelante.
 // import FlowSteps from '../../../shared/components/FlowSteps.vue';
@@ -1050,13 +1050,12 @@ onMounted(() => {
 </script>
 
 <template>
-  <FormHeader
-    back-href="/crud/cotizaciones/"
+  <EntityHeader
     :breadcrumb="breadcrumb"
     entity="Cotización"
     :title="tituloPagina"
     :record-number="numeroCotizacion"
-    :is-edit-mode="isEditMode"
+    :mode="isEditMode ? 'edit' : 'create'"
   >
     <template #badges>
       <EstadoCotizacionBadge
@@ -1128,7 +1127,7 @@ onMounted(() => {
         :on-submit="crearCotizacionIndependiente"
       />
     </template>
-  </FormHeader>
+  </EntityHeader>
 
   <div class="p-4">
     <!-- FlowSteps temporalmente desactivado.

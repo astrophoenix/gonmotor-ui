@@ -23,23 +23,20 @@ function titulo(paso) {
         :href="paso.url"
         :title="titulo(paso)"
         class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border transition-colors"
-        :class="paso.color"
-      >
+        :class="paso.color">
         <component :is="paso.icon" class="w-3.5 h-3.5 shrink-0" />
         {{ paso.numero }}
         <span
           v-if="paso.extra > 0"
           class="inline-flex items-center gap-0.5 pl-1 border-l border-current/30 font-semibold"
-          :title="`${paso.extra} relación(es) adicional(es)`"
-        >
+          :title="`${paso.extra} relación(es) adicional(es)`">
           <Plus class="w-2.5 h-2.5" />{{ paso.extra }}
         </span>
       </a>
       <span
         v-else
         class="inline-flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500"
-        :title="`${paso.label}: sin relación`"
-      >
+        :title="`${paso.label}: sin relación`">
         <component :is="paso.icon" class="w-3.5 h-3.5 shrink-0" />
         {{ paso.label }}: No
       </span>

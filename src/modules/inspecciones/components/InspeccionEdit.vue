@@ -18,7 +18,7 @@ import {
   normalizarTipoTrabajo,
 } from '../../../shared/config/tiposTrabajo';
 import Alert from '../../../shared/components/Alert.vue';
-import FormHeader from '../../../shared/components/FormHeader.vue';
+import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import EstadoInspeccionBadge from './EstadoInspeccionBadge.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TestigosTablero from '../../../shared/components/TestigosTablero.vue';
@@ -967,13 +967,12 @@ onMounted(() => {
 </script>
 
 <template>
-  <FormHeader
-    back-href="/crud/inspecciones/"
+  <EntityHeader
     :breadcrumb="breadcrumb"
     entity="Inspección"
     :title="tituloPagina"
     :record-number="form.numero_inspeccion"
-    :is-edit-mode="isEditMode"
+    :mode="isEditMode ? 'edit' : 'create'"
   >
     <template #badges>
       <EstadoInspeccionBadge
@@ -1010,7 +1009,7 @@ onMounted(() => {
         cancel-href="/crud/inspecciones/"
         :on-submit="submit"/>
     </template>
-  </FormHeader>
+  </EntityHeader>
 
   <!-- FlowSteps temporalmente desactivado.
   <div v-if="recepcion" class="relative mx-auto max-w-6xl px-4 pt-4 rounded-lg">

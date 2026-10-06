@@ -1,9 +1,10 @@
 <script setup>
 import { onMounted, reactive, ref, watch } from 'vue';
-import { ArrowLeft, Car, CirclePlus, FileText, Trash2 } from 'lucide-vue-next';
+import { Car, CirclePlus, FileText, Trash2 } from 'lucide-vue-next';
 import { clientsService } from '../services/clientesService';
 import { request } from '../../../shared/services/httpClient';
 import Alert from '../../../shared/components/Alert.vue';
+import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import VehicleImageField from '../../../shared/components/VehicleImageField.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import {
@@ -372,32 +373,28 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 bg-white border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
-    <nav class="flex mb-5" aria-label="Breadcrumb">
-      <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
-        <li><a href="/" class="text-gray-700 hover:text-primary-600 dark:text-gray-300">Inicio</a></li>
-        <li class="text-gray-400">/ <a href="/crud/clientes/" class="hover:text-primary-600">Clientes</a></li>
-        <li class="text-gray-400">/ {{ isEditMode ? 'Editar' : 'Agregar' }}</li>
-      </ol>
-    </nav>
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <a href="/crud/clientes/" title="Volver al listado" class="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-          <ArrowLeft class="w-5 h-5" />
-        </a>
-        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">{{ isEditMode ? 'Editar cliente' : 'Nuevo cliente' }}</h1>
-      </div>
+  <EntityHeader
+    :mode="isEditMode ? 'edit' : 'create'"
+    :title="isEditMode ? 'Editar cliente' : 'Nuevo cliente'"
+    :breadcrumb="[
+      { label: 'Inicio', href: '/' },
+      { label: 'Clientes', href: '/crud/clientes/' },
+      { label: isEditMode ? 'Editar' : 'Agregar' },
+    ]"
+  >
+    <template #actions>
       <button
         v-if="isEditMode"
         type="button"
-        class="inline-flex items-center px-3 py-2 text-sm font-medium text-primary-700 rounded-lg border border-primary-700 hover:bg-primary-100 active:bg-primary-200 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800 dark:active:bg-gray-700"
+        title="Crear otro cliente"
+        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:text-brand-400 dark:border-brand-400 dark:hover:bg-gray-700"
         @click="goToAdd"
       >
-        <CirclePlus class="w-5 h-5" />
+        <CirclePlus class="w-4 h-4" aria-hidden="true" />
         Nuevo
       </button>
-    </div>
-  </div>
+    </template>
+  </EntityHeader>
 
   <div class="p-4">
     <div class="relative mx-auto max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
