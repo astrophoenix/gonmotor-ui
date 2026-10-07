@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted } from 'vue';
-import { Eye, Pencil, Trash2, Filter, Search, CalendarDays, Wrench, Car, Gauge, IdCard, Phone, ArrowDown, Minus, ArrowUp, Flame } from 'lucide-vue-next';
+import { Eye, Pencil, Trash2, Filter, Search, CalendarDays, Wrench, Car, Gauge, IdCard, Phone, ChevronsDown, Equal, ChevronsUp, Siren } from 'lucide-vue-next';
 import { Icon } from '@iconify/vue';
 import filePdfIcon from '@iconify-icons/fa6-regular/file-pdf';
 import { useOrdenes } from '../composables/useOrdenes';
@@ -173,10 +173,30 @@ async function confirmDelete() {
   }
 }
 
-function formatDate(dateString) {
-  if (!dateString) return '-';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+function formatAntiguedad(date) {
+  const minutos = Math.floor((Date.now() - date.getTime()) / 60000);
+  if (minutos < 1) return 'recién ingresada';
+  if (minutos < 60) return `hace ${minutos} min`;
+  const horas = Math.floor(minutos / 60);
+  if (horas < 24) return `hace ${horas} h`;
+  const dias = Math.floor(horas / 24);
+  if (dias === 1) return 'ayer';
+  if (dias < 30) return `hace ${dias} días`;
+  const meses = Math.floor(dias / 30);
+  return `hace ${meses} ${meses === 1 ? 'mes' : 'meses'}`;
+}
+
+function getFechaOrden(item) {
+  const valor = item.fecha_ingreso || item.created_at;
+  if (!valor) return { fecha: '-', hora: '', antiguedad: '', completo: '' };
+  const date = new Date(valor);
+  if (Number.isNaN(date.getTime())) return { fecha: '-', hora: '', antiguedad: '', completo: '' };
+  return {
+    fecha: date.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+    hora: date.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' }),
+    antiguedad: formatAntiguedad(date),
+    completo: date.toLocaleString('es-EC', { dateStyle: 'long', timeStyle: 'short' }),
+  };
 }
 
 function vehiculoUrl(item) {
@@ -205,10 +225,10 @@ function handleExcelError(message) {
 
 function prioridadConfig(prioridad) {
   const map = {
-    BAJA: { label: 'Baja', icon: ArrowDown, color: 'text-gray-500 dark:text-gray-400' },
-    MEDIA: { label: 'Media', icon: Minus, color: 'text-blue-600 dark:text-blue-400' },
-    ALTA: { label: 'Alta', icon: ArrowUp, color: 'text-amber-600 dark:text-amber-400' },
-    URGENTE: { label: 'Urgente', icon: Flame, color: 'text-red-600 dark:text-red-400' },
+    BAJA: { label: 'Baja', icon: ChevronsDown, color: 'text-gray-500 dark:text-gray-400' },
+    MEDIA: { label: 'Media', icon: Equal, color: 'text-blue-600 dark:text-blue-400' },
+    ALTA: { label: 'Alta', icon: ChevronsUp, color: 'text-amber-600 dark:text-amber-400' },
+    URGENTE: { label: 'Urgente', icon: Siren, color: 'text-red-600 dark:text-red-400' },
   };
   return map[prioridad] || { label: prioridad || '-', icon: Minus, color: 'text-gray-500 dark:text-gray-400' };
 }
@@ -440,11 +460,19 @@ onUnmounted(() => {
             class="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300"
             :title="`Prioridad: ${prioridadConfig(item.prioridad).label}`"
           >
-            <component :is="prioridadConfig(item.prioridad).icon" class="w-3.5 h-3.5 shrink-0" :class="prioridadConfig(item.prioridad).color" />
+            <component :is="prioridadConfig(item.prioridad).icon" class="w-4 h-4 shrink-0" :class="prioridadConfig(item.prioridad).color" />
             {{ prioridadConfig(item.prioridad).label }}
           </span>
         </td>
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ formatDate(item.created_at) }}</td>
+        <td class="p-4 text-gray-800 whitespace-nowrap align-top dark:text-white">
+          <div class="flex flex-col gap-1" :title="getFechaOrden(item).completo">
+            <span class="font-medium text-gray-900 dark:text-white">{{ getFechaOrden(item).fecha }}</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">
+              {{ getFechaOrden(item).hora }}
+              <span v-if="getFechaOrden(item).antiguedad" class="text-gray-400 dark:text-gray-500">· {{ getFechaOrden(item).antiguedad }}</span>
+            </span>
+          </div>
+        </td>
         <td class="p-4 whitespace-nowrap align-top">
           <RelacionesFlujo :pasos="relacionesDeOrden(item)" />
         </td>
