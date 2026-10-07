@@ -415,6 +415,13 @@ async function cambiarEstado(nuevoEstado) {
       return;
     }
     estadoInspeccion.value = nuevoEstado;
+    if (inspeccionData.value) {
+      inspeccionData.value = {
+        ...inspeccionData.value,
+        estado: nuevoEstado,
+        estado_display: actualizada?.estado_display || '',
+      };
+    }
     // El backend sella la fecha de cierre al finalizar y la limpia al reabrir.
     if (actualizada && typeof actualizada === 'object') {
       form.fecha_finalizacion = toLocalDatetimeInput(actualizada.fecha_finalizacion);
@@ -1230,7 +1237,7 @@ onMounted(() => {
                       v-model="form.fecha_inspeccion"
                       type="datetime-local"
                       :disabled="inspeccionFinalizada"
-                      :class="['block w-full p-2.5 text-sm rounded shadow-xs focus:ring-4 focus:ring-primary-300 dark:text-white disabled:opacity-60 disabled:cursor-not-allowed', formErrors.fecha_inspeccion ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                      :class="['block w-full p-2.5 text-sm rounded shadow-xs border border-gray-300 dark:text-white disabled:opacity-60 disabled:cursor-not-allowed focus:ring-brand focus:border-brand', formErrors.fecha_inspeccion ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
                     >
                     <p v-if="formErrors.fecha_inspeccion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.fecha_inspeccion }}</p>
                   </div>
@@ -1260,7 +1267,7 @@ onMounted(() => {
                       inputmode="numeric"
                       autocomplete="off"
                       placeholder=""
-                      :class="['block w-full p-2.5 text-sm rounded shadow-xs focus:ring-4 focus:ring-primary-300 dark:text-white', formErrors.kilometraje_diagnostico ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                      :class="['block w-full p-2.5 text-sm rounded shadow-xs border border-gray-300 dark:text-white focus:ring-brand focus:border-brand', formErrors.kilometraje_diagnostico ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
                     >
                     <span v-if="kmReferenciaDisplay" class="mt-1 block text-xs text-gray-500 dark:text-gray-400">
                       Kilometraje actual:
@@ -1270,14 +1277,14 @@ onMounted(() => {
                   </div>
                   <div class="col-span-1 md:col-span-4">
                     <label for="codigos_dtc" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Códigos de Falla (DTC OBD2)</label>
-                    <input id="codigos_dtc" v-model="form.codigos_dtc" maxlength="255" placeholder="Ej: P0300, P0171..." class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                    <input id="codigos_dtc" v-model="form.codigos_dtc" maxlength="255" placeholder="Ej: P0300, P0171..." class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:ring-brand focus:border-brand">
                   </div>
                   </div>
                 </div>
 
                 <div class="p-1">
                   <label for="motivo_ingreso" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Motivo <span class="text-accent-500">*</span></label>
-                  <textarea id="motivo_ingreso" v-model="form.motivo_ingreso" rows="3" maxlength="500" placeholder="Razón por la cual el cliente trae el vehículo o falla reportada..." :class="['block w-full p-2.5 text-sm rounded shadow-xs focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.motivo_ingreso ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
+                  <textarea id="motivo_ingreso" v-model="form.motivo_ingreso" rows="3" maxlength="500" placeholder="Razón por la cual el cliente trae el vehículo o falla reportada..." :class="['block w-full p-2.5 text-sm rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white focus:ring-brand focus:border-brand', formErrors.motivo_ingreso ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
                   <p v-if="formErrors.motivo_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.motivo_ingreso }}</p>
                 </div>
 
@@ -1301,7 +1308,7 @@ onMounted(() => {
                         {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
                       </button>
                     </div>
-                    <textarea id="diagnostico_tecnico" v-model="form.diagnostico_tecnico" rows="4" maxlength="1000" :class="['block w-full p-2.5 text-sm rounded shadow-xs focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.diagnostico_tecnico ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
+                    <textarea id="diagnostico_tecnico" v-model="form.diagnostico_tecnico" rows="4" maxlength="1000" :class="['block w-full p-2.5 text-sm rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white focus:ring-brand focus:border-brand', formErrors.diagnostico_tecnico ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
                     <p v-if="formErrors.diagnostico_tecnico" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.diagnostico_tecnico }}</p>
                     <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error }}</p>
                     <div v-if="mejorado && !error" class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
@@ -1332,7 +1339,7 @@ onMounted(() => {
                         {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
                       </button>
                     </div>
-                    <textarea id="recomendaciones" v-model="form.recomendaciones" rows="3" maxlength="1000" :class="['block w-full p-2.5 text-sm rounded shadow-xs focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.recomendaciones ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
+                    <textarea id="recomendaciones" v-model="form.recomendaciones" rows="3" maxlength="1000" :class="['block w-full p-2.5 text-sm rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white focus:ring-brand focus:border-brand', formErrors.recomendaciones ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
                     <p v-if="formErrors.recomendaciones" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.recomendaciones }}</p>
                     <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error }}</p>
                     <div v-if="mejorado && !error" class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">

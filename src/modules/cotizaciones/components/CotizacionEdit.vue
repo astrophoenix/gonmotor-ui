@@ -658,6 +658,12 @@ async function crearCotizacionDesdeInspeccion() {
       window.location.replace(`/crud/cotizaciones/editar/?id=${encodeURIComponent(data.cotizacion_activa_id)}`);
       return;
     }
+    const tieneDetalles = (data.servicios_detectados?.length || 0) + (data.repuestos_sugeridos?.length || 0) > 0;
+    if (!tieneDetalles) {
+      errorMessage.value = 'La inspección no tiene servicios ni repuestos. Agrega al menos un ítem antes de generar la cotización.';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     const clienteId = data.recepcion?.cliente?.id || null;
     const vehiculoId = data.recepcion?.vehiculo?.id || null;
     form.clienteSearch = data.recepcion?.cliente?.nombre || '';
@@ -1170,7 +1176,7 @@ onMounted(() => {
                 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
                   <div class="flex items-center gap-2">
                     <FileText class="w-5 h-5 text-gray-900 dark:text-white" />
-                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Información General</h2>
+                    <h2 class="text-md font-semibold text-gray-900 dark:text-white">Información General</h2>
                   </div>
                   <div class="flex items-center gap-2">
                     <label for="validez_dias" class="text-sm font-medium text-gray-900 dark:text-white">Validez</label>

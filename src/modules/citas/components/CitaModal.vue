@@ -1,9 +1,12 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue';
-import { Car, X, Save, Search, Plus, UserPlus } from 'lucide-vue-next';
+import { X, Save } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
 import { citasService } from '../services/citasService';
 import Alert from '../../../shared/components/Alert.vue';
+import ClienteSearchSelect from '../../../shared/components/ClienteSearchSelect.vue';
+import VehiculoSearchSelect from '../../../shared/components/VehiculoSearchSelect.vue';
+import EmpleadoSearchSelect from '../../../shared/components/EmpleadoSearchSelect.vue';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -64,34 +67,50 @@ let disponibilidadTimer = null;
 
 const TALLERES_ENDPOINT = '/api/configuracion/sucursales/';
 
-// --- Búsqueda de cliente ---
-const clientsList = ref([]);
-const clientsLoading = ref(false);
+// --- Cliente y vehículo (selectores con búsqueda; el vehículo requiere cliente) ---
 const clientSearch = ref('');
-const clientsDropped = ref(false);
+const vehicleSearch = ref('');
 const showClientCreate = ref(false);
 const clientCreateForm = ref({ identificacion: '', nombre: '', telefono: '', email: '' });
 const isCreatingClient = ref(false);
-
-// --- Búsqueda de vehículo ---
-const vehiclesList = ref([]);
-const vehiclesLoading = ref(false);
-const vehicleSearch = ref('');
-const vehiclesDropped = ref(false);
 const showVehicleCreate = ref(false);
 const vehicleCreateForm = ref({ placa: '', marca: '', modelo: '', anio: '', color: '' });
 const isCreatingVehicle = ref(false);
 
-let searchTimer = null;
-
 const CLIENT_ENDPOINT = '/api/clientes/';
 const VEHICLE_ENDPOINT = '/api/vehiculos/';
+
+function formatPlaca(placa) {
+  if (!placa) return '';
+  const cleaned = String(placa).replace(/-/g, '').trim().toUpperCase();
+  if (cleaned.length <= 3) return cleaned;
+  return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}`;
+}
+
+// --- Asesor (empleado que atiende la cita y recibirá el vehículo al convertirla) ---
+const asesorSearch = ref('');
+
+function nombreEmpleado(empleado) {
+  const user = empleado?.user || {};
+  return `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || '';
+}
+
+function selectAsesor(empleado) {
+  form.value.asesor = empleado?.user?.id ?? null;
+  asesorSearch.value = nombreEmpleado(empleado);
+}
+
+function clearAsesor() {
+  form.value.asesor = null;
+  asesorSearch.value = '';
+}
 
 function getComparableState() {
   return {
     cliente: form.value.cliente ? form.value.cliente.id : null,
     vehiculo: form.value.vehiculo ? form.value.vehiculo.id : null,
     taller: form.value.taller,
+    asesor: form.value.asesor || null,
     fecha_cita: form.value.fecha_cita,
     hora_cita: form.value.hora_cita,
     duracion_minutos: form.value.duracion_minutos,
@@ -246,52 +265,21 @@ function applyBackendErrors(data) {
   formErrors.value = newErrors;
 }
 
-// --- Búsqueda de clientes (debounced) ---
-async function searchClients() {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(async () => {
-    if (!clientSearch.value.trim()) {
-      clientsList.value = [];
-      clientsDropped.value = false;
-      return;
-    }
-    clientsLoading.value = true;
-    try {
-      const data = await request(`${CLIENT_ENDPOINT}?search=${encodeURIComponent(clientSearch.value.trim())}&page=1&estado=activo`);
-      clientsList.value = Array.isArray(data) ? data : (data.results || []);
-      clientsDropped.value = true;
-    } catch (error) {
-      errorMessage.value = error.message;
-    } finally {
-      clientsLoading.value = false;
-    }
-  }, 350);
+// --- Cliente ---
+function selectCliente(cliente) {
+  form.value.cliente = cliente;
+  clientSearch.value = cliente.nombre || '';
+  clearVehiculo();
 }
 
-function selectClient(cliente) {
-  form.value.cliente = {
-    id: cliente.id,
-    nombre: cliente.nombre,
-    identificacion: cliente.identificacion,
-    telefono: cliente.telefono,
-  };
+function clearCliente() {
+  form.value.cliente = null;
   clientSearch.value = '';
-  clientsList.value = [];
-  clientsDropped.value = false;
-  showClientCreate.value = false;
-  if (form.value.vehiculo) {
-    const ownerId = form.value.vehiculo.cliente_id;
-    if (ownerId && String(ownerId) !== String(cliente.id)) {
-      form.value.vehiculo = null;
-      vehicleSearch.value = '';
-      vehiclesList.value = [];
-    }
-  }
+  clearVehiculo();
 }
 
 function openClientCreate() {
   showClientCreate.value = true;
-  clientsDropped.value = false;
 }
 
 async function createClient() {
@@ -318,14 +306,11 @@ async function createClient() {
         direccion: '',
       }),
     });
-    form.value.cliente = {
-      id: nuevo.id,
-      nombre: nuevo.nombre,
-      identificacion: nuevo.identificacion,
-      telefono: nuevo.telefono,
-    };
+    form.value.cliente = nuevo;
+    clientSearch.value = nuevo.nombre || '';
     showClientCreate.value = false;
     clientCreateForm.value = { identificacion: '', nombre: '', telefono: '', email: '' };
+    clearVehiculo();
     delete formErrors.value['create_cliente_nombre'];
     delete formErrors.value['create_cliente_identificacion'];
   } catch (error) {
@@ -335,49 +320,19 @@ async function createClient() {
   }
 }
 
-// --- Búsqueda de vehículos (debounced) ---
-function vehicleEndpoint() {
-  const params = new URLSearchParams({ page: '1' });
-  if (vehicleSearch.value.trim()) params.set('search', vehicleSearch.value.trim());
-  if (form.value.cliente) params.set('cliente', String(form.value.cliente.id));
-  return `${VEHICLE_ENDPOINT}?${params.toString()}`;
+// --- Vehículo ---
+function selectVehiculo(vehiculo) {
+  form.value.vehiculo = vehiculo;
+  vehicleSearch.value = formatPlaca(vehiculo.placa);
 }
 
-async function searchVehicles() {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(async () => {
-    vehiclesLoading.value = true;
-    try {
-      const data = await request(vehicleEndpoint());
-      let items = Array.isArray(data) ? data : (data.results || []);
-      items = items.filter((v) => v.is_active !== false);
-      vehiclesList.value = items;
-      vehiclesDropped.value = true;
-    } catch (error) {
-      errorMessage.value = error.message;
-    } finally {
-      vehiclesLoading.value = false;
-    }
-  }, 350);
-}
-
-function selectVehicle(vehiculo) {
-  form.value.vehiculo = {
-    id: vehiculo.id,
-    placa: vehiculo.placa,
-    marca: vehiculo.marca,
-    modelo: vehiculo.modelo,
-    color: vehiculo.color,
-  };
+function clearVehiculo() {
+  form.value.vehiculo = null;
   vehicleSearch.value = '';
-  vehiclesList.value = [];
-  vehiclesDropped.value = false;
-  showVehicleCreate.value = false;
 }
 
 function openVehicleCreate() {
   showVehicleCreate.value = true;
-  vehiclesDropped.value = false;
 }
 
 async function createVehicle() {
@@ -413,13 +368,8 @@ async function createVehicle() {
       method: 'POST',
       body: JSON.stringify(payload),
     });
-    form.value.vehiculo = {
-      id: nuevo.id,
-      placa: nuevo.placa,
-      marca: nuevo.marca,
-      modelo: nuevo.modelo,
-      color: nuevo.color,
-    };
+    form.value.vehiculo = nuevo;
+    vehicleSearch.value = formatPlaca(nuevo.placa);
     showVehicleCreate.value = false;
     vehicleCreateForm.value = { placa: '', marca: '', modelo: '', anio: '', color: '' };
     delete formErrors.value.create_vehiculo_placa;
@@ -449,8 +399,7 @@ function resetForm() {
   };
   clientSearch.value = '';
   vehicleSearch.value = '';
-  clientsList.value = [];
-  vehiclesList.value = [];
+  asesorSearch.value = '';
   showClientCreate.value = false;
   showVehicleCreate.value = false;
   formErrors.value = {};
@@ -502,6 +451,9 @@ async function open() {
       notas_internas: data.notas_internas || '',
       asesor: data.asesor || null,
     };
+    asesorSearch.value = data.asesor_nombre || '';
+    clientSearch.value = data.cliente?.nombre || '';
+    vehicleSearch.value = data.vehiculo ? formatPlaca(data.vehiculo.placa) : '';
     nextTick().then(() => { formSnapshot.value = getComparableState(); });
   } catch (error) {
     errorMessage.value = error.message;
@@ -526,6 +478,7 @@ async function submit() {
     cliente: form.value.cliente ? form.value.cliente.id : null,
     vehiculo: form.value.vehiculo ? form.value.vehiculo.id : null,
     taller: form.value.taller || null,
+    asesor: form.value.asesor || null,
     fecha_cita: form.value.fecha_cita,
     hora_cita: form.value.hora_cita,
     duracion_minutos: Number(form.value.duracion_minutos) || 60,
@@ -621,53 +574,18 @@ function formatHour(value) {
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- Cliente -->
             <div>
-              <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente *</label>
-              <div v-if="form.cliente" class="flex items-center justify-between p-2.5 rounded-lg border border-gray-300 bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
-                <div class="min-w-0">
-                  <p class="text-sm font-medium text-gray-900 truncate dark:text-white">{{ form.cliente.nombre }}</p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ form.cliente.identificacion }} · {{ form.cliente.telefono || 'Sin teléfono' }}</p>
-                </div>
-                <button type="button" class="text-sm text-red-600 hover:underline dark:text-red-400" @click="form.cliente = null; clientSearch = ''">Cambiar</button>
-              </div>
-              <template v-else>
-                <div class="relative">
-                  <Search class="absolute w-4 h-4 text-gray-400 left-3 top-3" />
-                  <input
-                    v-model="clientSearch"
-                    type="text"
-                    placeholder="Buscar por nombre o identificación..."
-                    class="block w-full p-2.5 pl-9 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    @input="searchClients"
-                  />
-                  <button
-                    type="button"
-                    class="absolute right-2 top-2 inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary-blue-700 rounded-md hover:bg-primary-blue-50 dark:text-primary-blue-400"
-                    @click="openClientCreate"
-                  >
-                    <UserPlus class="w-3.5 h-3.5" />
-                    Crear
-                  </button>
-                  <div
-                    v-if="clientsDropped"
-                    class="absolute z-20 mt-1 w-full overflow-hidden bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-800 dark:border-gray-600"
-                  >
-                    <p v-if="clientsLoading" class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">Buscando...</p>
-                    <ul v-else-if="clientsList.length" class="max-h-52 overflow-y-auto">
-                      <li
-                        v-for="c in clientsList"
-                        :key="c.id"
-                        class="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-                        @click="selectClient(c)"
-                      >
-                        <span class="font-medium text-gray-900 dark:text-white">{{ c.nombre }}</span>
-                        <span class="block text-xs text-gray-500 dark:text-gray-400">{{ c.identificacion }} · {{ c.telefono || 'Sin teléfono' }}</span>
-                      </li>
-                    </ul>
-                    <p v-else class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">Sin resultados. Usa "Crear".</p>
-                  </div>
-                </div>
-                <p v-if="formErrors.cliente" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.cliente }}</p>
-              </template>
+              <label for="cita_cliente" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente *</label>
+              <ClienteSearchSelect
+                id="cita_cliente"
+                v-model="clientSearch"
+                placeholder="Buscar por nombre o identificación..."
+                :error="Boolean(formErrors.cliente)"
+                :error-message="formErrors.cliente"
+                show-create
+                @select="selectCliente"
+                @clear="clearCliente"
+                @create="openClientCreate"
+              />
 
               <div v-if="showClientCreate" class="p-3 mt-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
                 <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Crear cliente rápido</p>
@@ -700,57 +618,20 @@ function formatHour(value) {
 
             <!-- Vehículo -->
             <div>
-              <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo *</label>
-              <div v-if="form.vehiculo" class="flex items-center justify-between p-2.5 rounded-lg border border-gray-300 bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
-                <div class="flex items-center gap-2 min-w-0">
-                  <Car class="w-4 h-4 text-gray-500 shrink-0 dark:text-gray-400" />
-                  <div class="min-w-0">
-                    <p class="text-sm font-medium text-gray-900 truncate dark:text-white">{{ form.vehiculo.placa }}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ form.vehiculo.marca }} {{ form.vehiculo.modelo }} {{ form.vehiculo.color || '' }}</p>
-                  </div>
-                </div>
-                <button type="button" class="text-sm text-red-600 hover:underline dark:text-red-400" @click="form.vehiculo = null; vehicleSearch = ''">Cambiar</button>
-              </div>
-              <template v-else>
-                <div class="relative">
-                  <Search class="absolute w-4 h-4 text-gray-400 left-3 top-3" />
-                  <input
-                    v-model="vehicleSearch"
-                    type="text"
-                    :placeholder="form.cliente ? 'Buscar vehículo del cliente...' : 'Buscar vehículo...'"
-                    class="block w-full p-2.5 pl-9 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    @input="searchVehicles"
-                  />
-                  <button
-                    type="button"
-                    class="absolute right-2 top-2 inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary-blue-700 rounded-md hover:bg-primary-blue-50 dark:text-primary-blue-400"
-                    @click="openVehicleCreate"
-                  >
-                    <Plus class="w-3.5 h-3.5" />
-                    Crear
-                  </button>
-                  <div
-                    v-if="vehiclesDropped"
-                    class="absolute z-20 mt-1 w-full overflow-hidden bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-800 dark:border-gray-600"
-                  >
-                    <p v-if="vehiclesLoading" class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">Buscando...</p>
-                    <ul v-else-if="vehiclesList.length" class="max-h-52 overflow-y-auto">
-                      <li
-                        v-for="v in vehiclesList"
-                        :key="v.id"
-                        class="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-                        @click="selectVehicle(v)"
-                      >
-                        <span class="font-medium text-gray-900 dark:text-white">{{ v.placa }}</span>
-                        <span class="block text-xs text-gray-500 dark:text-gray-400">{{ v.marca }} {{ v.modelo }} {{ v.color || '' }}</span>
-                      </li>
-                    </ul>
-                    <p v-else class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">Sin resultados. Usa "Crear".</p>
-                  </div>
-                </div>
-                <p v-if="formErrors.vehiculo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.vehiculo }}</p>
-                <p v-if="!form.cliente" class="mt-1 text-xs text-gray-500 dark:text-gray-400">Sugerencia: selecciona primero el cliente.</p>
-              </template>
+              <label for="cita_vehiculo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo *</label>
+              <VehiculoSearchSelect
+                id="cita_vehiculo"
+                v-model="vehicleSearch"
+                :cliente-id="form.cliente ? form.cliente.id : null"
+                :disabled="!form.cliente"
+                :placeholder="form.cliente ? 'Buscar vehículo por placa...' : 'Selecciona un cliente primero'"
+                :show-create="Boolean(form.cliente)"
+                :error="Boolean(formErrors.vehiculo)"
+                :error-message="formErrors.vehiculo"
+                @select="selectVehiculo"
+                @clear="clearVehiculo"
+                @create="openVehicleCreate"
+              />
 
               <div v-if="showVehicleCreate" class="p-3 mt-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
                 <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Crear vehículo rápido</p>
@@ -788,7 +669,7 @@ function formatHour(value) {
 
           <h4 class="mt-6 mb-4 text-base font-semibold dark:text-white">Programación</h4>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="md:col-span-2">
+            <div>
               <label for="cita_taller" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Taller</label>
               <select
                 id="cita_taller"
@@ -801,48 +682,61 @@ function formatHour(value) {
               <p v-if="formErrors.taller" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.taller }}</p>
             </div>
             <div>
-              <label for="cita_fecha" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Fecha *</label>
-              <input
-                id="cita_fecha"
-                v-model="form.fecha_cita"
-                type="date"
-                :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.fecha_cita ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
-              >
-              <p v-if="formErrors.fecha_cita" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.fecha_cita }}</p>
+              <label for="cita_asesor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Asesor</label>
+              <EmpleadoSearchSelect
+                id="cita_asesor"
+                v-model="asesorSearch"
+                placeholder="Buscar asesor..."
+                @select="selectAsesor"
+                @clear="clearAsesor"
+              />
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Si se deja vacío, se usará el usuario que convierta la cita.</p>
             </div>
-            <div>
-              <label for="cita_hora" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Hora *</label>
-              <input
-                id="cita_hora"
-                v-model="form.hora_cita"
-                type="time"
-                :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.hora_cita ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
-              >
-              <p v-if="formErrors.hora_cita" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.hora_cita }}</p>
-            </div>
-            <div>
-              <label for="cita_duracion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Duración (minutos) *</label>
-              <input
-                id="cita_duracion"
-                v-model.number="form.duracion_minutos"
-                type="number"
-                min="15"
-                max="1440"
-                step="15"
-                :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.duracion_minutos ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
-              >
-              <p v-if="formErrors.duracion_minutos" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.duracion_minutos }}</p>
-            </div>
-            <div>
-              <label for="cita_hora_fin" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Termina</label>
-              <input
-                id="cita_hora_fin"
-                :value="horaFin"
-                type="text"
-                readonly
-                placeholder="--:--"
-                class="block w-full p-2.5 text-sm bg-gray-100 border border-gray-300 rounded-lg text-gray-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400"
-              >
+            <div class="md:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <label for="cita_fecha" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Fecha *</label>
+                <input
+                  id="cita_fecha"
+                  v-model="form.fecha_cita"
+                  type="date"
+                  :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.fecha_cita ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                >
+                <p v-if="formErrors.fecha_cita" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.fecha_cita }}</p>
+              </div>
+              <div>
+                <label for="cita_hora" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Hora *</label>
+                <input
+                  id="cita_hora"
+                  v-model="form.hora_cita"
+                  type="time"
+                  :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.hora_cita ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                >
+                <p v-if="formErrors.hora_cita" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.hora_cita }}</p>
+              </div>
+              <div>
+                <label for="cita_duracion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Duración (minutos) *</label>
+                <input
+                  id="cita_duracion"
+                  v-model.number="form.duracion_minutos"
+                  type="number"
+                  min="15"
+                  max="1440"
+                  step="15"
+                  :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.duracion_minutos ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                >
+                <p v-if="formErrors.duracion_minutos" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.duracion_minutos }}</p>
+              </div>
+              <div>
+                <label for="cita_hora_fin" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Termina</label>
+                <input
+                  id="cita_hora_fin"
+                  :value="horaFin"
+                  type="text"
+                  readonly
+                  placeholder="--:--"
+                  class="block w-full p-2.5 text-sm bg-gray-100 border border-gray-300 rounded-lg text-gray-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400"
+                >
+              </div>
             </div>
             <div>
               <label for="cita_motivo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Motivo *</label>

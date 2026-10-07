@@ -145,6 +145,36 @@ function getTestigoIconClasses(testigo) {
 const tieneOrdenTrabajo = computed(() => Boolean(inspeccion.value?.tiene_orden_trabajo));
 const tieneCotizacionActiva = computed(() => Boolean(inspeccion.value?.tiene_cotizacion_activa));
 const estaFinalizada = computed(() => inspeccion.value?.estado === 'FINALIZADA');
+const tieneItemsInspeccion = computed(() => (
+  (inspeccion.value?.servicios_detectados?.length || 0)
+  + (inspeccion.value?.repuestos_sugeridos?.length || 0)
+) > 0);
+const MENSAJE_SIN_ITEMS = 'La inspección no tiene servicios ni repuestos. Reábrela y agrega al menos un ítem antes de generar la cotización.';
+
+// Solo un mensaje visible a la vez: al mostrar uno se limpia el otro.
+function mostrarError(mensaje) {
+  successMessage.value = '';
+  error.value = mensaje;
+}
+
+function mostrarExito(mensaje) {
+  error.value = '';
+  successMessage.value = mensaje;
+}
+
+function limpiarMensajes() {
+  error.value = '';
+  successMessage.value = '';
+}
+
+function avisarSinItems() {
+  mostrarError(MENSAJE_SIN_ITEMS);
+  scrollAlInicio();
+}
+
+function scrollAlInicio() {
+  document.getElementById('main-content')?.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
 // Chips de recepción, cotización y orden vinculadas a esta inspección.
 const relacionesInspeccion = computed(() => relacionesDeInspeccion(inspeccion.value));
@@ -305,6 +335,10 @@ function irACotizacion(cotizacionId) {
 }
 
 function crearComplementaria() {
+  if (!tieneItemsInspeccion.value) {
+    avisarSinItems();
+    return;
+  }
   const ids = selectedCotizaciones.value.join(',');
   const query = new URLSearchParams({ inspeccion: String(inspeccionId) });
   if (ids) query.set('complementa', ids);
@@ -314,11 +348,11 @@ function crearComplementaria() {
 async function usarCotizacionesAceptadas() {
   if (vinculandoCotizaciones.value) return;
   if (selectedCotizaciones.value.length === 0) {
-    error.value = 'Selecciona al menos una cotización aprobada.';
+    mostrarError('Selecciona al menos una cotización aprobada.');
     return;
   }
   vinculandoCotizaciones.value = true;
-  error.value = '';
+  limpiarMensajes();
   try {
     await request(
       `/api/ordenes/inspecciones/${encodeURIComponent(inspeccionId)}/cotizaciones-candidatas/`,
@@ -330,11 +364,11 @@ async function usarCotizacionesAceptadas() {
     await Promise.all([cargarInspeccion(), cargarCandidatas()]);
     cerrarDecisionModal();
     const numero = cotizacionesAceptadas.value[0]?.numero || 'la cotización';
-    successMessage.value = `${numero} quedó vinculada a esta inspección. Ya puedes generar la orden de trabajo desde la cotización.`;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    mostrarExito(`${numero} quedó vinculada a esta inspección. Ya puedes generar la orden de trabajo desde la cotización.`);
+    scrollAlInicio();
   } catch (vinculoError) {
-    error.value = vinculoError.message || 'No se pudieron vincular las cotizaciones aprobadas.';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    mostrarError(vinculoError.message || 'No se pudieron vincular las cotizaciones aprobadas.');
+    scrollAlInicio();
   } finally {
     vinculandoCotizaciones.value = false;
   }
@@ -344,6 +378,10 @@ function solicitarCrearCotizacion() {
   if (isSyncingCotizacion.value || isGeneratingCotizacion.value) return;
   if (hayAceptadas.value) {
     abrirDecisionModal();
+    return;
+  }
+  if (!tieneItemsInspeccion.value) {
+    avisarSinItems();
     return;
   }
   showGenerarCotizacionModal.value = true;
@@ -365,6 +403,11 @@ const textoConfirmarCotizacion = computed(() => (
 
 async function crearCotizacion() {
   if (isSyncingCotizacion.value || isGeneratingCotizacion.value) return;
+  if (!tieneItemsInspeccion.value) {
+    showGenerarCotizacionModal.value = false;
+    avisarSinItems();
+    return;
+  }
   isGeneratingCotizacion.value = true;
   const cotizacionId = inspeccion.value?.cotizacion_activa_id;
   if (!cotizacionId) {
@@ -380,10 +423,10 @@ async function crearCotizacion() {
       body: JSON.stringify({}),
     });
   } catch (syncError) {
-    error.value = syncError.message || 'No se pudo actualizar la cotización con los cambios de la inspección.';
+    mostrarError(syncError.message || 'No se pudo actualizar la cotización con los cambios de la inspección.');
     isSyncingCotizacion.value = false;
     isGeneratingCotizacion.value = false;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollAlInicio();
     return;
   }
   showGenerarCotizacionModal.value = false;
@@ -412,10 +455,10 @@ async function confirmarReabrir() {
       };
     }
     showReabrirModal.value = false;
-    successMessage.value = 'Inspección reabierta. Ahora está en proceso.';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    mostrarExito('Inspección reabierta. Ahora está en proceso.');
+    scrollAlInicio();
   } catch (fetchError) {
-    error.value = fetchError.message || 'No se pudo reabrir la inspección.';
+    mostrarError(fetchError.message || 'No se pudo reabrir la inspección.');
   } finally {
     isReopening.value = false;
   }
@@ -449,13 +492,13 @@ async function cargarInspeccion() {
 
 onMounted(async () => {
   if (params.get('finalizada')) {
-    successMessage.value = 'Inspección finalizada correctamente.';
+    mostrarExito('Inspección finalizada correctamente.');
     params.delete('finalizada');
     const cleanUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}${window.location.hash}`;
     window.history.replaceState({}, '', cleanUrl);
   }
   if (!inspeccionId) {
-    error.value = 'Falta el identificador de la inspección.';
+    mostrarError('Falta el identificador de la inspección.');
     loading.value = false;
     return;
   }
@@ -463,7 +506,7 @@ onMounted(async () => {
     await cargarInspeccion();
     await cargarCandidatas();
   } catch (fetchError) {
-    error.value = fetchError.message || 'No se pudo cargar la inspección.';
+    mostrarError(fetchError.message || 'No se pudo cargar la inspección.');
   } finally {
     loading.value = false;
   }
@@ -525,8 +568,8 @@ onMounted(async () => {
 
   <div class="p-4">
     <div class="relative mx-auto max-w-8xl">
-      <Alert v-if="error" type="error" :title="error" message="" dismissible @dismiss="error = ''"/>
-      <Alert v-if="successMessage" type="success" :title="successMessage" message="" dismissible @dismiss="successMessage = ''"/>
+      <Alert v-if="error" type="error" :message="error" dismissible @dismiss="error = ''"/>
+      <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''"/>
 
       <div
         v-if="hayAceptadas && !loading"
