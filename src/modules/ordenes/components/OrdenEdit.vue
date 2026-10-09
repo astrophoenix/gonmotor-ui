@@ -1,10 +1,10 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { Package, Wand2, Loader2, Plus, X, Camera, FileText, ClipboardList, Car } from 'lucide-vue-next';
+import { Package, Wand2, Loader2, Plus, X, Camera, FileText, ClipboardList, Car, ChevronsDown, Equal, ChevronsUp, Siren, Minus } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
 import { API_BASE_URL } from '../../../shared/config/env';
 import { ordenesService } from '../services/ordenesService';
-import { PRIORIDADES_ORDEN } from '../constants/estadosOrden';
+import { PRIORIDADES_ORDEN, ESTADOS_ORDEN_FILTRABLE, getEstadoOrden } from '../constants/estadosOrden';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
@@ -152,13 +152,21 @@ const form = ref({
 });
 
 const PRIORIDAD_BADGES = {
-  BAJA: { label: 'Baja', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
-  MEDIA: { label: 'Media', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
-  ALTA: { label: 'Alta', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' },
-  URGENTE: { label: 'Urgente', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' },
+  BAJA: { label: 'Baja', icon: ChevronsDown, color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
+  MEDIA: { label: 'Media', icon: Equal, color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
+  ALTA: { label: 'Alta', icon: ChevronsUp, color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' },
+  URGENTE: { label: 'Urgente', icon: Siren, color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' },
 };
 
-const prioridadBadge = computed(() => PRIORIDAD_BADGES[form.value.prioridad] || { label: form.value.prioridad || '—', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' });
+const prioridadConfig = (prioridad) =>
+  PRIORIDAD_BADGES[prioridad] || { label: prioridad || '—', icon: Minus, color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' };
+
+const prioridadBadge = computed(() => prioridadConfig(form.value.prioridad));
+
+const estadosOrdenOptions = ESTADOS_ORDEN_FILTRABLE.map((estado) => ({
+  value: estado,
+  label: getEstadoOrden(estado).label,
+}));
 
 const TIPOS = TIPOS_TRABAJO_OPCIONES;
 
@@ -584,6 +592,7 @@ async function handleSubmit() {
   const datosOrden = {
     cliente: clienteSeleccionado.value.id,
     vehiculo: vehiculoSeleccionado.value.id,
+    estado: form.value.estado,
     prioridad: form.value.prioridad,
     tipo_trabajo: form.value.tipo_trabajo,
     mecanico_principal: form.value.mecanico_principal || null,
@@ -640,14 +649,15 @@ async function handleSubmit() {
     <template #badges>
       <template v-if="orden">
         <EstadoOrdenBadge
-          :estado="orden.estado"
-          :estado-display="orden.estado_display"
+          :estado="form.estado"
+          :estado-display="getEstadoOrden(form.estado).label"
           size="md"
         />
         <span
-          class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium"
-          :class="prioridadBadge.color"
-        >Prioridad {{ prioridadBadge.label }}</span>
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium"
+          :class="prioridadBadge.color">
+          <component :is="prioridadBadge.icon" class="w-4 h-4 shrink-0" aria-hidden="true" />
+          {{ prioridadBadge.label }}</span>
       </template>
     </template>
     <template #actions>
@@ -743,21 +753,27 @@ async function handleSubmit() {
                   id="fecha_entrega"
                   v-model="form.fecha_entrega"
                   type="datetime-local"
-                  class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                  class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 focus:ring-brand focus:border-brand dark:bg-gray-700 dark:text-white dark:border-gray-600">
               </div>
               <div class="min-w-0">
                 <label for="tipo_trabajo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de Trabajo</label>
-                <select id="tipo_trabajo" v-model="form.tipo_trabajo" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                <select id="tipo_trabajo" v-model="form.tipo_trabajo" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 focus:ring-brand focus:border-brand dark:bg-gray-700 dark:text-white dark:border-gray-600">
                   <option v-for="tipo in TIPOS" :key="tipo.value" :value="tipo.value">{{ tipo.label }}</option>
                 </select>
               </div>
             </div>
 
-            <!-- Fila 3: Prioridad -->
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <!-- Fila 3: Estado y prioridad -->
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div class="min-w-0">
+                <label for="estado" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Estado</label>
+                <select id="estado" v-model="form.estado" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 focus:ring-brand focus:border-brand dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                  <option v-for="estado in estadosOrdenOptions" :key="estado.value" :value="estado.value">{{ estado.label }}</option>
+                </select>
+              </div>
               <div class="min-w-0">
                 <label for="prioridad" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Prioridad</label>
-                <select id="prioridad" v-model="form.prioridad" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                <select id="prioridad" v-model="form.prioridad" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 focus:ring-brand focus:border-brand dark:bg-gray-700 dark:text-white dark:border-gray-600">
                   <option v-for="prioridad in PRIORIDADES_ORDEN" :key="prioridad.value" :value="prioridad.value">{{ prioridad.label }}</option>
                 </select>
               </div>
@@ -773,7 +789,7 @@ async function handleSubmit() {
                   type="text"
                   maxlength="80"
                   placeholder="Ej.: esperando repuestos, aprobación del cliente..."
-                  class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                  class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 focus:ring-brand focus:border-brand dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 >
               </div>
             </div>
@@ -1003,7 +1019,7 @@ async function handleSubmit() {
                       {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
                     </button>
                   </div>
-                  <textarea id="observaciones" v-model="form.observaciones" rows="6" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder=""></textarea>
+                  <textarea id="observaciones" v-model="form.observaciones" rows="6" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 focus:ring-brand focus:border-brand dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder=""></textarea>
                   <p v-if="errorMejora" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ errorMejora }}</p>
                   <div v-if="mejorado && !errorMejora" class="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-emerald-700 dark:text-emerald-400">
                     <p>Texto mejorado. Revisa antes de guardar.</p>
@@ -1106,35 +1122,6 @@ async function handleSubmit() {
                   :estado-display="orden.estado_display"
                   size="sm"
                 />
-              </dd>
-            </div>
-            <div v-if="orden?.cotizacion_origen">
-              <dt class="font-medium text-gray-700 dark:text-gray-300">Cotización de origen</dt>
-              <dd class="font-medium text-sm">
-                <a :href="`/crud/cotizaciones/editar/?id=${orden.cotizacion_origen}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
-                  {{ orden.cotizacion_origen_numero || `#${orden.cotizacion_origen}` }}
-                </a>
-              </dd>
-            </div>
-            <div v-if="inspeccion">
-              <dt class="font-medium text-gray-700 dark:text-gray-300">Inspección</dt>
-              <dd class="font-medium text-sm">
-                <a :href="`/crud/inspecciones/ver/?id=${inspeccion.id}`" class="text-primary-blue-700 hover:underline dark:text-primary-blue-400">
-                  {{ inspeccion.numero_inspeccion || `#${inspeccion.id}` }}
-                </a>
-              </dd>
-            </div>
-            <div v-if="recepciones.length">
-              <dt class="font-medium text-gray-700 dark:text-gray-300">Recepción / es</dt>
-              <dd class="font-medium text-sm">
-                <a
-                  v-for="recepcion in recepciones"
-                  :key="recepcion.id"
-                  :href="`/crud/recepciones/ver/?id=${recepcion.id}`"
-                  class="text-primary-blue-700 hover:underline dark:text-primary-blue-400"
-                >
-                  {{ recepcion.numero_recepcion || `#${recepcion.id}` }}<span v-if="recepcion !== recepciones[recepciones.length - 1]">, </span>
-                </a>
               </dd>
             </div>
           </dl>

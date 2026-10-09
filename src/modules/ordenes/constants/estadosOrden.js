@@ -1,4 +1,4 @@
-import { Clock, CircleCheck, CircleSlash, Hourglass, Truck, Wrench } from 'lucide-vue-next';
+import { Clock, CircleCheck, CircleSlash, Hourglass, CheckCheck, Wrench } from 'lucide-vue-next';
 import { estadoADisplay } from '../../../shared/utils/estadoFlujo';
 
 /**
@@ -11,7 +11,7 @@ export const ESTADOS_ORDEN = {
   EN_ESPERA: { icon: Hourglass, color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200' },
   EN_PROCESO: { icon: Wrench, color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200' },
   COMPLETADO: { icon: CircleCheck, color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200' },
-  ENTREGADO: { icon: Truck, color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
+  ENTREGADO: { icon: CheckCheck, color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200' },
   CANCELADO: { icon: CircleSlash, color: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200' },
 };
 

@@ -221,7 +221,7 @@ const vinculandoCotizaciones = ref(false);
 const cotizacionesAceptadas = computed(() => candidatas.value.aprobadas || []);
 const hayAceptadas = computed(() => cotizacionesAceptadas.value.length > 0);
 const totalAceptadas = computed(() => cotizacionesAceptadas.value.reduce(
-  (accumulado, c) => acumulado + Number(c.total || 0), 0,
+  (accumulado, c) => accumulado + Number(c.total || 0), 0,
 ));
 
 function formatMoney(value) {
@@ -343,6 +343,15 @@ function crearComplementaria() {
   const query = new URLSearchParams({ inspeccion: String(inspeccionId) });
   if (ids) query.set('complementa', ids);
   window.location.assign(`/crud/cotizaciones/nuevo/?${query.toString()}`);
+}
+
+function crearNuevaCotizacion() {
+  if (!tieneItemsInspeccion.value) {
+    cerrarDecisionModal();
+    avisarSinItems();
+    return;
+  }
+  window.location.assign(`/crud/cotizaciones/nuevo/?inspeccion=${encodeURIComponent(inspeccionId)}`);
 }
 
 async function usarCotizacionesAceptadas() {
@@ -537,31 +546,28 @@ onMounted(async () => {
       <a
         v-if="inspeccion && !estaFinalizada"
         :href="`/crud/inspecciones/editar/?id=${encodeURIComponent(inspeccion.id)}`"
-        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:text-brand-400 dark:border-brand-400 dark:hover:bg-gray-700"
-      >
-        <SquarePen class="w-4 h-4" aria-hidden="true" />
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800">
+        <FilePen class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
         Editar
       </a>
       <button
         v-if="estaFinalizada"
         type="button"
         :disabled="isReopening"
-        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-red-700 rounded-base border border-red-600 hover:bg-red-50 focus:outline-none focus:ring-4 focus:ring-red-200 dark:text-red-400 dark:border-red-400 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        @click="solicitarReabrir"
-      >
-        <IconLockOpen2 class="w-4 h-4" aria-hidden="true" />
-        Reabrir
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
+        @click="solicitarReabrir">
+        <IconLockOpen2 class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
+        Reabrir Inspección
       </button>
       <button
         v-if="estaFinalizada"
         type="button"
         :disabled="isSyncingCotizacion"
         :title="tieneCotizacionActiva ? 'Actualizar la cotización existente para reflejar los cambios de la inspección.' : 'Generar una cotización desde este diagnóstico'"
-        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white rounded-base bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed"
-        @click="solicitarCrearCotizacion"
-      >
-        <IconFileInvoice class="w-4 h-4" aria-hidden="true" />
-        {{ isSyncingCotizacion ? 'Sincronizando...' : (tieneCotizacionActiva ? 'Actualizar cotización' : 'Generar cotización') }}
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
+        @click="solicitarCrearCotizacion">
+        <IconFileInvoice class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
+        {{ isSyncingCotizacion ? 'Sincronizando...' : (tieneCotizacionActiva ? 'Actualizar Cotización' : 'Crear Cotización') }}
       </button>
     </template>
   </EntityHeader>
@@ -571,38 +577,34 @@ onMounted(async () => {
       <Alert v-if="error" type="error" :message="error" dismissible @dismiss="error = ''"/>
       <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''"/>
 
-      <div
-        v-if="hayAceptadas && !loading"
-        class="mb-4 p-4 border border-green-300 rounded-lg bg-green-50 dark:border-green-700 dark:bg-green-900/30"
-      >
+      <div v-if="hayAceptadas && !loading" class="mb-4 p-4 border border-primary-blue-300 rounded-lg bg-primary-blue-50 dark:border-primary-blue-700 dark:bg-primary-blue-900/30">
         <div class="flex items-start gap-3">
-          <IconFileInvoice class="w-5 h-5 mt-0.5 text-green-600 dark:text-green-400" />
+          <IconFileInvoice class="w-5 h-5 mt-0.5 text-primary-blue-600 dark:text-primary-blue-400" />
           <div class="min-w-0 flex-1">
-            <h4 class="text-sm font-semibold text-green-900 dark:text-green-200">
+            <h4 class="text-sm font-semibold text-primary-blue-900 dark:text-primary-blue-200">
               Este vehículo tiene {{ cotizacionesAceptadas.length }}
               {{ cotizacionesAceptadas.length === 1 ? 'cotización aceptada' : 'cotizaciones aceptadas' }}
             </h4>
-            <ul class="mt-2 space-y-1 text-sm text-green-800 dark:text-green-300">
+            <ul class="mt-2 space-y-1 text-sm text-primary-blue-800 dark:text-primary-blue-300">
               <li v-for="cotizacion in cotizacionesAceptadas" :key="cotizacion.id" class="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  class="font-medium underline underline-offset-2 hover:text-green-900 dark:hover:text-green-100"
-                  @click="irACotizacion(cotizacion.id)"
-                >
+                  class="font-medium underline underline-offset-2 hover:text-primary-blue-900 dark:hover:text-primary-blue-100"
+                  @click="irACotizacion(cotizacion.id)">
                   {{ cotizacion.numero }}
                 </button>
                 <span>{{ formatMoney(cotizacion.total) }}</span>
-                <span class="text-xs text-green-700 dark:text-green-400">
+                <span class="text-sm text-primary-blue-700 dark:text-primary-blue-400">
                   aceptada el {{ formatShortDate(cotizacion.fechaAceptacion) }}
                   <template v-if="cotizacion.vinculada"> · ya vinculada a esta visita</template>
                 </span>
               </li>
             </ul>
-            <p v-if="candidatasCargando" class="mt-2 text-xs text-green-700 dark:text-green-400">Verificando cotizaciones del vehículo...</p>
+            <p v-if="candidatasCargando" class="mt-2 text-xs text-primary-blue-700 dark:text-primary-blue-400">Verificando cotizaciones del vehículo...</p>
             <button
               v-else-if="!tieneCotizacionActiva"
               type="button"
-              class="mt-3 inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded-lg bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
+              class="mt-3 inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-blue-600 hover:bg-primary-blue-700 focus:ring-4 focus:ring-primary-blue-300 dark:bg-primary-blue-700 dark:hover:bg-primary-blue-800"
               @click="abrirDecisionModal"
             >
               <IconFileInvoice class="w-4 h-4" />
@@ -1301,6 +1303,22 @@ onMounted(async () => {
             </span>
             <span class="block text-xs text-gray-500 dark:text-gray-400">
               Genera una cotización nueva con los ítems de la inspección y deja las aprobadas intactas como referencia.
+            </span>
+          </span>
+        </button>
+
+        <button
+          type="button"
+          class="flex items-start gap-3 w-full p-3 text-left border rounded-lg border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
+          @click="crearNuevaCotizacion"
+        >
+          <IconFileInvoice class="w-5 h-5 mt-0.5 text-gray-500 dark:text-gray-400" />
+          <span>
+            <span class="block text-sm font-semibold text-gray-900 dark:text-white">
+              Crear cotización nueva desde esta inspección
+            </span>
+            <span class="block text-xs text-gray-500 dark:text-gray-400">
+              Genera una cotización nueva solo con los ítems de esta inspección, sin vincular ni modificar las aceptadas existentes.
             </span>
           </span>
         </button>

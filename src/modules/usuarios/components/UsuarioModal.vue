@@ -1,9 +1,10 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
-import { X, Building2, MessageSquare, MapPin, Phone, ChevronDown, Search, Save, UserPlus, UserPen } from 'lucide-vue-next';
-import { empleadosService } from '../services/empleadosService';
+import { X, Building2, Building, MessageSquare, MapPin, Phone, ChevronDown, Search, Save, UserPlus, UserPen } from 'lucide-vue-next';
+import { usuariosService } from '../services/usuariosService';
 import { request } from '../../../shared/services/httpClient';
 import Alert from '../../../shared/components/Alert.vue';
+import { useAuthStore } from '../../auth/stores/authStore';
 import { useRolesOtorgables } from '../../../shared/composables/useRolesOtorgables';
 import {
   sanitizeNombre,
@@ -13,12 +14,14 @@ import {
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
-  empleadoId: { type: [Number, String], default: null },
+  usuarioId: { type: [Number, String], default: null },
 });
 
 const emit = defineEmits(['update:modelValue', 'created', 'updated']);
 
-const isEditMode = computed(() => Boolean(props.empleadoId));
+const isEditMode = computed(() => Boolean(props.usuarioId));
+
+const authStore = useAuthStore();
 
 const form = reactive({
   first_name: '',
@@ -35,7 +38,7 @@ const form = reactive({
 const isLoading = ref(false);
 const isSaving = ref(false);
 const errorMessage = ref('');
-const empleadoErrors = ref({});
+const usuarioErrors = ref({});
 
 const { rolesDisponibles: rolesDisponiblesApi } = useRolesOtorgables();
 
@@ -47,6 +50,8 @@ const rolesDisponibles = computed(() => {
   }
   return lista;
 });
+
+const empresaNombre = computed(() => authStore.user?.empresa_nombre || '');
 
 const talleres = ref([]);
 const isLoadingTalleres = ref(false);
@@ -137,7 +142,7 @@ function resetForm() {
   form.talleres = [];
   form.is_active = true;
   form.tiene_acceso = true;
-  empleadoErrors.value = {};
+  usuarioErrors.value = {};
   errorMessage.value = '';
   tallerSearch.value = '';
   showTallerDropdown.value = false;
@@ -146,7 +151,7 @@ function resetForm() {
 }
 
 function validateForm() {
-  empleadoErrors.value = {};
+  usuarioErrors.value = {};
   const errors = {};
 
   if (!form.first_name || !form.first_name.trim()) {
@@ -160,8 +165,11 @@ function validateForm() {
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
     errors.email = 'Ingresa un correo electrónico válido.';
   }
+  if (form.tiene_acceso && !form.talleres.length) {
+    errors.talleres = 'Selecciona al menos un taller.';
+  }
 
-  empleadoErrors.value = errors;
+  usuarioErrors.value = errors;
   return Object.keys(errors).length === 0;
 }
 
@@ -175,8 +183,9 @@ function applyBackendErrors(data) {
     identificacion: 'identificacion',
     direccion: 'direccion',
     rol: 'rol',
+    talleres: 'talleres',
   };
-  const newErrors = { ...empleadoErrors.value };
+  const newErrors = { ...usuarioErrors.value };
   Object.keys(fieldMap).forEach((key) => {
     const val = data[key];
     if (Array.isArray(val) && val.length) {
@@ -185,7 +194,7 @@ function applyBackendErrors(data) {
       newErrors[fieldMap[key]] = val;
     }
   });
-  empleadoErrors.value = newErrors;
+  usuarioErrors.value = newErrors;
 }
 
 async function open() {
@@ -196,7 +205,7 @@ async function open() {
   if (isEditMode.value) {
     isLoading.value = true;
     try {
-      const data = await empleadosService.getById(props.empleadoId);
+      const data = await usuariosService.getById(props.usuarioId);
       Object.assign(form, {
         first_name: data.user?.first_name || '',
         last_name: data.user?.last_name || '',
@@ -220,7 +229,7 @@ async function open() {
 
 async function submit() {
   errorMessage.value = '';
-  empleadoErrors.value = {};
+  usuarioErrors.value = {};
   isSaving.value = true;
 
   try {
@@ -245,10 +254,10 @@ async function submit() {
     };
 
     if (isEditMode.value) {
-      const response = await empleadosService.update(props.empleadoId, payload);
+      const response = await usuariosService.update(props.usuarioId, payload);
       emit('updated', response);
     } else {
-      const response = await empleadosService.create(payload);
+      const response = await usuariosService.create(payload);
       emit('created', response);
     }
   } catch (error) {
@@ -311,7 +320,7 @@ onBeforeUnmount(() => {
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
           <UserPlus v-if="!isEditMode" class="w-5 h-5 inline-block me-2" />
           <UserPen v-if="isEditMode" class="w-5 h-5 inline-block me-2" />
-          {{ isEditMode ? 'Editar empleado' : 'Nuevo empleado' }}
+          {{ isEditMode ? 'Editar usuario' : 'Nuevo usuario' }}
         </h3>
         <button
           type="button"
@@ -334,22 +343,28 @@ onBeforeUnmount(() => {
           @dismiss="showDiscardWarning = false"
         />
 
-        <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando empleado...</div>
+        <div v-if="empresaNombre" class="flex items-center gap-2 mb-4 p-3 rounded-lg bg-neutral-primary-soft border border-default">
+          <Building class="shrink-0 w-4 h-4 text-body" />
+          <span class="text-sm text-heading">
+            El usuario se asignará a tu empresa actual: <strong>{{ empresaNombre }}</strong>
+          </span>
+        </div>
+
+        <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando usuario...</div>
         <template v-else>
           <div class="space-y-4">
             <div class="flex items-start gap-3 p-3 rounded-lg bg-neutral-primary-soft border border-default">
               <input id="modal_tiene_acceso" v-model="form.tiene_acceso" type="checkbox" class="w-4 h-4 mt-1 text-primary-600 rounded border-gray-300 bg-gray-100 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600">
               <div>
                 <label for="modal_tiene_acceso" class="block text-sm font-medium text-gray-900 dark:text-white">Acceso al sistema</label>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Si lo desactivas, la persona queda registrada como empleado pero no podrá iniciar sesión.</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Si lo desactivas, la persona deja de poder iniciar sesión y desaparecerá de este listado.</p>
               </div>
             </div>
-
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label for="modal_identificacion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Identificación</label>
-                <input id="modal_identificacion" autocomplete="off" v-model="form.identificacion" maxlength="13" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', empleadoErrors.identificacion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-                <p v-if="empleadoErrors.identificacion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ empleadoErrors.identificacion }}</p>
+                <input id="modal_identificacion" autocomplete="off" v-model="form.identificacion" maxlength="13" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', usuarioErrors.identificacion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <p v-if="usuarioErrors.identificacion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ usuarioErrors.identificacion }}</p>
               </div>
               <div>
                 <label class="block mb-2 text-sm font-medium text-transparent select-none" aria-hidden="true">Estado</label>
@@ -363,18 +378,18 @@ onBeforeUnmount(() => {
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
               <div>
                 <label for="modal_first_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombres</label>
-                <input id="modal_first_name" autocomplete="off" v-model="form.first_name" required maxlength="150" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', empleadoErrors.first_name ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-                <p v-if="empleadoErrors.first_name" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ empleadoErrors.first_name }}</p>
+                <input id="modal_first_name" autocomplete="off" v-model="form.first_name" required maxlength="150" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', usuarioErrors.first_name ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <p v-if="usuarioErrors.first_name" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ usuarioErrors.first_name }}</p>
               </div>
               <div>
                 <label for="modal_last_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Apellidos</label>
-                <input id="modal_last_name" autocomplete="off" v-model="form.last_name" required maxlength="150" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', empleadoErrors.last_name ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-                <p v-if="empleadoErrors.last_name" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ empleadoErrors.last_name }}</p>
+                <input id="modal_last_name" autocomplete="off" v-model="form.last_name" required maxlength="150" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', usuarioErrors.last_name ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <p v-if="usuarioErrors.last_name" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ usuarioErrors.last_name }}</p>
               </div>
               <div>
                 <label for="modal_email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Correo electrónico</label>
-                <input id="modal_email" autocomplete="off" v-model="form.email" type="email" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', empleadoErrors.email ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-                <p v-if="empleadoErrors.email" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ empleadoErrors.email }}</p>
+                <input id="modal_email" autocomplete="off" v-model="form.email" type="email" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', usuarioErrors.email ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <p v-if="usuarioErrors.email" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ usuarioErrors.email }}</p>
               </div>
               <div>
                 <label for="modal_telefono" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Teléfono</label>
@@ -388,11 +403,12 @@ onBeforeUnmount(() => {
                 <select id="modal_rol" v-model="form.rol" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
                   <option v-for="item in rolesDisponibles" :key="item.value" :value="item.value">{{ item.label }}</option>
                 </select>
+                <p v-if="usuarioErrors.rol" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ usuarioErrors.rol }}</p>
               </div>
               <div>
                 <label for="modal_direccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Dirección</label>
-                <input id="modal_direccion" autocomplete="off" v-model="form.direccion" maxlength="255" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', empleadoErrors.direccion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-                <p v-if="empleadoErrors.direccion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ empleadoErrors.direccion }}</p>
+                <input id="modal_direccion" autocomplete="off" v-model="form.direccion" maxlength="255" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', usuarioErrors.direccion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <p v-if="usuarioErrors.direccion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ usuarioErrors.direccion }}</p>
               </div>
             </div>
 
@@ -400,6 +416,7 @@ onBeforeUnmount(() => {
               <span class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Talleres Asignados</span>
               <div v-if="isLoadingTalleres" class="text-sm text-gray-500 dark:text-gray-400">Cargando talleres...</div>
               <div v-else-if="!talleres.length" class="text-sm text-gray-500 dark:text-gray-400">No hay talleres disponibles.</div>
+              <p v-if="usuarioErrors.talleres" class="mt-1 text-sm text-red-600 dark:text-red-500">{{ usuarioErrors.talleres }}</p>
 
               <div v-else-if="talleres.length <= 6" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <label

@@ -14,10 +14,11 @@ import { mountOrdenes, mountOrdenDetail, mountOrdenEdit } from './modules/ordene
 import { mountCitas } from './modules/citas';
 import { mountCalendario } from './modules/calendario';
 import { mountEmpleados, mountEmpleadoDetail } from './modules/empleados';
+import { mountUsuarios } from './modules/usuarios';
 import { mountRepuestos } from './modules/inventario/repuestos';
 import { mountServicios } from './modules/inventario/servicios';
 import { mountProfileEdit } from './modules/auth';
-import { mountEmpresaConfig, mountTalleresConfig } from './modules/configuracion';
+import { mountEmpresaConfig, mountTalleresConfig, mountRoles } from './modules/configuracion';
 import { mountNotificaciones } from './modules/notificaciones';
 import { mountDashboard } from './modules/dashboard';
 import { mountDashboardV2 } from './modules/dashboard-v2';
@@ -233,6 +234,18 @@ const talleresConfigApp = document.getElementById('talleres-config-app');
 
 if (talleresConfigApp) {
     mountTalleresConfig(talleresConfigApp, pinia);
+}
+
+const rolesApp = document.getElementById('roles-app');
+
+if (rolesApp) {
+    mountRoles(rolesApp, pinia);
+}
+
+const usuariosApp = document.getElementById('usuarios-app');
+
+if (usuariosApp) {
+    mountUsuarios(usuariosApp, pinia);
 }
 
 const repuestosApp = document.getElementById('repuestos-app');

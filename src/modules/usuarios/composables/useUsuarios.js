@@ -1,13 +1,12 @@
 import { ref, computed, onScopeDispose } from 'vue';
-import { empleadosService } from '../services/empleadosService';
+import { usuariosService } from '../services/usuariosService';
 import { createLatestRequest, isAbortError } from '../../../shared/utils/search';
 
-export function useEmpleados() {
-  const empleados = ref([]);
+export function useUsuarios() {
+  const usuarios = ref([]);
   const search = ref('');
   const estado = ref('');
   const rol = ref('');
-  const acceso = ref('');
   const currentPage = ref(1);
   const total = ref(0);
   const nextUrl = ref(null);
@@ -27,28 +26,28 @@ export function useEmpleados() {
   );
 
   const rangeLabel = computed(() => {
-    if (!total.value) return 'No se encontraron empleados.';
-    return `Mostrando ${firstItem.value}-${lastItem.value} de ${total.value} empleado${total.value === 1 ? '' : 's'}`;
+    if (!total.value) return 'No se encontraron usuarios.';
+    return `Mostrando ${firstItem.value}-${lastItem.value} de ${total.value} usuario${total.value === 1 ? '' : 's'}`;
   });
 
   const listRequest = createLatestRequest();
 
-  async function fetchEmpleados(page = 1, extra = {}) {
+  async function fetchUsuarios(page = 1, extra = {}) {
     const { signal, id } = listRequest.begin();
     isLoading.value = true;
     errorMessage.value = '';
     try {
-      const data = await empleadosService.list({
+      const data = await usuariosService.list({
         page,
         search: search.value.trim(),
         estado: estado.value,
         rol: rol.value,
-        acceso: acceso.value,
+        acceso: 'con',
         ...extra,
         signal,
       });
       if (!listRequest.isCurrent(id)) return;
-      empleados.value = Array.isArray(data) ? data : (data.results || []);
+      usuarios.value = Array.isArray(data) ? data : (data.results || []);
       total.value = Array.isArray(data) ? data.length : data.count;
       nextUrl.value = Array.isArray(data) ? null : data.next;
       previousUrl.value = Array.isArray(data) ? null : data.previous;
@@ -62,11 +61,11 @@ export function useEmpleados() {
     }
   }
 
-  async function removeEmpleado(id, label) {
+  async function removeUsuario(id, label) {
     isDeleting.value = true;
     errorMessage.value = '';
     try {
-      const response = await empleadosService.delete(id, label);
+      const response = await usuariosService.delete(id, label);
       return response;
     } catch (error) {
       errorMessage.value = error.message;
@@ -79,11 +78,10 @@ export function useEmpleados() {
   onScopeDispose(() => listRequest.cancel());
 
   return {
-    empleados,
+    usuarios,
     search,
     estado,
     rol,
-    acceso,
     currentPage,
     total,
     nextUrl,
@@ -94,7 +92,7 @@ export function useEmpleados() {
     firstItem,
     lastItem,
     rangeLabel,
-    fetchEmpleados,
-    removeEmpleado,
+    fetchUsuarios,
+    removeUsuario,
   };
 }

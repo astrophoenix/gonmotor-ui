@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch, onUnmounted } from 'vue';
-import { IdCard, Pencil, Trash2, Users, Search, Filter } from 'lucide-vue-next';
-import { useEmpleados } from '../composables/useEmpleados';
+import { Pencil, Trash2, Users, Search, Filter, ShieldCheck } from 'lucide-vue-next';
+import { useUsuarios } from '../composables/useUsuarios';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
@@ -11,24 +11,23 @@ import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
 import { SEARCH_DEBOUNCE_MS, isSearchable } from '../../../shared/utils/search';
 import EntityTable from '../../../shared/components/EntityTable.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
-import EmpleadoModal from './EmpleadoModal.vue';
+import UsuarioModal from './UsuarioModal.vue';
 import { ROLES as roles } from '../../../shared/constants/roles';
 
 const {
-  empleados,
+  usuarios,
   isLoading,
   isDeleting,
   search,
   estado,
   rol,
-  acceso,
   currentPage,
   total,
   nextUrl,
   previousUrl,
-  fetchEmpleados,
-  removeEmpleado,
-} = useEmpleados();
+  fetchUsuarios,
+  removeUsuario,
+} = useUsuarios();
 
 const alert = ref({
   type: 'default',
@@ -44,30 +43,19 @@ function hideAlert() {
   alert.value = { type: 'default', title: '', message: '' };
 }
 
-// --- PANEL DE FILTROS AVANZADOS (no reactivos hasta "Buscar") ---
-const emptyAdvancedFilters = () => ({
-  estado: '',
-  rol: '',
-  acceso: '',
-});
+function emptyAdvancedFilters() {
+  return { estado: '', rol: '' };
+}
 
-const draftFilters = ref({ ...emptyAdvancedFilters(), estado: estado.value, rol: rol.value, acceso: acceso.value });
+const draftFilters = ref({ ...emptyAdvancedFilters(), estado: estado.value, rol: rol.value });
 const appliedFilters = ref({ ...draftFilters.value });
-
-const exportParams = computed(() => ({
-  search: search.value.trim(),
-  estado: appliedFilters.value.estado,
-  rol: appliedFilters.value.rol,
-  acceso: appliedFilters.value.acceso,
-}));
 
 function applyAdvancedFilters() {
   if (isLoading.value) return;
   estado.value = draftFilters.value.estado;
   rol.value = draftFilters.value.rol;
-  acceso.value = draftFilters.value.acceso;
   appliedFilters.value = { ...draftFilters.value };
-  loadEmpleados(1);
+  loadUsuarios(1);
 }
 
 function clearAdvancedFilters() {
@@ -75,97 +63,88 @@ function clearAdvancedFilters() {
   search.value = '';
   estado.value = '';
   rol.value = '';
-  acceso.value = '';
   draftFilters.value = emptyAdvancedFilters();
   appliedFilters.value = emptyAdvancedFilters();
-  loadEmpleados(1);
+  loadUsuarios(1);
 }
 
 const showDeleteModal = ref(false);
-const empleadoToDelete = ref(null);
+const usuarioToDelete = ref(null);
 let searchTimer;
 
-function handlePdfError(message) {
-  showAlert('error', '', message || 'No se pudo generar el PDF.');
-}
-
-function handleExcelError(message) {
-  showAlert('error', '', message || 'No se pudo generar el Excel.');
-}
-
-function editEmpleado(id) {
+function editUsuario(id) {
   openEditModal(id);
 }
 
-const showEmpleadoModal = ref(false);
-const empleadoModalId = ref(null);
+const showUsuarioModal = ref(false);
+const usuarioModalId = ref(null);
 
 function openCreateModal() {
-  empleadoModalId.value = null;
-  showEmpleadoModal.value = true;
+  usuarioModalId.value = null;
+  showUsuarioModal.value = true;
 }
 
 function openEditModal(id) {
-  empleadoModalId.value = id;
-  showEmpleadoModal.value = true;
+  usuarioModalId.value = id;
+  showUsuarioModal.value = true;
 }
 
-async function loadEmpleados(page = 1) {
+async function loadUsuarios(page = 1) {
   try {
-    await fetchEmpleados(page, appliedFilters.value);
+    await fetchUsuarios(page, appliedFilters.value);
   } catch (error) {
-    showAlert('error', '', error.message || 'No se pudieron cargar los empleados.');
+    showAlert('error', '', error.message || 'No se pudieron cargar los usuarios.');
   }
 }
 
-async function onEmpleadoSaved(message) {
-  showEmpleadoModal.value = false;
+async function onUsuarioSaved(message) {
+  showUsuarioModal.value = false;
   showAlert('success', '', message);
-  await loadEmpleados(currentPage.value);
+  await loadUsuarios(currentPage.value);
 }
 
-function onEmpleadoCreated() {
-  onEmpleadoSaved('Empleado creado correctamente.');
+function onUsuarioCreated() {
+  onUsuarioSaved('Usuario creado correctamente.');
 }
 
-function onEmpleadoUpdated() {
-  onEmpleadoSaved('Empleado actualizado correctamente.');
+function onUsuarioUpdated() {
+  onUsuarioSaved('Usuario actualizado correctamente.');
 }
 
-function openDeleteModal(empleado) {
-  empleadoToDelete.value = empleado;
+function openDeleteModal(usuario) {
+  usuarioToDelete.value = usuario;
   showDeleteModal.value = true;
 }
 
 async function confirmDelete() {
-  if (!empleadoToDelete.value) return;
+  if (!usuarioToDelete.value) return;
 
   try {
-    const response = await removeEmpleado(empleadoToDelete.value.id, empleadoToDelete.value.user?.first_name || 'empleado');
+    const response = await removeUsuario(usuarioToDelete.value.id, usuarioToDelete.value.user?.first_name || 'usuario');
     showAlert('success', '', response.message);
 
-    const page = empleados.value.length === 1 && currentPage.value > 1
+    const page = usuarios.value.length === 1 && currentPage.value > 1
       ? currentPage.value - 1
       : currentPage.value;
-    await loadEmpleados(page);
+    await loadUsuarios(page);
   } catch (error) {
-    showAlert('error', '', error.message || 'No se pudo eliminar el empleado.');
+    showAlert('error', '', error.message || 'No se pudo eliminar el usuario.');
   } finally {
-    empleadoToDelete.value = null;
+    usuarioToDelete.value = null;
     showDeleteModal.value = false;
   }
 }
 
 function scheduleSearch() {
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => loadEmpleados(1), SEARCH_DEBOUNCE_MS);
+  searchTimer = setTimeout(() => loadUsuarios(1), SEARCH_DEBOUNCE_MS);
 }
 
 watch(search, () => {
   if (isSearchable(search.value)) scheduleSearch();
 });
 onMounted(() => {
-  loadEmpleados();
+  loadUsuarios();
 });
 
 onUnmounted(() => {
@@ -177,10 +156,11 @@ onUnmounted(() => {
   <EntityHeader
     mode="list"
     :icon="Users"
-    entity="Empleados"
+    entity="Usuarios"
     :breadcrumb="[
       { label: 'Inicio', href: '/' },
-      { label: 'Empleados' },
+      { label: 'Configuración' },
+      { label: 'Usuarios' },
     ]"
   />
 
@@ -213,19 +193,19 @@ onUnmounted(() => {
       <div class="p-4">
         <div class="flex flex-wrap items-end gap-3 min-w-0">
           <div class="w-full min-w-60 shrink-0 lg:flex-1 lg:max-w-md">
-            <label for="empleados-search" class="block mb-1 text-sm font-medium text-heading">Buscar empleado</label>
+            <label for="usuarios-search" class="block mb-1 text-sm font-medium text-heading">Buscar usuario</label>
             <form class="relative" @submit.prevent="applyAdvancedFilters">
               <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
                 <Search class="w-4 h-4 text-body" />
               </div>
-              <input id="empleados-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="Identificación, nombre, correo o dirección" class="block w-full ps-9 pe-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand dark:bg-gray-800">
+              <input id="usuarios-search" v-model="search" v-sanitize-search type="search" maxlength="100" placeholder="Identificación, nombre, correo o dirección" class="block w-full ps-9 pe-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand dark:bg-gray-800">
             </form>
           </div>
 
           <div class="w-full sm:w-auto sm:shrink-0">
-            <label for="filtro-estado" class="block mb-1 text-sm font-medium text-heading">Estado</label>
+            <label for="filtro-estado-usuario" class="block mb-1 text-sm font-medium text-heading">Estado</label>
             <select
-              id="filtro-estado"
+              id="filtro-estado-usuario"
               v-model="draftFilters.estado"
               class="block w-full sm:w-36 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800"
             >
@@ -236,26 +216,14 @@ onUnmounted(() => {
           </div>
 
           <div class="w-full sm:w-auto sm:shrink-0">
-            <label for="filtro-rol" class="block mb-1 text-sm font-medium text-heading">Rol</label>
+            <label for="filtro-rol-usuario" class="block mb-1 text-sm font-medium text-heading">Rol</label>
             <select
-              id="filtro-rol"
+              id="filtro-rol-usuario"
               v-model="draftFilters.rol"
               class="block w-full sm:w-56 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800"
             >
               <option value="">Todos</option>
               <option v-for="item in roles" :key="item.value" :value="item.value">{{ item.label }}</option>
-            </select>
-          </div>
-        <div class="w-full sm:w-auto sm:shrink-0">
-            <label for="filtro-acceso" class="block mb-1 text-sm font-medium text-heading">Acceso al sistema</label>
-            <select
-              id="filtro-acceso"
-              v-model="draftFilters.acceso"
-              class="block w-full sm:w-44 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800"
-            >
-              <option value="">Todos</option>
-              <option value="con">Con acceso</option>
-              <option value="sin">Sin acceso</option>
             </select>
           </div>
         </div>
@@ -265,35 +233,31 @@ onUnmounted(() => {
     <!-- PANEL DE LISTADO -->
     <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
       <div class="flex flex-col gap-3 px-4 py-3 border-b border-default-medium md:flex-row md:items-center md:justify-between">
-        <h2 class="text-lg font-semibold text-heading">Listado de Empleados</h2>
+        <h2 class="text-lg font-semibold text-heading">Listado de Usuarios</h2>
         <div class="flex flex-wrap items-center gap-2">
           <EntityActionButtons
-            entity="empleados"
-            entity-api-path="auth/empleados"
-            :export-params="exportParams"
-            @add="openCreateModal"
-            @pdfExportError="handlePdfError"
-            @excelExportError="handleExcelError" />
+            entity="usuarios"
+            :show-export-pdf="false"
+            :show-export-excel="false"
+            @add="openCreateModal" />
         </div>
       </div>
       <EntityTable
-        :columns="['Identificación', 'Empleado', 'Correo', 'Rol', 'Acceso', 'Talleres', 'Estado', 'Acciones']"
-        :items="empleados"
+        :columns="['Identificación', 'Usuario', 'Correo', 'Rol', 'Talleres', 'Estado', 'Acciones']"
+        :items="usuarios"
         :loading="isLoading"
-        loading-text="Cargando empleados..."
-        empty-text="No se encontraron empleados."
-        :empty-colspan="9"
+        loading-text="Cargando usuarios..."
+        empty-text="No se encontraron usuarios."
+        :empty-colspan="8"
         :wrapper-class="'w-full'"
       >
     <template #row="{ item }">
       <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
         <td class="p-4 whitespace-nowrap">
-          <a
-            :href="`/crud/empleados/ver/?id=${encodeURIComponent(item.id)}`"
-            class="inline-flex items-center gap-1.5 font-medium text-primary-600 hover:text-primary-800 hover:underline dark:text-primary-400"
-          >
+          <span class="inline-flex items-center gap-1.5 font-medium text-primary-600 dark:text-primary-400">
+            <ShieldCheck class="w-4 h-4" />
             {{ item.user?.identificacion || '—' }}
-          </a>
+          </span>
         </td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">
           {{ item.user?.first_name }} {{ item.user?.last_name }}
@@ -303,14 +267,6 @@ onUnmounted(() => {
         </td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">
           {{ item.rol_display || item.rol }}
-        </td>
-        <td class="p-4 whitespace-nowrap">
-          <span v-if="item.tiene_acceso !== false" class="inline-flex items-center rounded px-2.5 py-0.5 text-xs font-medium bg-success-soft border border-success-subtle text-fg-success-strong">
-            Con acceso
-          </span>
-          <span v-else class="inline-flex items-center rounded px-2.5 py-0.5 text-xs font-medium bg-neutral-secondary-soft border border-default text-body">
-            Sin acceso
-          </span>
         </td>
         <td class="p-4 text-gray-800 dark:text-gray-400">
           <div v-if="!item.talleres || !item.talleres.length" class="text-gray-500 dark:text-gray-400">
@@ -332,10 +288,10 @@ onUnmounted(() => {
         </td>
         <td class="p-4 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <button type="button" title="Editar empleado" aria-label="Editar empleado" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="editEmpleado(item.id)">
+            <button type="button" title="Editar usuario" aria-label="Editar usuario" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="editUsuario(item.id)">
               <Pencil class="w-5 h-5" />
             </button>
-            <button type="button" title="Eliminar empleado" aria-label="Eliminar empleado" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
+            <button type="button" title="Eliminar usuario" aria-label="Eliminar usuario" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
               <Trash2 class="w-5 h-5" />
             </button>
           </div>
@@ -349,9 +305,9 @@ onUnmounted(() => {
         :next-url="nextUrl"
         :previous-url="previousUrl"
         :disabled="isLoading"
-        item-word="empleado"
-        empty-text="No se encontraron empleados."
-        @page="loadEmpleados"
+        item-word="usuario"
+        empty-text="No se encontraron usuarios."
+        @page="loadUsuarios"
       />
     </template>
     </EntityTable>
@@ -360,17 +316,17 @@ onUnmounted(() => {
 
   <ConfirmModal
     v-model="showDeleteModal"
-    entity-name="empleado"
-    :item-name="empleadoToDelete?.user?.first_name || ''"
+    entity-name="usuario"
+    :item-name="usuarioToDelete?.user?.first_name || ''"
     :is-deleting="isDeleting"
     @confirm="confirmDelete"
-    @cancel="empleadoToDelete = null"
+    @cancel="usuarioToDelete = null"
   />
 
-  <EmpleadoModal
-    v-model="showEmpleadoModal"
-    :empleado-id="empleadoModalId"
-    @created="onEmpleadoCreated"
-    @updated="onEmpleadoUpdated"
+  <UsuarioModal
+    v-model="showUsuarioModal"
+    :usuario-id="usuarioModalId"
+    @created="onUsuarioCreated"
+    @updated="onUsuarioUpdated"
   />
 </template>

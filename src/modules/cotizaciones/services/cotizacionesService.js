@@ -52,12 +52,6 @@ export const cotizacionesService = {
     });
   },
 
-  convertirAOrden(id) {
-    return request(`${buildUrl(id)}convertir_a_orden/`, {
-      method: 'POST',
-    });
-  },
-
   generarOrden(id, payload = {}) {
     return request(`${buildUrl(id)}generar_orden/`, {
       method: 'POST',

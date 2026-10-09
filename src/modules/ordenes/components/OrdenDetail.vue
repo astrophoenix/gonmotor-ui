@@ -6,7 +6,7 @@ import {
   ClipboardList,
   CircleDollarSign,
   Package,
-  SquarePen,
+  FilePen,
   X,
   FileText,
   IdCardIcon,
@@ -38,7 +38,7 @@ const previewImg = ref('');
 const showImageModal = ref(false);
 
 const activeTab = ref('resumen');
-const TAB_ORDER = ['resumen', 'trabajo', 'montos', 'evidencia'];
+const TAB_ORDER = ['resumen', 'trabajo', 'evidencia'];
 const activeTabIndex = computed(() => TAB_ORDER.indexOf(activeTab.value));
 
 function goToTab(direction) {
@@ -183,9 +183,8 @@ onMounted(async () => {
       <a
         v-if="orden"
         :href="`/crud/ordenes/editar/?id=${orden.id}`"
-        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:text-brand-400 dark:border-brand-400 dark:hover:bg-gray-700"
-      >
-        <SquarePen class="w-4 h-4" aria-hidden="true" />
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800">
+        <FilePen class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
         Editar
       </a>
     </template>
@@ -305,18 +304,10 @@ onMounted(async () => {
                 <button
                   type="button"
                   class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
-                  :class="activeTab === 'montos' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-                  @click="activeTab = 'montos'">
-                  <CircleDollarSign class="w-4 h-4" />
-                  3. Montos
-                </button>
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
                   :class="activeTab === 'evidencia' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
                   @click="activeTab = 'evidencia'">
                   <ImageIcon class="w-4 h-4" />
-                  4. Evidencia
+                  3. Evidencia
                 </button>
               </nav>
             </div>
@@ -373,13 +364,6 @@ onMounted(async () => {
                   <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ orden.motivo_espera || '—' }}</dd>
                 </div>
               </dl>
-
-              <div>
-                <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Observaciones</p>
-                <div class="block w-full p-2.5 text-sm whitespace-pre-line rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
-                  {{ orden.observaciones || '—' }}
-                </div>
-              </div>
             </div>
 
             <!-- Trabajo -->
@@ -459,45 +443,6 @@ onMounted(async () => {
               </div>
             </div>
 
-            <!-- Montos -->
-            <div v-show="activeTab === 'montos'" class="p-4 space-y-6">
-              <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Subtotal Servicios</dt>
-                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ formatNumber(orden.subtotal_servicios) }} USD</dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Subtotal Repuestos</dt>
-                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">{{ formatNumber(orden.subtotal_repuestos) }} USD</dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Descuento</dt>
-                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ formatNumber(orden.descuento) }} USD</dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Subtotal Neto</dt>
-                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ formatNumber(orden.subtotal_neto) }} USD</dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Subtotal base 0%</dt>
-                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ formatNumber(orden.subtotal_base_0) }} USD</dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Subtotal base gravada</dt>
-                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ formatNumber(orden.subtotal_base_gravada) }} USD</dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">IVA total</dt>
-                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ formatNumber(orden.monto_iva) }} USD</dd>
-                </div>
-              </dl>
-
-              <div class="flex items-center justify-between p-4 rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Total</span>
-                <span class="text-lg font-bold text-gray-900 dark:text-white">{{ formatNumber(orden.total) }} USD</span>
-              </div>
-            </div>
-
             <!-- Evidencia -->
             <div v-show="activeTab === 'evidencia'" class="p-4 space-y-8">
               <div>
@@ -574,6 +519,55 @@ onMounted(async () => {
                     </button>
                     <figcaption v-if="foto.descripcion" class="px-3 py-2 text-xs text-gray-600 dark:text-gray-300">{{ foto.descripcion }}</figcaption>
                   </figure>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Observaciones y Montos (siempre visibles, fuera de pestañas) -->
+          <div class="mt-4">
+            <div class="p-4 grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <!-- Columna izquierda: Observaciones -->
+              <div class="p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600">
+                <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Observaciones</p>
+                <div class="p-2.5 text-sm whitespace-pre-line rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
+                  {{ orden.observaciones || '—' }}
+                </div>
+              </div>
+
+              <!-- Columna derecha: Montos -->
+              <div class="p-5 space-y-2 text-sm rounded-lg border border-gray-200 dark:bg-gray-700/40 dark:border-gray-600/60">
+                <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                  <span>Subtotal servicios</span>
+                  <span class="font-medium tabular-nums">$ {{ formatNumber(orden.subtotal_servicios) }}</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                  <span>Subtotal repuestos</span>
+                  <span class="font-medium tabular-nums">$ {{ formatNumber(orden.subtotal_repuestos) }}</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                  <span>Subtotal neto</span>
+                  <span class="font-medium tabular-nums">$ {{ formatNumber(orden.subtotal_neto) }}</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                  <span>Descuento total</span>
+                  <span class="font-medium tabular-nums text-accent-600 dark:text-accent-400">$ {{ formatNumber(orden.descuento) }}</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                  <span>Subtotal base 0%</span>
+                  <span class="font-medium tabular-nums">$ {{ formatNumber(orden.subtotal_base_0) }}</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                  <span>Subtotal base gravada</span>
+                  <span class="font-medium tabular-nums">$ {{ formatNumber(orden.subtotal_base_gravada) }}</span>
+                </div>
+                <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                  <span>IVA total</span>
+                  <span class="font-medium tabular-nums">$ {{ formatNumber(orden.monto_iva) }}</span>
+                </div>
+                <div class="flex items-center justify-between pt-3 mt-3 text-base font-bold border-t border-gray-200 text-gray-900 dark:border-gray-600 dark:text-white">
+                  <span>Total</span>
+                  <span class="tabular-nums">$ {{ formatNumber(orden.total) }}</span>
                 </div>
               </div>
             </div>

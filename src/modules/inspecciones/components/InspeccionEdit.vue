@@ -994,9 +994,9 @@ onMounted(() => {
         type="button"
         :disabled="transicionEstado"
         title="Marcar la inspección como en proceso"
-        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-primary-700 rounded-base shadow-xs border border-primary-700 hover:bg-primary-50 focus:ring-4 focus:ring-primary-300 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
         @click="cambiarEstado('EN_PROCESO')">
-        <IconClockPlay class="w-5 h-5" />
+        <IconClockPlay class="w-5 h-5 text-primary-blue-500 dark:text-primary-blue-100" />
         Iniciar
       </button>
       <button
@@ -1004,10 +1004,9 @@ onMounted(() => {
         type="button"
         :disabled="transicionEstado"
         title="Cerrar el diagnóstico de la inspección"
-        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-green-700 rounded-base shadow-xs border border-green-700 hover:bg-green-50 focus:ring-4 focus:ring-green-300 dark:text-green-400 dark:border-green-400 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-        @click="solicitarFinalizacion"
-      >
-        <IconClockCheck class="w-5 h-5" />
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
+        @click="solicitarFinalizacion">
+        <IconClockCheck class="w-5 h-5 text-green-500 dark:text-green-100" />
         Finalizar
       </button>
       <FormSaveActions

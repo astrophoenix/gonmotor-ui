@@ -12,6 +12,7 @@ export const ENTITY_ADD_MODES = {
   proveedores: ADD_MODE.modal,
   vehiculos: ADD_MODE.modal,
   empleados: ADD_MODE.modal,
+  usuarios: ADD_MODE.modal,
   talleres: ADD_MODE.modal,
   repuestos: ADD_MODE.modal,
   servicios: ADD_MODE.modal,

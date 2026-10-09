@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import {
-  Pencil,
+  FilePen,
   Plus,
   FolderInput,
   FileCheck,
@@ -499,9 +499,9 @@ function irAInspeccion(recepcion) {
         v-if="puedeEditar"
         type="button"
         title="Editar recepción"
-        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:text-brand-400 dark:border-brand-400 dark:hover:bg-gray-700"
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
         @click="goTo(`/crud/recepciones/editar/?id=${recepcion.id}`)">
-        <Pencil class="w-4 h-4" aria-hidden="true" />
+        <FilePen class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
         Editar
       </button>
       <button
@@ -509,11 +509,11 @@ function irAInspeccion(recepcion) {
         type="button"
         :disabled="creandoInspeccion"
         title="Generar Inspección"
-        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 disabled:opacity-50 disabled:cursor-not-allowed dark:text-brand-400 dark:border-brand-400 dark:hover:bg-gray-700"
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
         @click="abrirModalCrearInspeccion">
         <Loader2 v-if="creandoInspeccion" class="w-4 h-4 animate-spin" aria-hidden="true" />
-        <IconReportSearch v-if="!creandoInspeccion" class="w-4 h-4" aria-hidden="true" />
-        {{ creandoInspeccion ? 'Creando...' : 'Crear Inspección' }}
+        <IconReportSearch v-if="!creandoInspeccion" class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
+        {{ creandoInspeccion ? 'Creando...' : 'Inspección' }}
       </button>
     </template>
   </EntityHeader>
@@ -667,23 +667,23 @@ function irAInspeccion(recepcion) {
       <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
       <Alert v-if="errorCrearInspeccion" type="error" :message="errorCrearInspeccion" dismissible @dismiss="errorCrearInspeccion = ''" />
 
-      <div v-if="cotizacionesDisponibles.length > 0" class="p-4 mb-4 border rounded-lg border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-900/30">
+      <div v-if="cotizacionesDisponibles.length > 0" class="p-4 mb-4 border rounded-lg border-primary-blue-300 bg-primary-blue-50 dark:border-primary-blue-700 dark:bg-primary-blue-900/30">
         <div class="flex items-start gap-3">
-          <TriangleAlert class="w-5 h-5 mt-0.5 text-green-600 dark:text-green-400" />
+          <TriangleAlert class="w-5 h-5 mt-0.5 text-primary-blue-600 dark:text-primary-blue-400" />
           <div class="min-w-0">
-            <h4 class="text-sm font-semibold text-green-900 dark:text-green-200">
+            <h4 class="text-sm font-semibold text-primary-blue-900 dark:text-primary-blue-200">
               Este vehículo tiene {{ cotizacionesDisponibles.length }}
               {{ cotizacionesDisponibles.length === 1 ? 'cotización' : 'cotizaciones' }}
               antes de esta visita
             </h4>
-            <p class="mt-1 text-sm text-green-800 dark:text-green-300">
+            <p class="mt-1 text-sm text-primary-blue-800 dark:text-primary-blue-300">
               Al crear la inspección elige cuáles se cargan como trabajo acordado; el resto queda intacto.
             </p>
-            <ul class="mt-2 space-y-1 text-sm text-green-800 dark:text-green-300">
+            <ul class="mt-2 space-y-1 text-sm text-primary-blue-800 dark:text-primary-blue-300">
               <li v-for="cotizacion in cotizacionesDisponibles" :key="cotizacion.id">
                 <button
                   type="button"
-                  class="font-medium underline underline-offset-2 hover:text-green-900 dark:hover:text-green-100"
+                  class="font-medium underline underline-offset-2 hover:text-primary-blue-900 dark:hover:text-primary-blue-100"
                   @click="goTo(`/crud/cotizaciones/editar/?id=${cotizacion.id}`)"
                 >
                   {{ cotizacion.numero }}

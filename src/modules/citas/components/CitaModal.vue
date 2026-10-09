@@ -825,7 +825,7 @@ function formatHour(value) {
       <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
         <button
           type="button"
-          class="px-5 py-2.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-300"
+          class="px-5 py-2.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded dark:bg-gray-700 dark:text-gray-300"
           @click="close"
         >
           Cancelar
@@ -833,9 +833,8 @@ function formatHour(value) {
         <button
           type="button"
           :disabled="isSaving || isLoading"
-          class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="submit"
-        >
+          class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          @click="submit">
           <Save v-if="!isSaving" class="w-5 h-5 mr-1.5 -ml-1 text-white" />
           <svg v-else class="w-5 h-5 mr-1.5 animate-spin" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

@@ -1,12 +1,12 @@
 import { request } from '../../../shared/services/httpClient';
 
-const ENDPOINT = '/api/auth/empleados/';
+const ENDPOINT = '/api/auth/usuarios/';
 
 function buildUrl(id) {
   return `${ENDPOINT}${encodeURIComponent(id)}/`;
 }
 
-export const empleadosService = {
+export const usuariosService = {
   list({ page = 1, search = '', ordering = 'user__first_name', estado = '', rol = '', acceso = '', signal } = {}) {
     const empresaId = localStorage.getItem('gonmotor_empresa_id') || sessionStorage.getItem('gonmotor_empresa_id');
     const params = new URLSearchParams({ page: String(page), ordering });
