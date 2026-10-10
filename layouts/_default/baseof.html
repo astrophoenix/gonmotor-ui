@@ -9,7 +9,7 @@
     {{ block "main" . }}
     {{ end }}
 
-    {{ partial "footer-copyright" . }}
+    {{ if not .Params.hide_footer }}{{ partial "footer-copyright" . }}{{ end }}
 
     {{ partial "scripts" . }}
   </body>

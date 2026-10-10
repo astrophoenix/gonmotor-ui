@@ -34,6 +34,7 @@ temp/
 static/*.js
 static/*.css
 static/*.map
+static/fonts/
 app.bundle.js.LICENSE.txt
 classNames.json
 

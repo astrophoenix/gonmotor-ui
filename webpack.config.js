@@ -34,10 +34,11 @@ module.exports = {
         }
       },
       {
-        test: /\.(ttf|eot|svg|gif|woff|woff2)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-        use: [{
-          loader: 'file-loader',
-        }]
+        test: /\.(ttf|eot|woff|woff2)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
+        type: 'asset/resource',
+        generator: {
+          filename: 'fonts/[name].[contenthash][ext]',
+        },
       },
     ],
   },
