@@ -4,7 +4,7 @@ import {
   Banknote, BarChart3, Building2, CalendarDays, Car, Circle, CircleCheck,
   ClipboardCheck, ClipboardList, Contact, ChevronDown, ChevronRight, FileText,
   Headset, IdCard, Info, ListChecks, MoreVertical, Package, Pencil, Plus,
-  Receipt, Save, Search, ShieldCheck, Truck, UserCog, Users, Warehouse, Wrench, X,
+  Receipt, RotateCcw, Save, Search, ShieldCheck, Truck, UserCog, Users, Warehouse, Wrench, X,
 } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
 import { useToast } from '../../../shared/composables/useToast';
@@ -191,6 +191,23 @@ function cancelarCambios() {
   borrador.value = JSON.parse(JSON.stringify(snapshot.value));
 }
 
+async function restablecer() {
+  if (!detalle.value) return;
+  guardando.value = true;
+  errorMessage.value = '';
+  try {
+    await request(`/api/auth/roles/${detalle.value.id}/permisos/`, { method: 'DELETE' });
+    await request(`/api/auth/roles/${detalle.value.id}/acciones/`, { method: 'DELETE' });
+    showSuccess('El rol vuelve a la configuración del sistema.');
+    await cargarRoles();
+    await cargarDetalle(detalle.value.id);
+  } catch (error) {
+    errorMessage.value = error.message || 'No pudimos restablecer el rol.';
+  } finally {
+    guardando.value = false;
+  }
+}
+
 async function guardar() {
   if (!detalle.value) return;
   guardando.value = true;
@@ -211,6 +228,7 @@ async function guardar() {
     });
     snapshot.value = JSON.parse(JSON.stringify(borrador.value));
     showSuccess('Cambios guardados correctamente.');
+    await cargarRoles();
   } catch (error) {
     errorMessage.value = error.message || 'No pudimos guardar los cambios.';
   } finally {
@@ -420,7 +438,7 @@ onMounted(async () => {
             <Info class="w-3.5 h-3.5" />
           </span>
           <p class="text-xs text-body leading-relaxed">
-            Los roles personalizados se crean según las necesidades de cada empresa. Todos parten de la misma lista de recursos y permisos del sistema.
+            Los roles del sistema proponen los permisos preconfigurados; puedes ajustarlos a las necesidades de tu empresa sin afectar a otras cuentas. Los roles personalizados se crean libremente según cada necesidad.
           </p>
         </div>
       </aside>
@@ -446,11 +464,26 @@ onMounted(async () => {
                   >
                     Inactivo
                   </span>
+                  <span
+                    v-if="detalle.personalizado"
+                    class="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-brand-soft border border-brand-subtle text-fg-brand-strong"
+                  >
+                    Personalizado en esta empresa
+                  </span>
                 </div>
                 <p class="text-sm text-body mt-1">{{ rolDescripcion(detalle) }}</p>
               </div>
             </div>
             <div class="flex items-center gap-2">
+              <button
+                v-if="isSystem && detalle.personalizado"
+                type="button"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-base bg-neutral-secondary-soft border border-default text-body hover:bg-neutral-secondary-soft/70"
+                @click="restablecer"
+              >
+                <RotateCcw class="w-4 h-4" />
+                Restablecer al sistema
+              </button>
               <button
                 v-if="!isSystem"
                 type="button"
@@ -559,7 +592,7 @@ onMounted(async () => {
                         </div>
                       </td>
                       <td class="py-2.5 px-2 text-center">
-                        <label v-if="!isSystem" class="inline-flex items-center cursor-pointer">
+                        <label class="inline-flex items-center cursor-pointer">
                           <input
                             type="checkbox"
                             class="w-4 h-4 rounded border-default-medium text-brand-600 focus:ring-brand focus:ring-2 dark:bg-gray-700"
@@ -567,16 +600,9 @@ onMounted(async () => {
                             @change="togglePermiso(recurso.codigo, 'ver', $event.target.checked)"
                           >
                         </label>
-                        <input
-                          v-else
-                          type="checkbox"
-                          class="w-4 h-4 rounded border-default-medium text-brand-600 dark:bg-gray-700 opacity-70"
-                          :checked="Boolean(detalle.permisos[recurso.codigo]?.ver)"
-                          disabled
-                        >
                       </td>
                       <td class="py-2.5 ps-2 text-center">
-                        <label v-if="!isSystem" class="inline-flex items-center cursor-pointer">
+                        <label class="inline-flex items-center cursor-pointer">
                           <input
                             type="checkbox"
                             class="w-4 h-4 rounded border-default-medium text-brand-600 focus:ring-brand focus:ring-2 dark:bg-gray-700"
@@ -584,13 +610,6 @@ onMounted(async () => {
                             @change="togglePermiso(recurso.codigo, 'modificar', $event.target.checked)"
                           >
                         </label>
-                        <input
-                          v-else
-                          type="checkbox"
-                          class="w-4 h-4 rounded border-default-medium text-brand-600 dark:bg-gray-700 opacity-70"
-                          :checked="Boolean(detalle.permisos[recurso.codigo]?.modificar)"
-                          disabled
-                        >
                       </td>
                     </tr>
                   </tbody>
@@ -639,7 +658,7 @@ onMounted(async () => {
                         </p>
                       </div>
                     </div>
-                    <label v-if="!isSystem" class="inline-flex items-center shrink-0 cursor-pointer">
+                    <label class="inline-flex items-center shrink-0 cursor-pointer">
                       <input
                         type="checkbox"
                         class="w-4 h-4 rounded border-default-medium text-accent-500 focus:ring-accent-400 focus:ring-2 dark:bg-gray-700"
@@ -647,10 +666,6 @@ onMounted(async () => {
                         @change="toggleAccion(accion.codigo, $event.target.checked)"
                       >
                     </label>
-                    <CircleCheck
-                      v-else-if="borrador.acciones.includes(accion.codigo)"
-                      class="w-4 h-4 shrink-0 text-accent-500"
-                    />
                   </div>
                 </div>
               </div>
@@ -692,7 +707,7 @@ onMounted(async () => {
           </div>
 
           <!-- Footer del panel -->
-          <div v-if="!isSystem" class="flex flex-wrap items-center justify-end gap-2 px-5 py-4 border-t border-default-medium">
+          <div class="flex flex-wrap items-center justify-end gap-2 px-5 py-4 border-t border-default-medium">
             <button
               type="button"
               class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-base bg-neutral-secondary-soft border border-default text-body hover:bg-neutral-secondary-soft/70 disabled:opacity-50"

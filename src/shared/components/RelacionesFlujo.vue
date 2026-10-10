@@ -6,7 +6,7 @@ import { Plus } from 'lucide-vue-next';
  * recibe los pasos ya normalizados por `utils/relacionesFlujo.js`.
  */
 defineProps({
-  /** Pasos normalizados: { key, label, icon, color, numero, estado, url, extra }. */
+  /** Pasos normalizados: { key, label, icon, numero, estado, url, extra }. El color se ignora: los badges usan un único estilo primary. */
   pasos: { type: Array, default: () => [] },
 });
 
@@ -22,8 +22,7 @@ function titulo(paso) {
         v-if="paso.numero"
         :href="paso.url"
         :title="titulo(paso)"
-        class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border transition-colors"
-        :class="paso.color">
+        class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border border-primary-200 bg-primary-100 text-primary-700 transition-colors hover:bg-primary-200 dark:border-primary-500 dark:bg-primary-500/10 dark:text-primary-300">
         <component :is="paso.icon" class="w-3.5 h-3.5 shrink-0" />
         {{ paso.numero }}
         <span
@@ -35,7 +34,7 @@ function titulo(paso) {
       </a>
       <span
         v-else
-        class="inline-flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500"
+        class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border border-gray-200 bg-gray-100 text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
         :title="`${paso.label}: sin relación`">
         <component :is="paso.icon" class="w-3.5 h-3.5 shrink-0" />
         {{ paso.label }}: No

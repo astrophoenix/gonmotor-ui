@@ -12,7 +12,7 @@ import { SEARCH_DEBOUNCE_MS, isSearchable } from '../../../shared/utils/search';
 import EntityTable from '../../../shared/components/EntityTable.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
 import EmpleadoModal from './EmpleadoModal.vue';
-import { ROLES as roles } from '../../../shared/constants/roles';
+import { useRolesOtorgables } from '../../../shared/composables/useRolesOtorgables';
 
 const {
   empleados,
@@ -29,6 +29,8 @@ const {
   fetchEmpleados,
   removeEmpleado,
 } = useEmpleados();
+
+const { rolesDisponibles: roles } = useRolesOtorgables();
 
 const alert = ref({
   type: 'default',

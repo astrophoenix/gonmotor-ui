@@ -10,6 +10,7 @@ import { talleresService } from '../../configuracion/services/talleresService';
 import { inspeccionesService } from '../../inspecciones/services/inspeccionesService';
 import { recepcionesService } from '../services/recepcionesService';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
+import EntityActionsMenu from '../../../shared/components/EntityActionsMenu.vue';
 import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
 import EstadoRecepcionBadge from './EstadoRecepcionBadge.vue';
 import { ESTADOS_FILTRABLE } from '../constants/estadosRecepcion';
@@ -509,13 +510,19 @@ onUnmounted(() => {
             <button v-if="item.estado === 'PENDIENTE'" type="button" title="Eliminar recepción" aria-label="Eliminar recepción" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
               <Trash2 class="w-5 h-5" />
             </button>
-            <button v-if="item.estado === 'ACEPTADA' && !item.inspecciones?.length" type="button" title="Crear inspección" aria-label="Crear inspección" :disabled="creandoId === item.id" class="px-1.5 py-1.5 inline-flex items-center p-2 text-gray-900 rounded border border-gray-300 hover:bg-primary-100 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-primary-400" @click="openCrearInspeccionModal(item)">
-              <Loader2 v-if="creandoId === item.id" class="w-5 h-5 animate-spin" />
-              <IconReportSearch class="w-5.5 h-5.5" />
-            </button>
-            <button type="button" title="Descargar PDF" aria-label="Descargar PDF" class="px-1.5 py-1.5 inline-flex items-center p-2 text-gray-900 rounded border border-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-primary-400">
-              <Icon :icon="filePdfIcon" class="w-5 h-5" />
-            </button>
+            <EntityActionsMenu>
+              <template #default="{ cerrar }">
+                <button v-if="item.estado === 'ACEPTADA' && !item.inspecciones?.length" type="button" role="menuitem" title="Crear inspección" :disabled="creandoId === item.id" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-700" @click="cerrar(); openCrearInspeccionModal(item)">
+                  <Loader2 v-if="creandoId === item.id" class="w-4 h-4 shrink-0 animate-spin" />
+                  <IconReportSearch v-else class="w-4 h-4 shrink-0 text-primary-600 dark:text-primary-400" />
+                  Crear inspección
+                </button>
+                <button type="button" role="menuitem" title="Descargar PDF" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700" @click="cerrar">
+                  <Icon :icon="filePdfIcon" class="w-4 h-4 shrink-0 text-accent-600 dark:text-accent-400" />
+                  Descargar PDF
+                </button>
+              </template>
+            </EntityActionsMenu>
           </div>
         </td>
       </tr>

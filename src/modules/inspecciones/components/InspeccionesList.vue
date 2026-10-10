@@ -1,8 +1,8 @@
 <script setup>
-import { onMounted, ref, watch, onUnmounted } from 'vue';
+import { onMounted, ref, watch, onUnmounted, nextTick } from 'vue';
 import {
   FileSearchCorner, Pencil, Trash2, Search, Receipt, Filter, CalendarDays, Flag,
-  Car, Gauge, IdCard, Phone,
+  Car, Gauge, IdCard, Phone, MoreVertical,
 } from 'lucide-vue-next';
 import { IconLockOpen2 } from '@tabler/icons-vue';
 import { Icon } from '@iconify/vue';
@@ -125,6 +125,49 @@ let searchTimer;
 
 function handleEditar(inspeccion) {
   window.location.assign(`/crud/inspecciones/editar/?id=${encodeURIComponent(inspeccion.id)}`);
+}
+
+// --- MENÚ DE ACCIONES (dropdown por fila) ---
+const accionesAbierta = ref(null);
+const accionesPos = ref({ top: 0, left: 0 });
+const accionesTriggerRef = ref(null);
+
+async function toggleAcciones(item, event) {
+  if (accionesAbierta.value === item.id) {
+    cerrarAcciones();
+    return;
+  }
+  accionesTriggerRef.value = event.currentTarget;
+  accionesAbierta.value = item.id;
+  await nextTick();
+  posicionarAcciones();
+}
+
+function posicionarAcciones() {
+  const trigger = accionesTriggerRef.value;
+  if (!trigger) return;
+  const rect = trigger.getBoundingClientRect();
+  const anchoMenu = 208;
+  const altoMenu = 132;
+  let top = rect.bottom + 4;
+  if (top + altoMenu > window.innerHeight - 8) top = rect.top - altoMenu - 4;
+  let left = rect.right - anchoMenu;
+  if (left < 8) left = 8;
+  accionesPos.value = { top, left };
+}
+
+function cerrarAcciones() {
+  accionesAbierta.value = null;
+}
+
+function onAccionesKeydown(event) {
+  if (event.key === 'Escape') cerrarAcciones();
+}
+
+function ejecutarAccion(accion, item) {
+  cerrarAcciones();
+  if (accion === 'reabrir') solicitarReabrir(item);
+  else if (accion === 'cotizacion') handleCrearCotizacion(item.id);
 }
 
 function solicitarReabrir(inspeccion) {
@@ -296,10 +339,12 @@ watch(search, () => {
 onMounted(() => {
   loadPrefijosInspeccion();
   reloadList();
+  document.addEventListener('keydown', onAccionesKeydown);
 });
 
 onUnmounted(() => {
   clearTimeout(searchTimer);
+  document.removeEventListener('keydown', onAccionesKeydown);
 });
 </script>
 
@@ -551,15 +596,32 @@ onUnmounted(() => {
             <button type="button" title="Eliminar inspección" aria-label="Eliminar inspección" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
               <Trash2 class="w-5 h-5" />
             </button>
-            <button v-if="item.estado === 'FINALIZADA'" type="button" title="Reabrir inspección" aria-label="Reabrir inspección" :disabled="isReopening" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="solicitarReabrir(item)">
-              <IconLockOpen2 class="w-5 h-5" />
+            <button type="button" title="Más acciones" aria-label="Más acciones de la inspección" :aria-expanded="accionesAbierta === item.id" class="px-1.5 py-1.5 inline-flex items-center p-2 text-gray-900 rounded border border-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-primary-400" @click.stop="toggleAcciones(item, $event)">
+              <MoreVertical class="w-5 h-5" />
             </button>
-            <button v-if="item.estado === 'PENDIENTE'" type="button" title="Crear cotización" aria-label="Crear cotización" class="px-1.5 py-1.5 inline-flex items-center p-2 text-gray-900 rounded border border-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-primary-400" @click="handleCrearCotizacion(item.id)">
-              <Receipt class="w-5 h-5" />
-            </button>
-            <button type="button" title="Descargar PDF" aria-label="Descargar PDF" class="px-1.5 py-1.5 inline-flex items-center p-2 text-gray-900 rounded border border-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-primary-400">
-              <Icon :icon="filePdfIcon" class="w-5 h-5" />
-            </button>
+            <Teleport to="body">
+              <div v-if="accionesAbierta === item.id" class="fixed inset-0 z-40" @click="cerrarAcciones" @contextmenu.prevent="cerrarAcciones" />
+              <div
+                v-if="accionesAbierta === item.id"
+                class="fixed z-50 w-52 overflow-hidden rounded-base border border-default bg-white py-1 shadow-md dark:bg-gray-800 dark:border-default"
+                :style="{ top: `${accionesPos.top}px`, left: `${accionesPos.left}px` }"
+                role="menu"
+                aria-label="Acciones de la inspección"
+              >
+                <button v-if="item.estado === 'FINALIZADA'" type="button" role="menuitem" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700" @click="ejecutarAccion('reabrir', item)">
+                  <IconLockOpen2 class="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                  Reabrir
+                </button>
+                <button v-if="item.estado === 'PENDIENTE'" type="button" role="menuitem" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700" @click="ejecutarAccion('cotizacion', item)">
+                  <Receipt class="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                  Crear cotización
+                </button>
+                <button type="button" role="menuitem" title="Descargar PDF" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700" @click="cerrarAcciones">
+                  <Icon :icon="filePdfIcon" class="w-4 h-4 text-accent-600 dark:text-accent-400" />
+                  Descargar PDF
+                </button>
+              </div>
+            </Teleport>
           </div>
         </td>
       </tr>
