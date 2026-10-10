@@ -22,6 +22,7 @@ import { mountEmpresaConfig, mountTalleresConfig, mountRoles } from './modules/c
 import { mountNotificaciones } from './modules/notificaciones';
 import { mountDashboard } from './modules/dashboard';
 import { mountDashboardV2 } from './modules/dashboard-v2';
+import { iniciarPermisosGlobal } from './shared/composables/usePermisos';
 import UserMenu from './shared/components/UserMenu.vue';
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
@@ -265,3 +266,5 @@ const notificacionesApp = document.getElementById('notificaciones-app');
 if (notificacionesApp) {
   mountNotificaciones(notificacionesApp, pinia);
 }
+
+iniciarPermisosGlobal();

@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted, computed, h } from 'vue';
-import { UsersRound, Upload, Phone, Mail, Pencil, Trash2, IdCard, Search, RotateCcw, Filter } from 'lucide-vue-next';
+import { UsersRound, Upload, Phone, Mail, Pen, Trash2, IdCard, Search, RotateCcw, Filter } from 'lucide-vue-next';
 import { useClients } from '../composables/useClients';
 // import { useToast } from '../../../shared/composables/useToast';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
@@ -16,6 +16,10 @@ import Pagination from '../../../shared/components/Pagination.vue';
 import ImportExcelModal from './ImportExcelModal.vue';
 import ClientModal from './ClientModal.vue';
 import ClienteVehiculosCell from './ClienteVehiculosCell.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
+
+const { puede } = usePermisos();
+const puedeModificarClientes = computed(() => puede('clientes', 'modificar'));
 
 const TIPOS_IDENTIFICACION = {
   C: 'Cédula',
@@ -321,6 +325,7 @@ onUnmounted(() => {
         <h2 class="text-lg font-semibold text-heading">Listado de Clientes</h2>
         <div class="flex flex-wrap items-center gap-2">
           <button
+            v-if="puedeModificarClientes"
             type="button"
             class="inline-flex items-center px-3 py-2 text-sm font-medium text-white rounded bg-emerald-600 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-300 dark:focus:ring-emerald-800"
             @click="openImportModal"
@@ -330,6 +335,7 @@ onUnmounted(() => {
           </button>
           <EntityActionButtons
             entity="clientes"
+            :show-add="puedeModificarClientes"
             :export-params="exportParams"
             @add="openCreateModal"
             @pdfExportError="handlePdfError"
@@ -383,13 +389,13 @@ onUnmounted(() => {
         </td>
         <td class="p-4 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <button v-if="!item.is_active" type="button" title="Reactivar cliente" aria-label="Reactivar cliente" :disabled="isReactivating" class="px-1.5 py-1.5 inline-flex items-center p-2 text-emerald-600 rounded border border-emerald-200 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-400 dark:border-emerald-500 dark:hover:bg-gray-700" @click="onReactivateClient(item)">
+            <button v-if="puedeModificarClientes && !item.is_active" type="button" title="Reactivar cliente" aria-label="Reactivar cliente" :disabled="isReactivating" class="px-1.5 py-1.5 inline-flex items-center p-2 text-emerald-600 rounded border border-emerald-200 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-400 dark:border-emerald-500 dark:hover:bg-gray-700" @click="onReactivateClient(item)">
               <RotateCcw class="w-5 h-5" />
             </button>
-            <button type="button" title="Editar cliente" aria-label="Editar cliente" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="editClient(item.id)">
-              <Pencil class="w-5 h-5" />
+            <button v-if="puedeModificarClientes" type="button" title="Editar cliente" aria-label="Editar cliente" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="editClient(item.id)">
+              <Pen class="w-5 h-5" />
             </button>
-            <button v-if="item.is_active" type="button" title="Eliminar cliente" aria-label="Eliminar cliente" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
+            <button v-if="puedeModificarClientes && item.is_active" type="button" title="Eliminar cliente" aria-label="Eliminar cliente" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
               <Trash2 class="w-5 h-5" />
             </button>
           </div>

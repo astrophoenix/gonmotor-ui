@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, onUnmounted, watch } from 'vue';
-import { Car, Clock, Pencil, Trash2, User } from 'lucide-vue-next';
+import { Car, Clock, Pen, Trash2, User } from 'lucide-vue-next';
 import { useCitas } from '../composables/useCitas';
 import EntityTable from '../../../shared/components/EntityTable.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
@@ -171,7 +171,7 @@ onUnmounted(() => clearTimeout(searchTimer));
               class="inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700"
               @click="onAccion(item, 'editar')"
             >
-              <Pencil class="w-5 h-5" />
+              <Pen class="w-5 h-5" />
             </button>
             <button
               type="button"

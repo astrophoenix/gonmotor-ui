@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, onUnmounted, ref, watch } from 'vue';
-import { Pencil, Trash2, Search, Filter, CalendarDays, Car, Gauge, IdCard, Phone, CalendarPlus, Send, CheckCircle2 } from 'lucide-vue-next';
+import { Pen, Trash2, Search, Filter, CalendarDays, Car, Gauge, IdCard, Phone, CalendarPlus, Send, CheckCircle2 } from 'lucide-vue-next';
 import { IconFolderDollar } from '@tabler/icons-vue';
 import { Icon } from '@iconify/vue';
 import filePdfIcon from '@iconify-icons/fa6-regular/file-pdf';
@@ -437,7 +437,7 @@ onUnmounted(() => {
         <td class="p-4 whitespace-nowrap align-top">
           <div class="flex items-center gap-2">
             <button type="button" title="Editar cotización" aria-label="Editar cotización" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="handleEditar(item.id)">
-              <Pencil class="w-5 h-5" />
+              <Pen class="w-5 h-5" />
             </button>
             <button type="button" title="Eliminar cotización" aria-label="Eliminar cotización" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
               <Trash2 class="w-5 h-5" />

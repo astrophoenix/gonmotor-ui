@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import {
   Banknote, BarChart3, Building2, CalendarDays, Car, Circle, CircleCheck,
   ClipboardCheck, ClipboardList, Contact, ChevronDown, ChevronRight, FileText,
-  Headset, IdCard, Info, ListChecks, MoreVertical, Package, Pencil, Plus,
+  Headset, IdCard, Info, ListChecks, MoreVertical, Package, Pen, Plus,
   Receipt, RotateCcw, Save, Search, ShieldCheck, Truck, UserCog, Users, Warehouse, Wrench, X,
 } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
@@ -415,7 +415,7 @@ onMounted(async () => {
                     class="flex w-full items-center gap-2 px-3 py-2 text-sm text-heading hover:bg-neutral-secondary-soft"
                     @click="seleccionar(rol.id); abrirEditarRol()"
                   >
-                    <Pencil class="w-4 h-4" />
+                    <Pen class="w-4 h-4" />
                     Editar información
                   </button>
                   <button
@@ -490,7 +490,7 @@ onMounted(async () => {
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-base bg-neutral-secondary-soft border border-default text-body hover:bg-neutral-secondary-soft/70"
                 @click="abrirEditarRol"
               >
-                <Pencil class="w-4 h-4" />
+                <Pen class="w-4 h-4" />
                 Editar rol
               </button>
               <button

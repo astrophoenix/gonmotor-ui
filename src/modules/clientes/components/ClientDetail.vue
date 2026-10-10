@@ -9,6 +9,10 @@ import { formatPlate } from '../../../shared/utils/formatPlate';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import ClientModal from './ClientModal.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
+
+const { puede } = usePermisos();
+const puedeModificarClientes = computed(() => puede('clientes', 'modificar'));
 
 const client = ref(null);
 const vehicles = ref([]);
@@ -128,7 +132,7 @@ onMounted(async () => {
 
     <template #actions>
       <button
-        v-if="client"
+        v-if="client && puedeModificarClientes"
         type="button"
         title="Editar cliente"
         class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:text-brand-400 dark:border-brand-400 dark:hover:bg-gray-700"

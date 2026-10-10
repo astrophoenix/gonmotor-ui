@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { Package, Pencil, Search, Trash2, Filter } from 'lucide-vue-next';
+import { Package, Pen, Search, Trash2, Filter } from 'lucide-vue-next';
 import { useRepuestos } from '../composables/useRepuestos';
 import ConfirmModal from '../../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../../shared/components/Alert.vue';
@@ -294,7 +294,7 @@ onUnmounted(() => clearTimeout(searchTimer));
         <td class="p-4 whitespace-nowrap">
           <div class="flex items-center gap-2">
             <button type="button" title="Editar repuesto" aria-label="Editar repuesto" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="openEditModal(item.id)">
-              <Pencil class="w-5 h-5" />
+              <Pen class="w-5 h-5" />
             </button>
             <button type="button" title="Eliminar repuesto" aria-label="Eliminar repuesto" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
               <Trash2 class="w-5 h-5" />

@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted, computed } from 'vue';
-import { Truck, Phone, Mail, Pencil, Trash2, IdCard, Search, RotateCcw, Filter, UserRound } from 'lucide-vue-next';
+import { Truck, Phone, Mail, Pen, Trash2, IdCard, Search, RotateCcw, Filter, UserRound } from 'lucide-vue-next';
 import { useProveedores } from '../composables/useProveedores';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
@@ -352,7 +352,7 @@ onUnmounted(() => {
               <RotateCcw class="w-5 h-5" />
             </button>
             <button type="button" title="Editar proveedor" aria-label="Editar proveedor" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="editProveedor(item.id)">
-              <Pencil class="w-5 h-5" />
+              <Pen class="w-5 h-5" />
             </button>
             <button v-if="item.is_active" type="button" title="Eliminar proveedor" aria-label="Eliminar proveedor" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
               <Trash2 class="w-5 h-5" />
