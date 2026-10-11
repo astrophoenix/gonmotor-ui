@@ -14,7 +14,8 @@ Convenciones y estándares del proyecto. El backend Django vive en `../gonmotor-
 - Layout por módulo: `src/modules/<name>/index.js` (exporta helpers `mount*`), `components/`, `composables/use<Name>.js`, `services/<name>Service.js`.
 
 ## Comunicación con el backend
-- TODO el HTTP va por `src/shared/services/httpClient.js` (`request`): inyecta `Authorization` y `X-Empresa-ID`, auto-refresca el JWT y propaga errores en español. No usar `fetch` directo ni pasar `token`/`empresaId` por parámetro.
+- TODO el HTTP va por `src/shared/services/httpClient.js` (`request`): inyecta `Authorization`, `X-Empresa-ID` y `X-Taller-ID` (taller activo, leído de `localStorage`/`sessionStorage` con clave `gonmotor_taller_id`), auto-refresca el JWT y propaga errores en español. No usar `fetch` directo ni pasar `token`/`empresaId` por parámetro.
+- Taller activo: el selector `src/shared/components/TallerSelect.vue` (icono, buscador debounced, máx. 5 visibles + «y N más») consulta `GET /api/auth/talleres/?search=` (solo talleres permitidos al rol/asignación). Se persiste con `authStore.setTaller({ id, nombre })`. En el login multiempresa los talleres llegan dentro de cada empresa de la respuesta de `/api/auth/login/`.
 - Varios servicios conservan funciones legacy `fetch(token, empresaId, ...)` (ej. `recepcionesService.js`) — es código muerto, no extender ese patrón.
 - `API_BASE_URL` se deriva del hostname en `src/shared/config/env.js`: localhost → `http://localhost:8000`, cualquier otro host → `https://gonmotor-api.onrender.com`.
 - Composable para listados: estado `isLoading`/`errorMessage`/paginación `currentPage`+`nextUrl`+`previousUrl` (ej. `useClients.js`).
@@ -27,12 +28,15 @@ Convenciones y estándares del proyecto. El backend Django vive en `../gonmotor-
 - Estado de una entidad: un `Estado<Entidad>Badge.vue` por módulo (`EstadoRecepcionBadge`, `EstadoInspeccionBadge`, `EstadoCotizacionBadge`, `EstadoOrdenBadge`), alimentado por `constants/estados<Entidad>.js`. No recrear badges de estado ad-hoc dentro de un componente.
 - Guardado: `FormSaveActions.vue` (props `isLoading`, `isEditMode`, `cancelHref`, `onSubmit`, `disabled`).
 - Confirmaciones de borrado: `ConfirmModal.vue` (no volver a crear modales de eliminar).
-- Selectores con búsqueda: `ClienteSearchSelect`, `VehiculoSearchSelect`, `EmpleadoSearchSelect`, `CatalogoSelect`.
+- Selectores con búsqueda: `ClienteSearchSelect`, `VehiculoSearchSelect`, `EmpleadoSearchSelect`, `CatalogoSelect`, `TallerSelect`.
 - Fotos: `ImageField` (base de una sola imagen: valida formato/tamaño, drag-and-drop, preview y zoom) y sus wrappers `PhotoUploadGrid` (colección con descripciones y persistencia API), `PhotoSlotGrid` (N vistas obligatorias) y `VehicleImageField` / `PersonImageField`; acciones de fila: `EntityActionButtons`.
 
 ## Paleta visual
-- Tokens definidos en `@theme` de `src/style.css`: `primary-*` (azul, legacy Flowbite), `brand-*` (azul corporativo `#2B4352`), `accent-*` (rojo `#D9011B`).
-- La migración de paleta está EN CURSO: los módulos aún mezclan `gray-*`/`primary-*`. Código nuevo debe usar `brand-*`/`accent-*`.
+- Tokens canónicos en `@theme` de `src/style.css`; espejo en JS (`BRAND`) en `src/shared/config/branding.js` para canvas/SVG (ECharts, FullCalendar). Al cambiar la paleta hay que actualizar AMBOS.
+- `brand-*` = navy corporativo (`900 #111C2E`, `700 #1B2A44`, `500 #3A4F6E`, `300 #94A6BF`…). `accent-*` = rojo (`500 #C8102E`). `primary-*`/`primary-blue-*` (Flowbite legacy) están remapeados a navy.
+- Semánticos: `info #2563EB` (azul, se mantiene en badges de estado y Alert info), `success #16A34A`, `warning #D97706`, `danger #DC2626`.
+- Regla de uso: botones primarios = navy (`brand-900`); el rojo `accent-500` solo para logo, indicador activo del sidebar y detalles; `danger` se reserva para acciones destructivas.
+- La migración de paleta está aplicada, pero los módulos todavía mezclan `gray-*` con la marca. Código nuevo debe usar `brand-*`/`accent-*`.
 
 ## Mejora de texto con IA (REUTILIZABLE)
 

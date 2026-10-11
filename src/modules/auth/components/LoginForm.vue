@@ -1,8 +1,10 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { User, Lock, Eye, EyeOff, ArrowRight } from 'lucide-vue-next';
 import { useAuthStore } from '../stores/authStore';
 import Alert from '../../../shared/components/Alert.vue';
+import TallerSelect from '../../../shared/components/TallerSelect.vue';
+import EmpresaSearchSelect from '../../../shared/components/EmpresaSearchSelect.vue';
 
 const authStore = useAuthStore();
 const username = ref('');
@@ -24,7 +26,30 @@ const hasError = computed(() => Boolean(errorMessage.value));
 const showCompanyModal = ref(false);
 const userCompanies = ref([]);
 const selectedCompanyId = ref(null);
+const selectedTallerId = ref(null);
 const tempUserId = ref(null);
+
+const selectedCompany = computed(
+  () => userCompanies.value.find((emp) => String(emp.id) === String(selectedCompanyId.value)) || null
+);
+
+const selectedCompanyTalleres = computed(() => selectedCompany.value?.talleres || []);
+
+/** Solo la administración puede ingresar sin taller activo («Todos»). */
+const ROLES_TODOS = ['ADMIN_EMPRESA', 'ADMIN_SISTEMA'];
+const permiteTodosEmpresa = computed(() =>
+  ROLES_TODOS.includes(selectedCompany.value?.rol)
+);
+
+watch(selectedCompany, (empresa) => {
+  if (ROLES_TODOS.includes(empresa?.rol)) {
+    selectedTallerId.value = null;
+    return;
+  }
+  const talleres = empresa?.talleres || [];
+  const predeterminado = talleres.find((taller) => taller.predeterminado);
+  selectedTallerId.value = predeterminado?.id ?? talleres[0]?.id ?? null;
+});
 
 async function submit() {
   if (authStore.isLoading) return;
@@ -70,6 +95,13 @@ async function confirmCompany() {
       },
       remember.value
     );
+
+    const taller =
+      selectedCompanyTalleres.value.find(
+        (t) => String(t.id) === String(selectedTallerId.value)
+      ) || null;
+    authStore.setTaller(taller);
+
     window.location.assign('/');
   } catch (error) {
     errorMessage.value = error.message || 'Error al seleccionar la empresa.';
@@ -281,19 +313,27 @@ async function confirmCompany() {
         </p>
 
         <div>
-          <label for="company_select" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+          <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
             Empresa Activa
           </label>
-          <select
-            id="company_select"
+          <EmpresaSearchSelect
             v-model="selectedCompanyId"
-            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-          >
-            <option :value="null" disabled>-- Selecciona un empresa --</option>
-            <option v-for="emp in userCompanies" :key="emp.id" :value="emp.id">
-              {{ emp.nombre_comercial || emp.nombre }} (RUC: {{ emp.ruc }})
-            </option>
-          </select>
+            :empresas="userCompanies"
+            placeholder="Selecciona una empresa"
+          />
+        </div>
+
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+            Taller
+          </label>
+          <TallerSelect
+            v-model="selectedTallerId"
+            :talleres="selectedCompanyTalleres"
+            :permitir-todos="permiteTodosEmpresa"
+            variante="campo"
+            placeholder="Selecciona un taller"
+          />
         </div>
 
         <div class="flex justify-end gap-3 pt-2">

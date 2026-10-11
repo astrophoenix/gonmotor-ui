@@ -228,7 +228,7 @@ onMounted(cargar);
       <button
         v-if="puedeEditar"
         type="button"
-        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:text-brand-400 dark:border-brand-400 dark:hover:bg-gray-700"
+        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:text-brand-300 dark:border-brand-300 dark:hover:bg-gray-700"
         @click="irAEditar"
       >
         <Pencil class="w-4 h-4" aria-hidden="true" />
@@ -337,17 +337,17 @@ onMounted(cargar);
                 <!-- Metadatos de la cotización (siempre visibles) -->
                 <div class="flex flex-wrap items-center gap-x-6 gap-y-2 pt-4 mt-4 text-sm text-gray-600 border-t border-gray-200 dark:border-gray-600 dark:text-gray-300">
                   <span class="inline-flex items-center gap-1.5" title="Fecha y hora de emisión">
-                    <CalendarDays class="w-4 h-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                    <CalendarDays class="w-4 h-4 shrink-0 text-brand-700 dark:text-brand-300" />
                     <span class="font-medium text-gray-900 dark:text-white">Emisión:</span>
                     {{ fechaEmision }}
                   </span>
                   <span class="inline-flex items-center gap-1.5 md:border-l md:border-gray-200 md:pl-6 md:dark:border-gray-600" title="Taller donde se creó la cotización">
-                    <Store class="w-4 h-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                    <Store class="w-4 h-4 shrink-0 text-brand-700 dark:text-brand-300" />
                     <span class="font-medium text-gray-900 dark:text-white">Taller:</span>
                     {{ cotizacion.sucursal_nombre || '—' }}
                   </span>
                   <!--span class="inline-flex items-center gap-1.5 md:border-l md:border-gray-200 md:pl-6 md:dark:border-gray-600" title="Origen de la cotización">
-                    <ClipboardList class="w-4 h-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                    <ClipboardList class="w-4 h-4 shrink-0 text-brand-700 dark:text-brand-300" />
                     <span class="font-medium text-gray-900 dark:text-white">Origen:</span>
                     <template v-if="cotizacion.inspeccion_origen">
                       <a

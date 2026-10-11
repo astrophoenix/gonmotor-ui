@@ -13,6 +13,7 @@ import {
   horaLocal,
   useCalendario,
 } from '../composables/useCalendario';
+import { BRAND } from '../../../shared/config/branding';
 
 /**
  * Panel de calendario de la pantalla unificada de citas.
@@ -433,7 +434,7 @@ watch(errorMessage, (valor) => {
             <div v-if="disponibilidad.aplicable && disponibilidad.capacidad_dia" class="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
               <div
                 class="h-2 rounded-full transition-all"
-                :style="{ width: porcentajeOcupacion + '%', backgroundColor: cuposAgotados ? '#D9011B' : '#2B4352' }"
+                :style="{ width: porcentajeOcupacion + '%', backgroundColor: cuposAgotados ? BRAND.accent500 : BRAND.brand500 }"
               />
             </div>
             <p v-else-if="disponibilidad.aplicable" class="mt-2.5 text-xs text-gray-500 dark:text-gray-400">
@@ -481,7 +482,7 @@ watch(errorMessage, (valor) => {
                       v-if="recepcionDe(cita)"
                       type="button"
                       :title="`Abrir la recepción ${recepcionDe(cita).numero}`"
-                      class="inline-flex items-center gap-1 rounded-full border border-brand-100 bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-600 transition-colors hover:bg-brand-100 hover:text-brand-700 dark:border-brand-400 dark:bg-brand-500/20 dark:text-brand-50 dark:hover:bg-brand-500/40"
+                      class="inline-flex items-center gap-1 rounded-full border border-brand-100 bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700 transition-colors hover:bg-brand-100 hover:text-brand-700 dark:border-brand-300 dark:bg-brand-500/20 dark:text-brand-50 dark:hover:bg-brand-500/40"
                       @click.stop="abrirRecepcion(cita)">
                       <ClipboardList class="h-3 w-3" />
                       {{ recepcionDe(cita).numero }}

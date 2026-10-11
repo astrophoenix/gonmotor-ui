@@ -1,6 +1,7 @@
 import { computed, onScopeDispose, ref } from 'vue';
 import { citasService } from '../../citas/services/citasService';
 import { createLatestRequest, isAbortError } from '../../../shared/utils/search';
+import { BRAND } from '../../../shared/config/branding';
 
 /** Tamaño de página con el que el calendario carga un rango de fechas. */
 const PAGE_SIZE = 500;
@@ -18,12 +19,12 @@ export const ESTADOS_CITA = [
 ];
 
 export const COLORES_ESTADO = {
-  PROGRAMADA: { bg: '#2B4352', border: '#1E2F3A', label: 'Programada' },
-  CONFIRMADA: { bg: '#2563EB', border: '#1D4ED8', label: 'Confirmada' },
+  PROGRAMADA: { bg: BRAND.brand500, border: BRAND.brand700, label: 'Programada' },
+  CONFIRMADA: { bg: BRAND.info, border: '#1D4ED8', label: 'Confirmada' },
   EN_PROGRESO: { bg: '#D97706', border: '#B45309', label: 'En Progreso' },
   COMPLETADA: { bg: '#059669', border: '#047857', label: 'Completada' },
   CANCELADA: { bg: '#9CA3AF', border: '#6B7280', label: 'Cancelada' },
-  NO_ASISTIO: { bg: '#D9011B', border: '#A90114', label: 'No Asistió' },
+  NO_ASISTIO: { bg: BRAND.accent500, border: BRAND.accent600, label: 'No Asistió' },
 };
 
 export function fechaLocal(date) {

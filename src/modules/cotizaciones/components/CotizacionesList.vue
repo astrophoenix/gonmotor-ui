@@ -5,6 +5,7 @@ import { IconFolderDollar } from '@tabler/icons-vue';
 import { Icon } from '@iconify/vue';
 import filePdfIcon from '@iconify-icons/fa6-regular/file-pdf';
 import { useCotizaciones } from '../composables/useCotizaciones';
+import { useAuthStore } from '../../auth/stores/authStore';
 import { talleresService } from '../../configuracion/services/talleresService';
 import FilterActions from '../../../shared/components/FilterActions.vue';
 import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
@@ -33,6 +34,8 @@ const {
   loadCotizaciones,
   removeCotizacion,
 } = useCotizaciones();
+
+const authStore = useAuthStore();
 
 const alert = ref({ type: 'default', title: '', message: '' });
 
@@ -295,7 +298,7 @@ onUnmounted(() => {
             </select>
           </div>
 
-          <div class="w-full sm:w-auto sm:shrink-0">
+          <div v-if="authStore.esTodosLosTalleres" class="w-full sm:w-auto sm:shrink-0">
             <label for="filtro-taller" class="block mb-1 text-sm font-medium text-heading">Taller</label>
             <select
               id="filtro-taller"

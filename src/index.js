@@ -21,9 +21,8 @@ import { mountProfileEdit } from './modules/auth';
 import { mountEmpresaConfig, mountTalleresConfig, mountRoles } from './modules/configuracion';
 import { mountNotificaciones } from './modules/notificaciones';
 import { mountDashboard } from './modules/dashboard';
-import { mountDashboardV2 } from './modules/dashboard-v2';
 import { iniciarPermisosGlobal } from './shared/composables/usePermisos';
-import UserMenu from './shared/components/UserMenu.vue';
+import Topbar from './shared/components/Topbar.vue';
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 
@@ -43,12 +42,6 @@ const dashboardApp = document.getElementById('dashboard-app');
 
 if (dashboardApp) {
   mountDashboard(dashboardApp, pinia);
-}
-
-const dashboardV2App = document.getElementById('dashboard-v2-app');
-
-if (dashboardV2App) {
-  mountDashboardV2(dashboardV2App, pinia);
 }
 
 const loginApp = document.getElementById('login-app');
@@ -189,10 +182,10 @@ if (ordenEditApp) {
   mountOrdenEdit(ordenEditApp, pinia);
 }
 
-const userMenuApp = document.getElementById('user-menu-app');
+const topbarApp = document.getElementById('topbar-app');
 
-if (userMenuApp) {
-    createApp(UserMenu).use(pinia).mount(userMenuApp);
+if (topbarApp) {
+    createApp(Topbar, { pageTitle: topbarApp.dataset.pageTitle || '' }).use(pinia).mount(topbarApp);
 }
 
 const citasApp = document.getElementById('citas-app');

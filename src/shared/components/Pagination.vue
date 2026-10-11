@@ -103,7 +103,7 @@ function goTo(page) {
             type="button"
             :aria-current="item === currentPage ? 'page' : null"
             class="flex items-center justify-center box-border border font-medium text-sm w-9 h-9 focus:outline-none cursor-pointer"
-            :class="item === currentPage ? 'text-fg-brand bg-brand-softer border-default-medium hover:bg-brand-soft hover:text-fg-brand' : 'text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading'"
+            :class="item === currentPage ? 'text-fg-brand bg-brand-50er border-default-medium hover:bg-brand-50 hover:text-fg-brand' : 'text-body bg-neutral-secondary-medium border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading'"
             @click="goTo(item)"
           >
             {{ item }}

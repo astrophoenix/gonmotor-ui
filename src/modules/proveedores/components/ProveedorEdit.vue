@@ -234,7 +234,7 @@ onMounted(() => {
         v-if="isEditMode"
         type="button"
         title="Crear otro proveedor"
-        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:text-brand-400 dark:border-brand-400 dark:hover:bg-gray-700"
+        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:text-brand-300 dark:border-brand-300 dark:hover:bg-gray-700"
         @click="goToAdd"
       >
         <CirclePlus class="w-4 h-4" aria-hidden="true" />

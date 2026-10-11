@@ -26,43 +26,63 @@
 }
 
 @theme {
-    --color-primary-50: #EFF6FF;
-    --color-primary-100: #DBEAFE;
-    --color-primary-200: #BFDBFE;
-    --color-primary-300: #93C5FD;
-    --color-primary-400: #60A5FA;
-    --color-primary-500: #2563EB;
-    --color-primary-600: #1D4ED8;
-    --color-primary-700: #1E40AF;
-    --color-primary-800: #1E3A8A;
-    --color-primary-900: #172554;
+    /* ===== Alias legacy: primary-* = navy (reemplaza el azul Flowbite) ===== */
+    --color-primary-50: #F3F6FA;
+    --color-primary-100: #E3E9F1;
+    --color-primary-200: #D2DBE7;
+    --color-primary-300: #A9BAD2;
+    --color-primary-400: #94A6BF;
+    --color-primary-500: #3A4F6E;
+    --color-primary-600: #1B2A44;
+    --color-primary-700: #162238;
+    --color-primary-800: #111C2E;
+    --color-primary-900: #0D1523;
 
-    /* Alias temporal: primary-blue-* apunta a la misma escala primaria azul */
-    --color-primary-blue-50: #EFF6FF;
-    --color-primary-blue-100: #DBEAFE;
-    --color-primary-blue-200: #BFDBFE;
-    --color-primary-blue-300: #93C5FD;
-    --color-primary-blue-400: #60A5FA;
-    --color-primary-blue-500: #2563EB;
-    --color-primary-blue-600: #1D4ED8;
-    --color-primary-blue-700: #1E40AF;
-    --color-primary-blue-800: #1E3A8A;
-    --color-primary-blue-900: #172554;
-    
-    --color-gray-workshop: #C6CCD4;
-    --color-brand-50: #f2f5f7;
-    --color-brand-100: #e1e7eb;
-    --color-brand-400: #3d5a6b;
-    --color-brand-500: #2B4352;
-    --color-brand-550: #274f63;
-    --color-brand-600: #213440;
-    --color-brand-700: #192630;
-    
-    --color-accent-50: #fef2f2;
-    --color-accent-100: #fee2e2;
-    --color-accent-400: #ef4444;
-    --color-accent-500: #D9011B;
-    --color-accent-600: #b50116;
+    /* Alias primary-blue-* apunta a la misma escala navy */
+    --color-primary-blue-50: #F3F6FA;
+    --color-primary-blue-100: #E3E9F1;
+    --color-primary-blue-200: #D2DBE7;
+    --color-primary-blue-300: #A9BAD2;
+    --color-primary-blue-400: #94A6BF;
+    --color-primary-blue-500: #3A4F6E;
+    --color-primary-blue-600: #1B2A44;
+    --color-primary-blue-700: #162238;
+    --color-primary-blue-800: #111C2E;
+    --color-primary-blue-900: #0D1523;
+
+    /* ===== Marca: navy ===== */
+    --color-brand-50: #F3F6FA;
+    --color-brand-100: #E3E9F1;
+    --color-brand-200: #C5D0DF;
+    --color-brand-300: #94A6BF;
+    --color-brand-400: #5E7391;
+    --color-brand-500: #3A4F6E;
+    --color-brand-600: #26395A;
+    --color-brand-700: #1B2A44;
+    --color-brand-800: #162238;
+    --color-brand-900: #111C2E;
+    --color-brand-950: #0B1220;
+
+    /* ===== Acento: rojo ===== */
+    --color-accent-50: #FEF2F3;
+    --color-accent-100: #FDE1E4;
+    --color-accent-400: #FF4D63;
+    --color-accent-500: #C8102E;
+    --color-accent-600: #B30D25;
+    --color-accent-700: #8F0A1E;
+
+    /* ===== Neutros (alias) ===== */
+    --color-ink: var(--color-slate-800);
+    --color-ink-soft: var(--color-slate-600);
+    --color-line: var(--color-slate-300);
+    --color-surface: var(--color-slate-50);
+    --color-muted: #8493A8;
+
+    /* ===== Semánticos ===== */
+    --color-success: #16A34A;
+    --color-warning: #D97706;
+    --color-info: #2563EB;
+    --color-danger: #DC2626;
 
     /* ===== Login: tokens del rediseño ===== */
     --color-brand-navy: #111C2E;
@@ -77,6 +97,16 @@
     --color-brand-subtitle: #B6C2D4;
     --color-brand-focus-ring: rgba(30, 41, 59, 0.12);
 
+    /* ===== Flowbite: tokens semánticos de marca → navy ===== */
+    --color-brand: #1B2A44;
+    --color-brand-soft: #E3E9F1;
+    --color-brand-softer: #F3F6FA;
+    --color-brand-medium: #162238;
+    --color-brand-strong: #1B2A44;
+    --color-fg-brand: #3A4F6E;
+    --color-fg-brand-subtle: #3A4F6E;
+    --color-fg-brand-strong: #1B2A44;
+
     --font-brand: 'Manrope', 'Arial', sans-serif;
     
     --font-sans: 'Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'system-ui', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
@@ -84,8 +114,17 @@
     --font-mono: 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace';
 }
 
-.gray-workshop {
-  background-color: #C6CCD4;
+/* Flowbite redefine estos tokens de marca en `.dark` con azul; los forzamos a
+   navy para que la marca mande también en modo oscuro. */
+.dark {
+  --color-brand: #94A6BF;
+  --color-brand-soft: #1B2A44;
+  --color-brand-softer: #162238;
+  --color-brand-medium: #162238;
+  --color-brand-strong: #94A6BF;
+  --color-fg-brand: #94A6BF;
+  --color-fg-brand-subtle: #94A6BF;
+  --color-fg-brand-strong: #94A6BF;
 }
 
 /* ===== Sidebar (drawer en móvil / colapsable en desktop) ===== */
@@ -110,7 +149,7 @@
   height: 2rem;
   padding: 0;
   border-radius: 0.5rem;
-  color: var(--color-brand-600);
+  color: #fff;
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease, transform 0.12s ease;
 }
@@ -119,7 +158,7 @@
   .sidebar-toggle-btn { display: inline-flex; }
   .sidebar-close-mobile { display: none; }
 }
-.sidebar-toggle-btn:hover { background-color: #fff; color: var(--color-brand-700); }
+.sidebar-toggle-btn:hover { color: var(--color-brand-300); }
 .sidebar-close-mobile:hover { background-color: var(--color-accent-500); color: #fff; }
 .sidebar-toggle-btn:active,
 .sidebar-close-mobile:active { transform: scale(0.92); }
@@ -157,11 +196,11 @@
   background: transparent;
 }
 
-/* Página activa en el sidebar: fondo + barra blanca a la izquierda.
+/* Página activa en el sidebar: fondo + barra roja (accent) a la izquierda.
    Sin capa (@layer) a propósito: debe ganar a las utilidades de hover/bg. */
 #sidebar .is-current {
   background-color: var(--color-brand-700);
-  box-shadow: inset 3px 0 0 #fff;
+  box-shadow: inset 3px 0 0 var(--color-accent-500);
   font-weight: 500;
 }
 
@@ -172,10 +211,10 @@
   outline-offset: -2px;
   border-radius: 0.25rem;
 }
-/* Los botones del header viven sobre gris claro: foco en color brand */
+/* Los botones del header viven sobre navy: foco en blanco */
 #sidebar .sidebar-toggle-btn:focus-visible,
 #sidebar .sidebar-close-mobile:focus-visible {
-  outline: 2px solid var(--color-brand-600);
+  outline: 2px solid #fff;
   outline-offset: 2px;
 }
 
@@ -233,7 +272,7 @@
     top: 50%;
     transform: translateY(-50%);
     margin-left: 0.5rem;
-    background: #111827;
+    background: var(--color-brand-900);
     color: #fff;
     padding: 0.25rem 0.5rem;
     border-radius: 0.25rem;
@@ -262,7 +301,7 @@
     min-width: 13rem;
     padding: 0.5rem;
     border-radius: 0.5rem;
-    background: var(--color-brand-600);
+    background: var(--color-brand-700);
     z-index: 60;
     box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.2);
   }
@@ -295,5 +334,13 @@ select option:checked {
 
 /* ===== Citas: anillo de resaltado de la cita elegida en el buscador ===== */
 .fc-event.cita-resaltada {
-  box-shadow: 0 0 0 3px #d9011b;
+  box-shadow: 0 0 0 3px var(--color-accent-500);
 }
+
+/* ===== Topbar: evita la miga de pan duplicada dentro del contenido =====
+   La topbar ya renderiza el breadcrumb. Esta regla lo oculta en las páginas
+   (centralizada, sin tocar cada componente). Revertir = borrar esta regla. */
+#main-content nav[aria-label="Breadcrumb"] {
+  display: none;
+}
+

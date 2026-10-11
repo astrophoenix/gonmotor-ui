@@ -9,6 +9,7 @@ import { Icon } from '@iconify/vue';
 import filePdfIcon from '@iconify-icons/fa6-regular/file-pdf';
 import { useInspecciones } from '../composables/useInspecciones';
 import { inspeccionesService } from '../services/inspeccionesService';
+import { useAuthStore } from '../../auth/stores/authStore';
 import { talleresService } from '../../configuracion/services/talleresService';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import FilterActions from '../../../shared/components/FilterActions.vue';
@@ -39,6 +40,8 @@ const {
   loadInspecciones,
   removeInspeccion,
 } = useInspecciones();
+
+const authStore = useAuthStore();
 
 const alert = ref({
   type: 'default',
@@ -421,7 +424,7 @@ onUnmounted(() => {
             </select>
           </div>
 
-          <div class="w-full sm:w-auto sm:shrink-0">
+          <div v-if="authStore.esTodosLosTalleres" class="w-full sm:w-auto sm:shrink-0">
             <label for="filtro-taller" class="block mb-1 text-sm font-medium text-heading">Taller</label>
             <select
               id="filtro-taller"

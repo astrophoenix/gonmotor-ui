@@ -1412,7 +1412,7 @@ onMounted(() => {
       <button
         v-if="puedeCrearInspeccion"
         type="button"
-        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 dark:text-brand-400 dark:border-brand-400 dark:hover:bg-gray-700"
+        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 dark:text-brand-300 dark:border-brand-300 dark:hover:bg-gray-700"
         title="Generar Inspección"
         @click="abrirModalCrearInspeccion">
         <Loader2 v-if="creandoInspeccion" class="w-4 h-4 animate-spin" />
@@ -1666,7 +1666,7 @@ onMounted(() => {
                           type="datetime-local"
                           :disabled="readOnly"
                           :class="[
-                            'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
+                            'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand-700 focus:border-brand',
                             formErrors.fecha_ingreso
                               ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
                               : '',
@@ -1683,7 +1683,7 @@ onMounted(() => {
                           type="datetime-local"
                           :disabled="readOnly"
                           :class="[
-                            'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
+                            'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand-700 focus:border-brand',
                             formErrors.fecha_salida
                               ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
                               : '',
@@ -1700,7 +1700,7 @@ onMounted(() => {
                           v-model="form.tipo_recepcion"
                           :disabled="readOnly"
                           :class="[
-                            'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
+                            'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand-700 focus:border-brand',
                             formErrors.tipo_recepcion
                               ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
                               : '',
@@ -1755,7 +1755,7 @@ onMounted(() => {
                             :disabled="readOnly"
                             placeholder="Describe la razón por la que el cliente trae el vehículo..."
                             :class="[
-                              'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
+                              'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand-700 focus:border-brand',
                               formErrors.motivo_ingreso
                                 ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
                                 : '',
@@ -1798,7 +1798,7 @@ onMounted(() => {
                               :disabled="readOnly"
                               placeholder="Ingresa el kilometraje"
                               :class="[
-                                'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
+                                'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand-700 focus:border-brand',
                                 formErrors.kilometraje_ingreso
                                   ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
                                   : '',
@@ -1865,7 +1865,7 @@ onMounted(() => {
                               maxlength="80"
                               rows="3"
                               :class="[
-                                'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
+                                'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand-700 focus:border-brand',
                                 formErrors.datos_grua
                                   ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
                                   : '',
@@ -1891,7 +1891,7 @@ onMounted(() => {
                             id="cantidad_llaves"
                             v-model="form.cantidad_llaves"
                             :disabled="readOnly"
-                            class="block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand">
+                            class="block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand-700 focus:border-brand">
                             <option :value="0">0</option>
                             <option :value="1">1</option>
                             <option :value="2">2</option>
@@ -1937,7 +1937,7 @@ onMounted(() => {
                           :disabled="readOnly"
                           placeholder="Observaciones (ej. otros objetos no listados)"
                           maxlength="255"
-                          class="block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand"
+                          class="block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand-700 focus:border-brand"
                         />
                       </div>
                     </div>
@@ -1955,7 +1955,7 @@ onMounted(() => {
                             type="text"
                             maxlength="100"
                             :disabled="readOnly"
-                            class="block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand"/>
+                            class="block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand-700 focus:border-brand"/>
                         </div>
                         <div>
                           <label for="numero_poliza" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">N° póliza</label>
@@ -1966,7 +1966,7 @@ onMounted(() => {
                             maxlength="20"
                             :disabled="readOnly"
                             :class="[
-                              'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
+                              'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand-700 focus:border-brand',
                               formErrors.numero_poliza
                                 ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
                                 : '',
@@ -1992,7 +1992,7 @@ onMounted(() => {
                             maxlength="80"
                             :disabled="readOnly"
                             :class="[
-                              'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
+                              'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand-700 focus:border-brand',
                               formErrors.numero_reclamo
                                 ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
                                 : '',
@@ -2017,7 +2017,7 @@ onMounted(() => {
                             type="text"
                             maxlength="120"
                             :disabled="readOnly"
-                            class="block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand"
+                            class="block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand-700 focus:border-brand"
                           />
                         </div>
                         <div>
@@ -2032,7 +2032,7 @@ onMounted(() => {
                             type="text"
                             maxlength="15"
                             :disabled="readOnly"
-                            class="block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand"
+                            class="block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand-700 focus:border-brand"
                           />
                         </div>
                       </div>
@@ -2283,7 +2283,7 @@ onMounted(() => {
                                     placeholder="Descripción del daño..."
                                     maxlength="80"
                                     :class="[
-                                      'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
+                                      'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand-700 focus:border-brand',
                                       detallesErrors[idx]
                                         ? 'bg-danger-soft! border-danger-subtle! text-fg-danger-strong! placeholder:text-fg-danger-strong! focus:ring-danger! focus:border-danger!'
                                         : '',
@@ -2308,7 +2308,7 @@ onMounted(() => {
                               hidden
                               rows="8"
                               placeholder="Describe golpes, rayones o estado de pintura..."
-                              class="block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand"></textarea>
+                              class="block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand-700 focus:border-brand"></textarea>
                           </div>
                         </div>
                     </div>
@@ -2416,7 +2416,7 @@ onMounted(() => {
                         :disabled="readOnly"
                         placeholder="Registra el motivo por el cual el cliente no aceptó las condiciones o no dejó el vehículo..."
                         :class="[
-                          'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand focus:border-brand',
+                          'block w-full p-2.5 text-sm rounded shadow-xs bg-neutral-secondary-medium border border-default-medium text-heading placeholder:text-body focus:ring-brand-700 focus:border-brand',
                           formErrors.motivo_no_recepcion
                             ? 'bg-yellow-50! border-yellow-500! text-yellow-900 placeholder:text-yellow-900! focus:ring-yellow-500! focus:border-yellow-500!'
                             : '',

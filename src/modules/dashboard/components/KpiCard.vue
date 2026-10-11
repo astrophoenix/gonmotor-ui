@@ -13,7 +13,7 @@ defineProps({
 });
 
 const TONOS = {
-  brand: 'bg-brand-500/10 text-brand-600 dark:bg-brand-500/20 dark:text-brand-100',
+  brand: 'bg-brand-500/10 text-brand-700 dark:bg-brand-500/20 dark:text-brand-100',
   emerald: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
   amber: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
   accent: 'bg-accent-100 text-accent-600 dark:bg-accent-600/20 dark:text-accent-400',

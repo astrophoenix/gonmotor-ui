@@ -27,6 +27,11 @@ function getEmpresaId() {
     || sessionStorage.getItem('gonmotor_empresa_id');
 }
 
+function getTallerId() {
+  return localStorage.getItem('gonmotor_taller_id')
+    || sessionStorage.getItem('gonmotor_taller_id');
+}
+
 function getStorage() {
   if (localStorage.getItem('gonmotor_access_token')) {
     return localStorage;
@@ -87,7 +92,9 @@ function clearSession() {
       'gonmotor_refresh_token',
       'gonmotor_user',
       'gonmotor_logged_in',
-      'gonmotor_empresa_id'
+      'gonmotor_empresa_id',
+      'gonmotor_taller_id',
+      'gonmotor_taller_nombre'
     ].forEach((key) => {
       currentStorage.removeItem(key);
     });
@@ -179,6 +186,7 @@ async function refreshAccessToken() {
 export async function request(path, options = {}) {
   const token = getAccessToken();
   const empresaId = getEmpresaId();
+  const tallerId = getTallerId();
   const responseType = options.responseType || 'json';
 
   const isFormData = options.body instanceof FormData;
@@ -189,6 +197,7 @@ export async function request(path, options = {}) {
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(empresaId ? { 'X-Empresa-ID': empresaId } : {}),
+      ...(tallerId ? { 'X-Taller-ID': tallerId } : {}),
       ...(options.headers || {})
     }
   };

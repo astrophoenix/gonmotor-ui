@@ -71,14 +71,14 @@ function onKeyDown(event) {
           maxlength="20"
           autocomplete="off"
           placeholder="Ej. ABC-1234"
-          class="block w-full ps-9 pe-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs placeholder:text-body focus:ring-brand focus:border-brand dark:bg-gray-800"
+          class="block w-full ps-9 pe-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs placeholder:text-body focus:ring-brand-700 focus:border-brand dark:bg-gray-800"
           @keydown="onKeyDown"
         />
       </div>
       <button
         type="button"
         :disabled="cargando || !puedeConsultar()"
-        class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white rounded shadow-xs bg-brand-500 hover:bg-brand-600 focus:ring-4 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+        class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white rounded shadow-xs bg-brand-900 hover:bg-brand-700 focus:ring-4 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-60"
         @click="consultar"
       >
         <Loader2 v-if="cargando" class="w-4 h-4 animate-spin" aria-hidden="true" />

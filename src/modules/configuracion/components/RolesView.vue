@@ -313,7 +313,7 @@ onMounted(async () => {
   <div class="p-4 bg-white border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
     <div class="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
       <div class="flex flex-1 min-w-0 items-start gap-3">
-        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand-soft text-fg-brand-strong">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand-50 text-brand-700">
           <ShieldCheck class="w-5 h-5" />
         </span>
         <div class="min-w-0">
@@ -359,12 +359,12 @@ onMounted(async () => {
               v-model="buscar"
               type="text"
               placeholder="Buscar rol"
-              class="w-full rounded-base border border-default-medium bg-white dark:bg-gray-800 pl-9 pr-3 py-2 text-sm text-heading placeholder:text-body/60 focus:border-brand focus:ring-1 focus:ring-brand focus:outline-none"
+              class="w-full rounded-base border border-default-medium bg-white dark:bg-gray-800 pl-9 pr-3 py-2 text-sm text-heading placeholder:text-body/60 focus:border-brand focus:ring-1 focus:ring-brand-700 focus:outline-none"
             >
           </div>
           <select
             v-model="estadoFiltro"
-            class="w-28 rounded-base border border-default-medium bg-white dark:bg-gray-800 px-2 py-2 text-sm text-heading focus:border-brand focus:ring-1 focus:ring-brand focus:outline-none"
+            class="w-28 rounded-base border border-default-medium bg-white dark:bg-gray-800 px-2 py-2 text-sm text-heading focus:border-brand focus:ring-1 focus:ring-brand-700 focus:outline-none"
           >
             <option value="todos">Todos</option>
             <option value="activos">Activos</option>
@@ -378,14 +378,14 @@ onMounted(async () => {
             :key="rol.id"
             class="flex items-start justify-between gap-2 cursor-pointer px-4 py-3"
             :class="selectedId === rol.id
-              ? 'bg-brand-soft border-l-[3px] border-brand-600'
+              ? 'bg-brand-50 border-l-[3px] border-brand-700'
               : 'border-l-[3px] border-transparent hover:bg-neutral-secondary-soft/70'"
             @click="seleccionar(rol.id)"
           >
             <span
               class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
               :class="selectedId === rol.id
-                ? 'bg-brand-600/10 text-fg-brand-strong'
+                ? 'bg-brand-700/10 text-brand-700'
                 : 'bg-neutral-secondary-soft text-body'"
             >
               <component :is="rolIcono(rol)" class="w-4.5 h-4.5" />
@@ -434,7 +434,7 @@ onMounted(async () => {
         </ul>
 
         <div class="flex items-start gap-2.5 p-4 border-t border-default-medium bg-brand-50 dark:bg-brand-100/10">
-          <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-600/10 text-fg-brand-strong">
+          <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-700/10 text-brand-700">
             <Info class="w-3.5 h-3.5" />
           </span>
           <p class="text-xs text-body leading-relaxed">
@@ -452,7 +452,7 @@ onMounted(async () => {
         <template v-else-if="detalle">
           <div class="flex flex-wrap items-start justify-between gap-3 px-5 py-4 border-b border-default-medium">
             <div class="flex items-center gap-3 min-w-0">
-              <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-brand-600 text-white">
+              <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-brand-700 text-white">
                 <component :is="rolIcono(detalle)" class="w-6 h-6" />
               </span>
               <div class="min-w-0">
@@ -466,7 +466,7 @@ onMounted(async () => {
                   </span>
                   <span
                     v-if="detalle.personalizado"
-                    class="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-brand-soft border border-brand-subtle text-fg-brand-strong"
+                    class="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-brand-50 border border-brand-subtle text-brand-700"
                   >
                     Personalizado en esta empresa
                   </span>
@@ -536,7 +536,7 @@ onMounted(async () => {
                 type="button"
                 class="px-3 py-2.5 text-sm font-medium border-b-2 -mb-px"
                 :class="activeTab === tab.id
-                  ? 'border-brand-600 text-fg-brand-strong'
+                  ? 'border-brand-700 text-brand-700'
                   : 'border-transparent text-body hover:text-heading'"
                 @click="activeTab = tab.id"
               >
@@ -550,7 +550,7 @@ onMounted(async () => {
             <div v-if="activeTab === 'permisos'">
               <div class="flex flex-wrap items-center justify-end gap-4 mb-4 text-xs text-body">
                 <span class="inline-flex items-center gap-1.5">
-                  <CircleCheck class="w-4 h-4 text-fg-brand-strong" />
+                  <CircleCheck class="w-4 h-4 text-brand-700" />
                   Permiso habilitado
                 </span>
                 <span class="inline-flex items-center gap-1.5">
@@ -581,7 +581,7 @@ onMounted(async () => {
                       <td class="py-2.5 pe-2">
                         <div class="flex items-center gap-3">
                           <span
-                            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-fg-brand-strong"
+                            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700"
                           >
                             <component :is="recursoExtra(recurso.codigo).icono" class="w-4 h-4" />
                           </span>
@@ -595,7 +595,7 @@ onMounted(async () => {
                         <label class="inline-flex items-center cursor-pointer">
                           <input
                             type="checkbox"
-                            class="w-4 h-4 rounded border-default-medium text-brand-600 focus:ring-brand focus:ring-2 dark:bg-gray-700"
+                            class="w-4 h-4 rounded border-default-medium text-brand-700 focus:ring-brand-700 focus:ring-2 dark:bg-gray-700"
                             :checked="Boolean(borrador.permisos[recurso.codigo]?.ver)"
                             @change="togglePermiso(recurso.codigo, 'ver', $event.target.checked)"
                           >
@@ -605,7 +605,7 @@ onMounted(async () => {
                         <label class="inline-flex items-center cursor-pointer">
                           <input
                             type="checkbox"
-                            class="w-4 h-4 rounded border-default-medium text-brand-600 focus:ring-brand focus:ring-2 dark:bg-gray-700"
+                            class="w-4 h-4 rounded border-default-medium text-brand-700 focus:ring-brand-700 focus:ring-2 dark:bg-gray-700"
                             :checked="Boolean(borrador.permisos[recurso.codigo]?.modificar)"
                             @change="togglePermiso(recurso.codigo, 'modificar', $event.target.checked)"
                           >
@@ -634,7 +634,7 @@ onMounted(async () => {
                     </span>
                   </span>
                   <span class="flex items-center gap-2 shrink-0">
-                    <span class="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-brand-soft border border-brand-subtle text-fg-brand-strong">
+                    <span class="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-brand-50 border border-brand-subtle text-brand-700">
                       {{ borrador.acciones.length }} {{ borrador.acciones.length === 1 ? 'acción' : 'acciones' }}
                     </span>
                     <ChevronRight class="w-4 h-4 text-body" />
@@ -648,7 +648,7 @@ onMounted(async () => {
                     class="flex items-center justify-between gap-3 px-4 py-2.5"
                   >
                     <div class="flex items-center gap-3 min-w-0">
-                      <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-soft text-fg-brand-strong">
+                      <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700">
                         <component :is="recursoExtra(accion.recurso__codigo || accion.recurso_codigo).icono" class="w-3.5 h-3.5" />
                       </span>
                       <div class="min-w-0">
@@ -764,7 +764,7 @@ onMounted(async () => {
                 v-model="nuevoRol.nombre"
                 type="text"
                 placeholder="Ej. Supervisor de taller"
-                class="w-full rounded-base border border-default-medium bg-white dark:bg-gray-800 px-3 py-2 text-sm text-heading placeholder:text-body/60 focus:border-brand focus:ring-1 focus:ring-brand focus:outline-none"
+                class="w-full rounded-base border border-default-medium bg-white dark:bg-gray-800 px-3 py-2 text-sm text-heading placeholder:text-body/60 focus:border-brand focus:ring-1 focus:ring-brand-700 focus:outline-none"
               >
               <p v-if="nuevoRolErrors.nombre" class="mt-1 text-xs text-accent-500">{{ nuevoRolErrors.nombre }}</p>
             </div>
@@ -775,7 +775,7 @@ onMounted(async () => {
                 v-model="nuevoRol.descripcion"
                 rows="3"
                 placeholder="Qué hace este rol, a quién está dirigido..."
-                class="w-full rounded-base border border-default-medium bg-white dark:bg-gray-800 px-3 py-2 text-sm text-heading placeholder:text-body/60 focus:border-brand focus:ring-1 focus:ring-brand focus:outline-none"
+                class="w-full rounded-base border border-default-medium bg-white dark:bg-gray-800 px-3 py-2 text-sm text-heading placeholder:text-body/60 focus:border-brand focus:ring-1 focus:ring-brand-700 focus:outline-none"
               ></textarea>
             </div>
             <label class="inline-flex items-center gap-2 text-sm text-heading cursor-pointer">
@@ -844,7 +844,7 @@ onMounted(async () => {
                 id="rol-editar-nombre"
                 v-model="editarRol.nombre"
                 type="text"
-                class="w-full rounded-base border border-default-medium bg-white dark:bg-gray-800 px-3 py-2 text-sm text-heading focus:border-brand focus:ring-1 focus:ring-brand focus:outline-none"
+                class="w-full rounded-base border border-default-medium bg-white dark:bg-gray-800 px-3 py-2 text-sm text-heading focus:border-brand focus:ring-1 focus:ring-brand-700 focus:outline-none"
               >
             </div>
             <div>
@@ -853,7 +853,7 @@ onMounted(async () => {
                 id="rol-editar-descripcion"
                 v-model="editarRol.descripcion"
                 rows="3"
-                class="w-full rounded-base border border-default-medium bg-white dark:bg-gray-800 px-3 py-2 text-sm text-heading focus:border-brand focus:ring-1 focus:ring-brand focus:outline-none"
+                class="w-full rounded-base border border-default-medium bg-white dark:bg-gray-800 px-3 py-2 text-sm text-heading focus:border-brand focus:ring-1 focus:ring-brand-700 focus:outline-none"
               ></textarea>
             </div>
             <label class="inline-flex items-center gap-2 text-sm text-heading cursor-pointer">

@@ -1,4 +1,5 @@
 import ApexCharts from 'apexcharts';
+import { BRAND } from './shared/config/branding';
 
 const getMainChartOptions = () => {
 	let mainChartColors = {}
@@ -59,7 +60,7 @@ const getMainChartOptions = () => {
 			{
 				name: 'Revenue',
 				data: [6356, 6218, 6156, 6526, 6356, 6256, 6056],
-				color: '#2563EB'
+				color: BRAND.brand500
 			},
 			{
 				name: 'Revenue (previous period)',
@@ -150,11 +151,11 @@ if (document.getElementById('main-chart')) {
 
 if (document.getElementById('new-products-chart')) {
 	const options = {
-		colors: ['#2563EB', '#F59E0B'],
+		colors: [BRAND.brand500, '#F59E0B'],
 		series: [
 			{
 				name: 'Quantity',
-				color: '#2563EB',
+				color: BRAND.brand500,
 				data: [
 					{ x: '01 Feb', y: 170 },
 					{ x: '02 Feb', y: 180 },
@@ -237,11 +238,11 @@ if (document.getElementById('new-products-chart')) {
 
 if (document.getElementById('sales-by-category')) {
 	const options = {
-		colors: ['#2563EB', '#F59E0B'],
+		colors: [BRAND.brand500, '#F59E0B'],
 		series: [
 			{
 				name: 'Desktop PC',
-				color: '#2563EB',
+				color: BRAND.brand500,
 				data: [
 					{ x: '01 Feb', y: 170 },
 					{ x: '02 Feb', y: 180 },
@@ -395,7 +396,7 @@ const getVisitorsChartOptions = () => {
 		theme: {
 			monochrome: {
 				enabled: true,
-				color: '#2563EB',
+				color: BRAND.brand500,
 			}
 		},
 		tooltip: {
@@ -439,7 +440,7 @@ const getSignupsChartOptions = () => {
 		theme: {
 			monochrome: {
 				enabled: true,
-				color: '#2563EB'
+				color: BRAND.brand500
 			}
 		},
 		plotOptions: {
@@ -528,7 +529,7 @@ const getTrafficChannelsChartOptions = () => {
 	return {
 		series: [70, 5, 25],
 		labels: ['Desktop', 'Tablet', 'Phone'],
-		colors: ['#10B981', '#F59E0B', '#2563EB'],
+		colors: ['#10B981', '#F59E0B', BRAND.brand500],
 		chart: {
 			type: 'donut',
 			height: 400,

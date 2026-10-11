@@ -6,6 +6,7 @@ import { Icon } from '@iconify/vue';
 import filePdfIcon from '@iconify-icons/fa6-regular/file-pdf';
 import { mdiTowTruck } from '@mdi/js';
 import { useRecepciones } from '../composables/useRecepciones';
+import { useAuthStore } from '../../auth/stores/authStore';
 import { talleresService } from '../../configuracion/services/talleresService';
 import { inspeccionesService } from '../../inspecciones/services/inspeccionesService';
 import { recepcionesService } from '../services/recepcionesService';
@@ -29,6 +30,8 @@ import { relacionesDeRecepcion } from '../../../shared/utils/relacionesFlujo';
 import Pagination from '../../../shared/components/Pagination.vue';
 
 const { recepciones, loading, error, loadRecepciones, currentPage, total, nextUrl, previousUrl } = useRecepciones();
+
+const authStore = useAuthStore();
 
 const prefijoRecepcionBySucursal = ref({});
 const talleres = ref([]);
@@ -356,7 +359,7 @@ onUnmounted(() => {
             </select>
           </div>
 
-          <div class="w-full sm:w-auto sm:shrink-0">
+          <div v-if="authStore.esTodosLosTalleres" class="w-full sm:w-auto sm:shrink-0">
             <label for="filtro-taller" class="block mb-1 text-sm font-medium text-heading">Taller</label>
             <select
               id="filtro-taller"

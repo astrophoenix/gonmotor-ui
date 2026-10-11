@@ -1180,7 +1180,7 @@ onMounted(() => {
                   </div>
                   <div class="flex items-center gap-2">
                     <label for="validez_dias" class="text-sm font-medium text-gray-900 dark:text-white">Validez</label>
-                    <select id="validez_dias" v-model="form.validez_dias" :disabled="!esEditable" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand px-6 py-2 shadow-xs">
+                    <select id="validez_dias" v-model="form.validez_dias" :disabled="!esEditable" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand-700 focus:border-brand px-6 py-2 shadow-xs">
                       <option v-for="dias in VALIDEZ_OPCIONES" :key="dias" :value="dias">{{ dias }} días</option>
                     </select>
                   </div>
@@ -1288,17 +1288,17 @@ onMounted(() => {
                 <!-- Metadatos de la cotización (siempre visibles) -->
                 <div class="flex flex-wrap items-center gap-x-6 gap-y-2 pt-4 mt-4 text-sm text-gray-600 border-t border-gray-200 dark:border-gray-600 dark:text-gray-300">
                   <span class="inline-flex items-center gap-1.5" title="Fecha y hora de emisión">
-                    <CalendarDays class="w-4 h-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                    <CalendarDays class="w-4 h-4 shrink-0 text-brand-700 dark:text-brand-300" />
                     <span class="font-medium text-gray-900 dark:text-white">Emisión:</span>
                     {{ fechaEmision }}
                   </span>
                   <span class="inline-flex items-center gap-1.5 md:border-l md:border-gray-200 md:pl-6 md:dark:border-gray-600" title="Taller donde se creó la cotización">
-                    <Store class="w-4 h-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                    <Store class="w-4 h-4 shrink-0 text-brand-700 dark:text-brand-300" />
                     <span class="font-medium text-gray-900 dark:text-white">Taller:</span>
                     {{ sucursalNombre || tallerSesion || '—' }}
                   </span>
                   <!--span class="inline-flex items-center gap-1.5 md:border-l md:border-gray-200 md:pl-6 md:dark:border-gray-600" title="Origen de la cotización">
-                    <ClipboardList class="w-4 h-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                    <ClipboardList class="w-4 h-4 shrink-0 text-brand-700 dark:text-brand-300" />
                     <span class="font-medium text-gray-900 dark:text-white">Origen:</span>
                     <template v-if="inspeccionOrigen">
                       <a
@@ -1388,17 +1388,17 @@ onMounted(() => {
                               <input v-model="servicio.es_opcional" type="checkbox" class="w-4 h-4 text-primary-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-blue-500 focus:ring-2" :disabled="!esEditable" />
                             </td>
                             <td class="px-4 py-2.5">
-                              <input :id="`svc-horas-${servicio.sufijo}`" v-model="servicio.horas_estimadas" type="number" min="0" step="0.5" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
+                              <input :id="`svc-horas-${servicio.sufijo}`" v-model="servicio.horas_estimadas" type="number" min="0" step="0.5" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand-700 focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
                             </td>
                             <td class="px-4 py-2.5 text-center">
-                              <input v-model="servicio.precio_unitario" type="number" min="0" step="0.01" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
+                              <input v-model="servicio.precio_unitario" type="number" min="0" step="0.01" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand-700 focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
                             </td>
                             <td class="px-4 py-2.5 text-center">
-                              <input v-model="servicio.descuento" type="number" min="0" step="0.01" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
+                              <input v-model="servicio.descuento" type="number" min="0" step="0.01" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand-700 focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
                             </td>
                             <td class="px-4 py-2.5 text-center">
                               <select v-model="servicio.iva_porcentaje" 
-                                class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable">
+                                class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand-700 focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable">
                                 <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
                               </select>
                             </td>
@@ -1464,16 +1464,16 @@ onMounted(() => {
                               <input v-model="repuesto.es_opcional" type="checkbox" class="w-4 h-4 text-primary-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-blue-500 focus:ring-2" :disabled="!esEditable" />
                             </td>
                             <td class="px-4 py-2.5 text-center">
-                              <input :id="`rpt-cant-${repuesto.sufijo}`" v-model="repuesto.cantidad" type="number" min="1" step="1" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
+                              <input :id="`rpt-cant-${repuesto.sufijo}`" v-model="repuesto.cantidad" type="number" min="1" step="1" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand-700 focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
                             </td>
                             <td class="px-4 py-2.5 text-center">
-                              <input v-model="repuesto.precio_unitario_referencial" type="number" min="0" step="0.01" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
+                              <input v-model="repuesto.precio_unitario_referencial" type="number" min="0" step="0.01" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand-700 focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
                             </td>
                             <td class="px-4 py-2.5 text-center">
-                              <input v-model="repuesto.descuento" type="number" min="0" step="0.01" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
+                              <input v-model="repuesto.descuento" type="number" min="0" step="0.01" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand-700 focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
                             </td>
                             <td class="px-4 py-2.5 text-center">
-                              <select v-model="repuesto.iva_porcentaje" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable">
+                              <select v-model="repuesto.iva_porcentaje" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand-700 focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable">
                                 <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
                               </select>
                             </td>
@@ -1528,7 +1528,7 @@ onMounted(() => {
                       {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
                     </button>
                   </div>
-                  <textarea id="observaciones" v-model="form.observaciones" rows="6" maxlength="2000" placeholder="Condiciones, garantías, notas para el cliente..." class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body"></textarea>
+                  <textarea id="observaciones" v-model="form.observaciones" rows="6" maxlength="2000" placeholder="Condiciones, garantías, notas para el cliente..." class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand-700 focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body"></textarea>
                   <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error }}</p>
                   <div v-if="mejorado && !error" class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
                     <CheckCircle2 class="w-5 h-5 shrink-0" />

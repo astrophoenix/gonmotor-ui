@@ -12,12 +12,12 @@ export const PASOS_FLUJO = {
   recepcion: {
     label: 'Recepción',
     icon: ClipboardList,
-    color: 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-200 dark:border-blue-800 dark:hover:bg-blue-900/60',
+    color: 'bg-brand-50 text-brand-700 border-brand-100 hover:bg-brand-100 dark:bg-brand-800/40 dark:text-brand-300 dark:border-brand-800 dark:hover:bg-brand-800/60',
   },
   inspeccion: {
     label: 'Inspección',
     icon: FileSearchCorner,
-    color: 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-200 dark:border-blue-800 dark:hover:bg-blue-900/60',
+    color: 'bg-brand-50 text-brand-700 border-brand-100 hover:bg-brand-100 dark:bg-brand-800/40 dark:text-brand-300 dark:border-brand-800 dark:hover:bg-brand-800/60',
   },
   cotizacion: {
     label: 'Cotización',

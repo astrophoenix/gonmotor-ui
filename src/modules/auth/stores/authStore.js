@@ -7,6 +7,8 @@ const REFRESH_TOKEN_KEY = 'gonmotor_refresh_token';
 const USER_KEY = 'gonmotor_user';
 const LOGGED_IN_KEY = 'gonmotor_logged_in';
 const EMPRESA_ID_KEY = 'gonmotor_empresa_id';
+const TALLER_ID_KEY = 'gonmotor_taller_id';
+const TALLER_NOMBRE_KEY = 'gonmotor_taller_nombre';
 
 function getStorage() {
   if (localStorage.getItem(ACCESS_TOKEN_KEY)) {
@@ -33,14 +35,18 @@ export const useAuthStore = defineStore('auth', () => {
   const accessToken = ref(storage?.getItem(ACCESS_TOKEN_KEY) || null);
   const user = ref(readUser(storage));
   const empresaId = ref(storage?.getItem(EMPRESA_ID_KEY) || user.value?.empresa_id || null);
+  const tallerId = ref(storage?.getItem(TALLER_ID_KEY) || user.value?.taller_id || null);
+  const tallerNombre = ref(storage?.getItem(TALLER_NOMBRE_KEY) || user.value?.taller_nombre || '');
   const isLoading = ref(false);
   const isAuthenticated = computed(() => Boolean(accessToken.value));
+  /** `true` cuando el taller activo es «Todos los talleres» (sin recorte). */
+  const esTodosLosTalleres = computed(() => tallerId.value == null);
 
   function persistSession(data, remember) {
     const targetStorage = remember ? localStorage : sessionStorage;
     const otherStorage = remember ? sessionStorage : localStorage;
 
-    [ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, USER_KEY, LOGGED_IN_KEY, EMPRESA_ID_KEY].forEach((key) => {
+    [ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, USER_KEY, LOGGED_IN_KEY, EMPRESA_ID_KEY, TALLER_ID_KEY, TALLER_NOMBRE_KEY].forEach((key) => {
       otherStorage.removeItem(key);
     });
 
@@ -58,8 +64,41 @@ export const useAuthStore = defineStore('auth', () => {
       empresaId.value = String(userData.empresa_id);
     }
 
+    if (userData.taller_id) {
+      targetStorage.setItem(TALLER_ID_KEY, String(userData.taller_id));
+      tallerId.value = String(userData.taller_id);
+      tallerNombre.value = userData.taller_nombre || '';
+      targetStorage.setItem(TALLER_NOMBRE_KEY, tallerNombre.value);
+    }
+
     accessToken.value = data.access;
     user.value = userData;
+  }
+
+  /**
+   * Persiste el taller activo elegido por el usuario (selector del topbar/login).
+   * `taller` puede ser un objeto `{ id, nombre }` o `null` para limpiarlo.
+   */
+  function setTaller(taller) {
+    const esObjeto = taller !== null && typeof taller === 'object';
+    const id = esObjeto ? (taller.id ?? null) : (taller ?? null);
+    const nombre = esObjeto ? (taller.nombre || '') : '';
+
+    [localStorage, sessionStorage].forEach((currentStorage) => {
+      currentStorage.removeItem(TALLER_ID_KEY);
+      currentStorage.removeItem(TALLER_NOMBRE_KEY);
+    });
+
+    tallerId.value = id != null ? String(id) : null;
+    tallerNombre.value = nombre;
+
+    const destino = getStorage();
+    if (destino && id != null) {
+      destino.setItem(TALLER_ID_KEY, String(id));
+      destino.setItem(TALLER_NOMBRE_KEY, nombre);
+    }
+
+    window.dispatchEvent(new CustomEvent('gonmotor:taller-updated'));
   }
 
   async function authenticate(credentials, remember = false) {
@@ -155,7 +194,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   function logout() {
     [localStorage, sessionStorage].forEach((currentStorage) => {
-      [ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, USER_KEY, LOGGED_IN_KEY, EMPRESA_ID_KEY].forEach((key) => {
+      [ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, USER_KEY, LOGGED_IN_KEY, EMPRESA_ID_KEY, TALLER_ID_KEY, TALLER_NOMBRE_KEY].forEach((key) => {
         currentStorage.removeItem(key);
       });
     });
@@ -163,18 +202,24 @@ export const useAuthStore = defineStore('auth', () => {
     accessToken.value = null;
     user.value = {};
     empresaId.value = null;
+    tallerId.value = null;
+    tallerNombre.value = '';
   }
 
   return {
     accessToken,
     user,
     empresaId,
+    tallerId,
+    tallerNombre,
     isLoading,
     isAuthenticated,
+    esTodosLosTalleres,
     authenticate,
     selectCompany,
     updateProfile,
     changePassword,
+    setTaller,
     refreshUserFromStorage,
     logout
   };
