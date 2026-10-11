@@ -41,11 +41,6 @@ export function sanitizeNombreUpper(value) {
   return sanitizeNombre(value).toUpperCase();
 }
 
-/** Elimina espacios y limpia el correo. */
-export function sanitizeEmail(value) {
-  return (value == null ? '' : String(value)).replace(/\s+/g, '').trim().slice(0, 100);
-}
-
 /**
  * Sanitiza un teléfono.
  * Por defecto deja únicamente dígitos y limita la longitud (`max`, 15 por
@@ -190,6 +185,128 @@ export function sanitizeObservaciones(value) {
 /** Devuelve la clave estable de una entidad (uid temporal o id persistente). */
 export function getItemKey(item, uidField = '_uid') {
   return item?.[uidField] || item?.id;
+}
+
+/**
+ * Sanitiza un correo: trim, minúsculas, quita espacios internos y caracteres de control.
+ * Máximo 254 caracteres. No valida el formato (eso lo hace validateEmail).
+ */
+export function sanitizeEmail(value) {
+  return (value == null ? '' : String(value))
+    .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+    .replace(/\s+/g, '')
+    .trim()
+    .toLowerCase()
+    .slice(0, 254);
+}
+
+/**
+ * Valida formato de correo sin regex catastrófica.
+ * Devuelve '' si es válido o mensaje de error en español.
+ */
+export function validateEmail(value) {
+  const raw = value == null ? '' : String(value).trim();
+  if (raw === '') {
+    return 'El correo electrónico es obligatorio.';
+  }
+  if (raw.length > 254) {
+    return 'El correo electrónico es demasiado largo (máx. 254 caracteres).';
+  }
+  const atIndex = raw.indexOf('@');
+  if (atIndex <= 0 || atIndex === raw.length - 1) {
+    return 'El formato del correo no es válido.';
+  }
+  const domain = raw.slice(atIndex + 1);
+  if (!domain.includes('.') || domain.startsWith('.') || domain.endsWith('.')) {
+    return 'El formato del correo no es válido.';
+  }
+  if (raw.split('@').length !== 2) {
+    return 'El formato del correo no es válido.';
+  }
+  const localPart = raw.slice(0, atIndex);
+  if (localPart.length > 64) {
+    return 'El formato del correo no es válido.';
+  }
+  if (/[\u0000-\u001F\u007F-\u009F<>[\]]/.test(raw)) {
+    return 'El correo contiene caracteres no permitidos.';
+  }
+  return '';
+}
+
+/**
+ * Sanitiza un código numérico: solo dígitos, longitud exacta.
+ */
+export function sanitizeCode(value, length = 6) {
+  return (value == null ? '' : String(value))
+    .replace(/\D/g, '')
+    .slice(0, length);
+}
+
+/**
+ * Valida un código numérico de longitud exacta.
+ */
+export function validateCode(value, length = 6) {
+  const raw = value == null ? '' : String(value).trim();
+  if (raw === '') {
+    return 'El código es obligatorio.';
+  }
+  if (!/^\d+$/.test(raw)) {
+    return 'El código debe contener solo números.';
+  }
+  if (raw.length !== length) {
+    return `El código debe tener ${length} dígitos.`;
+  }
+  return '';
+}
+
+/**
+ * Valida requisitos de contraseña.
+ * Devuelve objeto con: { isValid: boolean, errors: string[], checks: { length, upper, lower, number, symbol } }
+ */
+export function validatePasswordStrength(value) {
+  const checks = {
+    length: value.length >= 8,
+    upper: /[A-Z]/.test(value),
+    lower: /[a-z]/.test(value),
+    number: /\d/.test(value),
+    symbol: /[^A-Za-z0-9]/.test(value),
+  };
+  const errors = [];
+  if (!checks.length) errors.push('8 o más caracteres');
+  if (!checks.upper || !checks.lower) errors.push('Mayúscula y minúscula');
+  if (!checks.number) errors.push('Un número');
+  if (!checks.symbol) errors.push('Un símbolo');
+  return {
+    isValid: errors.length === 0,
+    errors,
+    checks,
+  };
+}
+
+/**
+ * Valida contraseña completa: longitud 8-128, sin caracteres de control ni byte nulo,
+ * requisitos de complejidad, y coincidencia con confirmación.
+ * Devuelve '' si es válido o mensaje de error en español.
+ */
+export function validatePassword(value, confirmation = null) {
+  const raw = value == null ? '' : String(value);
+  if (raw === '') {
+    return 'La contraseña es obligatoria.';
+  }
+  if (raw.length < 8 || raw.length > 128) {
+    return 'La contraseña debe tener entre 8 y 128 caracteres.';
+  }
+  if (/[\u0000-\u001F\u007F]/.test(raw)) {
+    return 'La contraseña contiene caracteres no permitidos.';
+  }
+  const strength = validatePasswordStrength(raw);
+  if (!strength.isValid) {
+    return `La contraseña debe tener: ${strength.errors.join(', ')}.`;
+  }
+  if (confirmation !== null && raw !== confirmation) {
+    return 'Las contraseñas no coinciden.';
+  }
+  return '';
 }
 
 /**

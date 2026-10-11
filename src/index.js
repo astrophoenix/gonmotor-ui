@@ -3,7 +3,7 @@ import 'flowbite/dist/flowbite.js';
 import './sidebar';
 import './charts';
 import './dark-mode';
-import { mountLogin, mountRegister } from './modules/auth';
+import { mountLogin, mountRegister, mountForgotPassword, mountResetPassword } from './modules/auth';
 import { mountClients, mountClientEdit, mountClientDetail } from './modules/clientes';
 import { mountProveedores, mountProveedorEdit, mountProveedorDetail } from './modules/proveedores';
 import { mountVehicles, mountVehicleEdit, mountVehicleDetail } from './modules/vehiculos';
@@ -54,6 +54,18 @@ const registerApp = document.getElementById('register-app');
 
 if (registerApp) {
     mountRegister(registerApp, pinia);
+}
+
+const forgotPasswordApp = document.getElementById('forgot-password-app');
+
+if (forgotPasswordApp) {
+    mountForgotPassword(forgotPasswordApp, pinia);
+}
+
+const resetPasswordApp = document.getElementById('reset-password-app');
+
+if (resetPasswordApp) {
+    mountResetPassword(resetPasswordApp, pinia);
 }
 
 const clientsApp = document.getElementById('clients-app');

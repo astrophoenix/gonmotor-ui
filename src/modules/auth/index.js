@@ -3,6 +3,8 @@ import { createPinia } from 'pinia';
 import LoginForm from './components/LoginForm.vue';
 import RegisterForm from './components/RegisterForm.vue';
 import ProfileEdit from './components/ProfileEdit.vue';
+import ForgotPasswordForm from './components/ForgotPasswordForm.vue';
+import ResetPasswordForm from './components/ResetPasswordForm.vue';
 
 export function mountLogin(element, pinia = createPinia()) {
   createApp(LoginForm)
@@ -18,6 +20,18 @@ export function mountRegister(element, pinia = createPinia()) {
 
 export function mountProfileEdit(element, pinia = createPinia()) {
   createApp(ProfileEdit)
+    .use(pinia)
+    .mount(element);
+}
+
+export function mountForgotPassword(element, pinia = createPinia()) {
+  createApp(ForgotPasswordForm)
+    .use(pinia)
+    .mount(element);
+}
+
+export function mountResetPassword(element, pinia = createPinia()) {
+  createApp(ResetPasswordForm)
     .use(pinia)
     .mount(element);
 }

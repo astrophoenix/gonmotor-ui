@@ -131,14 +131,11 @@ async function confirmCompany() {
 
       <!-- Logo -->
       <div class="relative z-10">
-        <a
-          href="/"
-          class="inline-flex items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-brand-navy"
-        >
-          <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white p-1.5 shadow-sm">
-            <img src="/images/mechanic_logo_icon.svg" alt="" class="h-full w-full" />
+        <a href="/" class="inline-flex items-center gap-1">
+          <span class="flex h-13 w-auto shrink-0 items-center justify-center">
+            <img src="/images/isotipo-blanco.svg" alt="gonmotor Logo login" class="h-full w-full"/>
           </span>
-          <span class="text-[26px] font-extrabold leading-none tracking-tight">
+          <span class="text-3xl font-extrabold leading-none tracking-tight">
             <span class="text-white">gon</span><span class="text-brand-coral">motor</span>
           </span>
         </a>
@@ -175,7 +172,7 @@ async function confirmCompany() {
           Bienvenido de nuevo
         </h1>
         <p class="mt-2 text-base text-brand-ink-soft dark:text-slate-400">
-          Ingresa tus credenciales para continuar.
+          Inicia sesión para gestionar tus talleres.
         </p>
 
         <div v-if="errorMessage" class="mt-6">

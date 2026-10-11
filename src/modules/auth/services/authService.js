@@ -12,7 +12,7 @@ export const authService = {
   selectCompany(payload) {
     return request('/api/auth/select-company/', {
       method: 'POST',
-      body: JSON.stringify(payload), // envía { user_id, empresa_id }
+      body: JSON.stringify(payload),
     });
   },
 
@@ -33,6 +33,20 @@ export const authService = {
 
   changePassword(data) {
     return request('/api/auth/change-password/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  forgotPassword(email) {
+    return request('/api/auth/password-reset/', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  resetPassword(data) {
+    return request('/api/auth/password-reset-confirm/', {
       method: 'POST',
       body: JSON.stringify(data),
     });
