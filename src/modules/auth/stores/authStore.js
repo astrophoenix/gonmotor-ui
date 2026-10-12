@@ -69,6 +69,14 @@ export const useAuthStore = defineStore('auth', () => {
       tallerId.value = String(userData.taller_id);
       tallerNombre.value = userData.taller_nombre || '';
       targetStorage.setItem(TALLER_NOMBRE_KEY, tallerNombre.value);
+    } else {
+      // La administración opera sin taller activo («Todos»): se limpia
+      // cualquier taller heredado de una sesión anterior para no recortar
+      // los listados ni enviar un `X-Taller-ID` equivocado.
+      targetStorage.removeItem(TALLER_ID_KEY);
+      targetStorage.removeItem(TALLER_NOMBRE_KEY);
+      tallerId.value = null;
+      tallerNombre.value = '';
     }
 
     accessToken.value = data.access;

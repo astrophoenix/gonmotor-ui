@@ -18,6 +18,8 @@ import EmpleadoSearchSelect from '../../../shared/components/EmpleadoSearchSelec
 import ClientModal from '../../clientes/components/ClientModal.vue';
 import FlowSteps from '../../../shared/components/FlowSteps.vue';
 import RelacionesFlujoEdit from '../../../shared/components/RelacionesFlujoEdit.vue';
+import TallerSelect from '../../../shared/components/TallerSelect.vue';
+import { useSucursalDocumento } from '../../../shared/composables/useSucursalDocumento';
 import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 import { sanitizeObservaciones } from '../../../shared/utils/sanitize';
 import {
@@ -83,6 +85,16 @@ const mecanicoSearch = ref('');
 const showClientCreateModal = ref(false);
 const formErrors = ref({ cliente: '', vehiculo: '' });
 const activeTab = ref('trabajo');
+
+const {
+  tallerId: tallerSucursalId,
+  error: tallerSucursalError,
+  mostrar: mostrarSucursal,
+  sucursal: sucursalDocumento,
+  cargarSucursal,
+  validar: validarSucursal,
+  limpiarError: limpiarErrorSucursal,
+} = useSucursalDocumento();
 
 function seleccionarCliente(clienteObj) {
   clienteSeleccionado.value = clienteObj || null;
@@ -419,6 +431,7 @@ function mapearRepuesto(r) {
 
 function aplicarOrden(data) {
   orden.value = data;
+  cargarSucursal(data.sucursal);
   servicios.value = (data.servicios || []).map(mapearServicio);
   repuestos.value = (data.repuestos || []).map(mapearRepuesto);
   fotosOt.value = (data.fotos || []).map((f) => ({
@@ -589,7 +602,15 @@ async function handleSubmit() {
     return;
   }
 
+  if (!validarSucursal()) {
+    error.value = tallerSucursalError.value;
+    saving.value = false;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+
   const datosOrden = {
+    sucursal: sucursalDocumento.value,
     cliente: clienteSeleccionado.value.id,
     vehiculo: vehiculoSeleccionado.value.id,
     estado: form.value.estado,
@@ -731,6 +752,21 @@ async function handleSubmit() {
                   placeholder="Buscar mecánico..."
                   @select="seleccionarMecanico"
                   @clear="limpiarMecanico"/>
+              </div>
+            </div>
+
+            <!-- Fila 1b: Taller emisor (solo administración sin taller activo) -->
+            <div v-if="mostrarSucursal" class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div class="min-w-0">
+                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Taller emisor <span class="text-accent-500">*</span></label>
+                <TallerSelect
+                  v-model="tallerSucursalId"
+                  variante="campo"
+                  :invalid="Boolean(tallerSucursalError)"
+                  placeholder="Selecciona el taller"
+                  @change="limpiarErrorSucursal"
+                />
+                <p v-if="tallerSucursalError" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ tallerSucursalError }}</p>
               </div>
             </div>
 

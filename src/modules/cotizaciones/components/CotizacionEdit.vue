@@ -49,6 +49,8 @@ import PdfExportButton from '../../../shared/components/PdfExportButton.vue';
 // import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 import ClientModal from '../../clientes/components/ClientModal.vue';
 import { useAuthStore } from '../../auth/stores/authStore';
+import TallerSelect from '../../../shared/components/TallerSelect.vue';
+import { useSucursalDocumento } from '../../../shared/composables/useSucursalDocumento';
 import ClienteSearchSelect from '../../../shared/components/ClienteSearchSelect.vue';
 import VehiculoSearchSelect from '../../../shared/components/VehiculoSearchSelect.vue';
 import EmpleadoSearchSelect from '../../../shared/components/EmpleadoSearchSelect.vue';
@@ -169,6 +171,16 @@ const esEditable = computed(() => ['PENDIENTE', 'ENVIADA'].includes(estado.value
 
 const authStore = useAuthStore();
 const tallerSesion = computed(() => authStore.user?.taller_nombre || '');
+
+const {
+  tallerId: tallerSucursalId,
+  error: tallerSucursalError,
+  mostrar: mostrarSucursal,
+  sucursal: sucursalDocumento,
+  cargarSucursal,
+  validar: validarSucursal,
+  limpiarError: limpiarErrorSucursal,
+} = useSucursalDocumento();
 
 // Emisión: si la cotización aún no existe se calcula con la fecha/hora actual local.
 const fechaEmision = computed(() => formatDateTime(createdAt.value || new Date()));
@@ -516,6 +528,7 @@ function aplicarCotizacion(data) {
   estado.value = data.estado || 'PENDIENTE';
   numeroCotizacion.value = data.numero_cotizacion || '';
   sucursalNombre.value = data.sucursal_nombre || '';
+  cargarSucursal(data.sucursal);
   createdAt.value = data.created_at || '';
   fechaAceptacion.value = data.fecha_aceptacion || null;
   metodoAceptacion.value = data.metodo_aceptacion || '';
@@ -673,6 +686,7 @@ async function crearCotizacionDesdeInspeccion() {
     await cargarCotizacionesComplementadas(inspeccionId);
 
     const creada = await cotizacionesService.create({
+      sucursal: sucursalDocumento.value,
       cliente: clienteId,
       vehiculo: vehiculoId,
       inspeccion_origen: inspeccionId,
@@ -923,9 +937,15 @@ async function crearCotizacionIndependiente() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     return;
   }
+  if (!validarSucursal()) {
+    errorMessage.value = tallerSucursalError.value;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
   isCreando.value = true;
   try {
     const creada = await cotizacionesService.create({
+      sucursal: sucursalDocumento.value,
       cliente: form.cliente.id,
       vehiculo: form.vehiculo.id,
       asesor: form.asesor || null,
@@ -970,7 +990,14 @@ async function submit() {
   successMessage.value = '';
   formErrors.value = {};
 
+  if (!validarSucursal()) {
+    errorMessage.value = tallerSucursalError.value;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+
   const payload = {
+    sucursal: sucursalDocumento.value,
     validez_dias: Number(form.validez_dias) || 15,
     observaciones: sanitizeObservaciones(form.observaciones || '').slice(0, 2000).trim(),
     asesor: form.asesor || null,
@@ -1284,6 +1311,19 @@ onMounted(() => {
                       </div>
                     </div>
                   </div>
+                </div>
+                <div v-if="mostrarSucursal" class="mt-4 max-w-sm">
+                  <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                    Taller emisor <span class="text-accent-500">*</span>
+                  </label>
+                  <TallerSelect
+                    v-model="tallerSucursalId"
+                    variante="campo"
+                    :invalid="Boolean(tallerSucursalError)"
+                    placeholder="Selecciona el taller"
+                    @change="limpiarErrorSucursal"
+                  />
+                  <p v-if="tallerSucursalError" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ tallerSucursalError }}</p>
                 </div>
                 <!-- Metadatos de la cotización (siempre visibles) -->
                 <div class="flex flex-wrap items-center gap-x-6 gap-y-2 pt-4 mt-4 text-sm text-gray-600 border-t border-gray-200 dark:border-gray-600 dark:text-gray-300">

@@ -81,6 +81,18 @@ import ClienteSearchSelect from "../../../shared/components/ClienteSearchSelect.
 import VehiculoSearchSelect from "../../../shared/components/VehiculoSearchSelect.vue";
 import EmpleadoSearchSelect from "../../../shared/components/EmpleadoSearchSelect.vue";
 import RelacionesFlujoEdit from "../../../shared/components/RelacionesFlujoEdit.vue";
+import TallerSelect from "../../../shared/components/TallerSelect.vue";
+import { useSucursalDocumento } from "../../../shared/composables/useSucursalDocumento";
+
+const {
+  tallerId: tallerSucursalId,
+  error: tallerSucursalError,
+  mostrar: mostrarSucursal,
+  sucursal: sucursalDocumento,
+  cargarSucursal,
+  validar: validarSucursal,
+  limpiarError: limpiarErrorSucursal,
+} = useSucursalDocumento();
 
 const recepcionId = new URLSearchParams(window.location.search).get("id");
 const isEditMode = Boolean(recepcionId);
@@ -790,6 +802,7 @@ async function loadRecepcion() {
         estado: data.estado || "PENDIENTE",
         motivo_no_recepcion: data.motivo_no_recepcion || "",
       });
+      cargarSucursal(data.sucursal);
       await cargarRelacionesRecepcion(data.id);
       clienteNoFirma.value = data.estado === "NO_ACEPTADA";
       if (data.cliente) {
@@ -1127,6 +1140,13 @@ async function submit() {
     return;
   }
 
+  if (!validarSucursal()) {
+    errorMessage.value = tallerSucursalError.value;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    isSaving.value = false;
+    return;
+  }
+
   if (tieneContradiccionNoAceptacion()) {
     isSaving.value = false;
     showContradiccionModal.value = true;
@@ -1158,6 +1178,7 @@ async function ejecutarGuardado() {
 
   try {
     const payload = {
+      sucursal: sucursalDocumento.value,
       cliente: form.cliente?.id || null,
       vehiculo: form.vehiculo?.id || null,
       tipo_recepcion: form.tipo_recepcion,
@@ -1584,6 +1605,21 @@ onMounted(() => {
                 </div>
               </div>
             </div>
+          </div>
+          <div v-if="mostrarSucursal" class="mt-4 max-w-sm">
+            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+              Taller emisor <span class="text-accent-500">*</span>
+            </label>
+            <TallerSelect
+              v-model="tallerSucursalId"
+              variante="campo"
+              :invalid="Boolean(tallerSucursalError)"
+              placeholder="Selecciona el taller"
+              @change="limpiarErrorSucursal"
+            />
+            <p v-if="tallerSucursalError" class="mt-2 text-sm text-red-600 dark:text-red-500">
+              {{ tallerSucursalError }}
+            </p>
           </div>
         </div>
         <div class="relative bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">

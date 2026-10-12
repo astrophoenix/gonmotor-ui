@@ -25,6 +25,8 @@ import TestigosTablero from '../../../shared/components/TestigosTablero.vue';
 import TextImprover from '../../../shared/components/TextImprover.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import RelacionesFlujoEdit from '../../../shared/components/RelacionesFlujoEdit.vue';
+import TallerSelect from '../../../shared/components/TallerSelect.vue';
+import { useSucursalDocumento } from '../../../shared/composables/useSucursalDocumento';
 // FlowSteps temporalmente desactivado; conservar para reactivarlo más adelante.
 // import FlowSteps from '../../../shared/components/FlowSteps.vue';
 // import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
@@ -48,6 +50,16 @@ const PUEDE_AGREGAR = { cita: true, recepcion: true, cotizacion: true, orden: tr
 const relacionesInspeccion = ref(RELACIONES_VACIAS());
 const puedeAgregarRelacion = ref({ ...PUEDE_AGREGAR });
 const relacionesCargadas = ref(false);
+
+const {
+  tallerId: tallerSucursalId,
+  error: tallerSucursalError,
+  mostrar: mostrarSucursal,
+  sucursal: sucursalDocumento,
+  cargarSucursal,
+  validar: validarSucursal,
+  limpiarError: limpiarErrorSucursal,
+} = useSucursalDocumento();
 
 const form = reactive({
   recepcion: recepcionId || null,
@@ -795,6 +807,7 @@ async function loadInspeccion() {
   try {
     const data = await inspeccionesService.getById(inspeccionId);
     inspeccionData.value = data;
+    cargarSucursal(data.sucursal);
     estadoInspeccion.value = data.estado || '';
     const recepcionIdVal = data.recepcion && typeof data.recepcion === 'object' ? data.recepcion.id : data.recepcion;
     Object.assign(form, {
@@ -904,8 +917,16 @@ async function submit() {
       return;
     }
 
+    if (!validarSucursal()) {
+      errorMessage.value = tallerSucursalError.value;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      isSaving.value = false;
+      return;
+    }
+
     const payload = {
       ...testigoPayload(form),
+      sucursal: sucursalDocumento.value,
       recepcion: form.recepcion && typeof form.recepcion === 'object' ? form.recepcion.id : form.recepcion,
       ...(!recepcion.value ? {
         cliente: clienteSeleccionado.value?.id || null,
@@ -1161,6 +1182,19 @@ onMounted(() => {
                 <span class="truncate font-bold text-gray-900 dark:text-white">{{ inspectorInfo?.rol_display || inspectorInfo?.rol || '—' }}</span>
               </div>
             </div>
+          </div>
+          <div v-if="mostrarSucursal" class="mt-4 max-w-sm">
+            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+              Taller emisor <span class="text-accent-500">*</span>
+            </label>
+            <TallerSelect
+              v-model="tallerSucursalId"
+              variante="campo"
+              :invalid="Boolean(tallerSucursalError)"
+              placeholder="Selecciona el taller"
+              @change="limpiarErrorSucursal"
+            />
+            <p v-if="tallerSucursalError" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ tallerSucursalError }}</p>
           </div>
         </div>
       </div>

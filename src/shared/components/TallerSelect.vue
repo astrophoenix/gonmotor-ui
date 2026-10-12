@@ -29,6 +29,8 @@ const props = defineProps({
    * la administración que puede operar sin taller activo.
    */
   permitirTodos: { type: Boolean, default: false },
+  /** Marca el campo en error (borde rojo) cuando es obligatorio y está vacío. */
+  invalid: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['update:modelValue', 'change']);
@@ -106,11 +108,20 @@ const mensajeConfirmacion = computed(
 
 const esVarianteCampo = computed(() => props.variante === 'campo');
 
-const claseDisparador = computed(() =>
-  esVarianteCampo.value
-    ? 'flex h-[52px] w-full items-center justify-between gap-3 rounded-xl border-[1.5px] border-brand-line bg-white px-3.5 text-base text-brand-ink outline-none transition-colors focus:border-brand-ink focus:ring-4 focus:ring-brand-focus-ring dark:border-slate-600 dark:bg-slate-800 dark:text-white'
-    : 'inline-flex max-w-[180px] items-center gap-2 rounded-lg border border-brand-100 bg-brand-50 px-2.5 py-2 text-sm text-ink transition-colors hover:bg-brand-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:border-brand-700 dark:bg-brand-800 dark:text-white dark:hover:bg-brand-700'
-);
+const claseDisparador = computed(() => {
+  if (esVarianteCampo.value) {
+    const base =
+      'flex h-10 w-full items-center justify-between gap-3 rounded-xl border-[1.5px] bg-white px-3.5 text-base text-brand-ink outline-none transition-colors focus:ring-4 dark:bg-slate-800 dark:text-white';
+    return props.invalid
+      ? `${base} border-brand-red focus:border-brand-red focus:ring-brand-red/15 dark:border-brand-red`
+      : `${base} border-brand-line focus:border-brand-ink focus:ring-brand-focus-ring dark:border-slate-600`;
+  }
+  const base =
+    'inline-flex min-w-0 max-w-[15rem] items-center gap-2 rounded-lg border bg-brand-50 px-2.5 py-2 text-sm text-ink transition-colors hover:bg-brand-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:bg-brand-800 dark:text-white dark:hover:bg-brand-700';
+  return props.invalid
+    ? `${base} border-brand-red dark:border-brand-red`
+    : `${base} border-brand-100 dark:border-brand-700`;
+});
 
 const claseEtiqueta = computed(() =>
   esVarianteCampo.value ? 'truncate font-medium' : 'hidden truncate font-medium sm:inline'
