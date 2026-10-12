@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
-import { User, Lock, Eye, EyeOff, ArrowRight } from 'lucide-vue-next';
+import { User, Lock, Eye, EyeOff, ArrowRight, CheckCircle2, Loader2 } from 'lucide-vue-next';
 import { useAuthStore } from '../stores/authStore';
 import Alert from '../../../shared/components/Alert.vue';
 import TallerSelect from '../../../shared/components/TallerSelect.vue';
@@ -297,10 +297,7 @@ async function confirmCompany() {
     </section>
 
     <!-- ===== Modal multi-empresa (lógica intacta) ===== -->
-    <div
-      v-if="showCompanyModal"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-sm"
-    >
+    <div v-if="showCompanyModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-sm">
       <div class="w-full max-w-md p-6 bg-white rounded-lg shadow-xl dark:bg-gray-800 border border-gray-200 dark:border-gray-700 space-y-4">
         <h3 class="text-xl font-bold text-gray-900 dark:text-white">
           Selecciona Empresa
@@ -337,17 +334,17 @@ async function confirmCompany() {
           <button
             type="button"
             @click="showCompanyModal = false"
-            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-          >
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded shadow-xs hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
             Cancelar
           </button>
           <button
             type="button"
             :disabled="!selectedCompanyId || authStore.isLoading"
             @click="confirmCompany"
-            class="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 dark:bg-primary-600 dark:hover:bg-primary-700"
-          >
-            {{ authStore.isLoading ? 'Guardando...' : 'Ingresar' }}
+            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded shadow-xs hover:bg-primary-800 disabled:opacity-50 dark:bg-primary-600 dark:hover:bg-primary-700">
+            <Loader2 v-if="authStore.isLoading" class="h-4 w-4 animate-spin mr-2" aria-hidden="true" />
+            <CheckCircle2 v-else class="h-4 w-4 mr-2" aria-hidden="true" />
+            {{ authStore.isLoading ? 'Ingresando...' : 'Ingresar' }}
           </button>
         </div>
       </div>
