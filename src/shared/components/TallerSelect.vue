@@ -31,6 +31,8 @@ const props = defineProps({
   permitirTodos: { type: Boolean, default: false },
   /** Marca el campo en error (borde rojo) cuando es obligatorio y está vacío. */
   invalid: { type: Boolean, default: false },
+  /** Deshabilita el disparador (p. ej. cuando el documento está bloqueado). */
+  disabled: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['update:modelValue', 'change']);
@@ -111,13 +113,13 @@ const esVarianteCampo = computed(() => props.variante === 'campo');
 const claseDisparador = computed(() => {
   if (esVarianteCampo.value) {
     const base =
-      'flex h-10 w-full items-center justify-between gap-3 rounded-xl border-[1.5px] bg-white px-3.5 text-base text-brand-ink outline-none transition-colors focus:ring-4 dark:bg-slate-800 dark:text-white';
+      'flex h-10 w-full items-center justify-between gap-3 rounded-xl border-[1.5px] bg-white px-3.5 text-base text-brand-ink outline-none transition-colors focus:ring-4 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-800 dark:text-white';
     return props.invalid
       ? `${base} border-brand-red focus:border-brand-red focus:ring-brand-red/15 dark:border-brand-red`
       : `${base} border-brand-line focus:border-brand-ink focus:ring-brand-focus-ring dark:border-slate-600`;
   }
   const base =
-    'inline-flex min-w-0 max-w-[15rem] items-center gap-2 rounded-lg border bg-brand-50 px-2.5 py-2 text-sm text-ink transition-colors hover:bg-brand-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:bg-brand-800 dark:text-white dark:hover:bg-brand-700';
+    'inline-flex min-w-0 max-w-[15rem] items-center gap-2 rounded-lg border bg-brand-50 px-2.5 py-2 text-sm text-ink transition-colors hover:bg-brand-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-brand-800 dark:text-white dark:hover:bg-brand-700';
   return props.invalid
     ? `${base} border-brand-red dark:border-brand-red`
     : `${base} border-brand-100 dark:border-brand-700`;
@@ -269,7 +271,7 @@ onUnmounted(() => {
       :aria-expanded="String(abierto)"
       aria-controls="taller-select-panel"
       :title="etiqueta"
-      :disabled="cambiando"
+      :disabled="cambiando || disabled"
       @click="alternar"
       @keydown.down.prevent="abrir()"
     >

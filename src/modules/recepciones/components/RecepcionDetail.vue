@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import {
   FilePen,
-  Plus,
+  FileCog,
   FolderInput,
   FileCheck,
   FileSearch,
@@ -23,6 +23,9 @@ import {
   Car,
   ClipboardList,
   Workflow,
+  Save,
+  Store,
+  CalendarDays,
 } from 'lucide-vue-next';
 import {
   IconEngine,
@@ -46,8 +49,11 @@ import { relacionesDeRecepcion } from '../../../shared/utils/relacionesFlujo';
 import { useRecepciones } from '../composables/useRecepciones';
 import { inspeccionesService } from '../../inspecciones/services/inspeccionesService';
 import { request } from '../../../shared/services/httpClient';
+import { useAuthStore } from '../../auth/stores/authStore';
 
 const { loading, error, loadRecepcion } = useRecepciones();
+const authStore = useAuthStore();
+const tallerSesion = computed(() => authStore.user?.taller_nombre || '');
 const recepcion = ref(null);
 const blueprintImageUrl = ref('');
 const previewImg = ref('');
@@ -508,12 +514,12 @@ function irAInspeccion(recepcion) {
         v-if="recepcion && !tieneInspeccion && recepcion.estado === 'ACEPTADA'"
         type="button"
         :disabled="creandoInspeccion"
-        title="Generar Inspección"
+        title="Crear Inspección"
         class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
         @click="abrirModalCrearInspeccion">
         <Loader2 v-if="creandoInspeccion" class="w-4 h-4 animate-spin" aria-hidden="true" />
-        <IconReportSearch v-if="!creandoInspeccion" class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
-        {{ creandoInspeccion ? 'Creando...' : 'Inspección' }}
+        <FileCog v-if="!creandoInspeccion" class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
+        {{ creandoInspeccion ? 'Creando...' : 'Crear Inspección' }}
       </button>
     </template>
   </EntityHeader>
@@ -530,11 +536,13 @@ function irAInspeccion(recepcion) {
     <div class="relative w-full max-w-2xl my-8 bg-white rounded-lg shadow-xl dark:bg-gray-800">
       <div class="flex items-start justify-between p-4 border-b border-gray-200 dark:border-gray-700">
         <div class="flex items-start gap-3">
-          <IconReportSearch class="w-6 h-6 text-primary-600 dark:text-primary-400" />
+          <div class="mt-2.5">
+            <FileCog class="w-6 h-6 text-primary-600 dark:text-primary-400" />
+          </div>
           <div>
-            <h3 id="modal-crear-inspeccion-title" class="text-base font-semibold text-gray-900 dark:text-white">
-              Se generará una inspección
-            </h3>
+            <h2 id="modal-crear-inspeccion-title" class="text-base font-semibold text-gray-900 dark:text-white">
+              Crear Inspección
+            </h2>
             <p class="text-sm text-gray-500 dark:text-gray-400">
               Recepción {{ numeroRecepcion }}
               <template v-if="recepcion?.vehiculo?.placa"> · {{ recepcion.vehiculo.placa }}</template>
@@ -637,7 +645,7 @@ function irAInspeccion(recepcion) {
         <div class="flex items-center gap-2">
           <button
             type="button"
-            class="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+            class="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-base hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
             @click="showModalCrearInspeccion = false"
           >
             Cancelar
@@ -645,11 +653,10 @@ function irAInspeccion(recepcion) {
           <button
             type="button"
             :disabled="creandoInspeccion || cargandoCandidatas"
-            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-primary-700 dark:hover:bg-primary-800"
-            @click="crearInspeccion(recepcion)"
-          >
+            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-base bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-primary-700 dark:hover:bg-primary-800"
+            @click="crearInspeccion(recepcion)">
             <Loader2 v-if="creandoInspeccion" class="w-4 h-4 animate-spin" />
-            <IconReportSearch v-else class="w-5 h-5" />
+            <Save v-else class="w-5 h-5" />
             {{ creandoInspeccion ? 'Creando...' : 'Crear inspección' }}
           </button>
         </div>
@@ -667,23 +674,22 @@ function irAInspeccion(recepcion) {
       <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
       <Alert v-if="errorCrearInspeccion" type="error" :message="errorCrearInspeccion" dismissible @dismiss="errorCrearInspeccion = ''" />
 
-      <div v-if="cotizacionesDisponibles.length > 0" class="p-4 mb-4 border rounded-lg border-primary-blue-300 bg-primary-blue-50 dark:border-primary-blue-700 dark:bg-primary-blue-900/30">
+      <div v-if="cotizacionesDisponibles.length > 0" class="p-4 mb-4 border rounded-lg border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900/30">
         <div class="flex items-start gap-3">
-          <TriangleAlert class="w-5 h-5 mt-0.5 text-primary-blue-600 dark:text-primary-blue-400" />
+          <TriangleAlert class="w-5 h-5 mt-0.5 text-blue-600 dark:text-blue-400" />
           <div class="min-w-0">
-            <h4 class="text-sm font-semibold text-primary-blue-900 dark:text-primary-blue-200">
+            <h4 class="text-sm font-semibold text-blue-900 dark:text-blue-200">
               Este vehículo tiene {{ cotizacionesDisponibles.length }}
               {{ cotizacionesDisponibles.length === 1 ? 'cotización' : 'cotizaciones' }}
-              antes de esta visita
             </h4>
-            <p class="mt-1 text-sm text-primary-blue-800 dark:text-primary-blue-300">
+            <p class="mt-1 text-sm text-blue-800 dark:text-blue-300">
               Al crear la inspección elige cuáles se cargan como trabajo acordado; el resto queda intacto.
             </p>
-            <ul class="mt-2 space-y-1 text-sm text-primary-blue-800 dark:text-primary-blue-300">
+            <ul class="mt-2 space-y-1 text-sm text-blue-800 dark:text-blue-300">
               <li v-for="cotizacion in cotizacionesDisponibles" :key="cotizacion.id">
                 <button
                   type="button"
-                  class="font-medium underline underline-offset-2 hover:text-primary-blue-900 dark:hover:text-primary-blue-100"
+                  class="font-medium underline underline-offset-2 hover:text-blue-900 dark:hover:text-blue-100"
                   @click="goTo(`/crud/cotizaciones/editar/?id=${cotizacion.id}`)"
                 >
                   {{ cotizacion.numero }}
@@ -781,6 +787,20 @@ function irAInspeccion(recepcion) {
                 </div>
               </div>
             </div>
+          </div>
+
+          <!-- Metadatos de la recepción (siempre visibles) -->
+          <div class="flex flex-wrap items-center gap-x-6 gap-y-2 pt-4 mt-4 text-sm text-gray-600 border-t border-gray-200 dark:border-gray-600 dark:text-gray-300">
+            <span class="inline-flex items-center gap-1.5" title="Fecha y hora de ingreso">
+              <CalendarDays class="w-4 h-4 shrink-0 text-brand-700 dark:text-brand-300" />
+              <span class="font-medium text-gray-900 dark:text-white">Emisión:</span>
+              {{ formatDate(recepcion.fecha_ingreso) }}
+            </span>
+            <span class="inline-flex items-center gap-1.5 md:border-l md:border-gray-200 md:pl-6 md:dark:border-gray-600" title="Taller donde se creó la recepción">
+              <Store class="w-4 h-4 shrink-0 text-brand-700 dark:text-brand-300" />
+              <span class="font-medium text-gray-900 dark:text-white">Taller:</span>
+              {{ recepcion.sucursal_nombre || tallerSesion || '—' }}
+            </span>
           </div>
         </div>
 

@@ -25,6 +25,7 @@ const props = defineProps({
   puedeAgregar: { type: Object, default: () => ({}) },
   alVincular: { type: Function, required: true },
   alDesvincular: { type: Function, required: true },
+  disabled: { type: Boolean, default: false },
 });
 
 // `multiple`: el grupo admite más de una entidad a la vez.
@@ -124,7 +125,7 @@ function normalizarSeleccion(grupo, item) {
 }
 
 async function vincular(grupo, item) {
-  if (!item?.id || procesando.value) return;
+  if (props.disabled || !item?.id || procesando.value) return;
   procesando.value = true;
   errorMessage.value = '';
   try {
@@ -144,6 +145,7 @@ async function vincular(grupo, item) {
 }
 
 function pedirDesvinculacion(grupo, item) {
+  if (props.disabled) return;
   relacionPendiente.value = { tipo: grupo.tipo, item };
   errorMessage.value = '';
   modalVisible.value = true;
@@ -242,7 +244,7 @@ async function confirmarDesvinculacion() {
                 <button
                   type="button"
                   class="inline-flex h-7 w-7 items-center justify-center rounded-full text-red-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300"
-                  :disabled="procesando || item.canDelete === false"
+                  :disabled="disabled || procesando || item.canDelete === false"
                   :title="item.deleteReason || `Quitar relación de ${grupo.label.toLowerCase()}`"
                   :aria-label="`Quitar relación de ${grupo.label.toLowerCase()}`"
                   @click="pedirDesvinculacion(grupo, item)">
@@ -253,7 +255,7 @@ async function confirmarDesvinculacion() {
 
             <component
               :is="grupo.selector"
-              v-if="grupo.selector && grupo.puedeAgregar && (grupo.buscarConItems || !grupo.items.length)"
+              v-if="!disabled && grupo.selector && grupo.puedeAgregar && (grupo.buscarConItems || !grupo.items.length)"
               :id="`relacion-${entidadId}-${grupo.tipo}`"
               v-model="busquedas[grupo.tipo]"
               :disabled="procesando"

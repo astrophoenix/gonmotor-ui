@@ -39,6 +39,7 @@ import {
   Notebook,
   Trash2,
   Car,
+  Workflow,
 } from "lucide-vue-next";
 import {
   IconEngine,
@@ -81,6 +82,8 @@ import ClienteSearchSelect from "../../../shared/components/ClienteSearchSelect.
 import VehiculoSearchSelect from "../../../shared/components/VehiculoSearchSelect.vue";
 import EmpleadoSearchSelect from "../../../shared/components/EmpleadoSearchSelect.vue";
 import RelacionesFlujoEdit from "../../../shared/components/RelacionesFlujoEdit.vue";
+import RelacionesFlujo from "../../../shared/components/RelacionesFlujo.vue";
+import { relacionesDeRecepcion } from "../../../shared/utils/relacionesFlujo";
 import TallerSelect from "../../../shared/components/TallerSelect.vue";
 import { useSucursalDocumento } from "../../../shared/composables/useSucursalDocumento";
 
@@ -108,6 +111,8 @@ const fotosPresence = ref({});
 const relacionesRecepcion = ref({ cita: [], inspeccion: [], cotizacion: [], orden: [] });
 const puedeAgregarRelacion = ref({ cita: true, inspeccion: true, cotizacion: true, orden: true });
 const relacionesCargadas = ref(false);
+const recepcionData = ref(null);
+const pasosRelaciones = computed(() => relacionesDeRecepcion(recepcionData.value || {}));
 
 function pad2(n) {
   return String(n).padStart(2, "0");
@@ -346,6 +351,12 @@ function cancelarCrearInspeccion() {
 
 const esNoAceptada = computed(
   () => clienteNoFirma.value || (form.motivo_no_recepcion || "").trim() !== "",
+);
+
+const mensajeModoLectura = computed(() =>
+  form.estado === "NO_ACEPTADA"
+    ? "Esta recepción quedó registrada como 'No Aceptada / Sin Firma'; solo puedes consultarla."
+    : "Esta recepción ya fue aceptada y firmada por el cliente; solo puedes consultarla.",
 );
 
 const tipoRecepcionLabel = computed(() => getTipoTrabajoLabel(form.tipo_recepcion));
@@ -784,7 +795,11 @@ async function loadRecepcion() {
   try {
     const data = await recepcionesService.getById(recepcionId);
     if (data) {
-      if (data.aceptacion_condiciones && data.fecha_firma_cliente) {
+      recepcionData.value = data;
+      const esEstadoFinal =
+        (data.aceptacion_condiciones && data.fecha_firma_cliente) ||
+        data.estado === "NO_ACEPTADA";
+      if (esEstadoFinal) {
         readOnly.value = true;
       }
       Object.assign(form, {
@@ -1430,17 +1445,18 @@ onMounted(() => {
       />
     </template>
     <template #actions>
-      <button
+      <!--button
         v-if="puedeCrearInspeccion"
         type="button"
-        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 dark:text-brand-300 dark:border-brand-300 dark:hover:bg-gray-700"
-        title="Generar Inspección"
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
+        title="Crear Inspección"
         @click="abrirModalCrearInspeccion">
         <Loader2 v-if="creandoInspeccion" class="w-4 h-4 animate-spin" />
         <IconReportSearch v-else class="w-5 h-5" />
         Crear Inspección
-      </button>
+      </button-->
       <FormSaveActions
+        v-if="!readOnly"
         :is-loading="isSaving"
         :is-edit-mode="isEditMode"
         :disabled="readOnly"
@@ -1464,7 +1480,7 @@ onMounted(() => {
           v-if="readOnly"
           type="info"
           title="Solo lectura"
-          message="Esta recepción ya fue aceptada y firmada por el cliente, por lo que solo es posible modificarla."
+          :message="mensajeModoLectura"
         />
         <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">
           <div class="flex items-center gap-2 mb-4">
@@ -1614,6 +1630,7 @@ onMounted(() => {
               v-model="tallerSucursalId"
               variante="campo"
               :invalid="Boolean(tallerSucursalError)"
+              :disabled="readOnly"
               placeholder="Selecciona el taller"
               @change="limpiarErrorSucursal"
             />
@@ -2649,16 +2666,33 @@ onMounted(() => {
             </dl>
           </div>
         </div>
-        <RelacionesFlujoEdit
-          v-if="isEditMode && form.id && relacionesCargadas"
-          class="mt-4"
-          tipo-entidad="recepcion"
-          :entidad-id="form.id"
-          :relaciones="relacionesRecepcion"
-          :puede-agregar="puedeAgregarRelacion"
-          :al-vincular="vincularRelacion"
-          :al-desvincular="desvincularRelacion"
-        />
+        <template v-if="isEditMode && form.id && relacionesCargadas">
+          <div
+            v-if="readOnly"
+            class="relative mt-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
+          >
+            <div class="flex items-center gap-2 mb-1">
+              <Workflow class="w-5 h-5 text-gray-900 dark:text-gray-900" />
+              <h4 class="text-sm font-semibold text-gray-900 dark:text-white">
+                Relaciones del flujo
+              </h4>
+            </div>
+            <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
+              Documentos generados a partir de esta recepción.
+            </p>
+            <RelacionesFlujo :pasos="pasosRelaciones" />
+          </div>
+          <RelacionesFlujoEdit
+            v-else
+            class="mt-4"
+            tipo-entidad="recepcion"
+            :entidad-id="form.id"
+            :relaciones="relacionesRecepcion"
+            :puede-agregar="puedeAgregarRelacion"
+            :al-vincular="vincularRelacion"
+            :al-desvincular="desvincularRelacion"
+          />
+        </template>
       </div>
     </div>
   </div>
