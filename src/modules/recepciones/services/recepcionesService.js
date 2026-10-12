@@ -46,6 +46,13 @@ export const recepcionesService = {
     });
   },
 
+  firmar(id, firmaCliente) {
+    return request(`${buildUrl(id)}firmar/`, {
+      method: 'POST',
+      body: JSON.stringify({ firma_cliente: firmaCliente }),
+    });
+  },
+
   delete(id) {
     return request(buildUrl(id), {
       method: 'DELETE',

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import {
   FilePen,
   FileCog,
@@ -26,6 +26,7 @@ import {
   Save,
   Store,
   CalendarDays,
+  BrushCleaning,
 } from 'lucide-vue-next';
 import {
   IconEngine,
@@ -47,6 +48,7 @@ import { getTipoTrabajoLabel } from '../../../shared/config/tiposTrabajo';
 import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
 import { relacionesDeRecepcion } from '../../../shared/utils/relacionesFlujo';
 import { useRecepciones } from '../composables/useRecepciones';
+import { recepcionesService } from '../services/recepcionesService';
 import { inspeccionesService } from '../../inspecciones/services/inspeccionesService';
 import { request } from '../../../shared/services/httpClient';
 import { useAuthStore } from '../../auth/stores/authStore';
@@ -61,6 +63,16 @@ const showImageModal = ref(false);
 const successMessage = ref('');
 const creandoInspeccion = ref(false);
 const errorCrearInspeccion = ref('');
+
+// Re-firma de una recepción NO_ACEPTADA: el cliente cambia de opinión y firma;
+// la transición va directo a ACEPTADA (nunca por PENDIENTE).
+const showModalFirmar = ref(false);
+const firmaClienteCanvas = ref(null);
+const firmaClienteData = ref(null);
+const isDrawingCliente = ref(false);
+const aceptacionCliente = ref(false);
+const firmando = ref(false);
+const errorFirmar = ref('');
 
 const activeTab = ref('informacion');
 const TAB_ORDER = ['informacion', 'inspeccion', 'evidencias', 'autorizacion'];
@@ -445,9 +457,110 @@ watch(showModalCrearInspeccion, (abierto) => {
   document.body.style.overflow = abierto ? 'hidden' : '';
 });
 
+watch(showModalFirmar, (abierto) => {
+  document.body.style.overflow = abierto ? 'hidden' : '';
+});
+
 onBeforeUnmount(() => {
   document.body.style.overflow = '';
 });
+
+function initFirmaCanvas(canvas) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+}
+
+function getFirmaCoords(canvas, event) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+  const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+  return {
+    x: (clientX - rect.left) * scaleX,
+    y: (clientY - rect.top) * scaleY,
+  };
+}
+
+function onFirmaPointerDown(event) {
+  const canvas = firmaClienteCanvas.value;
+  if (!canvas) return;
+  isDrawingCliente.value = true;
+  const ctx = canvas.getContext('2d');
+  const coords = getFirmaCoords(canvas, event);
+  ctx.beginPath();
+  ctx.moveTo(coords.x, coords.y);
+}
+
+function onFirmaPointerMove(event) {
+  if (!isDrawingCliente.value) return;
+  const canvas = firmaClienteCanvas.value;
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const coords = getFirmaCoords(canvas, event);
+  ctx.lineTo(coords.x, coords.y);
+  ctx.stroke();
+}
+
+function onFirmaPointerUp() {
+  if (!isDrawingCliente.value) return;
+  isDrawingCliente.value = false;
+  firmaClienteData.value = firmaClienteCanvas.value?.toDataURL('image/png') || null;
+}
+
+function borrarFirmaCliente() {
+  const canvas = firmaClienteCanvas.value;
+  if (canvas) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    initFirmaCanvas(canvas);
+  }
+  firmaClienteData.value = null;
+  aceptacionCliente.value = false;
+}
+
+function abrirModalFirmar() {
+  firmaClienteData.value = null;
+  aceptacionCliente.value = false;
+  errorFirmar.value = '';
+  showModalFirmar.value = true;
+  nextTick(() => initFirmaCanvas(firmaClienteCanvas.value));
+}
+
+function cerrarModalFirmar() {
+  if (firmando.value) return;
+  showModalFirmar.value = false;
+}
+
+async function confirmarFirma() {
+  if (!recepcion.value?.id || firmando.value) return;
+  errorFirmar.value = '';
+  if (!firmaClienteData.value) {
+    errorFirmar.value = 'Captura la firma del cliente antes de continuar.';
+    return;
+  }
+  if (!aceptacionCliente.value) {
+    errorFirmar.value = 'El cliente debe aceptar las condiciones de recepción.';
+    return;
+  }
+  firmando.value = true;
+  try {
+    await recepcionesService.firmar(recepcion.value.id, firmaClienteData.value);
+    showModalFirmar.value = false;
+    recepcion.value = await loadRecepcion(recepcion.value.id);
+    successMessage.value = "Recepción firmada y aceptada correctamente.";
+  } catch (err) {
+    errorFirmar.value = err?.message || 'No se pudo registrar la firma.';
+  } finally {
+    firmando.value = false;
+  }
+}
 
 async function crearInspeccion(recepcion) {
   if (creandoInspeccion.value || !recepcion?.id) return;
@@ -501,6 +614,15 @@ function irAInspeccion(recepcion) {
     </template>
 
     <template #actions>
+      <button
+        v-if="recepcion && recepcion.estado === 'NO_ACEPTADA'"
+        type="button"
+        title="Firmar aceptación"
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded shadow-xs bg-brand-900 hover:bg-brand-700 focus:ring-4 focus:ring-brand-500/30"
+        @click="abrirModalFirmar">
+        <Signature class="w-5 h-5 -ms-1" aria-hidden="true" />
+        Firmar aceptación
+      </button>
       <button
         v-if="puedeEditar"
         type="button"
@@ -660,6 +782,98 @@ function irAInspeccion(recepcion) {
             {{ creandoInspeccion ? 'Creando...' : 'Crear inspección' }}
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div v-if="showModalFirmar" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <!-- Fondo oscurecido: al hacer click aquí no se cierra el modal. -->
+    <div class="fixed inset-0 bg-black/70" aria-hidden="true"></div>
+    <div class="relative w-full max-w-xl my-8 bg-white rounded-lg shadow-xl dark:bg-gray-800">
+      <div class="flex items-start justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex items-start gap-3">
+          <div class="mt-1">
+            <Signature class="w-6 h-6 text-primary-600 dark:text-primary-400" />
+          </div>
+          <div>
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white">
+              Firmar aceptación
+            </h2>
+          </div>
+        </div>
+        <button
+          type="button"
+          title="Cerrar"
+          class="inline-flex items-center justify-center w-8 h-8 text-gray-400 bg-transparent rounded-lg hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-700 dark:hover:text-white"
+          @click="cerrarModalFirmar"
+        >
+          <X class="w-5 h-5" />
+        </button>
+      </div>
+
+      <div class="p-4 space-y-4">
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          Registra la firma del cliente para dejar la recepción {{ numeroRecepcion }} como aceptada.
+        </p>
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+            Firma del cliente <span class="text-accent-500">*</span>
+          </label>
+          <div class="relative bg-white border border-gray-300 rounded-lg dark:bg-white dark:border-gray-600 overflow-hidden">
+            <canvas
+              ref="firmaClienteCanvas"
+              width="400"
+              height="120"
+              class="w-full h-auto bg-white touch-none"
+              @pointerdown="onFirmaPointerDown"
+              @pointermove="onFirmaPointerMove"
+              @pointerup="onFirmaPointerUp"
+              @pointerleave="onFirmaPointerUp"
+            ></canvas>
+            <button
+              type="button"
+              title="Borrar firma"
+              class="absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-1.5 text-sm font-medium text-red-700 border border-red-400 rounded hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-900/20"
+              @click="borrarFirmaCliente"
+            >
+              <BrushCleaning class="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        <label class="flex items-start gap-2">
+          <input
+            v-model="aceptacionCliente"
+            type="checkbox"
+            class="mt-0.5 w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+          />
+          <span class="text-sm font-medium text-gray-900 dark:text-white">
+            El cliente acepta las condiciones de recepción y el estado reportado del vehículo.
+          </span>
+        </label>
+
+        <p v-if="errorFirmar" class="text-sm text-red-700 dark:text-red-300">{{ errorFirmar }}</p>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 p-4 border-t border-gray-200 dark:border-gray-700">
+        <button
+          type="button"
+          :disabled="firmando"
+          class="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-base hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+          @click="cerrarModalFirmar"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          :disabled="firmando || !firmaClienteData || !aceptacionCliente"
+          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-base bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-primary-700 dark:hover:bg-primary-800"
+          @click="confirmarFirma"
+        >
+          <Loader2 v-if="firmando" class="w-4 h-4 animate-spin" />
+          <Signature v-else class="w-5 h-5" />
+          {{ firmando ? 'Firmando...' : 'Firmar y aceptar' }}
+        </button>
       </div>
     </div>
   </div>
