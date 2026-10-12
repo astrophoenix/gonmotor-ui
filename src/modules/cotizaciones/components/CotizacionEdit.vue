@@ -9,7 +9,6 @@ import {
   X,
   Plus,
   Package,
-  Wrench,
   CircleDollarSign,
   IdCardIcon,
   Phone,
@@ -19,7 +18,7 @@ import {
   PaintBucket,
   Trash2,
   CalendarDays,
-  ClipboardList,
+  Toolbox,
   Store,
   UserCheck,
   ArrowLeftRight,
@@ -1101,25 +1100,25 @@ onMounted(() => {
         <button
           v-if="estado === 'PENDIENTE'"
           type="button"
-          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-base bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
+          class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
           @click="abrirModal('ENVIAR')">
-          <Send class="w-5 h-5" />
-          Enviar Cliente
+          <Send class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
+          Enviar
         </button>
         <button
           v-if="estado === 'RECHAZADA'"
           type="button"
-          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-base bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 dark:bg-primary-700 dark:hover:bg-primary-800"
+          class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
           @click="abrirModal('REENVIAR')">
-          <Send class="w-5 h-5" />
-          Reenviar al cliente
+          <Send class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
+          Reenviar
         </button>
         <button
           v-if="estado === 'ACEPTADA'"
           type="button"
-          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-base bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
+          class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
           @click="mostrarModalGenerarOrden = true">
-          <ArrowLeftRight class="w-5 h-5" />
+          <ArrowLeftRight class="text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
           Generar orden de trabajo
         </button>
         <PdfExportButton
@@ -1339,7 +1338,7 @@ onMounted(() => {
                       class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
                       :class="activeTab === 'servicios' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
                       @click="activeTab = 'servicios'">
-                      <Package class="w-4 h-4" />
+                      <Toolbox class="w-4 h-4" />
                       Servicios
                     </button>
                     <button
@@ -1347,7 +1346,7 @@ onMounted(() => {
                       class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
                       :class="activeTab === 'repuestos' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
                       @click="activeTab = 'repuestos'">
-                      <Wrench class="w-4 h-4" />
+                      <Package class="w-4 h-4" />
                       Repuestos
                     </button>
                   </nav>

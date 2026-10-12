@@ -20,7 +20,7 @@ import {
   TagIcon,
   UserCheck,
   Workflow,
-  Wrench,
+  Toolbox,
 } from 'lucide-vue-next';
 import { IconBrandWhatsapp, IconLockOpen2 } from '@tabler/icons-vue';
 import { cotizacionesService } from '../services/cotizacionesService';
@@ -210,9 +210,8 @@ onMounted(cargar);
         v-if="puedeGenerarOrden"
         type="button"
         class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white rounded-base bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
-        @click="abrirModalGenerarOrden"
-      >
-        <ArrowLeftRight class="w-4 h-4" aria-hidden="true" />
+        @click="abrirModalGenerarOrden">
+        <ArrowLeftRight class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
         Generar orden de trabajo
       </button>
       <button
@@ -220,18 +219,16 @@ onMounted(cargar);
         type="button"
         :disabled="procesandoReapertura"
         class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-red-700 rounded-base border border-red-600 hover:bg-red-50 focus:outline-none focus:ring-4 focus:ring-red-200 dark:text-red-400 dark:border-red-400 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        @click="abrirModalReabrir"
-      >
-        <IconLockOpen2 class="w-4 h-4" aria-hidden="true" />
+        @click="abrirModalReabrir">
+        <IconLockOpen2 class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
         Reabrir
       </button>
       <button
         v-if="puedeEditar"
         type="button"
-        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:text-brand-300 dark:border-brand-300 dark:hover:bg-gray-700"
-        @click="irAEditar"
-      >
-        <Pencil class="w-4 h-4" aria-hidden="true" />
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
+        @click="irAEditar">
+        <Pencil class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
         Editar
       </button>
       <PdfExportButton
@@ -385,7 +382,7 @@ onMounted(cargar);
             <!-- ===== 2. SERVICIOS ===== -->
             <section class="mt-6">
               <h3 class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-                <Wrench class="w-5 h-5 text-gray-800 dark:text-white" />
+                <Toolbox class="w-5 h-5 text-gray-800 dark:text-white" />
                 Servicios
               </h3>
               <div v-if="cotizacion.servicios?.length" class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
@@ -427,7 +424,7 @@ onMounted(cargar);
             <section class="mt-8">
               <h3 class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
                 <Package class="w-5 h-5 text-gray-800 dark:text-white" />
-                Repuestos / Materiales
+                Repuestos
               </h3>
               <div v-if="cotizacion.repuestos?.length" class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
                 <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">

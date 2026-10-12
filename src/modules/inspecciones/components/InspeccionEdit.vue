@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue';
-import { Car, Toolbox, WrenchIcon, TriangleAlert, CheckCircle2, FileText, Loader2, Plus, Trash2, Wand2, ClipboardList, IdCardIcon, TagIcon, Shapes, PaintBucket, Phone, Mail, CameraIcon, Camera, ShieldCheck, Workflow } from 'lucide-vue-next';
+import { Car, Toolbox, WrenchIcon, TriangleAlert, CheckCircle2, FileText, Loader2, Plus, Trash2, Wand2, ClipboardList, IdCardIcon, TagIcon, Shapes, PaintBucket, Phone, Mail, CameraIcon, Camera, ShieldCheck, Workflow, Package } from 'lucide-vue-next';
 import { IconClockCheck, IconClockPlay, IconEngine, IconManualGearbox, IconAutomaticGearbox, IconGasStation } from '@tabler/icons-vue';
 import { request } from '../../../shared/services/httpClient';
 import { API_BASE_URL } from '../../../shared/config/env';
@@ -1527,7 +1527,7 @@ onMounted(() => {
                 <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 p-4">
                   <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">
                     <span class="inline-flex items-center gap-2">
-                      <WrenchIcon class="w-5 h-5 text-gray-800 dark:text-white" />
+                      <Package class="w-5 h-5 text-gray-800 dark:text-white" />
                       Repuestos
                     </span>
                   </h5>

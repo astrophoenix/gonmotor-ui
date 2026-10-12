@@ -1,7 +1,6 @@
 <script setup>
 import { onMounted, onUnmounted, ref, watch } from 'vue';
-import { Pen, Trash2, Search, Filter, CalendarDays, Car, Gauge, IdCard, Phone, CalendarPlus, Send, CheckCircle2 } from 'lucide-vue-next';
-import { IconFolderDollar } from '@tabler/icons-vue';
+import { Pen, Trash2, Search, Filter, CalendarDays, Car, Gauge, IdCard, Phone, CalendarPlus, Send, CheckCircle2, Receipt } from 'lucide-vue-next';
 import { Icon } from '@iconify/vue';
 import filePdfIcon from '@iconify-icons/fa6-regular/file-pdf';
 import { useCotizaciones } from '../composables/useCotizaciones';
@@ -239,7 +238,7 @@ onUnmounted(() => {
 <template>
   <EntityHeader
     mode="list"
-    :icon="IconFolderDollar"
+    :icon="Receipt"
     entity="Cotizaciones"
     :breadcrumb="[
       { label: 'Inicio', href: '/' },

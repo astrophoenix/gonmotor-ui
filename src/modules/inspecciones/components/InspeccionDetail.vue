@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { Car, Camera, CheckCircle2, ClipboardList, FilePen, ShieldCheck, FileText, IdCardIcon, Image as ImageIcon, Mail, PaintBucket, Phone, Shapes, TagIcon, TriangleAlert, WrenchIcon, Workflow, X, Toolbox, Receipt } from 'lucide-vue-next';
-import { IconAutomaticGearbox, IconEngine, IconFileInvoice, IconGasStation, IconLockOpen2, IconManualGearbox } from '@tabler/icons-vue';
+import { Car, Camera, ClipboardList, FilePen, ShieldCheck, FileText, IdCardIcon, Image as ImageIcon, Mail, PaintBucket, Phone, Shapes, TagIcon, TriangleAlert, Workflow, X, Toolbox, Receipt, Package } from 'lucide-vue-next';
+import { IconAutomaticGearbox, IconEngine, IconGasStation, IconLockOpen2, IconManualGearbox } from '@tabler/icons-vue';
 import { API_BASE_URL } from '../../../shared/config/env';
 import { request } from '../../../shared/services/httpClient';
 import { inspeccionesService } from '../services/inspeccionesService';
@@ -566,7 +566,7 @@ onMounted(async () => {
                   :class="activeTab === 'servicios' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
                   @click="activeTab = 'servicios'">
                   <Toolbox class="w-4 h-4" />
-                  4. Servicios &amp; Repuestos
+                  4. Servicios y Repuestos
                 </button>
               </nav>
             </div>
@@ -757,11 +757,10 @@ onMounted(async () => {
                   </table>
                 </div>
               </div>
-
               <div>
                 <h4 class="mb-4 text-md font-semibold dark:text-white">
                   <span class="inline-flex items-center gap-2">
-                    <WrenchIcon class="w-5 h-5 text-gray-800 dark:text-white" />
+                    <Package class="w-5 h-5 text-gray-800 dark:text-white" />
                     Repuestos
                   </span>
                 </h4>
