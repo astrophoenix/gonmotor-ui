@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { Car, Camera, CheckCircle2, ClipboardList, Clock, FolderInput, ShieldCheck, FileText, IdCardIcon, Image as ImageIcon, Mail, PaintBucket, Phone, Shapes, SquarePen, TagIcon, TriangleAlert, WrenchIcon, Workflow, X, Toolbox } from 'lucide-vue-next';
+import { Car, Camera, CheckCircle2, ClipboardList, FilePen, Clock, FolderInput, ShieldCheck, FileText, IdCardIcon, Image as ImageIcon, Mail, PaintBucket, Phone, Shapes, SquarePen, TagIcon, TriangleAlert, WrenchIcon, Workflow, X, Toolbox } from 'lucide-vue-next';
 import { IconAutomaticGearbox, IconEngine, IconFileInvoice, IconGasStation, IconLockOpen2, IconManualGearbox } from '@tabler/icons-vue';
 import { API_BASE_URL } from '../../../shared/config/env';
 import { request } from '../../../shared/services/httpClient';
@@ -334,6 +334,11 @@ function irACotizacion(cotizacionId) {
   window.location.assign(`/crud/cotizaciones/editar/?id=${encodeURIComponent(cotizacionId)}`);
 }
 
+function irAEditar() {
+  if (!inspeccion.value?.id) return;
+  window.location.assign(`/crud/inspecciones/editar/?id=${encodeURIComponent(inspeccion.value.id)}`);
+}
+
 function crearComplementaria() {
   if (!tieneItemsInspeccion.value) {
     avisarSinItems();
@@ -543,18 +548,20 @@ onMounted(async () => {
     </template>
 
     <template #actions>
-      <a
+      <button
         v-if="inspeccion && !estaFinalizada"
-        :href="`/crud/inspecciones/editar/?id=${encodeURIComponent(inspeccion.id)}`"
-        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800">
+        type="button"
+        title="Editar inspección"
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
+        @click="irAEditar">
         <FilePen class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
         Editar
-      </a>
+      </button>
       <button
         v-if="estaFinalizada"
         type="button"
         :disabled="isReopening"
-        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs text-primary bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
         @click="solicitarReabrir">
         <IconLockOpen2 class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
         Reabrir Inspección
@@ -564,7 +571,7 @@ onMounted(async () => {
         type="button"
         :disabled="isSyncingCotizacion"
         :title="tieneCotizacionActiva ? 'Actualizar la cotización existente para reflejar los cambios de la inspección.' : 'Generar una cotización desde este diagnóstico'"
-        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs text-primary bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
         @click="solicitarCrearCotizacion">
         <IconFileInvoice class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
         {{ isSyncingCotizacion ? 'Sincronizando...' : (tieneCotizacionActiva ? 'Actualizar Cotización' : 'Crear Cotización') }}

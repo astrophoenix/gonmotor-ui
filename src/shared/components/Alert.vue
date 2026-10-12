@@ -48,13 +48,13 @@ function dismiss() {
 
 <template>
   <div
-    v-if="message" :class="['flex items-center p-4 mt-1 mb-1 text-sm rounded-lg', typeClasses[type] || typeClasses.default,]" role="alert">
+    v-if="message || $slots.default" :class="['flex items-center p-4 mt-1 mb-1 text-sm rounded-lg', typeClasses[type] || typeClasses.default,]" role="alert">
     <component :is="alertIcon" class="shrink-0 w-4 h-4 me-3" aria-hidden="true" />
     <span class="sr-only">{{ type }}</span>
     <div>
       <span v-if="title" class="font-medium mr-1">{{ title }} </span>
       <span v-if="title && message"> </span>
-      <span>{{ message }}</span>
+      <slot>{{ message }}</slot>
     </div>
     <button
       v-if="dismissible"

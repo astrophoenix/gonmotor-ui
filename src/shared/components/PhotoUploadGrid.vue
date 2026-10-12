@@ -214,8 +214,9 @@ defineExpose({ guardarFotos });
         <textarea
           v-model="foto.descripcion"
           maxlength="255"
+          :disabled="disabled"
           placeholder="Descripción (opcional)"
-          class="h-full min-h-16 w-full resize-none rounded border border-default-medium bg-neutral-secondary-medium p-2.5 text-sm text-heading shadow-xs placeholder:text-body focus:border-brand focus:ring-brand"
+          class="h-full min-h-16 w-full resize-none rounded border border-default-medium bg-neutral-secondary-medium p-2.5 text-sm text-heading shadow-xs placeholder:text-body focus:border-brand focus:ring-brand disabled:cursor-not-allowed disabled:opacity-60"
         />
       </div>
 

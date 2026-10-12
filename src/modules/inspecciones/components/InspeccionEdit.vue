@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue';
-import { Car, Toolbox, WrenchIcon, TriangleAlert, CheckCircle2, FileText, Loader2, Plus, Trash2, Wand2, ClipboardList, IdCardIcon, TagIcon, Shapes, PaintBucket, Phone, Mail, CameraIcon, Camera, ShieldCheck } from 'lucide-vue-next';
+import { Car, Toolbox, WrenchIcon, TriangleAlert, CheckCircle2, FileText, Loader2, Plus, Trash2, Wand2, ClipboardList, IdCardIcon, TagIcon, Shapes, PaintBucket, Phone, Mail, CameraIcon, Camera, ShieldCheck, Workflow } from 'lucide-vue-next';
 import { IconClockCheck, IconClockPlay, IconEngine, IconManualGearbox, IconAutomaticGearbox, IconGasStation } from '@tabler/icons-vue';
 import { request } from '../../../shared/services/httpClient';
 import { API_BASE_URL } from '../../../shared/config/env';
@@ -25,8 +25,10 @@ import TestigosTablero from '../../../shared/components/TestigosTablero.vue';
 import TextImprover from '../../../shared/components/TextImprover.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import RelacionesFlujoEdit from '../../../shared/components/RelacionesFlujoEdit.vue';
+import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
 import TallerSelect from '../../../shared/components/TallerSelect.vue';
 import { useSucursalDocumento } from '../../../shared/composables/useSucursalDocumento';
+import { relacionesDeInspeccion } from '../../../shared/utils/relacionesFlujo';
 // FlowSteps temporalmente desactivado; conservar para reactivarlo más adelante.
 // import FlowSteps from '../../../shared/components/FlowSteps.vue';
 // import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
@@ -116,6 +118,10 @@ const breadcrumb = computed(() => [
 ]);
 
 const inspeccionFinalizada = computed(() => estadoInspeccion.value === 'FINALIZADA');
+const readOnly = computed(() => isEditMode && inspeccionFinalizada.value);
+const detalleHref = computed(() => `/crud/inspecciones/ver/?id=${encodeURIComponent(inspeccionId)}`);
+const pasosRelaciones = computed(() => relacionesDeInspeccion(inspeccionData.value || {}));
+const tallerSucursalNombre = computed(() => inspeccionData.value?.sucursal_nombre || '');
 
 const fechaFinalizacionDisplay = computed(() => (
   form.fecha_finalizacion ? formatDateTime(form.fecha_finalizacion) : 'Pendiente de cierre'
@@ -132,6 +138,7 @@ const duracionInspeccion = computed(() => {
 
 const transicionEstado = ref(false);
 const showFinalizarModal = ref(false);
+const showIniciarModal = ref(false);
 
 const activeTab = ref('informacion');
 const TAB_ORDER = ['informacion', 'testigos', 'fotos', 'servicios'];
@@ -406,6 +413,16 @@ const responsableNombre = computed(() => {
   );
   return empleado ? `${nombreEmpleado(empleado)} — ${empleado.rol_display || ''}`.trim().replace(/— $/, '') : (form.responsable ? '—' : 'Sin asignar');
 });
+
+function solicitarIniciar() {
+  if (transicionEstado.value) return;
+  showIniciarModal.value = true;
+}
+
+async function confirmarIniciar() {
+  await cambiarEstado('EN_PROCESO');
+  showIniciarModal.value = false;
+}
 
 function solicitarFinalizacion() {
   if (transicionEstado.value) return;
@@ -895,6 +912,7 @@ function desvincularRelacion({ tipo, id }) {
 }
 
 async function submit() {
+  if (readOnly.value) return;
   errorMessage.value = '';
   successMessage.value = '';
   formErrors.value = {};
@@ -1015,9 +1033,9 @@ onMounted(() => {
         type="button"
         :disabled="transicionEstado"
         title="Marcar la inspección como en proceso"
-        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
-        @click="cambiarEstado('EN_PROCESO')">
-        <IconClockPlay class="w-5 h-5 text-primary-blue-500 dark:text-primary-blue-100" />
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
+        @click="solicitarIniciar">
+        <IconClockPlay class="w-5 h-5 text-blue-500 dark:text-blue-100" />
         Iniciar
       </button>
       <button
@@ -1025,12 +1043,13 @@ onMounted(() => {
         type="button"
         :disabled="transicionEstado"
         title="Cerrar el diagnóstico de la inspección"
-        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
         @click="solicitarFinalizacion">
         <IconClockCheck class="w-5 h-5 text-green-500 dark:text-green-100" />
         Finalizar
       </button>
       <FormSaveActions
+        v-if="!readOnly"
         :is-loading="isSaving"
         :is-edit-mode="isEditMode"
         cancel-href="/crud/inspecciones/"
@@ -1049,6 +1068,15 @@ onMounted(() => {
       <div class="lg:col-span-3 space-y-4">
         <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
         <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
+        <Alert
+          v-if="readOnly"
+          type="info"
+          title="Solo lectura"
+        >
+          La inspección está finalizada, por lo que solo puedes consultarla.
+          Ve al <a :href="detalleHref" class="font-medium underline hover:no-underline">detalle de la inspección</a>
+          para reabrirla si necesitas modificar el diagnóstico.
+        </Alert>
 
         <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">
         <div class="flex items-center gap-2 mb-4">
@@ -1086,7 +1114,8 @@ onMounted(() => {
                 v-model="clienteSearch"
                 :error="Boolean(formErrors.cliente)"
                 :error-message="formErrors.cliente"
-                :show-create="true"
+                :show-create="!readOnly"
+                :disabled="readOnly"
                 @select="selectCliente"
                 @clear="clearCliente"
                 @create="showClientCreateModal = true"
@@ -1136,7 +1165,7 @@ onMounted(() => {
                 id="vehiculo"
                 v-model="vehiculoSearch"
                 :cliente-id="clienteSeleccionado?.id || null"
-                :disabled="!clienteSeleccionado"
+                :disabled="readOnly || !clienteSeleccionado"
                 :placeholder="clienteSeleccionado ? 'Buscar placa...' : 'Selecciona un cliente primero'"
                 class="relative"
                 @select="selectVehiculo"
@@ -1164,6 +1193,7 @@ onMounted(() => {
             <EmpleadoSearchSelect
               id="inspector"
               v-model="responsableSearch"
+              :disabled="readOnly"
               placeholder="Buscar inspector..."
               @select="selectResponsable"
               @clear="clearResponsable"
@@ -1190,7 +1220,9 @@ onMounted(() => {
             <TallerSelect
               v-model="tallerSucursalId"
               variante="campo"
+              :nombre="tallerSucursalNombre"
               :invalid="Boolean(tallerSucursalError)"
+              :disabled="readOnly"
               placeholder="Selecciona el taller"
               @change="limpiarErrorSucursal"
             />
@@ -1251,7 +1283,7 @@ onMounted(() => {
                   <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                   <div class="col-span-1">
                     <label for="tipo_inspeccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de Inspección</label>
-                    <select id="tipo_inspeccion" v-model="form.tipo_inspeccion" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white">
+                    <select id="tipo_inspeccion" v-model="form.tipo_inspeccion" :disabled="readOnly" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white disabled:opacity-60 disabled:cursor-not-allowed">
                       <option
                         v-for="item in TIPOS_TRABAJO_OPCIONES"
                         :key="item.value"
@@ -1269,7 +1301,7 @@ onMounted(() => {
                       id="fecha_inspeccion"
                       v-model="form.fecha_inspeccion"
                       type="datetime-local"
-                      :disabled="inspeccionFinalizada"
+                      :disabled="readOnly"
                       :class="['block w-full p-2.5 text-sm rounded shadow-xs border border-gray-300 dark:text-white disabled:opacity-60 disabled:cursor-not-allowed focus:ring-brand focus:border-brand', formErrors.fecha_inspeccion ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
                     >
                     <p v-if="formErrors.fecha_inspeccion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.fecha_inspeccion }}</p>
@@ -1300,7 +1332,8 @@ onMounted(() => {
                       inputmode="numeric"
                       autocomplete="off"
                       placeholder=""
-                      :class="['block w-full p-2.5 text-sm rounded shadow-xs border border-gray-300 dark:text-white focus:ring-brand focus:border-brand', formErrors.kilometraje_diagnostico ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                      :disabled="readOnly"
+                      :class="['block w-full p-2.5 text-sm rounded shadow-xs border border-gray-300 dark:text-white focus:ring-brand focus:border-brand disabled:opacity-60 disabled:cursor-not-allowed', formErrors.kilometraje_diagnostico ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
                     >
                     <span v-if="kmReferenciaDisplay" class="mt-1 block text-xs text-gray-500 dark:text-gray-400">
                       Kilometraje actual:
@@ -1310,14 +1343,14 @@ onMounted(() => {
                   </div>
                   <div class="col-span-1 md:col-span-4">
                     <label for="codigos_dtc" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Códigos de Falla (DTC OBD2)</label>
-                    <input id="codigos_dtc" v-model="form.codigos_dtc" maxlength="255" placeholder="Ej: P0300, P0171..." class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:ring-brand focus:border-brand">
+                    <input id="codigos_dtc" v-model="form.codigos_dtc" maxlength="255" :disabled="readOnly" placeholder="Ej: P0300, P0171..." class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:ring-brand focus:border-brand disabled:opacity-60 disabled:cursor-not-allowed">
                   </div>
                   </div>
                 </div>
 
                 <div class="p-1">
                   <label for="motivo_ingreso" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Motivo <span class="text-accent-500">*</span></label>
-                  <textarea id="motivo_ingreso" v-model="form.motivo_ingreso" rows="3" maxlength="500" placeholder="Razón por la cual el cliente trae el vehículo o falla reportada..." :class="['block w-full p-2.5 text-sm rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white focus:ring-brand focus:border-brand', formErrors.motivo_ingreso ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
+                  <textarea id="motivo_ingreso" v-model="form.motivo_ingreso" rows="3" maxlength="500" :disabled="readOnly" placeholder="Razón por la cual el cliente trae el vehículo o falla reportada..." :class="['block w-full p-2.5 text-sm rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white focus:ring-brand focus:border-brand disabled:opacity-60 disabled:cursor-not-allowed', formErrors.motivo_ingreso ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
                   <p v-if="formErrors.motivo_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.motivo_ingreso }}</p>
                 </div>
 
@@ -1330,6 +1363,7 @@ onMounted(() => {
                     <div class="flex items-center justify-between gap-2 mb-2">
                       <label for="diagnostico_tecnico" class="block text-sm font-medium text-gray-900 dark:text-white">Diagnóstico <span class="text-accent-500">*</span></label>
                       <button
+                        v-if="!readOnly"
                         type="button"
                         title="Mejorar el texto con IA"
                         :disabled="mejorando"
@@ -1341,7 +1375,7 @@ onMounted(() => {
                         {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
                       </button>
                     </div>
-                    <textarea id="diagnostico_tecnico" v-model="form.diagnostico_tecnico" rows="4" maxlength="1000" :class="['block w-full p-2.5 text-sm rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white focus:ring-brand focus:border-brand', formErrors.diagnostico_tecnico ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
+                    <textarea id="diagnostico_tecnico" v-model="form.diagnostico_tecnico" rows="4" maxlength="1000" :disabled="readOnly" :class="['block w-full p-2.5 text-sm rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white focus:ring-brand focus:border-brand disabled:opacity-60 disabled:cursor-not-allowed', formErrors.diagnostico_tecnico ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
                     <p v-if="formErrors.diagnostico_tecnico" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.diagnostico_tecnico }}</p>
                     <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error }}</p>
                     <div v-if="mejorado && !error" class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
@@ -1362,6 +1396,7 @@ onMounted(() => {
                     <div class="flex items-center justify-between gap-2 mb-2">
                       <label for="recomendaciones" class="block text-sm font-medium text-gray-900 dark:text-white">Recomendaciones <span class="text-accent-500">*</span></label>
                       <button
+                        v-if="!readOnly"
                         type="button"
                         title="Mejorar el texto con IA"
                         :disabled="mejorando"
@@ -1372,7 +1407,7 @@ onMounted(() => {
                         {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
                       </button>
                     </div>
-                    <textarea id="recomendaciones" v-model="form.recomendaciones" rows="3" maxlength="1000" :class="['block w-full p-2.5 text-sm rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white focus:ring-brand focus:border-brand', formErrors.recomendaciones ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
+                    <textarea id="recomendaciones" v-model="form.recomendaciones" rows="3" maxlength="1000" :disabled="readOnly" :class="['block w-full p-2.5 text-sm rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white focus:ring-brand focus:border-brand disabled:opacity-60 disabled:cursor-not-allowed', formErrors.recomendaciones ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
                     <p v-if="formErrors.recomendaciones" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.recomendaciones }}</p>
                     <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error }}</p>
                     <div v-if="mejorado && !error" class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
@@ -1387,7 +1422,7 @@ onMounted(() => {
               </div>
 
               <div v-show="activeTab === 'testigos'" class="col-span-1">
-                  <TestigosTablero v-model="testigos" />
+                  <TestigosTablero v-model="testigos" :disabled="readOnly" />
               </div>
 
               <div v-show="activeTab === 'fotos'" class="col-span-1">
@@ -1404,7 +1439,7 @@ onMounted(() => {
                     :service="inspeccionesService"
                     :max="FOTO_MAX"
                     entity-label="inspección"
-                    :disabled="isEditMode && estadoInspeccion === 'FINALIZADA'"
+                    :disabled="readOnly"
                     disabled-message="La inspección está finalizada; reábrela para poder modificar las fotos."
                   />
               </div>
@@ -1438,6 +1473,7 @@ onMounted(() => {
                               :input-id="`svc-desc-${s.sufijo}`"
                               v-model="s.descripcion"
                               :catalogo="catalogoServicios"
+                              :disabled="readOnly"
                               placeholder="Busca y selecciona..."
                               mensaje-sin-resultados="Sin coincidencias. Puedes escribir un servicio libre."
                               :error="!!s.error"
@@ -1445,18 +1481,18 @@ onMounted(() => {
                               @select="(item) => seleccionarServicio(item, s)"/>
                           </td>
                           <td class="p-2">
-                            <input :id="`svc-horas-${s.sufijo}`" v-model="s.horas_estimadas" type="number" step="0.25" min="0" max="999.99" class="block w-20 p-2 text-center text-sm bg-gray-50 rounded-base shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white">
+                            <input :id="`svc-horas-${s.sufijo}`" v-model="s.horas_estimadas" :disabled="readOnly" type="number" step="0.25" min="0" max="999.99" class="block w-20 p-2 text-center text-sm bg-gray-50 rounded-base shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white disabled:opacity-60 disabled:cursor-not-allowed">
                           </td>
                           <td class="p-2">
-                            <select v-model="s.prioridad" class="block w-24 p-2 text-sm bg-gray-50 rounded-base shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white">
+                            <select v-model="s.prioridad" :disabled="readOnly" class="block w-24 p-2 text-sm bg-gray-50 rounded-base shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white disabled:opacity-60 disabled:cursor-not-allowed">
                               <option v-for="p in PRIORIDADES" :key="p.value" :value="p.value">{{ p.label }}</option>
                             </select>
                           </td>
                           <td class="p-2 text-center">
-                            <input v-model="s.es_sugerido" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600">
+                            <input v-model="s.es_sugerido" :disabled="readOnly" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 disabled:opacity-60 disabled:cursor-not-allowed">
                           </td>
                           <td class="p-2 text-center">
-                            <button type="button" title="Quitar servicio" aria-label="Quitar servicio" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarServicio(index)">
+                            <button type="button" title="Quitar servicio" aria-label="Quitar servicio" :disabled="readOnly" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed" @click="quitarServicio(index)">
                               <Trash2 class="w-5 h-5" />
                             </button>
                           </td>
@@ -1464,7 +1500,7 @@ onMounted(() => {
                       </tbody>
                     </table>
                   </div>
-                  <div class="flex justify-end mt-3">
+                  <div v-if="!readOnly" class="flex justify-end mt-3">
                     <button
                       type="button"
                       title="Añadir servicio detectado"
@@ -1505,6 +1541,7 @@ onMounted(() => {
                               :input-id="`rpt-desc-${r.sufijo}`"
                               v-model="r.descripcion"
                               :catalogo="catalogoRepuestos"
+                              :disabled="readOnly"
                               placeholder="Busca y selecciona..."
                               mostrar-stock
                               mensaje-sin-resultados="Sin coincidencias. Puedes escribir un repuesto libre."
@@ -1514,18 +1551,18 @@ onMounted(() => {
                             />
                           </td>
                           <td class="p-2">
-                            <input :id="`rpt-cant-${r.sufijo}`" v-model="r.cantidad" type="number" step="0.5" min="0" max="9999.99" class="block w-20 p-2 text-center text-sm bg-gray-50 rounded-base shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white">
+                            <input :id="`rpt-cant-${r.sufijo}`" v-model="r.cantidad" :disabled="readOnly" type="number" step="0.5" min="0" max="9999.99" class="block w-20 p-2 text-center text-sm bg-gray-50 rounded-base shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white disabled:opacity-60 disabled:cursor-not-allowed">
                           </td>
                           <td class="p-2">
-                            <select v-model="r.prioridad" class="block w-24 p-2 text-sm bg-gray-50 rounded-base shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white">
+                            <select v-model="r.prioridad" :disabled="readOnly" class="block w-24 p-2 text-sm bg-gray-50 rounded-base shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white disabled:opacity-60 disabled:cursor-not-allowed">
                               <option v-for="p in PRIORIDADES" :key="p.value" :value="p.value">{{ p.label }}</option>
                             </select>
                           </td>
                           <td class="p-2 text-center">
-                            <input v-model="r.es_sugerido" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600">
+                            <input v-model="r.es_sugerido" :disabled="readOnly" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 disabled:opacity-60 disabled:cursor-not-allowed">
                           </td>
                           <td class="p-2 text-center">
-                            <button type="button" title="Quitar repuesto" aria-label="Quitar repuesto" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarRepuesto(index)">
+                            <button type="button" title="Quitar repuesto" aria-label="Quitar repuesto" :disabled="readOnly" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed" @click="quitarRepuesto(index)">
                               <Trash2 class="w-5 h-5" />
                             </button>
                           </td>
@@ -1533,7 +1570,7 @@ onMounted(() => {
                       </tbody>
                     </table>
                   </div>
-                  <div class="flex justify-end mt-3">
+                  <div v-if="!readOnly" class="flex justify-end mt-3">
                     <button
                       type="button"
                       title="Añadir repuesto sugerido"
@@ -1674,7 +1711,23 @@ onMounted(() => {
         </div>
 
         <div v-if="isEditMode && relacionesCargadas" class="px-4 pt-4">
+          <div
+            v-if="readOnly"
+            class="relative rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
+          >
+            <div class="flex items-center gap-2 mb-1">
+              <Workflow class="w-5 h-5 text-gray-900 dark:text-gray-900" />
+              <h4 class="text-sm font-semibold text-gray-900 dark:text-white">
+                Relaciones del flujo
+              </h4>
+            </div>
+            <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
+              Documentos generados a partir de esta inspección.
+            </p>
+            <RelacionesFlujo :pasos="pasosRelaciones" />
+          </div>
           <RelacionesFlujoEdit
+            v-else
             tipo-entidad="inspeccion"
             :entidad-id="inspeccionId"
             :relaciones="relacionesInspeccion"
@@ -1691,6 +1744,20 @@ onMounted(() => {
     v-model="showClientCreateModal"
     @created="onClientCreated"
     @reactivated="onClientCreated"
+  />
+
+  <ConfirmModal
+    v-model="showIniciarModal"
+    title="Iniciar inspección"
+    :message="'Al iniciar la inspección pasarás a registrar testigos, fotos y servicios. ¿Deseas continuar?'"
+    :icon="IconClockPlay"
+    icon-class="text-blue-600 dark:text-blue-400"
+    confirm-text="Sí, iniciar"
+    confirming-text="Iniciando..."
+    variant="primary"
+    :is-deleting="transicionEstado"
+    @confirm="confirmarIniciar"
+    @cancel="showIniciarModal = false"
   />
 
   <ConfirmModal

@@ -113,6 +113,7 @@ const puedeAgregarRelacion = ref({ cita: true, inspeccion: true, cotizacion: tru
 const relacionesCargadas = ref(false);
 const recepcionData = ref(null);
 const pasosRelaciones = computed(() => relacionesDeRecepcion(recepcionData.value || {}));
+const tallerSucursalNombre = computed(() => recepcionData.value?.sucursal_nombre || "");
 
 function pad2(n) {
   return String(n).padStart(2, "0");
@@ -1629,6 +1630,7 @@ onMounted(() => {
             <TallerSelect
               v-model="tallerSucursalId"
               variante="campo"
+              :nombre="tallerSucursalNombre"
               :invalid="Boolean(tallerSucursalError)"
               :disabled="readOnly"
               placeholder="Selecciona el taller"
