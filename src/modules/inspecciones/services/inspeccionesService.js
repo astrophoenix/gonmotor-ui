@@ -56,20 +56,10 @@ export const inspeccionesService = {
     return request(`${ENDPOINT}?recepcion=${encodeURIComponent(recepcionId)}`);
   },
 
-  crearDesdeRecepcion(recepcionId, cotizaciones = null) {
-    const opciones = { method: 'POST' };
-    if (Array.isArray(cotizaciones)) {
-      opciones.body = JSON.stringify({ cotizaciones });
-    }
+  crearDesdeRecepcion(recepcionId) {
     return request(
       `/api/recepciones/${encodeURIComponent(recepcionId)}/crear-inspeccion/`,
-      opciones
-    );
-  },
-
-  cotizacionesCandidatas(recepcionId) {
-    return request(
-      `/api/recepciones/${encodeURIComponent(recepcionId)}/cotizaciones-candidatas/`
+      { method: 'POST' }
     );
   },
 

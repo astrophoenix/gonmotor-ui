@@ -1,6 +1,6 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { Car, Camera, CheckCircle2, ClipboardList, FilePen, Clock, FolderInput, ShieldCheck, FileText, IdCardIcon, Image as ImageIcon, Mail, PaintBucket, Phone, Shapes, SquarePen, TagIcon, TriangleAlert, WrenchIcon, Workflow, X, Toolbox } from 'lucide-vue-next';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { Car, Camera, CheckCircle2, ClipboardList, FilePen, ShieldCheck, FileText, IdCardIcon, Image as ImageIcon, Mail, PaintBucket, Phone, Shapes, TagIcon, TriangleAlert, WrenchIcon, Workflow, X, Toolbox, Receipt } from 'lucide-vue-next';
 import { IconAutomaticGearbox, IconEngine, IconFileInvoice, IconGasStation, IconLockOpen2, IconManualGearbox } from '@tabler/icons-vue';
 import { API_BASE_URL } from '../../../shared/config/env';
 import { request } from '../../../shared/services/httpClient';
@@ -144,6 +144,12 @@ function getTestigoIconClasses(testigo) {
 
 const tieneOrdenTrabajo = computed(() => Boolean(inspeccion.value?.tiene_orden_trabajo));
 const tieneCotizacionActiva = computed(() => Boolean(inspeccion.value?.tiene_cotizacion_activa));
+const cotizacionActivaAceptada = computed(
+  () => inspeccion.value?.cotizacion_activa_estado === 'ACEPTADA',
+);
+const puedeActualizarCotizacion = computed(
+  () => tieneCotizacionActiva.value && !cotizacionActivaAceptada.value,
+);
 const estaFinalizada = computed(() => inspeccion.value?.estado === 'FINALIZADA');
 const tieneItemsInspeccion = computed(() => (
   (inspeccion.value?.servicios_detectados?.length || 0)
@@ -209,191 +215,29 @@ function cerrarFoto() {
 
 const isSyncingCotizacion = ref(false);
 
-// --- Decisión de cotización: el cliente puede tener cotizaciones aceptadas
-// antes de esta visita, así que nunca se crea una nueva sin avisar. ---
-const candidatas = ref({ aprobadas: [], enCurso: [], historicas: [] });
-const candidatasCargando = ref(false);
-const showDecisionModal = ref(false);
-const showComparacion = ref(false);
-const selectedCotizaciones = ref([]);
-const vinculandoCotizaciones = ref(false);
-
-const cotizacionesAceptadas = computed(() => candidatas.value.aprobadas || []);
-const hayAceptadas = computed(() => cotizacionesAceptadas.value.length > 0);
-const totalAceptadas = computed(() => cotizacionesAceptadas.value.reduce(
-  (accumulado, c) => accumulado + Number(c.total || 0), 0,
-));
-
-function formatMoney(value) {
-  return Number(value || 0).toLocaleString('es-EC', { style: 'currency', currency: 'USD' });
-}
-
-function formatShortDate(value) {
-  if (!value) return '—';
-  const fecha = new Date(value);
-  if (Number.isNaN(fecha.getTime())) return '—';
-  return fecha.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
-
-async function cargarCandidatas() {
-  if (!inspeccionId) return;
-  candidatasCargando.value = true;
-  try {
-    const respuesta = await request(
-      `/api/ordenes/inspecciones/${encodeURIComponent(inspeccionId)}/cotizaciones-candidatas/`
-    );
-    candidatas.value = {
-      aprobadas: respuesta.aprobadas || [],
-      enCurso: respuesta.enCurso || [],
-      historicas: respuesta.historicas || [],
-    };
-  } catch (candidatasError) {
-    // No bloquea el flujo: si no se pueden listar, se sigue el camino previo.
-    console.warn('No se pudieron cargar las cotizaciones del vehículo', candidatasError);
-  } finally {
-    candidatasCargando.value = false;
-  }
-}
-
-function alternarCotizacion(id) {
-  selectedCotizaciones.value = selectedCotizaciones.value.includes(id)
-    ? selectedCotizaciones.value.filter((otro) => otro !== id)
-    : [...selectedCotizaciones.value, id];
-}
-
-const todasSeleccionadas = computed(
-  () => hayAceptadas.value && selectedCotizaciones.value.length === cotizacionesAceptadas.value.length,
+// Reapertura: solo si el trabajo no avanzó. Se bloquea cuando la inspección ya
+// generó una orden de trabajo o tiene una cotización enviada/aceptada.
+const tieneCotizacionBloqueante = computed(
+  () => Boolean(inspeccion.value?.tiene_cotizacion_bloqueante),
 );
-
-function alternarTodas() {
-  selectedCotizaciones.value = todasSeleccionadas.value ? [] : cotizacionesAceptadas.value.map((c) => c.id);
-}
-
-/** Normaliza el texto para comparar un ítem de la inspección con el de la cotización. */
-function claveItem(tipo, item) {
-  const codigo = (item.codigo || item.codigo_repuesto || '').trim().toUpperCase();
-  if (codigo) return `${tipo}:${codigo}`;
-  const descripcion = (item.descripcion || '').trim().toLowerCase().replace(/\s+/g, ' ');
-  return `${tipo}:${descripcion}`;
-}
-
-const coberturaItems = computed(() => {
-  const cotizadas = new Map();
-  cotizacionesAceptadas.value.forEach((cotizacion) => {
-    [...(cotizacion.servicios || []), ...(cotizacion.repuestos || [])].forEach((item) => {
-      const clave = claveItem((item.cantidad && !item.horas) ? 'REP' : 'SRV', item);
-      const existente = cotizadas.get(clave);
-      cotizadas.set(clave, {
-        cotizacion: existente?.cotizacion || cotizacion.numero,
-        veces: (existente?.veces || 0) + 1,
-      });
-    });
-  });
-
-  const filas = [];
-  const registrar = (tipo, item, descripcion, cantidad) => {
-    const clave = claveItem(tipo, item);
-    const coincidencia = cotizadas.get(clave);
-    filas.push({
-      tipo,
-      descripcion,
-      cantidad,
-      cubierta: Boolean(coincidencia),
-      cotizacion: coincidencia?.cotizacion || '',
-    });
-  };
-
-  (inspeccion.value?.servicios_detectados || []).forEach((s) => {
-    registrar('SRV', s, s.descripcion, formatoHoras(s.horas_estimadas));
-  });
-  (inspeccion.value?.repuestos_sugeridos || []).forEach((r) => {
-    registrar('REP', r, r.descripcion, `x${r.cantidad ?? 1}`);
-  });
-  return filas;
+const puedeReabrir = computed(
+  () => estaFinalizada.value && !tieneOrdenTrabajo.value && !tieneCotizacionBloqueante.value,
+);
+const motivoNoReabrir = computed(() => {
+  if (!estaFinalizada.value || puedeReabrir.value) return '';
+  if (tieneOrdenTrabajo.value) {
+    return 'La inspección ya generó una orden de trabajo; no puede reabrirse.';
+  }
+  return 'La inspección tiene una cotización enviada o aceptada; no puede reabrirse.';
 });
-
-const resumenCobertura = computed(() => {
-  const total = coberturaItems.value.length;
-  const cubiertas = coberturaItems.value.filter((f) => f.cubierta).length;
-  return { total, cubiertas, nuevas: total - cubiertas };
-});
-
-function abrirDecisionModal() {
-  showComparacion.value = false;
-  selectedCotizaciones.value = cotizacionesAceptadas.value.map((c) => c.id);
-  showDecisionModal.value = true;
-}
-
-function cerrarDecisionModal() {
-  showDecisionModal.value = false;
-  showComparacion.value = false;
-}
-
-function irACotizacion(cotizacionId) {
-  if (!cotizacionId) return;
-  window.location.assign(`/crud/cotizaciones/editar/?id=${encodeURIComponent(cotizacionId)}`);
-}
 
 function irAEditar() {
   if (!inspeccion.value?.id) return;
   window.location.assign(`/crud/inspecciones/editar/?id=${encodeURIComponent(inspeccion.value.id)}`);
 }
 
-function crearComplementaria() {
-  if (!tieneItemsInspeccion.value) {
-    avisarSinItems();
-    return;
-  }
-  const ids = selectedCotizaciones.value.join(',');
-  const query = new URLSearchParams({ inspeccion: String(inspeccionId) });
-  if (ids) query.set('complementa', ids);
-  window.location.assign(`/crud/cotizaciones/nuevo/?${query.toString()}`);
-}
-
-function crearNuevaCotizacion() {
-  if (!tieneItemsInspeccion.value) {
-    cerrarDecisionModal();
-    avisarSinItems();
-    return;
-  }
-  window.location.assign(`/crud/cotizaciones/nuevo/?inspeccion=${encodeURIComponent(inspeccionId)}`);
-}
-
-async function usarCotizacionesAceptadas() {
-  if (vinculandoCotizaciones.value) return;
-  if (selectedCotizaciones.value.length === 0) {
-    mostrarError('Selecciona al menos una cotización aprobada.');
-    return;
-  }
-  vinculandoCotizaciones.value = true;
-  limpiarMensajes();
-  try {
-    await request(
-      `/api/ordenes/inspecciones/${encodeURIComponent(inspeccionId)}/cotizaciones-candidatas/`,
-      {
-        method: 'POST',
-        body: JSON.stringify({ cotizaciones: selectedCotizaciones.value, accion: 'vincular' }),
-      }
-    );
-    await Promise.all([cargarInspeccion(), cargarCandidatas()]);
-    cerrarDecisionModal();
-    const numero = cotizacionesAceptadas.value[0]?.numero || 'la cotización';
-    mostrarExito(`${numero} quedó vinculada a esta inspección. Ya puedes generar la orden de trabajo desde la cotización.`);
-    scrollAlInicio();
-  } catch (vinculoError) {
-    mostrarError(vinculoError.message || 'No se pudieron vincular las cotizaciones aprobadas.');
-    scrollAlInicio();
-  } finally {
-    vinculandoCotizaciones.value = false;
-  }
-}
-
 function solicitarCrearCotizacion() {
   if (isSyncingCotizacion.value || isGeneratingCotizacion.value) return;
-  if (hayAceptadas.value) {
-    abrirDecisionModal();
-    return;
-  }
   if (!tieneItemsInspeccion.value) {
     avisarSinItems();
     return;
@@ -402,17 +246,17 @@ function solicitarCrearCotizacion() {
 }
 
 const textoConfirmacionCotizacion = computed(() => (
-  tieneCotizacionActiva.value
+  puedeActualizarCotizacion.value
     ? 'Se actualizará la cotización con los detalles actuales de servicios y repuestos necesarios para realizar la orden de trabajo.'
     : 'Se creará una cotización con los detalles de servicios y repuestos necesarios para realizar la orden de trabajo.'
 ));
 
 const tituloConfirmacionCotizacion = computed(() => (
-  tieneCotizacionActiva.value ? 'Actualizar cotización' : 'Generar cotización'
+  puedeActualizarCotizacion.value ? 'Actualizar cotización' : 'Crear cotización'
 ));
 
 const textoConfirmarCotizacion = computed(() => (
-  tieneCotizacionActiva.value ? 'Actualizar cotización' : 'Generar cotización'
+  puedeActualizarCotizacion.value ? 'Actualizar cotización' : 'Crear cotización'
 ));
 
 async function crearCotizacion() {
@@ -423,7 +267,9 @@ async function crearCotizacion() {
     return;
   }
   isGeneratingCotizacion.value = true;
-  const cotizacionId = inspeccion.value?.cotizacion_activa_id;
+  const cotizacionId = puedeActualizarCotizacion.value
+    ? inspeccion.value?.cotizacion_activa_id
+    : null;
   if (!cotizacionId) {
     showGenerarCotizacionModal.value = false;
     isGeneratingCotizacion.value = false;
@@ -450,6 +296,10 @@ async function crearCotizacion() {
 
 function solicitarReabrir() {
   if (isReopening.value) return;
+  if (!puedeReabrir.value) {
+    if (motivoNoReabrir.value) mostrarError(motivoNoReabrir.value);
+    return;
+  }
   showReabrirModal.value = true;
 }
 
@@ -457,23 +307,11 @@ async function confirmarReabrir() {
   if (isReopening.value) return;
   isReopening.value = true;
   try {
-    const actualizada = await inspeccionesService.update(inspeccionId, { estado: 'EN_PROCESO' });
-    if (inspeccion.value) {
-      // Al reabrir se limpia la fecha de cierre y la duración.
-      inspeccion.value = {
-        ...inspeccion.value,
-        estado: 'EN_PROCESO',
-        estado_display: 'En proceso',
-        fecha_finalizacion: actualizada?.fecha_finalizacion ?? null,
-        duracion_inspeccion_minutos: actualizada?.duracion_inspeccion_minutos ?? null,
-      };
-    }
-    showReabrirModal.value = false;
-    mostrarExito('Inspección reabierta. Ahora está en proceso.');
-    scrollAlInicio();
+    await inspeccionesService.update(inspeccionId, { estado: 'EN_PROCESO' });
+    // Reabrir lleva directo a la edición para retomar el diagnóstico.
+    window.location.assign(`/crud/inspecciones/editar/?id=${encodeURIComponent(inspeccionId)}`);
   } catch (fetchError) {
     mostrarError(fetchError.message || 'No se pudo reabrir la inspección.');
-  } finally {
     isReopening.value = false;
   }
 }
@@ -481,11 +319,6 @@ async function confirmarReabrir() {
 const numeroInspeccion = computed(
   () => inspeccion.value?.numero_inspeccion || `#${inspeccion.value?.id}`
 );
-
-// El modal se cierra solo con la X o Cancelar, así que el fondo queda bloqueado.
-watch(showDecisionModal, (abierto) => {
-  document.body.style.overflow = abierto ? 'hidden' : '';
-});
 
 onBeforeUnmount(() => {
   document.body.style.overflow = '';
@@ -518,7 +351,6 @@ onMounted(async () => {
   }
   try {
     await cargarInspeccion();
-    await cargarCandidatas();
   } catch (fetchError) {
     mostrarError(fetchError.message || 'No se pudo cargar la inspección.');
   } finally {
@@ -558,22 +390,23 @@ onMounted(async () => {
         Editar
       </button>
       <button
-        v-if="estaFinalizada"
+        v-if="puedeReabrir"
         type="button"
-        :disabled="isReopening"
-        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs text-primary bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
+        :disabled="isReopening || !puedeReabrir"
+        :title="puedeReabrir ? 'Reabrir la inspección para editarla' : motivoNoReabrir"
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs text-primary bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800"
         @click="solicitarReabrir">
         <IconLockOpen2 class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
         Reabrir Inspección
       </button>
       <button
-        v-if="estaFinalizada"
+        v-if="puedeReabrir"
         type="button"
         :disabled="isSyncingCotizacion"
-        :title="tieneCotizacionActiva ? 'Actualizar la cotización existente para reflejar los cambios de la inspección.' : 'Generar una cotización desde este diagnóstico'"
+        :title="puedeActualizarCotizacion ? 'Actualizar la cotización existente para reflejar los cambios de la inspección.' : 'Generar una cotización desde este diagnóstico'"
         class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs text-primary bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
         @click="solicitarCrearCotizacion">
-        <IconFileInvoice class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
+        <Receipt class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
         {{ isSyncingCotizacion ? 'Sincronizando...' : (tieneCotizacionActiva ? 'Actualizar Cotización' : 'Crear Cotización') }}
       </button>
     </template>
@@ -583,43 +416,12 @@ onMounted(async () => {
     <div class="relative mx-auto max-w-8xl">
       <Alert v-if="error" type="error" :message="error" dismissible @dismiss="error = ''"/>
       <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''"/>
-
-      <div v-if="hayAceptadas && !loading" class="mb-4 p-4 border border-primary-blue-300 rounded-lg bg-primary-blue-50 dark:border-primary-blue-700 dark:bg-primary-blue-900/30">
-        <div class="flex items-start gap-3">
-          <IconFileInvoice class="w-5 h-5 mt-0.5 text-primary-blue-600 dark:text-primary-blue-400" />
-          <div class="min-w-0 flex-1">
-            <h4 class="text-sm font-semibold text-primary-blue-900 dark:text-primary-blue-200">
-              Este vehículo tiene {{ cotizacionesAceptadas.length }}
-              {{ cotizacionesAceptadas.length === 1 ? 'cotización aceptada' : 'cotizaciones aceptadas' }}
-            </h4>
-            <ul class="mt-2 space-y-1 text-sm text-primary-blue-800 dark:text-primary-blue-300">
-              <li v-for="cotizacion in cotizacionesAceptadas" :key="cotizacion.id" class="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  class="font-medium underline underline-offset-2 hover:text-primary-blue-900 dark:hover:text-primary-blue-100"
-                  @click="irACotizacion(cotizacion.id)">
-                  {{ cotizacion.numero }}
-                </button>
-                <span>{{ formatMoney(cotizacion.total) }}</span>
-                <span class="text-sm text-primary-blue-700 dark:text-primary-blue-400">
-                  aceptada el {{ formatShortDate(cotizacion.fechaAceptacion) }}
-                  <template v-if="cotizacion.vinculada"> · ya vinculada a esta visita</template>
-                </span>
-              </li>
-            </ul>
-            <p v-if="candidatasCargando" class="mt-2 text-xs text-primary-blue-700 dark:text-primary-blue-400">Verificando cotizaciones del vehículo...</p>
-            <button
-              v-else-if="!tieneCotizacionActiva"
-              type="button"
-              class="mt-3 inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-blue-600 hover:bg-primary-blue-700 focus:ring-4 focus:ring-primary-blue-300 dark:bg-primary-blue-700 dark:hover:bg-primary-blue-800"
-              @click="abrirDecisionModal"
-            >
-              <IconFileInvoice class="w-4 h-4" />
-              Resolver cotización
-            </button>
-          </div>
-        </div>
-      </div>
+      <Alert
+        v-if="!loading && inspeccion && estaFinalizada && !puedeReabrir"
+        type="info"
+        title="Importante:"
+        :message="motivoNoReabrir"
+      />
 
       <div v-if="loading" class="p-6 text-center text-sm text-gray-500 bg-white rounded-lg shadow dark:bg-gray-800 dark:text-gray-400">
         Cargando inspección...
@@ -1140,207 +942,10 @@ onMounted(async () => {
   </div>
 
 
-  <div
-    v-if="showDecisionModal"
-    class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:items-center"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="decision-cotizacion-title"
-  >
-    <!-- Fondo oscurecido: al hacer click aquí no se cierra el modal. -->
-    <div class="fixed inset-0 bg-black/70" aria-hidden="true"></div>
-    <div class="relative w-full max-w-3xl my-8 bg-white rounded-lg shadow-xl dark:bg-gray-800">
-      <div class="flex items-start justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-        <div class="flex items-start gap-3">
-          <IconFileInvoice class="w-6 h-6 text-green-600 dark:text-green-400" />
-          <div>
-            <h3 id="decision-cotizacion-title" class="text-base font-semibold text-gray-900 dark:text-white">
-              El cliente ya aceptó {{ cotizacionesAceptadas.length }}
-              {{ cotizacionesAceptadas.length === 1 ? 'cotización' : 'cotizaciones' }}
-            </h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-              Revisa cuáles usará esta visita antes de cotizar de nuevo.
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          class="inline-flex items-center justify-center w-8 h-8 rounded-full text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
-          aria-label="Cerrar"
-          @click="cerrarDecisionModal"
-        >
-          <X class="w-5 h-5" />
-        </button>
-      </div>
-
-      <div class="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
-        <div class="flex items-center justify-between">
-          <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Cotizaciones del vehículo</h4>
-          <button
-            type="button"
-            class="text-sm font-medium text-primary-700 hover:underline dark:text-primary-400"
-            @click="alternarTodas"
-          >
-            {{ todasSeleccionadas ? 'Desmarcar todas' : 'Marcar todas' }}
-          </button>
-        </div>
-
-        <ul class="space-y-2">
-          <li
-            v-for="cotizacion in cotizacionesAceptadas"
-            :key="cotizacion.id"
-            class="flex items-start gap-3 p-3 border rounded-lg dark:border-gray-600"
-            :class="selectedCotizaciones.includes(cotizacion.id)
-              ? 'border-green-500 bg-green-50 dark:border-green-600 dark:bg-green-900/30'
-              : 'border-gray-200 dark:border-gray-700'"
-          >
-            <input
-              type="checkbox"
-              class="w-4 h-4 mt-1 text-green-600 border-gray-300 rounded focus:ring-green-500 dark:bg-gray-700 dark:border-gray-600"
-              :checked="selectedCotizaciones.includes(cotizacion.id)"
-              :aria-label="`Usar ${cotizacion.numero}`"
-              @change="alternarCotizacion(cotizacion.id)"
-            >
-            <div class="min-w-0 flex-1">
-              <div class="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  class="text-sm font-semibold text-gray-900 underline underline-offset-2 hover:text-primary-700 dark:text-white dark:hover:text-primary-400"
-                  @click="irACotizacion(cotizacion.id)"
-                >
-                  {{ cotizacion.numero }}
-                </button>
-                <span class="px-2 py-0.5 text-xs font-medium text-green-800 rounded-full bg-green-100 dark:bg-green-900 dark:text-green-300">
-                  Aceptada
-                </span>
-                <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ formatMoney(cotizacion.total) }}</span>
-                <span v-if="cotizacion.vinculada" class="text-xs text-gray-500 dark:text-gray-400">
-                  ya vinculada a esta visita
-                </span>
-              </div>
-              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Aceptada el {{ formatShortDate(cotizacion.fechaAceptacion) }} ·
-                {{ cotizacion.servicios.length }} servicio(s) · {{ cotizacion.repuestos.length }} repuesto(s)
-              </p>
-            </div>
-          </li>
-        </ul>
-
-        <div class="p-3 border rounded-lg border-gray-200 dark:border-gray-700">
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 text-sm font-medium text-primary-700 hover:underline dark:text-primary-400"
-            :aria-expanded="showComparacion"
-            @click="showComparacion = !showComparacion"
-          >
-            <ClipboardList class="w-4 h-4" />
-            Comparar con la inspección
-            <span class="text-xs text-gray-500 dark:text-gray-400">
-              ({{ resumenCobertura.nuevas }} nuevos · {{ resumenCobertura.cubiertas }} ya cotizados)
-            </span>
-          </button>
-
-          <div v-if="showComparacion" class="mt-3 overflow-x-auto">
-            <p v-if="resumenCobertura.total === 0" class="text-sm text-gray-500 dark:text-gray-400">
-              La inspección todavía no tiene ítems cargados.
-            </p>
-            <table v-else class="w-full text-sm text-left text-gray-600 dark:text-gray-300">
-              <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:text-gray-700 dark:text-gray-300">
-                <tr>
-                  <th scope="col" class="px-2 py-2">Ítem</th>
-                  <th scope="col" class="px-2 py-2">Cantidad</th>
-                  <th scope="col" class="px-2 py-2">Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="(fila, index) in coberturaItems"
-                  :key="`${fila.tipo}-${fila.descripcion}-${index}`"
-                  class="border-t border-gray-100 dark:border-gray-700"
-                >
-                  <td class="px-2 py-2">
-                    <span class="mr-1 text-xs text-gray-400">{{ fila.tipo }}</span>{{ fila.descripcion }}
-                  </td>
-                  <td class="px-2 py-2 whitespace-nowrap">{{ fila.cantidad }}</td>
-                  <td class="px-2 py-2">
-                    <span
-                      class="px-2 py-0.5 text-xs font-medium rounded-full"
-                      :class="fila.cubierta
-                        ? 'text-blue-800 bg-blue-100 dark:bg-blue-900 dark:text-blue-300'
-                        : 'text-amber-800 bg-amber-100 dark:bg-amber-900 dark:text-amber-300'"
-                    >
-                      {{ fila.cubierta ? `Ya cotizado en ${fila.cotizacion}` : 'Nuevo' }}
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div class="p-4 space-y-3 border-t border-gray-200 dark:border-gray-700">
-        <button
-          type="button"
-          class="flex items-start gap-3 w-full p-3 text-left border rounded-lg border-green-500 hover:bg-green-50 dark:hover:bg-green-900/30"
-          :disabled="vinculandoCotizaciones || selectedCotizaciones.length === 0"
-          @click="usarCotizacionesAceptadas"
-        >
-          <CheckCircle2 class="w-5 h-5 mt-0.5 text-green-600 dark:text-green-400" />
-          <span>
-            <span class="block text-sm font-semibold text-gray-900 dark:text-white">
-              {{ vinculandoCotizaciones ? 'Vinculando...' : 'Usar las cotizaciones marcadas' }}
-            </span>
-            <span class="block text-xs text-gray-500 dark:text-gray-400">
-              Se ligan a esta inspección y a la recepción ({{ selectedCotizaciones.length }} seleccionadas,
-              {{ formatMoney(totalAceptadas) }}). No se crea una cotización nueva ni se modifica lo aprobado.
-            </span>
-          </span>
-        </button>
-
-        <button
-          type="button"
-          class="flex items-start gap-3 w-full p-3 text-left border rounded-lg border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
-          @click="crearComplementaria"
-        >
-          <SquarePen class="w-5 h-5 mt-0.5 text-gray-500 dark:text-gray-400" />
-          <span>
-            <span class="block text-sm font-semibold text-gray-900 dark:text-white">
-              Crear cotización complementaria
-            </span>
-            <span class="block text-xs text-gray-500 dark:text-gray-400">
-              Genera una cotización nueva con los ítems de la inspección y deja las aprobadas intactas como referencia.
-            </span>
-          </span>
-        </button>
-
-        <button
-          type="button"
-          class="flex items-start gap-3 w-full p-3 text-left border rounded-lg border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
-          @click="crearNuevaCotizacion"
-        >
-          <IconFileInvoice class="w-5 h-5 mt-0.5 text-gray-500 dark:text-gray-400" />
-          <span>
-            <span class="block text-sm font-semibold text-gray-900 dark:text-white">
-              Crear cotización nueva desde esta inspección
-            </span>
-            <span class="block text-xs text-gray-500 dark:text-gray-400">
-              Genera una cotización nueva solo con los ítems de esta inspección, sin vincular ni modificar las aceptadas existentes.
-            </span>
-          </span>
-        </button>
-
-        <p class="text-xs text-gray-500 dark:text-gray-400">
-          El vínculo formal entre la cotización complementaria y las aprobadas se registra al crear la orden de trabajo.
-        </p>
-      </div>
-    </div>
-  </div>
-
   <ConfirmModal
     v-model="showReabrirModal"
     title="Reabrir inspección"
-    :message="'Se reabrirá la inspección para poder modificar el diagnóstico y volver a generar la cotización. El cliente deberá aceptar nuevamente la cotización antes de modificar la orden de trabajo. ¿Deseas continuar?'"
+    :message="'Podrás reabrirla mientras no tenga una cotización enviada o aceptada ni una orden de trabajo. ¿Deseas continuar?'"
     :icon="IconLockOpen2"
     icon-class="text-primary-600 dark:text-primary-400"
     confirm-text="Sí, reabrir"
@@ -1355,11 +960,11 @@ onMounted(async () => {
     v-model="showGenerarCotizacionModal"
     :title="tituloConfirmacionCotizacion"
     :message="textoConfirmacionCotizacion"
-    :icon="IconFileInvoice"
-    icon-class="text-green-600 dark:text-green-400"
+    :icon="Receipt"
+    icon-class="text-primary-blue-600 dark:text-primary-blue-400"
     :confirm-text="textoConfirmarCotizacion"
-    confirming-text="Generando..."
-    confirm-class="bg-green-600 hover:bg-green-700 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
+    confirming-text="Creando..."
+    confirm-class="bg-primary-blue-600 hover:bg-primary-blue-700 focus:ring-primary-blue-300 dark:bg-primary-blue-700 dark:hover:bg-primary-blue-800"
     variant="success"
     :is-deleting="isGeneratingCotizacion"
     @confirm="crearCotizacion"

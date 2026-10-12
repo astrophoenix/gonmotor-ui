@@ -17,9 +17,8 @@ function titulo(paso) {
 
 <template>
   <div class="flex flex-col items-start gap-1.5">
-    <template v-for="paso in pasos" :key="paso.key">
+    <template v-for="paso in pasos.filter((relacion) => relacion.numero)" :key="paso.key">
       <a
-        v-if="paso.numero"
         :href="paso.url"
         :title="titulo(paso)"
         class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border border-primary-200 bg-primary-100 text-primary-700 transition-colors hover:bg-primary-200 dark:border-primary-500 dark:bg-primary-500/10 dark:text-primary-300">
@@ -32,13 +31,6 @@ function titulo(paso) {
           <Plus class="w-2.5 h-2.5" />{{ paso.extra }}
         </span>
       </a>
-      <span
-        v-else
-        class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border border-gray-200 bg-gray-100 text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
-        :title="`${paso.label}: sin relación`">
-        <component :is="paso.icon" class="w-3.5 h-3.5 shrink-0" />
-        {{ paso.label }}: No
-      </span>
     </template>
   </div>
 </template>

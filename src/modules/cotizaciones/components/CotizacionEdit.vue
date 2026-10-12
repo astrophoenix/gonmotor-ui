@@ -60,11 +60,6 @@ import EstadoCotizacionBadge from './EstadoCotizacionBadge.vue';
 const urlParams = new URLSearchParams(window.location.search);
 const cotizacionParamId = urlParams.get('id');
 const inspeccionParamId = urlParams.get('inspeccion');
-// Cotizaciones ya aceptadas que esta(complementa, sin tocarlas.
-const complementaParam = urlParams.get('complementa') || '';
-const complementaIds = complementaParam
-  ? complementaParam.split(',').map((valor) => Number(valor)).filter((valor) => Number.isInteger(valor) && valor > 0)
-  : [];
 
 const isEditModeUrl = Boolean(cotizacionParamId);
 const inspeccionId = inspeccionParamId ? Number(inspeccionParamId) : null;
@@ -104,7 +99,6 @@ const showImageModal = ref(false);
 
 const mostrarModalGenerarOrden = ref(false);
 const procesandoGeneracionOrden = ref(false);
-const complementaCotizaciones = ref([]);
 
 const tituloPagina = computed(() => (isEditMode.value ? 'Editar cotización' : 'Nueva cotización'));
 
@@ -633,29 +627,10 @@ function desvincularRelacion({ tipo, id }) {
   return relacionCotizacion({ tipo, id, accion: 'desvincular' });
 }
 
-async function cargarCotizacionesComplementadas(idInspeccion) {
-  if (!idInspeccion || complementaIds.length === 0) return;
-  try {
-    const respuesta = await request(
-      `/api/ordenes/inspecciones/${encodeURIComponent(idInspeccion)}/cotizaciones-candidatas/`
-    );
-    const aprobadas = respuesta.aprobadas || [];
-    complementaCotizaciones.value = aprobadas.filter((c) => complementaIds.includes(c.id));
-  } catch (error) {
-    // El aviso es informativo: si falla, la cotización se crea igual.
-    complementaCotizaciones.value = [];
-  }
-}
-
 function observacionesIniciales(inspeccion) {
   const lineas = [];
   if (inspeccion?.recepcion?.motivo_ingreso) {
     lineas.push(`Motivo de ingreso: ${inspeccion.recepcion.motivo_ingreso}`);
-  }
-  if (complementaCotizaciones.value.length > 0) {
-    lineas.push(
-      `Cotización complementaria. No incluye el trabajo ya aceptado en: ${complementaCotizaciones.value.map((c) => c.numero).join(', ')}.`
-    );
   }
   return sanitizeObservaciones(lineas.join('\n')).slice(0, 2000);
 }
@@ -667,7 +642,9 @@ async function crearCotizacionDesdeInspeccion() {
   errorMessage.value = '';
   try {
     const data = await request(`/api/ordenes/inspecciones/${inspeccionId}/`);
-    if (data.cotizacion_activa_id) {
+    // Una cotización aceptada es inmutable: una nueva cotización desde la
+    // inspección debe construirse exclusivamente con sus ítems actuales.
+    if (data.cotizacion_activa_id && data.cotizacion_activa_estado !== 'ACEPTADA') {
       window.location.replace(`/crud/cotizaciones/editar/?id=${encodeURIComponent(data.cotizacion_activa_id)}`);
       return;
     }
@@ -683,7 +660,6 @@ async function crearCotizacionDesdeInspeccion() {
     form.vehiculoSearch = data.recepcion?.vehiculo?.placa || '';
 
     prefillDesdeInspeccion(data);
-    await cargarCotizacionesComplementadas(inspeccionId);
 
     const creada = await cotizacionesService.create({
       sucursal: sucursalDocumento.value,
@@ -1171,21 +1147,6 @@ onMounted(() => {
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
       <div class="lg:col-span-3 space-y-4">
         <div class="relative mx-auto max-w-8xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
-          <div
-            v-if="complementaCotizaciones.length > 0"
-            class="p-4 mb-4 border rounded-lg border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900/30">
-            <h4 class="text-sm font-semibold text-blue-900 dark:text-blue-200">
-              Cotización complementaria
-            </h4>
-            <p class="mt-1 text-sm text-blue-800 dark:text-blue-300">
-              El cliente ya aceptó estas cotizaciones; sus ítems no se incluyen en esta:
-            </p>
-            <ul class="mt-2 space-y-1 text-sm text-blue-800 dark:text-blue-300">
-              <li v-for="cotizacion in complementaCotizaciones" :key="cotizacion.id">
-                {{ cotizacion.numero }} — {{ Number(cotizacion.total).toLocaleString('es-EC', { style: 'currency', currency: 'USD' }) }}
-              </li>
-            </ul>
-          </div>
           <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
           <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
 
@@ -1318,15 +1279,17 @@ onMounted(() => {
                   </label>
                   <TallerSelect
                     v-model="tallerSucursalId"
+                    :nombre="sucursalNombre"
                     variante="campo"
+                    :disabled="Boolean(inspeccionOrigen)"
                     :invalid="Boolean(tallerSucursalError)"
                     placeholder="Selecciona el taller"
                     @change="limpiarErrorSucursal"
                   />
                   <p v-if="tallerSucursalError" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ tallerSucursalError }}</p>
                 </div>
-                <!-- Metadatos de la cotización (siempre visibles) -->
-                <div class="flex flex-wrap items-center gap-x-6 gap-y-2 pt-4 mt-4 text-sm text-gray-600 border-t border-gray-200 dark:border-gray-600 dark:text-gray-300">
+                <!-- Los metadatos solo se muestran al crear una cotización. -->
+                <div v-if="!isEditMode" class="flex flex-wrap items-center gap-x-6 gap-y-2 pt-4 mt-4 text-sm text-gray-600 border-t border-gray-200 dark:border-gray-600 dark:text-gray-300">
                   <span class="inline-flex items-center gap-1.5" title="Fecha y hora de emisión">
                     <CalendarDays class="w-4 h-4 shrink-0 text-brand-700 dark:text-brand-300" />
                     <span class="font-medium text-gray-900 dark:text-white">Emisión:</span>

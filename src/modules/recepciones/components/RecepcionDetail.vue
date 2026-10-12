@@ -216,69 +216,11 @@ function goTo(path) {
 
 const tieneInspeccion = computed(() => (recepcion.value?.inspecciones?.length ?? 0) > 0);
 
-// Antes de crear la inspección se confirma con el usuario y se eligen las
-// cotizaciones cuyo trabajo se cargará como acordado.
+// Antes de crear la inspección se confirma con el usuario.
 const showModalCrearInspeccion = ref(false);
-const candidatas = ref({ aprobadas: [], enCurso: [], historicas: [] });
-const cotizacionesSeleccionadas = ref([]);
-const cargandoCandidatas = ref(false);
-
-const cotizacionesDisponibles = computed(() => [
-  ...candidatas.value.aprobadas,
-  ...candidatas.value.enCurso,
-]);
-
-const totalItemsSeleccionados = computed(() => cotizacionesSeleccionadas.value.reduce(
-  (total, id) => {
-    const cotizacion = cotizacionesDisponibles.value.find((c) => c.id === id);
-    if (!cotizacion) return total;
-    return total + cotizacion.servicios.length + cotizacion.repuestos.length;
-  },
-  0,
-));
-
-const todasLasCotizacionesSeleccionadas = computed(
-  () => cotizacionesDisponibles.value.length > 0
-    && cotizacionesSeleccionadas.value.length === cotizacionesDisponibles.value.length,
-);
-
-function alternarCotizacion(id) {
-  cotizacionesSeleccionadas.value = cotizacionesSeleccionadas.value.includes(id)
-    ? cotizacionesSeleccionadas.value.filter((otro) => otro !== id)
-    : [...cotizacionesSeleccionadas.value, id];
-}
-
-function alternarTodasLasCotizaciones() {
-  cotizacionesSeleccionadas.value = todasLasCotizacionesSeleccionadas.value
-    ? []
-    : cotizacionesDisponibles.value.map((c) => c.id);
-}
-
-async function cargarCandidatas() {
-  const id = recepcion.value?.id;
-  if (!id) return;
-  cargandoCandidatas.value = true;
-  try {
-    const respuesta = await inspeccionesService.cotizacionesCandidatas(id);
-    candidatas.value = {
-      aprobadas: respuesta.aprobadas || [],
-      enCurso: respuesta.enCurso || [],
-      historicas: respuesta.historicas || [],
-    };
-  } catch (candidatasError) {
-    candidatas.value = { aprobadas: [], enCurso: [], historicas: [] };
-  } finally {
-    cargandoCandidatas.value = false;
-  }
-}
 
 function abrirModalCrearInspeccion() {
   showModalCrearInspeccion.value = true;
-  // Por defecto se cargan las aceptadas: son el trabajo ya acordado.
-  cotizacionesSeleccionadas.value = [...candidatas.value.aprobadas].map((c) => c.id);
-  if (!candidatas.value.aprobadas.length && !candidatas.value.enCurso.length) {
-    cargarCandidatas();
-  }
 }
 
 const puedeEditar = computed(() => {
@@ -567,10 +509,7 @@ async function crearInspeccion(recepcion) {
   creandoInspeccion.value = true;
   errorCrearInspeccion.value = '';
   try {
-    const inspeccion = await inspeccionesService.crearDesdeRecepcion(
-      recepcion.id,
-      cotizacionesSeleccionadas.value,
-    );
+    const inspeccion = await inspeccionesService.crearDesdeRecepcion(recepcion.id);
     if (inspeccion?.id) {
       goTo(`/crud/inspecciones/editar/?id=${inspeccion.id}&creada=1`);
     }
@@ -680,108 +619,34 @@ function irAInspeccion(recepcion) {
         </button>
       </div>
 
-      <div class="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
+      <div class="p-4 space-y-4">
         <p class="text-sm text-gray-600 dark:text-gray-300">
-          La inspección se crea con los datos del ingreso y el técnico podrá agregar lo que encuentre.
-          Selecciona las cotizaciones cuyos ítems se cargarán como trabajo ya acordado:
+          La inspección se crea con los datos del ingreso. El técnico agrega los servicios y
+          repuestos que encuentre durante el diagnóstico.
         </p>
-
-        <div v-if="cargandoCandidatas" class="p-3 text-sm text-center text-gray-500 dark:text-gray-400">
-          Buscando cotizaciones del vehículo...
-        </div>
-
-        <div v-else-if="cotizacionesDisponibles.length === 0" class="p-3 text-sm text-gray-500 border border-dashed rounded-lg border-gray-300 dark:border-gray-600 dark:text-gray-400">
-          Este vehículo no tiene cotizaciones previas. La inspección se creará sin ítems cotizados.
-        </div>
-
-        <div v-else>
-          <div class="flex items-center justify-between mb-2">
-            <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Cotizaciones del vehículo</h4>
-            <button
-              type="button"
-              class="text-sm font-medium text-primary-700 hover:underline dark:text-primary-400"
-              @click="alternarTodasLasCotizaciones"
-            >
-              {{ todasLasCotizacionesSeleccionadas ? 'Desmarcar todas' : 'Marcar todas' }}
-            </button>
-          </div>
-
-          <ul class="space-y-2">
-            <li
-              v-for="cotizacion in cotizacionesDisponibles"
-              :key="cotizacion.id"
-              class="flex items-start gap-3 p-3 border rounded-lg dark:border-gray-600"
-              :class="cotizacionesSeleccionadas.includes(cotizacion.id)
-                ? 'border-green-500 bg-green-50 dark:border-green-600 dark:bg-green-900/30'
-                : 'border-gray-200 dark:border-gray-700'">
-              <input
-                type="checkbox"
-                class="w-4 h-4 mt-1 text-green-600 border-gray-300 rounded focus:ring-green-500 dark:bg-gray-700 dark:border-gray-600"
-                :checked="cotizacionesSeleccionadas.includes(cotizacion.id)"
-                :aria-label="`Cargar los ítems de ${cotizacion.numero}`"
-                @change="alternarCotizacion(cotizacion.id)">
-              <div class="min-w-0 flex-1">
-                <div class="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    class="text-sm font-semibold text-gray-900 underline underline-offset-2 hover:text-primary-700 dark:text-white dark:hover:text-primary-400"
-                    @click="goTo(`/crud/cotizaciones/editar/?id=${cotizacion.id}`)"
-                  >
-                    {{ cotizacion.numero }}
-                  </button>
-                  <span
-                    class="px-2 py-0.5 text-xs font-medium rounded-full"
-                    :class="cotizacion.estado === 'ACEPTADA'
-                      ? 'text-green-800 bg-green-100 dark:bg-green-900 dark:text-green-300'
-                      : 'text-blue-800 bg-blue-100 dark:bg-blue-900 dark:text-blue-300'"
-                  >
-                    {{ cotizacion.estadoDisplay }}
-                  </span>
-                  <span v-if="cotizacion.vinculada" class="text-xs text-gray-500 dark:text-gray-400">
-                    ya vinculada a esta recepción
-                  </span>
-                </div>
-                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  {{ cotizacion.servicios.length }} servicio(s) · {{ cotizacion.repuestos.length }} repuesto(s)
-                  — {{ Number(cotizacion.total).toLocaleString('es-EC', { style: 'currency', currency: 'USD' }) }}
-                </p>
-              </div>
-            </li>
-          </ul>
-        </div>
 
         <p v-if="errorCrearInspeccion" class="text-sm text-red-700 dark:text-red-300">
           {{ errorCrearInspeccion }}
         </p>
       </div>
 
-      <div class="flex items-center justify-between gap-3 p-4 border-t border-gray-200 dark:border-gray-700">
-        <p class="text-xs text-gray-500 dark:text-gray-400">
-          <template v-if="totalItemsSeleccionados > 0">
-            Se cargarán {{ totalItemsSeleccionados }} ítems como trabajo acordado.
-          </template>
-          <template v-else>
-            No se cargarán ítems cotizados.
-          </template>
-        </p>
-        <div class="flex items-center gap-2">
-          <button
-            type="button"
-            class="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-base hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
-            @click="showModalCrearInspeccion = false"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            :disabled="creandoInspeccion || cargandoCandidatas"
-            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-base bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-primary-700 dark:hover:bg-primary-800"
-            @click="crearInspeccion(recepcion)">
-            <Loader2 v-if="creandoInspeccion" class="w-4 h-4 animate-spin" />
-            <Save v-else class="w-5 h-5" />
-            {{ creandoInspeccion ? 'Creando...' : 'Crear inspección' }}
-          </button>
-        </div>
+      <div class="flex items-center justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700">
+        <button
+          type="button"
+          class="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-base hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+          @click="showModalCrearInspeccion = false"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          :disabled="creandoInspeccion"
+          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-base bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-primary-700 dark:hover:bg-primary-800"
+          @click="crearInspeccion(recepcion)">
+          <Loader2 v-if="creandoInspeccion" class="w-4 h-4 animate-spin" />
+          <Save v-else class="w-5 h-5" />
+          {{ creandoInspeccion ? 'Creando...' : 'Crear inspección' }}
+        </button>
       </div>
     </div>
   </div>
@@ -887,34 +752,6 @@ function irAInspeccion(recepcion) {
     <div class="relative mx-auto max-w-8xl">
       <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
       <Alert v-if="errorCrearInspeccion" type="error" :message="errorCrearInspeccion" dismissible @dismiss="errorCrearInspeccion = ''" />
-
-      <div v-if="cotizacionesDisponibles.length > 0" class="p-4 mb-4 border rounded-lg border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900/30">
-        <div class="flex items-start gap-3">
-          <TriangleAlert class="w-5 h-5 mt-0.5 text-blue-600 dark:text-blue-400" />
-          <div class="min-w-0">
-            <h4 class="text-sm font-semibold text-blue-900 dark:text-blue-200">
-              Este vehículo tiene {{ cotizacionesDisponibles.length }}
-              {{ cotizacionesDisponibles.length === 1 ? 'cotización' : 'cotizaciones' }}
-            </h4>
-            <p class="mt-1 text-sm text-blue-800 dark:text-blue-300">
-              Al crear la inspección elige cuáles se cargan como trabajo acordado; el resto queda intacto.
-            </p>
-            <ul class="mt-2 space-y-1 text-sm text-blue-800 dark:text-blue-300">
-              <li v-for="cotizacion in cotizacionesDisponibles" :key="cotizacion.id">
-                <button
-                  type="button"
-                  class="font-medium underline underline-offset-2 hover:text-blue-900 dark:hover:text-blue-100"
-                  @click="goTo(`/crud/cotizaciones/editar/?id=${cotizacion.id}`)"
-                >
-                  {{ cotizacion.numero }}
-                </button>
-                — {{ cotizacion.estadoDisplay }}
-                ({{ cotizacion.servicios.length + cotizacion.repuestos.length }} ítems)
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
 
       <div v-if="error" class="mb-4 p-3 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-900 dark:text-red-200">
         {{ error }}

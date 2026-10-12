@@ -255,13 +255,12 @@ function clearAdvancedFilters() {
 async function confirmarReabrir() {
   if (!inspeccionToReabrir.value || isReopening.value) return;
   isReopening.value = true;
-  const numero = numeroDisplay(inspeccionToReabrir.value);
   try {
     await inspeccionesService.update(inspeccionToReabrir.value.id, { estado: 'EN_PROCESO' });
+    const id = inspeccionToReabrir.value.id;
     inspeccionToReabrir.value = null;
     showReabrirModal.value = false;
-    showAlert('success', '', `Inspección ${numero} reabierta. Ahora está en proceso.`);
-    await reloadList(currentPage.value);
+    window.location.assign(`/crud/inspecciones/editar/?id=${encodeURIComponent(id)}`);
   } catch (error) {
     showAlert('error', '', error.message || 'No se pudo reabrir la inspección.');
     showReabrirModal.value = false;
@@ -611,7 +610,7 @@ onUnmounted(() => {
                 role="menu"
                 aria-label="Acciones de la inspección"
               >
-                <button v-if="item.estado === 'FINALIZADA'" type="button" role="menuitem" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700" @click="ejecutarAccion('reabrir', item)">
+                <button v-if="item.estado === 'FINALIZADA'" type="button" role="menuitem" :disabled="!item.puede_reabrir" :title="item.puede_reabrir ? 'Reabrir la inspección' : (item.tiene_orden_trabajo ? 'La inspección ya tiene una orden de trabajo.' : 'Tiene una cotización enviada o aceptada.')" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-700" @click="ejecutarAccion('reabrir', item)">
                   <IconLockOpen2 class="w-4 h-4 text-primary-600 dark:text-primary-400" />
                   Reabrir
                 </button>

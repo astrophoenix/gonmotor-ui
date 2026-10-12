@@ -126,7 +126,7 @@ const claseDisparador = computed(() => {
 });
 
 const claseEtiqueta = computed(() =>
-  esVarianteCampo.value ? 'truncate font-medium' : 'hidden truncate font-medium sm:inline'
+  esVarianteCampo.value ? 'truncate text-sm font-small' : 'hidden truncate text-smfont-small sm:inline'
 );
 
 const clasePanel = computed(() => {

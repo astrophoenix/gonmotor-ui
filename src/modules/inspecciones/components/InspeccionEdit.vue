@@ -120,6 +120,15 @@ const breadcrumb = computed(() => [
 const inspeccionFinalizada = computed(() => estadoInspeccion.value === 'FINALIZADA');
 const readOnly = computed(() => isEditMode && inspeccionFinalizada.value);
 const detalleHref = computed(() => `/crud/inspecciones/ver/?id=${encodeURIComponent(inspeccionId)}`);
+const mensajeSoloLectura = computed(() => {
+  if (inspeccionData.value?.tiene_orden_trabajo) {
+    return 'La inspección ya generó una orden de trabajo y no se puede reabrir. Solo puedes consultar su información.';
+  }
+  if (inspeccionData.value?.tiene_cotizacion_bloqueante) {
+    return 'La inspección tiene una cotización enviada o aceptada y no se puede reabrir. Solo puedes consultar su información.';
+  }
+  return 'La inspección está finalizada, por lo que solo puedes consultarla.';
+});
 const pasosRelaciones = computed(() => relacionesDeInspeccion(inspeccionData.value || {}));
 const tallerSucursalNombre = computed(() => inspeccionData.value?.sucursal_nombre || '');
 
@@ -1049,7 +1058,7 @@ onMounted(() => {
         Finalizar
       </button>
       <FormSaveActions
-        v-if="!readOnly"
+        v-if="!readOnly && estadoInspeccion !== 'PENDIENTE'"
         :is-loading="isSaving"
         :is-edit-mode="isEditMode"
         cancel-href="/crud/inspecciones/"
@@ -1073,9 +1082,11 @@ onMounted(() => {
           type="info"
           title="Solo lectura"
         >
-          La inspección está finalizada, por lo que solo puedes consultarla.
-          Ve al <a :href="detalleHref" class="font-medium underline hover:no-underline">detalle de la inspección</a>
-          para reabrirla si necesitas modificar el diagnóstico.
+          {{ mensajeSoloLectura }}
+          <template v-if="!inspeccionData?.tiene_orden_trabajo && !inspeccionData?.tiene_cotizacion_bloqueante">
+            Ve al <a :href="detalleHref" class="font-medium underline hover:no-underline">detalle de la inspección</a>
+            para reabrirla si necesitas modificar el diagnóstico.
+          </template>
         </Alert>
 
         <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">
