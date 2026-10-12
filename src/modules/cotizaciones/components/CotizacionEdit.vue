@@ -22,8 +22,11 @@ import {
   Store,
   UserCheck,
   ArrowLeftRight,
+  RotateCcw,
+  XCircle,
+  Wrench,
 } from 'lucide-vue-next';
-import { IconBrandWhatsapp } from '@tabler/icons-vue';
+import { IconBrandWhatsapp, IconFileTypePdf } from '@tabler/icons-vue';
 import { request } from '../../../shared/services/httpClient';
 import { formatDateTime } from '../../../shared/utils/datetime';
 import { cotizacionesService } from '../services/cotizacionesService';
@@ -44,7 +47,8 @@ import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import TextImprover from '../../../shared/components/TextImprover.vue';
 // FlowSteps temporalmente desactivado; conservar para reactivarlo más adelante.
 // import FlowSteps from '../../../shared/components/FlowSteps.vue';
-import PdfExportButton from '../../../shared/components/PdfExportButton.vue';
+import EntityActionsMenu from '../../../shared/components/EntityActionsMenu.vue';
+import { usePdfExport } from '../../../shared/composables/usePdfExport';
 // import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 import ClientModal from '../../clientes/components/ClientModal.vue';
 import { useAuthStore } from '../../auth/stores/authStore';
@@ -161,6 +165,18 @@ const modal = reactive({
 });
 
 const esEditable = computed(() => ['PENDIENTE', 'ENVIADA'].includes(estado.value));
+
+const hayAccionesEstado = computed(() =>
+  ['PENDIENTE', 'RECHAZADA', 'ENVIADA'].includes(estado.value)
+);
+
+const tieneOrdenRelacionada = computed(() =>
+  Boolean(ordenGeneradaNumero.value || ordenTrabajoNumero.value)
+);
+
+const puedeGenerarOrden = computed(
+  () => estado.value === 'ACEPTADA' && !tieneOrdenRelacionada.value
+);
 
 const authStore = useAuthStore();
 const tallerSesion = computed(() => authStore.user?.taller_nombre || '');
@@ -843,6 +859,20 @@ function descargarPdf() {
   return cotizacionesService.exportarPdf(cotizacionId.value);
 }
 
+const { isExportingPdf, exportarPdf } = usePdfExport({
+  onError: (message) => { errorMessage.value = message; },
+});
+
+function ejecutarAccion(cerrar, accion) {
+  cerrar();
+  if (accion === 'ENVIAR') abrirModal('ENVIAR');
+  else if (accion === 'REENVIAR') abrirModal('REENVIAR');
+  else if (accion === 'ACEPTAR') abrirModal('ACEPTAR');
+  else if (accion === 'RECHAZAR') abrirModal('RECHAZAR');
+  else if (accion === 'GENERAR_ORDEN') mostrarModalGenerarOrden = true;
+  else if (accion === 'EXPORTAR_PDF') exportarPdf(descargarPdf);
+}
+
 async function confirmarModal() {
   if (!cotizacionId.value || modal.procesando) return;
   modal.procesando = true;
@@ -1081,52 +1111,64 @@ onMounted(() => {
           :is-edit-mode="isEditMode"
           cancel-href="/crud/cotizaciones/"
           :on-submit="submit"/>
-        <button
-          v-if="estado === 'ENVIADA'"
-          type="button"
-          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-base bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
-          @click="abrirModal('ACEPTAR')">
-          <CheckCircle2 class="w-5 h-5" />
-          Marcar aceptada
-        </button>
-        <button
-          v-if="estado === 'ENVIADA'"
-          type="button"
-          class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-base bg-red-600 hover:bg-red-700 focus:ring-4 focus:ring-red-300 dark:bg-red-700 dark:hover:bg-red-800"
-          @click="abrirModal('RECHAZAR')">
-          <X class="w-5 h-5" />
-          Marcar rechazada
-        </button>
-        <button
-          v-if="estado === 'PENDIENTE'"
-          type="button"
-          class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
-          @click="abrirModal('ENVIAR')">
-          <Send class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
-          Enviar
-        </button>
-        <button
-          v-if="estado === 'RECHAZADA'"
-          type="button"
-          class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
-          @click="abrirModal('REENVIAR')">
-          <Send class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
-          Reenviar
-        </button>
-        <button
-          v-if="estado === 'ACEPTADA'"
-          type="button"
-          class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
-          @click="mostrarModalGenerarOrden = true">
-          <ArrowLeftRight class="text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
-          Generar orden de trabajo
-        </button>
-        <PdfExportButton
-          :descargador="descargarPdf"
-          title="Descargar en PDF la cotización guardada"
-          :disabled="isSaving"
-          @error="errorMessage = $event"
-        />
+        <EntityActionsMenu :disabled="isSaving || isExportingPdf">
+          <template #default="{ cerrar }">
+            <button
+              v-if="estado === 'PENDIENTE'"
+              type="button"
+              role="menuitem"
+              class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700"
+              @click="ejecutarAccion(cerrar, 'ENVIAR')">
+              <Send class="w-5 h-5 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
+              Enviar
+            </button>
+            <button
+              v-if="estado === 'RECHAZADA'"
+              type="button"
+              role="menuitem"
+              class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700"
+              @click="ejecutarAccion(cerrar, 'REENVIAR')">
+              <RotateCcw class="w-5 h-5 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
+              Reenviar
+            </button>
+            <button
+              v-if="estado === 'ENVIADA'"
+              type="button"
+              role="menuitem"
+              class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700"
+              @click="ejecutarAccion(cerrar, 'ACEPTAR')">
+              <CheckCircle2 class="w-5 h-5 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
+              Aprobar
+            </button>
+            <button
+              v-if="estado === 'ENVIADA'"
+              type="button"
+              role="menuitem"
+              class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700"
+              @click="ejecutarAccion(cerrar, 'RECHAZAR')">
+              <XCircle class="w-5 h-5 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
+              Rechazar
+            </button>
+            <div v-if="hayAccionesEstado" class="my-1 border-t border-gray-200 dark:border-gray-700" role="separator" />
+            <button
+              v-if="puedeGenerarOrden"
+              type="button"
+              role="menuitem"
+              class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700"
+              @click="ejecutarAccion(cerrar, 'GENERAR_ORDEN')">
+              <Wrench class="w-5 h-5 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
+              Crear Orden Trabajo
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700"
+              @click="ejecutarAccion(cerrar, 'EXPORTAR_PDF')">
+              <IconFileTypePdf class="w-5 h-5 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
+              Descargar PDF
+            </button>
+          </template>
+        </EntityActionsMenu>
       </template>
       <FormSaveActions
         v-if="!isEditMode && !inspeccionOrigen"
@@ -1608,7 +1650,7 @@ onMounted(() => {
     <div class="w-full max-w-md p-6 bg-white rounded-lg shadow-xl dark:bg-gray-800">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-          {{ modal.tipo === 'ENVIAR' ? 'Enviar cotización al cliente' : modal.tipo === 'ACEPTAR' ? 'Marcar cotización como aceptada' : modal.tipo === 'RECHAZAR' ? 'Marcar cotización como rechazada' : 'Reenviar cotización al cliente' }}
+          {{ modal.tipo === 'ENVIAR' ? 'Enviar cotización al cliente' : modal.tipo === 'ACEPTAR' ? 'Aceptar cotización' : modal.tipo === 'RECHAZAR' ? 'Rechazar cotización' : 'Reenviar cotización' }}
         </h3>
         <button type="button" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" @click="cerrarModal">
           <X class="w-5 h-5" />
