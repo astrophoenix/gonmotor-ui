@@ -1,9 +1,24 @@
 import { request } from '../../../../shared/services/httpClient';
 
 const ENDPOINT = '/api/repuestos/';
+const IMAGENES_ENDPOINT = '/api/repuestos-imagenes/';
 
 function buildUrl(id) {
   return `${ENDPOINT}${encodeURIComponent(id)}/`;
+}
+
+function buildImagenUrl(id) {
+  return `${IMAGENES_ENDPOINT}${encodeURIComponent(id)}/`;
+}
+
+function buildFormData(payload) {
+  const formData = new FormData();
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      formData.append(key, value);
+    }
+  });
+  return formData;
 }
 
 export const repuestosService = {
@@ -49,6 +64,30 @@ export const repuestosService = {
         throw new Error(`No se pudo eliminar '${label}'. ${error.message}`);
       }
       throw error;
+    });
+  },
+
+  listImagenes(repuestoId) {
+    return request(`${IMAGENES_ENDPOINT}?repuesto=${encodeURIComponent(repuestoId)}`);
+  },
+
+  createImagen(payload) {
+    return request(IMAGENES_ENDPOINT, {
+      method: 'POST',
+      body: buildFormData(payload),
+    });
+  },
+
+  updateImagen(id, payload) {
+    return request(buildImagenUrl(id), {
+      method: 'PATCH',
+      body: buildFormData(payload),
+    });
+  },
+
+  deleteImagen(id) {
+    return request(buildImagenUrl(id), {
+      method: 'DELETE',
     });
   },
 };
