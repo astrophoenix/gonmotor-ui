@@ -44,7 +44,8 @@ module.exports = {
   },
   resolve: {
     alias: {
-      'gonmotor-icons': path.resolve(__dirname, 'src/icons')
+      'gonmotor-icons': path.resolve(__dirname, 'src/icons'),
+      '@': path.resolve(__dirname, 'src')
     },
     extensions: ['', '.js', '.jsx', '.css']
   },

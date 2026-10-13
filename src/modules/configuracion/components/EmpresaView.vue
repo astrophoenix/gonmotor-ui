@@ -1,8 +1,10 @@
 <script setup>
-import { onMounted, reactive, ref } from 'vue';
-import { FileText, Image as ImageIcon, Upload, Trash2 } from 'lucide-vue-next';
+import { computed, onMounted, reactive, ref } from 'vue';
+import { FileText } from 'lucide-vue-next';
 import { empresaConfigService } from '../services/empresaConfigService';
 import Alert from '../../../shared/components/Alert.vue';
+import ImageField from '../../../shared/components/ImageField.vue';
+import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import {
   sanitizeNombre,
   sanitizeEmail,
@@ -18,7 +20,7 @@ const formErrors = ref({});
 
 const empresaId = ref(null);
 const logoFile = ref(null);
-const logoPreview = ref('');
+const logoImageKey = ref(0);
 const logoError = ref('');
 const logoRemoved = ref(false);
 
@@ -33,6 +35,8 @@ const form = reactive({
   telefono: '',
   logo: '',
 });
+
+const currentLogoUrl = computed(() => (logoRemoved.value ? '' : form.logo));
 
 function showError(error) {
   errorMessage.value = error.message || 'No fue posible completar la operación.';
@@ -71,36 +75,16 @@ function validateForm() {
   return Object.keys(errors).length === 0;
 }
 
-function onLogoChange(event) {
-  const file = event.target.files[0];
+function onLogoUpload(file) {
   if (!file) return;
-
-  if (!MARKETING_ALLOWED_TYPES.includes(file.type)) {
-    logoError.value = 'Formato no permitido. Solo JPG, PNG, WebP o SVG.';
-    return;
-  }
-
-  if (file.size > LOGO_MAX_SIZE) {
-    logoError.value = 'La imagen supera el tamaño máximo permitido de 2MB.';
-    return;
-  }
-
   logoError.value = '';
   logoFile.value = file;
   logoRemoved.value = false;
-
-  if (logoPreview.value) {
-    URL.revokeObjectURL(logoPreview.value);
-  }
-  logoPreview.value = URL.createObjectURL(file);
 }
 
-function cancelLogo() {
-  if (logoPreview.value) {
-    URL.revokeObjectURL(logoPreview.value);
-  }
-  logoPreview.value = '';
+function onLogoRemove() {
   logoFile.value = null;
+  logoError.value = '';
   // Si ya existía logo en el servidor, se marca para eliminación.
   logoRemoved.value = Boolean(form.logo);
 }
@@ -162,11 +146,8 @@ async function submit() {
     successMessage.value = 'Datos de la empresa actualizados correctamente.';
     logoFile.value = null;
     logoRemoved.value = false;
-    if (logoPreview.value) {
-      URL.revokeObjectURL(logoPreview.value);
-      logoPreview.value = '';
-    }
     await loadEmpresa();
+    logoImageKey.value += 1;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (error) {
     showError(error);
@@ -180,7 +161,7 @@ onMounted(loadEmpresa);
 </script>
 
 <template>
-  <div class="p-4 bg-white border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
+  <!--div class="p-4 bg-white border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
     <nav class="flex mb-5" aria-label="Breadcrumb">
       <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
         <li><a href="/" class="text-gray-700 hover:text-primary-600 dark:text-gray-300">Inicio</a></li>
@@ -188,140 +169,135 @@ onMounted(loadEmpresa);
         <li class="text-gray-400">/ <span class="dark:text-gray-400">Empresa</span></li>
       </ol>
     </nav>
-  </div>
+  </div-->
 
-  <div class="p-4">
-    <div class="relative max-w-4xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
+    <div class="grid grid-cols-1 w-full max-w-4xl mx-auto px-4 pt-6 xl:gap-4 dark:bg-gray-900">
       <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
       <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
 
-      <div v-if="isLoading" class="py-10 text-center text-sm text-gray-500 dark:text-gray-400">Cargando configuración de empresa...</div>
-
-      <form v-else class="space-y-6" novalidate @submit.prevent="submit">
-        <div>
-          <h4 class="mb-4 text-xl font-semibold dark:text-white">
-            <span class="inline-flex items-center gap-2">
-              <FileText class="w-6 h-6 text-gray-800 dark:text-white" />
-              Datos de la Empresa
-            </span>
-          </h4>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="md:col-span-2">
-              <label for="nombre_comercial" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre comercial *</label>
-              <input
-                id="nombre_comercial"
-                v-model="form.nombre_comercial"
-                maxlength="200"
-                @input="form.nombre_comercial = sanitizeNombre(form.nombre_comercial)"
-                :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.nombre_comercial ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
-              >
-              <p v-if="formErrors.nombre_comercial" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.nombre_comercial }}</p>
-            </div>
-            <div class="md:col-span-2">
-              <label for="razon_social" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Razón social</label>
-              <input
-                id="razon_social"
-                v-model="form.razon_social"
-                maxlength="200"
-                @input="form.razon_social = sanitizeNombre(form.razon_social)"
-                class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-              >
-            </div>
-            <div>
-              <label for="ruc" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">RUC *</label>
-              <input
-                id="ruc"
-                v-model="form.ruc"
-                inputmode="numeric"
-                maxlength="13"
-                @input="form.ruc = sanitizeIdentificacion(form.ruc, 'R')"
-                :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.ruc ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
-              >
-              <p v-if="formErrors.ruc" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.ruc }}</p>
-            </div>
-            <div>
-              <label for="telefono" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Teléfono *</label>
-              <input
-                id="telefono"
-                v-model="form.telefono"
-                inputmode="numeric"
-                maxlength="20"
-                @input="form.telefono = sanitizeTelefono(form.telefono)"
-                :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.telefono ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
-              >
-              <p v-if="formErrors.telefono" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.telefono }}</p>
-            </div>
-            <div class="md:col-span-2">
-              <label for="email_contacto" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Correo electrónico de contacto *</label>
-              <input
-                id="email_contacto"
-                v-model="form.email_contacto"
-                type="email"
-                maxlength="254"
-                @input="form.email_contacto = sanitizeEmail(form.email_contacto)"
-                :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.email_contacto ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
-              >
-              <p v-if="formErrors.email_contacto" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.email_contacto }}</p>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <h4 class="mb-4 text-xl font-semibold dark:text-white">
-            <span class="inline-flex items-center gap-2">
-              <ImageIcon class="w-6 h-6 text-gray-800 dark:text-white" />
-
-              Logotipo oficial
-            </span>
-          </h4>
-          <div class="flex items-start space-x-6 p-2.5 border border-gray-200 rounded-lg dark:border-gray-700">
-            <div class="h-40 w-40 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 overflow-hidden border border-gray-200 dark:border-gray-600">
-              <img
-                v-if="logoPreview || (form.logo && !logoRemoved)"
-                :src="logoPreview || form.logo"
-                class="w-full h-full object-contain"
-                alt="Logotipo de la empresa"
-              >
-              <ImageIcon v-if="!logoPreview && (!form.logo || logoRemoved)" class="w-16 h-16 text-gray-400 dark:text-gray-500" />
-            </div>
-            <div class="flex-1">
-              <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">JPG, PNG, WebP o SVG. Máximo 2MB</p>
-              <div class="flex items-center space-x-3">
-                <label class="inline-flex items-center px-4 py-2 text-sm font-medium text-center text-white rounded-lg bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 cursor-pointer">
-                  <Upload class="w-4 h-4 mr-2 -ml-1" />
-                  Subir
-                  <input type="file" class="hidden" accept="image/*" @change="onLogoChange">
-                </label>
-                <button
-                  type="button"
-                  :disabled="!logoPreview && !form.logo"
-                  @click="cancelLogo"
-                  class="inline-flex items-center py-2 px-3 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Trash2 class="w-4 h-4 mr-2 -ml-1 text-gray-800 dark:text-white" />
-                  Eliminar
-                </button>
+      <div class="p-4 mb-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 sm:p-6 dark:bg-gray-800">
+        <h3 class="mb-4 text-xl font-semibold dark:text-white">
+          <span class="inline-flex items-center gap-2">
+            <FileText class="w-6 h-6 text-gray-800 dark:text-white" />
+            Información Empresa
+          </span>
+        </h3>
+        <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando...</div>
+        <!--div v-if="isLoading" class="py-10 text-center text-sm text-gray-500 dark:text-gray-400">Cargando configuración de empresa...</div-->
+        <form v-else novalidate @submit.prevent="submit">
+          <div class="grid grid-cols-6 gap-6">
+            <div class="col-span-6 sm:col-span-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="md:col-span-2">
+                  <label for="nombre_comercial" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                    Nombre comercial <span class="text-accent-500">*</span>
+                  </label>
+                  <input
+                    id="nombre_comercial"
+                    v-model="form.nombre_comercial"
+                    maxlength="200"
+                    @input="form.nombre_comercial = sanitizeNombre(form.nombre_comercial)"
+                    :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.nombre_comercial ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                  >
+                  <p v-if="formErrors.nombre_comercial" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.nombre_comercial }}</p>
+                </div>
+                <div class="md:col-span-2">
+                  <label for="razon_social" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                    Razón social
+                  </label>
+                  <input
+                    id="razon_social"
+                    v-model="form.razon_social"
+                    maxlength="200"
+                    @input="form.razon_social = sanitizeNombre(form.razon_social)"
+                    class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                  >
+                </div>
+                <div>
+                  <label for="ruc" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                    RUC <span class="text-accent-500">*</span>
+                  </label>
+                  <input
+                    id="ruc"
+                    v-model="form.ruc"
+                    inputmode="numeric"
+                    maxlength="13"
+                    @input="form.ruc = sanitizeIdentificacion(form.ruc, 'R')"
+                    :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.ruc ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                  >
+                  <p v-if="formErrors.ruc" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.ruc }}</p>
+                </div>
+                <div>
+                  <label for="telefono" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                    Teléfono <span class="text-accent-500">*</span>
+                  </label>
+                  <input
+                    id="telefono"
+                    v-model="form.telefono"
+                    inputmode="numeric"
+                    maxlength="20"
+                    @input="form.telefono = sanitizeTelefono(form.telefono)"
+                    :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.telefono ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                  >
+                  <p v-if="formErrors.telefono" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.telefono }}</p>
+                </div>
+                <div class="md:col-span-2">
+                  <label for="email_contacto" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                    Correo electrónico <span class="text-accent-500">*</span>
+                  </label>
+                  <input
+                    id="email_contacto"
+                    v-model="form.email_contacto"
+                    type="email"
+                    maxlength="254"
+                    @input="form.email_contacto = sanitizeEmail(form.email_contacto)"
+                    :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.email_contacto ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                  <p v-if="formErrors.email_contacto" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.email_contacto }}</p>
+                </div>
               </div>
-              <p v-if="logoError" class="mt-3 text-sm text-red-600 dark:text-red-500">{{ logoError }}</p>
-              <p v-if="!form.logo && !logoPreview" class="mt-3 text-sm text-gray-500 dark:text-gray-400">Sin logotipo cargado</p>
             </div>
-          </div>
-        </div>
 
-        <div class="flex justify-start pt-4 border-t border-gray-200 dark:border-gray-700">
-          <button
-            type="submit"
-            :disabled="isSaving"
-            class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <svg v-if="isSaving" class="w-4 h-4 mr-2 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-            </svg>
-            {{ isSaving ? 'Guardando...' : 'Guardar cambios' }}
-          </button>
-        </div>
-      </form>
+            <div class="col-span-6 sm:col-span-2 w-full max-w-xs">
+              <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Logotipo oficial</label>
+              <ImageField
+                :key="logoImageKey"
+                :image-url="currentLogoUrl"
+                :max-size="LOGO_MAX_SIZE"
+                :allowed-types="MARKETING_ALLOWED_TYPES"
+                hint="JPG, PNG, WebP o SVG. Máximo 2 MB"
+                alt="Logotipo de la empresa"
+                empty-label="Subir logotipo"
+                aspect="landscape"
+                :error="logoError"
+                @upload="onLogoUpload"
+                @remove="onLogoRemove"
+              />
+            </div>
+
+            <div class="col-span-6">
+              <FormSaveActions
+                :is-loading="isSaving"
+                :is-edit-mode="true"
+                cancel-href="/configuracion/empresa/"
+                :on-submit="submit"
+              />
+            </div>
+
+            <!--div class="flex justify-start col-span-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                type="submit"
+                :disabled="isSaving"
+                class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg v-if="isSaving" class="w-4 h-4 mr-2 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                {{ isSaving ? 'Guardando...' : 'Guardar cambios' }}
+              </button>
+            </div-->
+          </div>
+        </form>
+      </div>
     </div>
-  </div>
 </template>

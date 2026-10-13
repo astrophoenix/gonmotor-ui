@@ -158,6 +158,19 @@
                 <span class="ml-3" sidebar-toggle-item>Empleados</span>
             </a>
           </li>
+          <li>
+            <hr class="my-1 border-brand-700/40" />
+          </li>
+          <li class="sidebar-section-label" sidebar-toggle-item>Reportes</li>
+          <li>
+            <a href="{{ "reportes/rentabilidad/" | relURL }}" sidebar-tooltip="Rentabilidad" class="flex items-center py-2.5 px-2 text-base text-white hover:bg-brand-700 group transition duration-75 dark:text-white dark:hover:bg-brand-700 {{ if and (eq $mod "reportes") (eq $sub "rentabilidad") }}is-current{{ end }}" {{ if and (eq $mod "reportes") (eq $sub "rentabilidad") }}aria-current="page"{{ end }}>
+              <svg class="flex-shrink-0 w-5 h-5 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M9 17V9m4 8V5m4 12v-6" />
+              </svg>
+              <span class="ml-3" sidebar-toggle-item>Rentabilidad</span>
+            </a>
+          </li>
+
         </ul>
       </div>
     </div>

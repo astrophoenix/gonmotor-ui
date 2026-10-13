@@ -1,9 +1,10 @@
 <script setup>
 import { onMounted, ref } from 'vue';
-import { ChevronRight, Check, Lock, Eye, EyeOff } from 'lucide-vue-next';
+import { Eye, EyeOff, Lock, UserRoundCheck } from 'lucide-vue-next';
 import { useAuthStore } from '../stores/authStore';
 import Alert from '../../../shared/components/Alert.vue';
 import PersonImageField from '../../../shared/components/PersonImageField.vue';
+import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import { sanitizeTelefono } from '../../../shared/utils/sanitize';
 
 const authStore = useAuthStore();
@@ -241,7 +242,7 @@ async function submitPassword() {
 </script>
 
 <template>
-  <div class="p-4 bg-white block sm:flex items-center justify-between border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
+  <!--div class="p-4 bg-white block sm:flex items-center justify-between border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
     <div class="w-full mb-1">
       <div class="mb-4">
         <nav class="flex mb-5" aria-label="Breadcrumb">
@@ -266,36 +267,23 @@ async function submitPassword() {
         <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">Editar perfil</h1>
       </div>
     </div>
-  </div>
+  </div-->
 
   <div class="grid grid-cols-1 w-full max-w-4xl mx-auto px-4 pt-6 xl:gap-4 dark:bg-gray-900">
+    <Alert v-if="errorMessage" type="error" title="" :message="errorMessage" dismissible @dismiss="hideAlert"/>
+    <Alert v-if="successMessage" type="success" title="" :message="successMessage" dismissible @dismiss="hideAlert"/>
     <!-- Sección: Información General (foto de perfil al lado derecho) -->
     <div class="p-4 mb-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 sm:p-6 dark:bg-gray-800">
-      <h3 class="mb-4 text-xl font-semibold dark:text-white">Información General</h3>
+      <h3 class="mb-4 text-xl font-semibold dark:text-white">Información Perfil</h3>
       <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando...</div>
       <form v-else novalidate @submit.prevent="submitProfile">
-        <Alert
-          v-if="errorMessage"
-          type="error"
-          title=""
-          :message="errorMessage"
-          dismissible
-          @dismiss="hideAlert"
-        />
-        <Alert
-          v-if="successMessage"
-          type="success"
-          title=""
-          :message="successMessage"
-          dismissible
-          @dismiss="hideAlert"
-        />
-
         <div class="grid grid-cols-6 gap-6">
           <div class="col-span-6 sm:col-span-4">
             <div class="grid grid-cols-6 gap-6">
               <div class="col-span-6 sm:col-span-3">
-                <label for="first_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombres <span class="text-accent-500">*</span></label>
+                <label for="first_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                  Nombres <span class="text-accent-500">*</span>
+                </label>
                 <input
                   id="first_name"
                   :value="form.first_name"
@@ -303,12 +291,13 @@ async function submitPassword() {
                   type="text"
                   :maxlength="FIELD_MAX.first_name"
                   required
-                  class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"
-                >
+                  class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
               </div>
 
               <div class="col-span-6 sm:col-span-3">
-                <label for="last_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Apellidos <span class="text-accent-500">*</span></label>
+                <label for="last_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                  Apellidos <span class="text-accent-500">*</span>
+                </label>
                 <input
                   id="last_name"
                   :value="form.last_name"
@@ -316,8 +305,7 @@ async function submitPassword() {
                   type="text"
                   :maxlength="FIELD_MAX.last_name"
                   required
-                  class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"
-                >
+                  class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
               </div>
 
               <div class="col-span-6 sm:col-span-3">
@@ -329,8 +317,7 @@ async function submitPassword() {
                   type="email"
                   :maxlength="FIELD_MAX.email"
                   required
-                  class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"
-                >
+                  class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
               </div>
 
               <div class="col-span-6 sm:col-span-3">
@@ -342,8 +329,7 @@ async function submitPassword() {
                   type="text"
                   :maxlength="FIELD_MAX.username"
                   required
-                  class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"
-                >
+                  class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
               </div>
 
               <div class="col-span-6 sm:col-span-3">
@@ -354,8 +340,7 @@ async function submitPassword() {
                   @input="onSanitizedInput($event, 'telefono', formattedTelefono)"
                   type="tel"
                   :maxlength="FIELD_MAX.telefono"
-                  class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"
-                >
+                  class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
               </div>
             </div>
           </div>
@@ -373,11 +358,15 @@ async function submitPassword() {
             />
           </div>
 
-          <div class="flex items-center justify-end col-span-6 gap-3">
-            <button type="submit" :disabled="isSavingProfile" class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300 dark:bg-primary-blue-600 dark:hover:bg-primary-blue-700 dark:focus:ring-primary-blue-800 disabled:opacity-50">
-              <Check class="w-4 h-4 mr-2 -ml-1" />
-              {{ isSavingProfile ? 'Guardando...' : 'Guardar perfil' }}
-            </button>
+          <div class="col-span-6">
+            <FormSaveActions
+              :is-loading="isSavingProfile"
+              :is-edit-mode="true"
+              cancel-href="/perfil/"
+              :on-submit="submitProfile"
+              :icon="UserRoundCheck"
+              text="Guardar Perfil"
+            />
           </div>
         </div>
       </form>
@@ -386,7 +375,7 @@ async function submitPassword() {
     <!-- Sección: Password information -->
     <div class="p-4 mb-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 sm:p-6 dark:bg-gray-800">
         <h3 class="mb-4 text-xl font-semibold dark:text-white">Cambiar Contraseña</h3>
-        <form @submit.prevent="submitPassword">
+        <form novalidate @submit.prevent="submitPassword">
           <div class="grid grid-cols-6 gap-6">
             <div class="col-span-6 sm:col-span-3">
               <label for="current-password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contraseña actual <span class="text-accent-500">*</span></label>
@@ -471,11 +460,15 @@ async function submitPassword() {
                 </div>
               </div>
             </div>
-            <div class="flex items-center justify-end col-span-6 gap-3">
-              <button type="submit" :disabled="isSavingPassword" class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300 dark:bg-primary-blue-600 dark:hover:bg-primary-blue-700 dark:focus:ring-primary-blue-800 disabled:opacity-50">
-                <Lock class="w-4 h-4 mr-2 -ml-1" />
-                {{ isSavingPassword ? 'Guardando...' : 'Guardar contraseña' }}
-              </button>
+            <div class="col-span-6">
+              <FormSaveActions
+                :is-loading="isSavingPassword"
+                :is-edit-mode="true"
+                cancel-href="/perfil/"
+                :on-submit="submitPassword"
+                :icon="Lock"
+                text="Guardar contraseña"
+              />
             </div>
           </div>
         </form>

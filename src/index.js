@@ -20,6 +20,7 @@ import { mountServicios } from './modules/inventario/servicios';
 import { mountProfileEdit } from './modules/auth';
 import { mountEmpresaConfig, mountTalleresConfig, mountRoles } from './modules/configuracion';
 import { mountNotificaciones } from './modules/notificaciones';
+import { mountReportesRentabilidad } from './modules/reportes';
 import { mountDashboard } from './modules/dashboard';
 import { iniciarPermisosGlobal } from './shared/composables/usePermisos';
 import Topbar from './shared/components/Topbar.vue';
