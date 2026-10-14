@@ -95,6 +95,7 @@ const {
   validar: validarSucursal,
   limpiarError: limpiarErrorSucursal,
 } = useSucursalDocumento();
+const tallerSucursalNombre = computed(() => orden.value?.sucursal_nombre || '');
 
 function seleccionarCliente(clienteObj) {
   clienteSeleccionado.value = clienteObj || null;
@@ -761,6 +762,7 @@ async function handleSubmit() {
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Taller <span class="text-accent-500">*</span></label>
                 <TallerSelect
                   v-model="tallerSucursalId"
+                  :nombre="tallerSucursalNombre"
                   variante="campo"
                   :invalid="Boolean(tallerSucursalError)"
                   placeholder="Selecciona el taller"

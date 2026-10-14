@@ -9,10 +9,11 @@ import { useAuthStore } from '../../modules/auth/stores/authStore';
  * - Solo la administración (ADMIN_EMPRESA / ADMIN_SISTEMA) sin taller activo
  *   («Todos los talleres») ve el selector; en ese caso es obligatorio.
  * - Con un taller activo (o para el resto de roles) el selector se oculta y el
- *   backend resuelve el taller desde la cabecera `X-Taller-ID` (storage).
+ *   payload lleva el taller ya asignado al documento (edición) o, si no hay,
+ *   el taller activo de la sesión: el mismo que viaja en `X-Taller-ID`.
  *
- * El payload debe incluir `sucursal` únicamente cuando el selector está
- * visible; en caso contrario se omite (null) para que el backend lo derive.
+ * Nunca se envía `sucursal: null` habiendo un taller conocido: en una edición
+ * eso dejaría el documento sin taller.
  */
 export function useSucursalDocumento() {
   const authStore = useAuthStore();
@@ -24,8 +25,11 @@ export function useSucursalDocumento() {
   const sinTallerActivo = computed(() => authStore.esTodosLosTalleres);
   const mostrar = computed(() => esAdminTalleres.value && sinTallerActivo.value);
 
-  /** Valor para el campo `sucursal` del payload (solo si hay que elegirlo). */
-  const sucursal = computed(() => (mostrar.value ? tallerId.value : null));
+  /** Valor para el campo `sucursal` del payload. */
+  const sucursal = computed(() => {
+    if (mostrar.value) return tallerId.value;
+    return tallerId.value ?? authStore.tallerId ?? null;
+  });
 
   /** Precarga el taller del documento cargado (modo edición). */
   function cargarSucursal(valor) {

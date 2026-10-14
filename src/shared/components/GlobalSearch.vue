@@ -18,6 +18,10 @@ import {
 import { buscarGlobal } from '../services/busquedaService';
 import { createLatestRequest, isAbortError } from '../utils/search';
 import { formatPlate } from '../utils/formatPlate';
+import { getEstadoRecepcion } from '../../modules/recepciones/constants/estadosRecepcion';
+import { getEstadoInspeccion } from '../../modules/inspecciones/constants/estadosInspeccion';
+import { getEstadoCotizacion } from '../../modules/cotizaciones/constants/estadosCotizacion';
+import { getEstadoOrden } from '../../modules/ordenes/constants/estadosOrden';
 
 /** Grupos → icono (librería existente del proyecto). */
 const ICONOS = {
@@ -44,6 +48,16 @@ const RUTAS = {
   repuestos: () => '/crud/repuestos/',
   servicios: () => '/crud/servicios/',
 };
+
+/** Grupo → resolución de estado (color) de cada documento del flujo. */
+const ESTADOS = {
+  recepciones: getEstadoRecepcion,
+  inspecciones: getEstadoInspeccion,
+  cotizaciones: getEstadoCotizacion,
+  ordenes: getEstadoOrden,
+};
+
+const META_CLASE_NEUTRA = 'bg-brand-50 text-brand-700 dark:bg-brand-800 dark:text-brand-100';
 
 const EJEMPLOS = ['GSU-5812', 'REC-0001', 'Juan Pérez'];
 
@@ -125,6 +139,12 @@ function segmentos(texto) {
 
 function tituloResultado(resultado) {
   return resultado.grupo === 'vehiculos' ? formatPlate(resultado.titulo) : resultado.titulo;
+}
+
+/** Clases del badge: color del estado en documentos del flujo, neutro en el resto. */
+function metaClase(resultado) {
+  const resolver = ESTADOS[resultado.grupo || resultado.tipo];
+  return resolver && resultado.estado ? resolver(resultado.estado).color : META_CLASE_NEUTRA;
 }
 
 function reiniciar() {
@@ -295,23 +315,18 @@ onUnmounted(() => {
           aria-autocomplete="list"
           :aria-expanded="String(panelVisible)"
           :aria-activedescendant="indiceActivo >= 0 ? `gs-opt-${indiceActivo}` : undefined"
-          class="w-full rounded-lg border border-brand-100 bg-brand-50 py-2 pl-8 pr-3 text-sm text-ink transition-colors placeholder:text-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 lg:w-[230px] lg:pr-14 xl:w-[280px] dark:border-brand-700 dark:bg-brand-800 dark:text-white dark:placeholder:text-brand-300"
+          class="w-full rounded border border-brand-100 bg-brand-50 py-2 pl-8 pr-3 text-sm text-ink transition-colors placeholder:text-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 lg:w-[230px] lg:pr-14 xl:w-[280px] dark:border-brand-700 dark:bg-brand-800 dark:text-white dark:placeholder:text-brand-300"
           @focus="abierto = true"
-          @keydown="onInputKeydown"
-        >
-        <kbd
-          v-if="!movilAbierto"
-          class="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 items-center gap-0.5 rounded border border-line bg-white px-1.5 py-0.5 text-[11px] font-medium text-muted lg:flex dark:border-brand-700 dark:bg-brand-900 dark:text-brand-300"
-        >
+          @keydown="onInputKeydown">
+        <kbd v-if="!movilAbierto" class="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 items-center gap-0.5 rounded border border-line bg-white px-1.5 py-0.5 text-[11px] font-medium text-muted lg:flex dark:border-brand-700 dark:bg-brand-900 dark:text-brand-300">
           Ctrl K
         </kbd>
         <button
           v-if="movilAbierto"
           type="button"
-          class="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-ink-soft transition-colors hover:bg-surface hover:text-brand-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:text-brand-300 dark:hover:bg-brand-800 dark:hover:text-white"
+          class="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1.5 text-ink-soft transition-colors hover:bg-surface hover:text-brand-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:text-brand-300 dark:hover:bg-brand-800 dark:hover:text-white"
           aria-label="Cerrar búsqueda"
-          @click="cerrarMovil"
-        >
+          @click="cerrarMovil">
           <X class="h-5 w-5" aria-hidden="true" />
         </button>
       </div>
@@ -323,8 +338,7 @@ onUnmounted(() => {
       id="global-search-results"
       role="listbox"
       aria-label="Resultados de búsqueda"
-      :class="panelClase"
-    >
+      :class="panelClase">
       <!-- Cargando -->
       <div v-if="cargando" class="flex items-center gap-2 px-4 py-6 text-sm text-ink-soft dark:text-brand-300">
         <Loader2 class="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -348,8 +362,7 @@ onUnmounted(() => {
             :key="ejemplo"
             type="button"
             class="rounded-full border border-brand-100 bg-brand-50 px-2.5 py-1 text-xs text-brand-700 transition-colors hover:bg-brand-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:border-brand-700 dark:bg-brand-800 dark:text-brand-100"
-            @click="elegirEjemplo(ejemplo)"
-          >
+            @click="elegirEjemplo(ejemplo)">
             {{ ejemplo }}
           </button>
         </div>
@@ -364,8 +377,7 @@ onUnmounted(() => {
       <template v-else>
         <div class="max-h-[70vh] overflow-y-auto py-1.5">
           <div v-for="grupo in grupos" :key="grupo.tipo" class="px-1.5">
-            <p class="flex items-center gap-1.5 px-2.5 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-muted">
-              <component :is="iconoDe(grupo.tipo)" class="h-3.5 w-3.5" aria-hidden="true" />
+            <p class="flex items-center gap-1.5 px-2.5 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-gray-600 dark:text-brand-300">
               {{ grupo.etiqueta }}
             </p>
             <button
@@ -380,8 +392,7 @@ onUnmounted(() => {
                 ? 'bg-surface dark:bg-brand-800'
                 : 'hover:bg-surface dark:hover:bg-brand-800'"
               @mouseenter="indiceActivo = indiceDe(grupo, resultado)"
-              @click="navegar(resultado)"
-            >
+              @click="navegar(resultado)">
               <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700 dark:bg-brand-800 dark:text-brand-100">
                 <component :is="iconoDe(grupo.tipo)" class="h-4 w-4" aria-hidden="true" />
               </span>
@@ -390,28 +401,25 @@ onUnmounted(() => {
                   <template v-for="(segmento, i) in segmentos(tituloResultado(resultado))" :key="i">
                     <mark
                       v-if="segmento.match"
-                      class="rounded-sm bg-brand-100 text-brand-900 dark:bg-brand-700 dark:text-white"
-                    >{{ segmento.texto }}</mark>
+                      class="rounded-sm bg-brand-100 text-brand-900 dark:bg-brand-700 dark:text-white">
+                      {{ segmento.texto }}
+                    </mark>
                     <template v-else>{{ segmento.texto }}</template>
                   </template>
                 </span>
-                <span
-                  v-if="resultado.subtitulo"
-                  class="block truncate text-xs text-ink-soft dark:text-brand-300"
-                >
+                <span v-if="resultado.subtitulo" class="block truncate text-xs text-ink-soft dark:text-brand-300">
                   <template v-for="(segmento, i) in segmentos(resultado.subtitulo)" :key="i">
-                    <mark
-                      v-if="segmento.match"
-                      class="rounded-sm bg-brand-100 text-brand-900 dark:bg-brand-700 dark:text-white"
-                    >{{ segmento.texto }}</mark>
+                    <mark v-if="segmento.match" class="rounded-sm bg-brand-100 text-brand-900 dark:bg-brand-700 dark:text-white">
+                      {{ segmento.texto }}
+                    </mark>
                     <template v-else>{{ segmento.texto }}</template>
                   </template>
                 </span>
               </span>
               <span
                 v-if="resultado.meta"
-                class="shrink-0 rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-medium text-brand-700 dark:bg-brand-800 dark:text-brand-100"
-              >
+                class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium"
+                :class="metaClase(resultado)">
                 {{ resultado.meta }}
               </span>
             </button>

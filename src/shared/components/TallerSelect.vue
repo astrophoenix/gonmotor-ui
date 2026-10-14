@@ -1,6 +1,6 @@
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
-import { Check, ChevronDown, Loader2, Search, Wrench } from 'lucide-vue-next';
+import { Check, ChevronDown, Loader2, Search, Warehouse } from 'lucide-vue-next';
 import ConfirmModal from './ConfirmModal.vue';
 import { listarTalleresDisponibles } from '../services/talleresDisponiblesService';
 import { createLatestRequest, isAbortError, SEARCH_DEBOUNCE_MS } from '../utils/search';
@@ -20,6 +20,12 @@ const props = defineProps({
   variante: { type: String, default: 'topbar' },
   /** Alineación del panel desplegable. */
   alinear: { type: String, default: 'right' },
+  /**
+   * Modo compacto en móvil (< sm), para el topbar: el disparador es solo el
+   * icono (como el de `GlobalSearch`) y el panel se fija bajo la barra superior,
+   * centrado, en vez de colgar del disparador (que se desbordaría).
+   */
+  movilCompacto: { type: Boolean, default: false },
   /** Pide confirmación antes de emitir el cambio (útil en el topbar). */
   confirmar: { type: Boolean, default: false },
   /** Deshabilita el disparador y muestra un spinner mientras se aplica el cambio. */
@@ -118,8 +124,12 @@ const claseDisparador = computed(() => {
       ? `${base} border-brand-red focus:border-brand-red focus:ring-brand-red/15 dark:border-brand-red`
       : `${base} border-brand-line focus:border-brand-ink focus:ring-brand-focus-ring dark:border-slate-600`;
   }
+  if (props.movilCompacto) {
+    // < sm: botón de icono como el de GlobalSearch; desde sm, el chip de siempre.
+    return 'inline-flex min-w-0 max-w-[15rem] items-center gap-2 rounded-lg p-2 text-ink-soft transition-colors hover:bg-surface hover:text-brand-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-60 dark:text-brand-300 dark:hover:bg-brand-800 dark:hover:text-white sm:rounded sm:border sm:border-brand-100 sm:bg-brand-50 sm:px-2.5 sm:py-2 sm:text-sm sm:text-ink sm:hover:bg-brand-100 sm:dark:border-brand-700 sm:dark:bg-brand-800 sm:dark:text-white sm:dark:hover:bg-brand-700';
+  }
   const base =
-    'inline-flex min-w-0 max-w-[15rem] items-center gap-2 rounded-lg border bg-brand-50 px-2.5 py-2 text-sm text-ink transition-colors hover:bg-brand-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-brand-800 dark:text-white dark:hover:bg-brand-700';
+    'inline-flex min-w-0 max-w-[15rem] items-center gap-2 rounded border bg-brand-50 px-2.5 py-2 text-sm text-ink transition-colors hover:bg-brand-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-brand-800 dark:text-white dark:hover:bg-brand-700';
   return props.invalid
     ? `${base} border-brand-red dark:border-brand-red`
     : `${base} border-brand-100 dark:border-brand-700`;
@@ -135,7 +145,13 @@ const clasePanel = computed(() => {
   if (esVarianteCampo.value) {
     return `${base} left-0 w-full`;
   }
-  return `${base} ${props.alinear === 'left' ? 'left-0' : 'right-0'} w-[300px] max-w-[calc(100vw-2rem)]`;
+  const lado = props.alinear === 'left' ? 'left-0' : 'right-0';
+  if (props.movilCompacto) {
+    // Clases literales: Tailwind no detecta variantes construidas dinámicamente.
+    const ladoSm = props.alinear === 'left' ? 'sm:left-0' : 'sm:right-0';
+    return `${base.replace('absolute', 'fixed')} inset-x-4 top-14 mx-auto max-w-sm sm:absolute sm:inset-x-auto sm:top-auto sm:mx-0 ${ladoSm} sm:w-[300px] sm:max-w-[calc(100vw-2rem)]`;
+  }
+  return `${base} ${lado} w-[300px] max-w-[calc(100vw-2rem)]`;
 });
 
 function seleccionar(taller) {
@@ -280,17 +296,23 @@ onUnmounted(() => {
       :aria-expanded="String(abierto)"
       aria-controls="taller-select-panel"
       :title="etiqueta"
+      :aria-label="`Taller: ${etiqueta}`"
       :disabled="cambiando || disabled"
       @click="alternar"
-      @keydown.down.prevent="abrir()"
-    >
-      <Wrench class="h-4 w-4 shrink-0 text-brand-700 dark:text-brand-100" aria-hidden="true" />
+      @keydown.down.prevent="abrir()">
+      <Warehouse
+        class="shrink-0"
+        :class="movilCompacto
+          ? 'h-5 w-5 sm:h-4 sm:w-4 sm:text-brand-700 sm:dark:text-brand-100'
+          : 'h-4 w-4 text-brand-700 dark:text-brand-100'"
+        aria-hidden="true"
+      />
       <span :class="claseEtiqueta" class="flex-1 text-left">{{ etiqueta }}</span>
       <Loader2 v-if="cambiando" class="h-3.5 w-3.5 shrink-0 animate-spin text-muted" aria-hidden="true" />
       <ChevronDown
         v-else
         class="h-3.5 w-3.5 shrink-0 text-muted transition-transform"
-        :class="abierto && 'rotate-180'"
+        :class="[abierto && 'rotate-180', movilCompacto && 'hidden sm:block']"
         aria-hidden="true"
       />
     </button>
@@ -315,7 +337,7 @@ onUnmounted(() => {
             spellcheck="false"
             placeholder="Buscar taller…"
             aria-label="Buscar taller"
-            class="w-full rounded-lg border border-brand-100 bg-brand-50 py-1.5 pl-8 pr-3 text-sm text-ink transition-colors placeholder:text-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 dark:border-brand-700 dark:bg-brand-800 dark:text-white dark:placeholder:text-brand-300"
+            class="w-full rounded border border-brand-100 bg-brand-50 py-1.5 pl-8 pr-3 text-sm text-ink transition-colors placeholder:text-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 dark:border-brand-700 dark:bg-brand-800 dark:text-white dark:placeholder:text-brand-300"
             @keydown="onTeclado"
           >
         </div>
@@ -344,10 +366,9 @@ onUnmounted(() => {
                 ? 'bg-surface dark:bg-brand-800'
                 : 'hover:bg-surface dark:hover:bg-brand-800'"
               @mouseenter="indiceActivo = indice"
-              @click="seleccionar(taller)"
-            >
+              @click="seleccionar(taller)">
               <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700 dark:bg-brand-800 dark:text-brand-100">
-                <Wrench class="h-4 w-4" aria-hidden="true" />
+                <Warehouse class="h-4 w-4" aria-hidden="true" />
               </span>
               <span class="min-w-0 flex-1">
                 <span class="block truncate text-sm font-medium text-ink dark:text-white">
@@ -362,7 +383,7 @@ onUnmounted(() => {
               </span>
               <Check
                 v-if="String(taller.id) === String(modelValue)"
-                class="h-4 w-4 shrink-0 text-brand-700 dark:text-brand-100"
+                class="h-4 w-4 shrink-0 text-green-700 dark:text-green-100"
                 aria-hidden="true"
               />
             </button>
@@ -383,7 +404,7 @@ onUnmounted(() => {
       v-model="modalConfirmacion"
       title="Cambiar de taller"
       :message="mensajeConfirmacion"
-      :icon="Wrench"
+      :icon="Warehouse"
       variant="primary"
       confirm-text="Cambiar taller"
       confirming-text="Cambiando…"

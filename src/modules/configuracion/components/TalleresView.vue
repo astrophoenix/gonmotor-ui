@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { Building2, Search, Pen, Trash2, Filter } from 'lucide-vue-next';
+import { Warehouse, Search, Pen, Trash2, Filter } from 'lucide-vue-next';
 import { talleresService } from '../services/talleresService';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import FilterActions from '../../../shared/components/FilterActions.vue';
@@ -169,7 +169,7 @@ onUnmounted(() => {
 <template>
   <EntityHeader
     mode="list"
-    :icon="Building2"
+    :icon="Warehouse"
     entity="Talleres"
     :breadcrumb="[
       { label: 'Inicio', href: '/' },

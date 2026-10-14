@@ -448,27 +448,27 @@ watch(vehiculos, (list) => {
               </select>
             </div>
             <div class="col-span-6 sm:col-span-3">
-              <label for="modal_identificacion" :class="['block mb-2.5 text-sm font-medium', clientErrors.identificacion ? 'text-fg-danger-strong' : 'text-gray-900 dark:text-white']">Identificación</label>
+              <label for="modal_identificacion" :class="['block mb-2.5 text-sm font-medium', clientErrors.identificacion ? 'text-fg-danger-strong' : 'text-gray-900 dark:text-white']">Identificación <span class="text-accent-500">*</span> </label>
               <input id="modal_identificacion" v-model="form.identificacion" required maxlength="20" :class="clientErrors.identificacion ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
               <p v-if="clientErrors.identificacion" class="mt-2.5 text-sm text-fg-danger-strong">{{ clientErrors.identificacion }}</p>
             </div>
             <div class="col-span-6 sm:col-span-3">
-              <label for="modal_nombre" :class="['block mb-2.5 text-sm font-medium', clientErrors.nombre ? 'text-fg-danger-strong' : 'text-heading']">Nombre o razón social</label>
+              <label for="modal_nombre" :class="['block mb-2.5 text-sm font-medium', clientErrors.nombre ? 'text-fg-danger-strong' : 'text-heading']">Nombre o razón social <span class="text-accent-500">*</span></label>
               <input id="modal_nombre" v-model="form.nombre" required maxlength="200" :class="clientErrors.nombre ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
               <p v-if="clientErrors.nombre" class="mt-2.5 text-sm text-fg-danger-strong">{{ clientErrors.nombre }}</p>
             </div>
             <div class="col-span-6 sm:col-span-3">
-              <label for="modal_email" :class="['block mb-2.5 text-sm font-medium', clientErrors.email ? 'text-fg-danger-strong' : 'text-heading']">Correo electrónico</label>
+              <label for="modal_email" :class="['block mb-2.5 text-sm font-medium', clientErrors.email ? 'text-fg-danger-strong' : 'text-heading']">Correo electrónico <span class="text-accent-500">*</span></label>
               <input id="modal_email" v-model="form.email" type="email" required maxlength="100" :class="clientErrors.email ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
               <p v-if="clientErrors.email" class="mt-2.5 text-sm text-fg-danger-strong">{{ clientErrors.email }}</p>
             </div>
             <div class="col-span-6 sm:col-span-3">
-              <label for="modal_telefono" :class="['block mb-2.5 text-sm font-medium', clientErrors.telefono ? 'text-fg-danger-strong' : 'text-heading']">Teléfono</label>
+              <label for="modal_telefono" :class="['block mb-2.5 text-sm font-medium', clientErrors.telefono ? 'text-fg-danger-strong' : 'text-heading']">Teléfono <span class="text-accent-500">*</span></label>
               <input id="modal_telefono" v-model="form.telefono" maxlength="15" :class="clientErrors.telefono ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
               <p v-if="clientErrors.telefono" class="mt-2.5 text-sm text-fg-danger-strong">{{ clientErrors.telefono }}</p>
             </div>
             <div class="col-span-6 sm:col-span-3">
-              <label for="modal_direccion" :class="['block mb-2.5 text-sm font-medium', clientErrors.direccion ? 'text-fg-danger-strong' : 'text-heading']">Dirección</label>
+              <label for="modal_direccion" :class="['block mb-2.5 text-sm font-medium', clientErrors.direccion ? 'text-fg-danger-strong' : 'text-heading']">Dirección <span class="text-accent-500">*</span></label>
               <textarea id="modal_direccion" v-model="form.direccion" rows="2" maxlength="150" :class="clientErrors.direccion ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'"></textarea>
               <p v-if="clientErrors.direccion" class="mt-2.5 text-sm text-fg-danger-strong">{{ clientErrors.direccion }}</p>
             </div>

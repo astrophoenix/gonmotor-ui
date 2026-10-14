@@ -1,11 +1,12 @@
 <script setup>
 import { computed, nextTick, reactive, ref, watch } from 'vue';
-import { X, Save, FileText, Calendar, Tag, AlignLeft } from 'lucide-vue-next';
+import { X, Save, Wallet, Calendar, Tag, AlignLeft, FileText } from 'lucide-vue-next';
 import Alert from '../../../shared/components/Alert.vue';
 import TallerSelect from '../../../shared/components/TallerSelect.vue';
 import { useSucursalDocumento } from '../../../shared/composables/useSucursalDocumento';
 import { gastosService } from '../services/gastosService';
 import { CATEGORIAS_GASTO } from '../constants/categoriasGasto';
+import { sanitizeObservaciones } from '../../../shared/utils/sanitize';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -183,6 +184,12 @@ function close() {
   emit('update:modelValue', false);
 }
 
+// Sanitiza la descripción al escribir o pegar (mismo criterio que observaciones).
+watch(() => form.descripcion, (valor) => {
+  const limpio = sanitizeObservaciones(valor);
+  if (limpio !== valor) form.descripcion = limpio;
+});
+
 watch(() => props.modelValue, (val) => {
   if (val) open();
 });
@@ -194,7 +201,7 @@ watch(() => props.modelValue, (val) => {
       <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
           <span class="inline-flex items-center gap-2">
-            <FileText v-if="!isEditMode" class="w-5 h-5 inline-block me-2" />
+            <Wallet v-if="!isEditMode" class="w-5 h-5 inline-block me-2" />
             <Tag v-if="isEditMode" class="w-5 h-5 inline-block me-2" />
             {{ isEditMode ? 'Editar gasto' : 'Nuevo gasto' }}
           </span>
@@ -223,8 +230,8 @@ watch(() => props.modelValue, (val) => {
         <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando gasto...</div>
         <template v-else>
           <h4 class="mb-4 text-base font-semibold dark:text-white flex items-center gap-2">
-            <Tag class="w-4 h-4 text-gray-800 dark:text-white" />
-            Información del gasto
+            <FileText class="w-4 h-4 text-gray-800 dark:text-white" />
+            Información General
           </h4>
 
           <div class="grid grid-cols-6 gap-4">
@@ -243,7 +250,7 @@ watch(() => props.modelValue, (val) => {
             </div>
 
             <div class="col-span-6 sm:col-span-3">
-              <label for="modal_fecha" :class="['block mb-1.5 text-sm font-medium', fieldErrors.fecha ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300']">Fecha *</label>
+              <label for="modal_fecha" :class="['block mb-1.5 text-sm font-medium', fieldErrors.fecha ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300']">Fecha <span class="text-accent-500">*</span></label>
               <div class="relative">
                 <Calendar class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-400" />
                 <input
@@ -259,7 +266,7 @@ watch(() => props.modelValue, (val) => {
             </div>
 
             <div class="col-span-6 sm:col-span-3">
-              <label for="modal_categoria" :class="['block mb-1.5 text-sm font-medium', fieldErrors.categoria ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300']">Categoría *</label>
+              <label for="modal_categoria" :class="['block mb-1.5 text-sm font-medium', fieldErrors.categoria ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300']">Categoría <span class="text-accent-500">*</span></label>
               <select
                 id="modal_categoria"
                 v-model="form.categoria"
@@ -273,7 +280,7 @@ watch(() => props.modelValue, (val) => {
             </div>
 
             <div class="col-span-6 sm:col-span-3">
-              <label for="modal_monto" :class="['block mb-1.5 text-sm font-medium', fieldErrors.monto ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300']">Monto *</label>
+              <label for="modal_monto" :class="['block mb-1.5 text-sm font-medium', fieldErrors.monto ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300']">Monto <span class="text-accent-500">*</span></label>
               <div class="relative">
                 <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
                 <input
@@ -315,7 +322,7 @@ watch(() => props.modelValue, (val) => {
       <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
         <button
           type="button"
-          class="text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 focus:ring-4 focus:ring-gray-200 font-medium text-sm px-4 py-2.5"
+          class="text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 focus:ring-4 focus:ring-gray-200 font-medium text-sm px-4 py-2.5"
           :disabled="isSaving || isLoading"
           @click="close"
         >
@@ -324,7 +331,7 @@ watch(() => props.modelValue, (val) => {
         <button
           type="button"
           :disabled="isSaving || isLoading"
-          class="inline-flex items-center text-white bg-brand-900 rounded-lg hover:bg-brand-800 focus:ring-4 focus:ring-brand-medium shadow-xs font-medium text-sm px-4 py-2.5 disabled:opacity-50"
+          class="inline-flex items-center text-white bg-brand-900 rounded hover:bg-brand-800 focus:ring-4 focus:ring-brand-medium shadow-xs font-medium text-sm px-4 py-2.5 disabled:opacity-50"
           @click="submit"
         >
           <Save v-if="!isSaving" class="w-5 h-5 mr-1.5 -ml-1 text-white" />

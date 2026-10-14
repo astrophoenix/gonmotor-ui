@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { Bell, Building2, ChevronDown, ShieldCheck, Settings, Store, Users } from 'lucide-vue-next';
+import { Bell, Building2, ChevronDown, ShieldCheck, Settings, Warehouse, Users } from 'lucide-vue-next';
 import GlobalSearch from './GlobalSearch.vue';
 import TallerSelect from './TallerSelect.vue';
 import UserMenu from './UserMenu.vue';
@@ -18,7 +18,7 @@ const menuConfiguracionRef = ref(null);
 
 const enlacesConfiguracion = [
   { href: '/configuracion/empresa/', label: 'Empresa', icon: Building2 },
-  { href: '/configuracion/talleres/', label: 'Talleres', icon: Store },
+  { href: '/configuracion/talleres/', label: 'Talleres', icon: Warehouse },
   { href: '/configuracion/usuarios/', label: 'Usuarios', icon: Users },
   { href: '/configuracion/roles/', label: 'Roles', icon: ShieldCheck },
 ];
@@ -109,6 +109,7 @@ function claseCrumble(indice) {
         :permitir-todos="authStore.user?.es_admin_talleres"
         variante="topbar"
         alinear="right"
+        movil-compacto
         confirmar
         :cambiando="cambiandoTaller"
         @change="onTallerChange"

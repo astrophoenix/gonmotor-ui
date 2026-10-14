@@ -13,6 +13,9 @@ import FilterActions from '../../../shared/components/FilterActions.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import TallerSelect from '../../../shared/components/TallerSelect.vue';
 import GastosModal from './GastosModal.vue';
+import { useAuthStore } from '../../auth/stores/authStore';
+
+const authStore = useAuthStore();
 
 const {
   gastos,
@@ -174,7 +177,8 @@ onMounted(() => loadGastos());
               </select>
             </div>
 
-            <div class="w-full sm:w-auto sm:max-w-[22rem]">
+            <!-- Solo con «Todos los talleres»: con un taller activo el backend ya filtra por él. -->
+            <div v-if="authStore.esTodosLosTalleres" class="w-full sm:w-auto sm:max-w-[22rem]">
               <label class="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Taller</label>
               <TallerSelect
                 v-model="tallerId"

@@ -1,6 +1,6 @@
 <script setup>
 import { computed, nextTick, reactive, ref, watch } from 'vue';
-import { X, Save } from 'lucide-vue-next';
+import { X, Save, Warehouse } from 'lucide-vue-next';
 import { talleresService } from '../services/talleresService';
 import {
   sanitizeTaller,
@@ -322,6 +322,7 @@ watch(() => props.modelValue, (val) => {
     <div class="relative block w-full max-w-3xl rounded-lg bg-white shadow-xl dark:bg-gray-800 my-auto">
       <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <Warehouse class="inline w-5 h-5 mr-2 text-gray-500 dark:text-gray-400" aria-hidden="true" />
           {{ isEditMode ? 'Editar taller' : 'Nuevo taller' }}
         </h3>
         <button
