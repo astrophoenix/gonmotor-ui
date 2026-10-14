@@ -16,6 +16,7 @@ export const ENTITY_ADD_MODES = {
   talleres: ADD_MODE.modal,
   repuestos: ADD_MODE.modal,
   servicios: ADD_MODE.modal,
+  gastos: ADD_MODE.modal,
   recepciones: ADD_MODE.page,
   inspecciones: ADD_MODE.page,
   ordenes_trabajo: ADD_MODE.page,

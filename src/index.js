@@ -21,6 +21,7 @@ import { mountProfileEdit } from './modules/auth';
 import { mountEmpresaConfig, mountTalleresConfig, mountRoles } from './modules/configuracion';
 import { mountNotificaciones } from './modules/notificaciones';
 import { mountReportesRentabilidad } from './modules/reportes';
+import { mountGastos } from './modules/gastos';
 import { mountDashboard } from './modules/dashboard';
 import { iniciarPermisosGlobal } from './shared/composables/usePermisos';
 import Topbar from './shared/components/Topbar.vue';
@@ -270,7 +271,19 @@ if (serviciosApp) {
 const notificacionesApp = document.getElementById('notificaciones-app');
 
 if (notificacionesApp) {
-  mountNotificaciones(notificacionesApp, pinia);
+    mountNotificaciones(notificacionesApp, pinia);
+}
+
+const reportesRentabilidadApp = document.getElementById('reportes-rentabilidad-app');
+
+if (reportesRentabilidadApp) {
+    mountReportesRentabilidad(reportesRentabilidadApp, pinia);
+}
+
+const gastosApp = document.getElementById('gastos-app');
+
+if (gastosApp) {
+    mountGastos(gastosApp, pinia);
 }
 
 iniciarPermisosGlobal();

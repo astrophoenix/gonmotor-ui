@@ -758,7 +758,7 @@ async function handleSubmit() {
             <!-- Fila 1b: Taller emisor (solo administración sin taller activo) -->
             <div v-if="mostrarSucursal" class="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div class="min-w-0">
-                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Taller emisor <span class="text-accent-500">*</span></label>
+                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Taller <span class="text-accent-500">*</span></label>
                 <TallerSelect
                   v-model="tallerSucursalId"
                   variante="campo"

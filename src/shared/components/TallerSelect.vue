@@ -252,6 +252,15 @@ function onClickFuera(event) {
 
 onMounted(() => {
   document.addEventListener('click', onClickFuera);
+  if (!esLocal.value && !resultados.value.length && props.modelValue != null) {
+    cargar('');
+  }
+});
+
+watch(() => props.modelValue, (nuevo, anterior) => {
+  if (!esLocal.value && !resultados.value.length && nuevo != null) {
+    cargar('');
+  }
 });
 
 onUnmounted(() => {

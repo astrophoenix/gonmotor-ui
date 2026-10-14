@@ -246,6 +246,7 @@ import {
   BarChart3,
   TrendingUp,
   TrendingDown,
+  Info,
 } from 'lucide-vue-next';
 
 const breadcrumb = [
@@ -299,5 +300,16 @@ function consultar() {
   fetchData();
 }
 
-onMounted(() => {});
+onMounted(() => {
+  if (viewMode.value === 'empresa') {
+    fetchData();
+  }
+});
+
+watch(viewMode, (nuevo) => {
+  if (nuevo === 'empresa') {
+    clearAlert();
+    fetchData();
+  }
+});
 </script>
