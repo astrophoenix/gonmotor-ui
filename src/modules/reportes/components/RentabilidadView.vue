@@ -17,111 +17,94 @@
       />
     </div>
 
-    <section class="px-4 py-4 bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4 items-end">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nivel de reporte</label>
-          <div class="flex flex-wrap gap-2">
-            <button
-              type="button"
-              @click="viewMode = 'taller'"
-              :class="[
-                'inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg border transition-colors',
-                viewMode === 'taller'
-                  ? 'bg-brand-900 text-white border-brand-900 hover:bg-brand-800'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700',
-              ]"
-            >
-              <Building2 class="w-4 h-4 mr-2" />
-              Por taller
-            </button>
-            <button
-              type="button"
-              @click="viewMode = 'empresa'"
-              :class="[
-                'inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg border transition-colors',
-                viewMode === 'empresa'
-                  ? 'bg-brand-900 text-white border-brand-900 hover:bg-brand-800'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700',
-              ]"
-            >
-              <Building class="w-4 h-4 mr-2" />
-              Por empresa
-            </button>
+    <div class="px-4 pb-4 sm:px-6 lg:px-8 mt-4">
+      <!-- PANEL DE FILTROS -->
+      <div class="bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+        <div class="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between border-b border-default-medium">
+          <h2 class="flex items-center gap-2 text-md font-semibold text-heading">
+            <Filter class="w-5 h-5" />
+            Búsqueda
+          </h2>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <FilterActions
+              :loading="isLoading"
+              search-label="Consultar"
+              loading-label="Consultando..."
+              @clear="limpiar"
+              @search="consultar" />
           </div>
         </div>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Taller
-            <span v-if="viewMode === 'taller'" class="text-red-500">*</span>
-          </label>
-          <TallerSelect
-            v-model="filters.tallerId"
-            :required="viewMode === 'taller'"
-            placeholder="Seleccionar taller..."
-          />
-          <p v-if="viewMode === 'empresa'" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Opcional: filtrar por un taller
+        <div class="p-4">
+          <div class="flex flex-wrap items-end gap-3 min-w-0">
+            <div v-if="authStore.esTodosLosTalleres" class="w-full sm:w-auto sm:shrink-0">
+              <label for="filtro-taller" class="block mb-1 text-sm font-medium text-heading">Taller</label>
+              <select
+                id="filtro-taller"
+                v-model="filters.tallerId"
+                class="block w-full sm:w-48 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800">
+                <option :value="null">Todos los talleres</option>
+                <option v-for="taller in talleres" :key="taller.id" :value="taller.id">{{ tallerLabel(taller) }}</option>
+              </select>
+            </div>
+
+            <div class="w-full sm:w-40 sm:shrink-0">
+              <label for="filtro-fecha-desde" class="block mb-1 text-sm font-medium text-heading">Desde</label>
+              <div class="relative">
+                <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                  <CalendarDays class="w-4 h-4 text-body" aria-hidden="true" />
+                </div>
+                <input
+                  id="filtro-fecha-desde"
+                  ref="fechaDesdeInput"
+                  datepicker
+                  datepicker-autohide
+                  datepicker-format="dd/mm/yyyy"
+                  type="text"
+                  autocomplete="off"
+                  placeholder="dd/mm/aaaa"
+                  class="block w-full ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs placeholder:text-body dark:bg-gray-800" />
+              </div>
+            </div>
+
+            <div class="w-full sm:w-40 sm:shrink-0">
+              <label for="filtro-fecha-hasta" class="block mb-1 text-sm font-medium text-heading">Hasta</label>
+              <div class="relative">
+                <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                  <CalendarDays class="w-4 h-4 text-body" aria-hidden="true" />
+                </div>
+                <input
+                  id="filtro-fecha-hasta"
+                  ref="fechaHastaInput"
+                  datepicker
+                  datepicker-autohide
+                  datepicker-format="dd/mm/yyyy"
+                  type="text"
+                  autocomplete="off"
+                  placeholder="dd/mm/aaaa"
+                  class="block w-full ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs placeholder:text-body dark:bg-gray-800" />
+              </div>
+            </div>
+          </div>
+
+          <p class="mt-3 text-xs text-body">
+            <template v-if="periodo.desde || periodo.hasta">
+              Periodo: {{ periodo.desde || '—' }} al {{ periodo.hasta || '—' }}
+            </template>
+            <template v-else>Sin rango (OT entregadas)</template>
           </p>
         </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha desde</label>
-          <input
-            v-model="filters.fechaDesde"
-            type="date"
-            class="block w-full rounded-lg border-gray-300 text-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-          />
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha hasta</label>
-          <input
-            v-model="filters.fechaHasta"
-            type="date"
-            class="block w-full rounded-lg border-gray-300 text-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-          />
-        </div>
       </div>
+    </div>
 
-      <div class="flex flex-wrap items-center justify-between gap-3 mt-4">
-        <div class="text-xs text-gray-500 dark:text-gray-400">
-          <template v-if="periodo.desde || periodo.hasta">
-            Periodo: {{ periodo.desde || '—' }} al {{ periodo.hasta || '—' }}
-          </template>
-          <template v-else>Sin rango (OT entregadas)</template>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <button
-            type="button"
-            @click="resetFilters"
-            class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
-          >
-            <RotateCcw class="w-4 h-4 mr-2" />
-            Limpiar
-          </button>
-          <button
-            type="button"
-            @click="consultar"
-            :disabled="isLoading || (viewMode === 'taller' && !filters.tallerId)"
-            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-brand-900 rounded-lg hover:bg-brand-800 disabled:opacity-50"
-          >
-            <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin" />
-            <Search v-else class="w-4 h-4 mr-2" />
-            Consultar
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <div v-if="!isLoading && !data && !errorMessage" class="px-4 py-8 text-center">
+    <div v-if="!isLoading && !data && !errorMessage" class="px-4 sm:px-6 lg:px-8 py-8 text-center">
       <BarChart3 class="w-12 h-12 mx-auto text-gray-400 mb-3" />
       <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-1">Sin datos</h3>
       <p class="text-sm text-gray-500 dark:text-gray-400">Selecciona filtros y consulta la rentabilidad.</p>
     </div>
 
-    <div v-if="data && !isLoading" class="px-4 py-4 space-y-4">
+    <div v-if="data && !isLoading" class="px-4 sm:px-6 lg:px-8 pb-4 space-y-4">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
@@ -223,7 +206,7 @@
       </div>
     </div>
 
-    <div v-if="isLoading" class="px-4 py-8 flex items-center justify-center">
+    <div v-if="isLoading" class="px-4 sm:px-6 lg:px-8 py-8 flex items-center justify-center">
       <Loader2 class="w-8 h-8 animate-spin text-brand-500" />
     </div>
   </div>
@@ -233,21 +216,24 @@
 import { ref, watch, onMounted } from 'vue';
 import EntityHeader from '@/shared/components/EntityHeader.vue';
 import Alert from '@/shared/components/Alert.vue';
-import TallerSelect from '@/shared/components/TallerSelect.vue';
+import FilterActions from '@/shared/components/FilterActions.vue';
+import { useAuthStore } from '@/modules/auth/stores/authStore';
+import { talleresService } from '@/modules/configuracion/services/talleresService';
 import { useReportes } from '../composables/useReportes';
 import RentabilidadChart from './RentabilidadChart.vue';
 import {
   ChartColumn,
-  Building2,
-  Building,
-  Search,
-  RotateCcw,
+  CalendarDays,
+  Filter,
   Loader2,
   BarChart3,
   TrendingUp,
   TrendingDown,
   Info,
 } from 'lucide-vue-next';
+
+const authStore = useAuthStore();
+const talleres = ref([]);
 
 const breadcrumb = [
   { label: 'Reportes' },
@@ -295,21 +281,62 @@ watch(errorMessage, (msg) => {
   else clearAlert();
 });
 
+async function cargarTalleres() {
+  try {
+    const respuesta = await talleresService.listTalleres();
+    talleres.value = Array.isArray(respuesta) ? respuesta : respuesta?.results || [];
+  } catch {
+    talleres.value = [];
+  }
+}
+
+function tallerLabel(taller) {
+  return [taller.nombre, taller.ciudad].filter(Boolean).join(' · ') || `Taller ${taller.id}`;
+}
+
+// Flowbite escribe directamente en input.value (no emite input/change), por eso
+// estos campos se leen del DOM en vez de usar v-model.
+const fechaDesdeInput = ref(null);
+const fechaHastaInput = ref(null);
+
+function fechaInputAIso(elemento) {
+  const valor = (elemento?.value || '').trim();
+  if (!valor) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) return valor;
+  const match = valor.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+  if (!match) return '';
+  const [, dia, mes, anio] = match;
+  return `${anio}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+}
+
+function limpiarCamposFecha() {
+  [fechaDesdeInput, fechaHastaInput].forEach((campo) => {
+    const elemento = campo.value;
+    if (!elemento) return;
+    elemento.value = '';
+    if (typeof elemento.datepicker?.clear === 'function') elemento.datepicker.clear();
+  });
+}
+
 function consultar() {
   clearAlert();
+  filters.value.fechaDesde = fechaInputAIso(fechaDesdeInput.value) || null;
+  filters.value.fechaHasta = fechaInputAIso(fechaHastaInput.value) || null;
+  // Filtro Taller oculto (sin «Todos los talleres»): siempre el taller activo.
+  if (!authStore.esTodosLosTalleres) filters.value.tallerId = authStore.tallerId;
+  // Sin taller elegido → rentabilidad de la empresa; con taller → la de ese taller.
+  viewMode.value = filters.value.tallerId ? 'taller' : 'empresa';
   fetchData();
 }
 
-onMounted(() => {
-  if (viewMode.value === 'empresa') {
-    fetchData();
-  }
-});
+function limpiar() {
+  resetFilters();
+  limpiarCamposFecha();
+  consultar();
+}
 
-watch(viewMode, (nuevo) => {
-  if (nuevo === 'empresa') {
-    clearAlert();
-    fetchData();
-  }
+onMounted(() => {
+  if (authStore.esTodosLosTalleres) cargarTalleres();
+  consultar();
 });
 </script>
