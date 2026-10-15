@@ -3,11 +3,11 @@ import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { X, Save, FileText, UserRoundPlus, UserRoundPen } from 'lucide-vue-next';
 import {
   sanitizeIdentificacion,
-  sanitizeNombreUpper,
+  sanitizeText,
+  recortarEspacios,
   sanitizeEmail,
   sanitizeTelefono,
   sanitizeDireccion,
-  sanitizeText,
   validateTelefono,
 } from '../../../shared/utils/sanitize';
 import Alert from '../../../shared/components/Alert.vue';
@@ -151,11 +151,11 @@ function buildPayload() {
   return {
     tipo_identificacion: form.tipo_identificacion,
     identificacion: form.identificacion,
-    nombre: form.nombre,
+    nombre: recortarEspacios(form.nombre),
     email: form.email || '',
     telefono: form.telefono || '',
     direccion: form.direccion || '',
-    contacto: form.contacto || '',
+    contacto: recortarEspacios(form.contacto),
   };
 }
 
@@ -240,7 +240,7 @@ watch(() => form.identificacion, (val) => {
   if (clean !== val) form.identificacion = clean;
 });
 watch(() => form.nombre, (val) => {
-  const clean = sanitizeNombreUpper(val);
+  const clean = sanitizeText(val);
   if (clean !== val) form.nombre = clean;
 });
 watch(() => form.email, (val) => {
@@ -317,7 +317,7 @@ watch(() => form.contacto, (val) => {
             </div>
             <div class="col-span-6 sm:col-span-3">
               <label for="modal_nombre" :class="['block mb-2.5 text-sm font-medium', proveedorErrors.nombre ? 'text-fg-danger-strong' : 'text-heading']">Nombre o razón social</label>
-              <input id="modal_nombre" v-model="form.nombre" required maxlength="200" :class="proveedorErrors.nombre ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+              <input id="modal_nombre" v-model="form.nombre" @blur="form.nombre = recortarEspacios(form.nombre)" required maxlength="200" :class="proveedorErrors.nombre ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
               <p v-if="proveedorErrors.nombre" class="mt-2.5 text-sm text-fg-danger-strong">{{ proveedorErrors.nombre }}</p>
             </div>
             <div class="col-span-6 sm:col-span-3">
@@ -332,7 +332,7 @@ watch(() => form.contacto, (val) => {
             </div>
             <div class="col-span-6 sm:col-span-3">
               <label for="modal_contacto" class="block mb-2.5 text-sm font-medium text-heading">Persona de contacto</label>
-              <input id="modal_contacto" v-model="form.contacto" maxlength="100" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body">
+              <input id="modal_contacto" v-model="form.contacto" @blur="form.contacto = recortarEspacios(form.contacto)" maxlength="100" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body">
             </div>
             <div class="col-span-6 sm:col-span-3">
               <label for="modal_direccion" :class="['block mb-2.5 text-sm font-medium', proveedorErrors.direccion ? 'text-fg-danger-strong' : 'text-heading']">Dirección</label>

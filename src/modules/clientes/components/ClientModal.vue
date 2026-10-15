@@ -2,7 +2,7 @@
 import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { Car, X, Trash2, Save, FileText, UserRoundPlus, UserRoundPen } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
-import { sanitizeIdentificacion, sanitizeNombreUpper, sanitizeEmail, sanitizeTelefono, formatPlaca, sanitizeVin, sanitizeText, sanitizeColor, sanitizeMotor, sanitizeObservaciones, sanitizeDireccion, sanitizeAnio, sanitizeKilometraje, getItemKey as getVehicleKey, validatePlaca, validateTelefono } from '../../../shared/utils/sanitize';
+import { sanitizeIdentificacion, sanitizeNombreUpper, sanitizeEmail, sanitizeTelefono, formatPlaca, sanitizeVin, sanitizeText, recortarEspacios, sanitizeColor, sanitizeMotor, sanitizeObservaciones, sanitizeDireccion, sanitizeAnio, sanitizeKilometraje, getItemKey as getVehicleKey, validatePlaca, validateTelefono } from '../../../shared/utils/sanitize';
 import Alert from '../../../shared/components/Alert.vue';
 import VehicleImageField from '../../../shared/components/VehicleImageField.vue';
 
@@ -246,7 +246,7 @@ function buildFormData() {
   const formData = new FormData();
   formData.append('tipo_identificacion', form.tipo_identificacion);
   formData.append('identificacion', form.identificacion);
-  formData.append('nombre', form.nombre);
+  formData.append('nombre', recortarEspacios(form.nombre));
   formData.append('email', form.email || '');
   formData.append('telefono', form.telefono || '');
   formData.append('direccion', form.direccion || '');
@@ -256,6 +256,8 @@ function buildFormData() {
     const item = {
       ...rest,
       placa: (v.placa || '').replace(/-/g, '').trim().toUpperCase(),
+      marca: recortarEspacios(v.marca),
+      modelo: recortarEspacios(v.modelo),
       anio: v.anio ? Number(v.anio) : null,
       kilometraje_actual: v.kilometraje_actual ? parseInt(v.kilometraje_actual, 10) : 0,
     };
@@ -454,7 +456,7 @@ watch(vehiculos, (list) => {
             </div>
             <div class="col-span-6 sm:col-span-3">
               <label for="modal_nombre" :class="['block mb-2.5 text-sm font-medium', clientErrors.nombre ? 'text-fg-danger-strong' : 'text-heading']">Nombre o razón social <span class="text-accent-500">*</span></label>
-              <input id="modal_nombre" v-model="form.nombre" required maxlength="200" :class="clientErrors.nombre ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+              <input id="modal_nombre" v-model="form.nombre" @blur="form.nombre = recortarEspacios(form.nombre)" required maxlength="200" :class="clientErrors.nombre ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
               <p v-if="clientErrors.nombre" class="mt-2.5 text-sm text-fg-danger-strong">{{ clientErrors.nombre }}</p>
             </div>
             <div class="col-span-6 sm:col-span-3">
@@ -499,12 +501,12 @@ watch(vehiculos, (list) => {
               </div>
               <div class="col-span-1">
                 <label :class="['block mb-2.5 text-sm font-medium', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca) ? 'text-fg-danger-strong' : 'text-heading']">Marca</label>
-                <input v-model="vehiculo.marca" maxlength="50" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+                <input v-model="vehiculo.marca" maxlength="50" @blur="vehiculo.marca = recortarEspacios(vehiculo.marca)" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
                 <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca" class="mt-2.5 text-sm text-fg-danger-strong">{{ vehiculoErrors[getVehicleKey(vehiculo)].marca }}</p>
               </div>
               <div class="col-span-1">
                 <label :class="['block mb-2.5 text-sm font-medium', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo) ? 'text-fg-danger-strong' : 'text-heading']">Modelo</label>
-                <input v-model="vehiculo.modelo" maxlength="50" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+                <input v-model="vehiculo.modelo" maxlength="50" @blur="vehiculo.modelo = recortarEspacios(vehiculo.modelo)" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
                 <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo" class="mt-2.5 text-sm text-fg-danger-strong">{{ vehiculoErrors[getVehicleKey(vehiculo)].modelo }}</p>
               </div>
               <div class="col-span-1">

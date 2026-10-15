@@ -275,7 +275,7 @@ async function submitPassword() {
     <!-- Sección: Información General (foto de perfil al lado derecho) -->
     <div class="p-4 mb-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 sm:p-6 dark:bg-gray-800">
       <h3 class="mb-4 text-xl font-semibold dark:text-white">Información Perfil</h3>
-      <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando...</div>
+      <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando perfil...</div>
       <form v-else novalidate @submit.prevent="submitProfile">
         <div class="grid grid-cols-6 gap-6">
           <div class="col-span-6 sm:col-span-4">

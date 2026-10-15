@@ -2,7 +2,8 @@
 import { ref } from 'vue';
 import { Plus } from 'lucide-vue-next';
 import { IconFileTypeXls, IconFileTypePdf } from '@tabler/icons-vue';
-import { API_BASE_URL } from '../config/env';
+import { request } from '../services/httpClient';
+import { descargarBlob, filenameDesdeContentDisposition } from '../utils/download';
 import { useToast } from '../composables/useToast';
 import ToastContainer from './ToastContainer.vue';
 import { ADD_MODE, getEntityAddMode } from '../config/entityConfig';
@@ -58,16 +59,6 @@ function exportUrlPath(action) {
   return query ? `${path}?${query}` : path;
 }
 
-function getAccessToken() {
-  return localStorage.getItem('gonmotor_access_token')
-    || sessionStorage.getItem('gonmotor_access_token');
-}
-
-function getEmpresaId() {
-  return localStorage.getItem('gonmotor_empresa_id')
-    || sessionStorage.getItem('gonmotor_empresa_id');
-}
-
 function goToAdd() {
   if (getEntityAddMode(props.entity) === ADD_MODE.modal) {
     emit('add');
@@ -78,67 +69,21 @@ function goToAdd() {
 
 const isExportingPdf = ref(false);
 
-async function downloadFile(path, filename) {
-  const token = getAccessToken();
-  const empresaId = getEmpresaId();
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(empresaId ? { 'X-Empresa-ID': empresaId } : {})
-    }
-  });
-
-  if (!response.ok) {
-    const data = await response.json().catch(() => ({}));
-    const message = data?.detail || data?.non_field_errors?.[0] || 'No se pudo generar el archivo.';
-    throw new Error(message);
-  }
-
-  const blob = await response.blob();
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  window.URL.revokeObjectURL(url);
-  document.body.removeChild(a);
+// Vía httpClient para enviar también X-Taller-ID (el PDF respeta el taller
+// activo igual que el listado) y refrescar el JWT si expiró.
+async function downloadFile(path, fallbackFilename) {
+  const { blob, contentDisposition } = await request(path, { responseType: 'blob' });
+  const filename = filenameDesdeContentDisposition(contentDisposition, fallbackFilename);
+  descargarBlob(blob, filename);
+  return filename;
 }
 
 async function exportPdf() {
+  if (isExportingPdf.value) return;
   isExportingPdf.value = true;
   try {
-    const token = getAccessToken();
-    const empresaId = getEmpresaId();
-    const url = `${API_BASE_URL.replace(/\/$/, '')}${exportUrlPath('exportar-pdf/')}`;
-
-    const response = await fetch(url, {
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(empresaId ? { 'X-Empresa-ID': empresaId } : {})
-      }
-    });
-
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      const message = data?.detail || `Error en la descarga (status ${response.status}).`;
-      throw new Error(message);
-    }
-
-    const blob = await response.blob();
-    const blobUrl = window.URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = `listado_${props.entity}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-
-    showSuccess(`PDF generado: listado_${props.entity}.pdf`);
-
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(blobUrl);
-
+    const filename = await downloadFile(exportUrlPath('exportar-pdf/'), `listado_${props.entity}.pdf`);
+    showSuccess(`PDF generado: ${filename}`);
   } catch (error) {
     emit('pdfExportError', error.message || 'Ocurrió un error al generar el PDF.');
   } finally {
@@ -152,8 +97,8 @@ async function exportExcel() {
   if (isExportingExcel.value) return;
   isExportingExcel.value = true;
   try {
-    await downloadFile(exportUrlPath('export-excel/'), `${props.entity}_reporte.xlsx`);
-    showSuccess(`Excel generado: ${props.entity}_reporte.xlsx`);
+    const filename = await downloadFile(exportUrlPath('export-excel/'), `${props.entity}_reporte.xlsx`);
+    showSuccess(`Excel generado: ${filename}`);
   } catch (error) {
     emit('excelExportError', error.message || 'Ocurrió un error al generar el Excel.');
   } finally {

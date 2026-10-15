@@ -431,6 +431,7 @@ onUnmounted(() => {
         <div class="flex flex-wrap items-center gap-2">
           <EntityActionButtons
             entity="recepciones"
+            :export-params="buildQuery()"
             @pdfExportError="handlePdfError"
             @excelExportError="handleExcelError"
           />

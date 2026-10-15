@@ -7,11 +7,11 @@ import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import {
   sanitizeIdentificacion,
-  sanitizeNombreUpper,
+  sanitizeText,
+  recortarEspacios,
   sanitizeEmail,
   sanitizeTelefono,
   sanitizeDireccion,
-  sanitizeText,
   validateTelefono,
 } from '../../../shared/utils/sanitize';
 
@@ -128,11 +128,11 @@ function buildPayload() {
   return {
     tipo_identificacion: form.tipo_identificacion,
     identificacion: form.identificacion,
-    nombre: form.nombre,
+    nombre: recortarEspacios(form.nombre),
     email: form.email || '',
     telefono: form.telefono || '',
     direccion: form.direccion || '',
-    contacto: form.contacto || '',
+    contacto: recortarEspacios(form.contacto),
   };
 }
 
@@ -190,7 +190,7 @@ watch(() => form.identificacion, (val) => {
 });
 
 watch(() => form.nombre, (val) => {
-  const clean = sanitizeNombreUpper(val);
+  const clean = sanitizeText(val);
   if (clean !== val) form.nombre = clean;
 });
 
@@ -266,7 +266,7 @@ onMounted(() => {
         </div>
         <div class="col-span-6 sm:col-span-3">
           <label for="nombre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre o razón social</label>
-          <input id="nombre" v-model="form.nombre" required maxlength="200" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', proveedorErrors.nombre ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+          <input id="nombre" v-model="form.nombre" @blur="form.nombre = recortarEspacios(form.nombre)" required maxlength="200" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', proveedorErrors.nombre ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
           <p v-if="proveedorErrors.nombre" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ proveedorErrors.nombre }}</p>
         </div>
         <div class="col-span-6 sm:col-span-3">
@@ -281,7 +281,7 @@ onMounted(() => {
         </div>
         <div class="col-span-6 sm:col-span-3">
           <label for="contacto" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Persona de contacto</label>
-          <input id="contacto" v-model="form.contacto" maxlength="100" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+          <input id="contacto" v-model="form.contacto" @blur="form.contacto = recortarEspacios(form.contacto)" maxlength="100" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
         </div>
         <div class="col-span-6 sm:col-span-3">
           <label for="direccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Dirección</label>

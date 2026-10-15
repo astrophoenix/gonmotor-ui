@@ -35,10 +35,12 @@ export function sanitizeNombre(value) {
 
 /**
  * Nombre / Razón Social en mayúsculas: además de limpiar caracteres no
- * permitidos, convierte el texto a mayúsculas mientras se escribe.
+ * permitidos, quita los espacios iniciales y convierte el texto a mayúsculas
+ * mientras se escribe. El espacio final se conserva para poder escribir la
+ * siguiente palabra; se recorta con `recortarEspacios` al salir/guardar.
  */
 export function sanitizeNombreUpper(value) {
-  return sanitizeNombre(value).toUpperCase();
+  return sanitizeNombre(value).replace(/^\s+/, '').toUpperCase();
 }
 
 /**
@@ -97,9 +99,20 @@ export function sanitizeVin(value) {
     .slice(0, 17);
 }
 
-/** Texto alfanumérico + espacios + acentos (marca, modelo). */
+/**
+ * Texto alfanumérico + espacios + acentos (marca, modelo).
+ * Quita los espacios iniciales pero conserva los intermedios y el final: se
+ * aplica en cada tecla y un `trim()` completo impediría escribir el espacio
+ * entre palabras. El espacio final se recorta con `recortarEspacios` al salir
+ * del campo (`@blur`) y al guardar.
+ */
 export function sanitizeText(value) {
-  return (value == null ? '' : String(value)).replace(ALPHA_NUM_PATTERN, '').trim();
+  return (value == null ? '' : String(value)).replace(ALPHA_NUM_PATTERN, '').replace(/^\s+/, '');
+}
+
+/** Código corto (p. ej. código del taller): solo letras, acentos y dígitos, sin espacios. */
+export function sanitizeCodigo(value) {
+  return sanitizeText(value).replace(/\s/g, '');
 }
 
 /**

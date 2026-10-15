@@ -356,6 +356,7 @@ onUnmounted(() => {
         <div class="flex flex-wrap items-center gap-2">
           <EntityActionButtons
             entity="cotizaciones"
+            :export-params="buildQuery()"
             @pdfExportError="handlePdfError"
             @excelExportError="handleExcelError"
           />

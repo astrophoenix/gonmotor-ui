@@ -12,6 +12,7 @@ import {
   sanitizeVin,
   sanitizeMotor,
   sanitizeText,
+  recortarEspacios,
   sanitizeColor,
   sanitizeObservaciones,
   stripPlacaDash,
@@ -207,7 +208,12 @@ async function submit() {
       isSaving.value = false;
       return;
     }
-    const payload = { ...form, placa: stripPlacaDash(form.placa) };
+    const payload = {
+      ...form,
+      placa: stripPlacaDash(form.placa),
+      marca: recortarEspacios(form.marca),
+      modelo: recortarEspacios(form.modelo),
+    };
     payload.cliente_id = form.cliente_id ?? null;
     let formData = null;
 
@@ -382,12 +388,12 @@ onMounted(() => {
           </div>
           <div class="col-span-1">
             <label for="marca" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Marca</label>
-            <input id="marca" v-model="form.marca" required maxlength="50" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.marca ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+            <input id="marca" v-model="form.marca" required maxlength="50" @blur="form.marca = recortarEspacios(form.marca)" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.marca ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
             <p v-if="vehicleErrors.marca" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.marca }}</p>
           </div>
           <div class="col-span-1">
             <label for="modelo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Modelo</label>
-            <input id="modelo" v-model="form.modelo" required maxlength="50" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.modelo ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+            <input id="modelo" v-model="form.modelo" required maxlength="50" @blur="form.modelo = recortarEspacios(form.modelo)" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.modelo ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
             <p v-if="vehicleErrors.modelo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.modelo }}</p>
           </div>
           <div class="col-span-1">

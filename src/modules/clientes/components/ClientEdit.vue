@@ -15,6 +15,7 @@ import {
   formatPlaca,
   sanitizeVin,
   sanitizeText,
+  recortarEspacios,
   sanitizeColor,
   sanitizeMotor,
   sanitizeObservaciones,
@@ -244,7 +245,7 @@ async function submit() {
 
     formData.append('tipo_identificacion', form.tipo_identificacion);
     formData.append('identificacion', form.identificacion);
-    formData.append('nombre', form.nombre);
+    formData.append('nombre', recortarEspacios(form.nombre));
     formData.append('email', form.email || '');
     formData.append('telefono', form.telefono || '');
     formData.append('direccion', form.direccion || '');
@@ -254,6 +255,8 @@ async function submit() {
       const item = {
         ...rest,
         placa: (v.placa || '').replace(/-/g, '').trim().toUpperCase(),
+        marca: recortarEspacios(v.marca),
+        modelo: recortarEspacios(v.modelo),
         anio: v.anio ? Number(v.anio) : null,
         kilometraje_actual: v.kilometraje_actual ? parseInt(v.kilometraje_actual, 10) : 0
       };
@@ -419,7 +422,7 @@ onMounted(() => {
         </div>
         <div class="col-span-6 sm:col-span-3">
           <label for="nombre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre o razón social</label>
-          <input id="nombre" v-model="form.nombre" required maxlength="200" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.nombre ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+          <input id="nombre" v-model="form.nombre" @blur="form.nombre = recortarEspacios(form.nombre)" required maxlength="200" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.nombre ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
           <p v-if="clientErrors.nombre" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.nombre }}</p>
         </div>
         <div class="col-span-6 sm:col-span-3">
@@ -465,12 +468,12 @@ onMounted(() => {
               </div>
               <div class="col-span-1">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Marca</label>
-                <input v-model="vehiculo.marca" maxlength="50" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <input v-model="vehiculo.marca" maxlength="50" @blur="vehiculo.marca = recortarEspacios(vehiculo.marca)" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
                 <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehiculoErrors[getVehicleKey(vehiculo)].marca }}</p>
               </div>
               <div class="col-span-1">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Modelo</label>
-                <input v-model="vehiculo.modelo" maxlength="50" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <input v-model="vehiculo.modelo" maxlength="50" @blur="vehiculo.modelo = recortarEspacios(vehiculo.modelo)" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
                 <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehiculoErrors[getVehicleKey(vehiculo)].modelo }}</p>
               </div>
               <div class="col-span-1">

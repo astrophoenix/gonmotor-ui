@@ -4,7 +4,7 @@ import { X, Save, Warehouse } from 'lucide-vue-next';
 import { talleresService } from '../services/talleresService';
 import {
   sanitizeTaller,
-  sanitizeText,
+  sanitizeCodigo,
   sanitizeNombre,
   sanitizeObservaciones,
   sanitizeTelefono,
@@ -356,7 +356,7 @@ watch(() => props.modelValue, (val) => {
                 v-model="form.nombre"
                 maxlength="150"
                 @input="form.nombre = sanitizeTaller(form.nombre)"
-                :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors.nombre ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                :class="['block w-full p-2.5 text-sm rounded shadow-sm focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors.nombre ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
               >
               <p v-if="tallerErrors.nombre" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ tallerErrors.nombre }}</p>
             </div>
@@ -368,8 +368,8 @@ watch(() => props.modelValue, (val) => {
                   id="modal_taller_codigo"
                   v-model="form.codigo_sucursal"
                   maxlength="10"
-                  @input="form.codigo_sucursal = sanitizeText(form.codigo_sucursal)"
-                  :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors.codigo_sucursal ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                  @input="form.codigo_sucursal = sanitizeCodigo(form.codigo_sucursal)"
+                  :class="['block w-full p-2.5 text-sm rounded shadow-sm focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors.codigo_sucursal ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
                 >
                 <p v-if="tallerErrors.codigo_sucursal" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ tallerErrors.codigo_sucursal }}</p>
               </div>
@@ -380,7 +380,7 @@ watch(() => props.modelValue, (val) => {
                   v-model="form.ciudad"
                   maxlength="100"
                   @input="form.ciudad = sanitizeNombre(form.ciudad)"
-                  class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                  class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-sm border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 >
               </div>
             </div>
@@ -393,7 +393,7 @@ watch(() => props.modelValue, (val) => {
                 rows="2"
                 maxlength="300"
                 @input="form.direccion = sanitizeObservaciones(form.direccion)"
-                :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors.direccion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                :class="['block w-full p-2.5 text-sm rounded shadow-sm focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors.direccion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
               ></textarea>
               <p v-if="tallerErrors.direccion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ tallerErrors.direccion }}</p>
             </div>
@@ -407,7 +407,7 @@ watch(() => props.modelValue, (val) => {
                   inputmode="numeric"
                   maxlength="20"
                   @input="form.telefono = sanitizeTelefono(form.telefono)"
-                  class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                  class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-sm border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 >
               </div>
               <div>
@@ -429,53 +429,53 @@ watch(() => props.modelValue, (val) => {
                 </p>
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div>
-                  <label for="modal_taller_cap_dia" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Citas máximas por día</label>
+                  <label for="modal_taller_cap_dia" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white" title="Citas máximas por día">Citas por día</label>
                   <input
                     id="modal_taller_cap_dia"
                     v-model.number="form.capacidad_citas_dia"
                     type="number"
                     min="0"
                     step="1"
-                    :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors.capacidad_citas_dia ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                    :class="['block w-full p-2.5 text-sm rounded shadow-sm focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors.capacidad_citas_dia ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
                   >
-                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">0 = sin límite de citas al día.</p>
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">0 = sin límite.</p>
                   <p v-if="tallerErrors.capacidad_citas_dia" class="mt-1 text-xs text-red-600 dark:text-red-500">{{ tallerErrors.capacidad_citas_dia }}</p>
                 </div>
 
                 <div>
-                  <label for="modal_taller_cap_sim" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Atenciones simultáneas máximas</label>
+                  <label for="modal_taller_cap_sim" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white" title="Atenciones simultáneas máximas: vehículos atendiéndose al mismo tiempo (bahías)">Simultáneas</label>
                   <input
                     id="modal_taller_cap_sim"
                     v-model.number="form.capacidad_simultanea"
                     type="number"
                     min="0"
                     step="1"
-                    :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors.capacidad_simultanea ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                    :class="['block w-full p-2.5 text-sm rounded shadow-sm focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors.capacidad_simultanea ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
                   >
-                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Vehículos atendiéndose al mismo tiempo (bahías). 0 = sin límite.</p>
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Bahías. 0 = sin límite.</p>
                   <p v-if="tallerErrors.capacidad_simultanea" class="mt-1 text-xs text-red-600 dark:text-red-500">{{ tallerErrors.capacidad_simultanea }}</p>
                 </div>
 
                 <div>
-                  <label for="modal_taller_apertura" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Hora de apertura</label>
+                  <label for="modal_taller_apertura" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Apertura</label>
                   <input
                     id="modal_taller_apertura"
                     v-model="form.hora_apertura"
                     type="time"
-                    :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors.hora_apertura ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                    :class="['block w-full p-2.5 text-sm rounded shadow-sm focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors.hora_apertura ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
                   >
                   <p v-if="tallerErrors.hora_apertura" class="mt-1 text-xs text-red-600 dark:text-red-500">{{ tallerErrors.hora_apertura }}</p>
                 </div>
 
                 <div>
-                  <label for="modal_taller_cierre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Hora de cierre</label>
+                  <label for="modal_taller_cierre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cierre</label>
                   <input
                     id="modal_taller_cierre"
                     v-model="form.hora_cierre"
                     type="time"
-                    :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors.hora_cierre ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                    :class="['block w-full p-2.5 text-sm rounded shadow-sm focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors.hora_cierre ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:text-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
                   >
                   <p v-if="tallerErrors.hora_cierre" class="mt-1 text-xs text-red-600 dark:text-red-500">{{ tallerErrors.hora_cierre }}</p>
                 </div>
@@ -492,10 +492,16 @@ watch(() => props.modelValue, (val) => {
                 </p>
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div v-for="{ tipo, etiqueta } in SECUENCIA_TIPOS" :key="tipo" class="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                  <h5 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">{{ etiqueta }}</h5>
-                  <div class="grid grid-cols-2 gap-3">
+              <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                <div v-for="{ tipo, etiqueta } in SECUENCIA_TIPOS" :key="tipo" class="py-3 first:pt-0 last:pb-0">
+                  <div class="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                    <h5 class="text-sm font-semibold text-gray-900 dark:text-white">{{ etiqueta }}</h5>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                      Último emitido: <span class="font-semibold">{{ form[`ultimo_${tipo}`] || 0 }}</span>
+                      · Siguiente formato: <span class="font-mono font-semibold">{{ formatoEjemplo(tipo) }}</span>
+                    </p>
+                  </div>
+                  <div class="grid grid-cols-3 gap-3">
                     <div>
                       <label :for="`modal_sec_prefijo_${tipo}`" class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-300">Prefijo</label>
                       <input
@@ -503,7 +509,7 @@ watch(() => props.modelValue, (val) => {
                         v-model="form[`prefijo_${tipo}`]"
                         maxlength="10"
                         @input="form[`prefijo_${tipo}`] = sanitizePrefijo(form[`prefijo_${tipo}`])"
-                        :class="['block w-full p-2 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors[`prefijo_${tipo}`] ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                        :class="['block w-full p-2 text-sm rounded shadow-sm focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors[`prefijo_${tipo}`] ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
                       >
                       <p v-if="tallerErrors[`prefijo_${tipo}`]" class="mt-1 text-xs text-red-600 dark:text-red-500">{{ tallerErrors[`prefijo_${tipo}`] }}</p>
                     </div>
@@ -517,29 +523,25 @@ watch(() => props.modelValue, (val) => {
                         min="2"
                         max="10"
                         @input="form[`digitos_${tipo}`] = sanitizeEntero(form[`digitos_${tipo}`])"
-                        :class="['block w-full p-2 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors[`digitos_${tipo}`] ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                        :class="['block w-full p-2 text-sm rounded shadow-sm focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors[`digitos_${tipo}`] ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
                       >
                       <p v-if="tallerErrors[`digitos_${tipo}`]" class="mt-1 text-xs text-red-600 dark:text-red-500">{{ tallerErrors[`digitos_${tipo}`] }}</p>
                     </div>
+                    <div>
+                      <label :for="`modal_sec_siguiente_${tipo}`" class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-300">Siguiente número</label>
+                      <input
+                        :id="`modal_sec_siguiente_${tipo}`"
+                        v-model="form[`siguiente_${tipo}`]"
+                        inputmode="numeric"
+                        maxlength="10"
+                        :min="(parseInt(form[`ultimo_${tipo}`], 10) || 0) + 1"
+                        min="1"
+                        @input="form[`siguiente_${tipo}`] = sanitizeEntero(form[`siguiente_${tipo}`])"
+                        :class="['block w-full p-2 text-sm rounded shadow-sm focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors[`siguiente_${tipo}`] ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                      >
+                      <p v-if="tallerErrors[`siguiente_${tipo}`]" class="mt-1 text-xs text-red-600 dark:text-red-500">{{ tallerErrors[`siguiente_${tipo}`] }}</p>
+                    </div>
                   </div>
-                  <div class="mt-3">
-                    <label :for="`modal_sec_siguiente_${tipo}`" class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-300">Siguiente número</label>
-                    <input
-                      :id="`modal_sec_siguiente_${tipo}`"
-                      v-model="form[`siguiente_${tipo}`]"
-                      inputmode="numeric"
-                      maxlength="10"
-                      :min="(parseInt(form[`ultimo_${tipo}`], 10) || 0) + 1"
-                      min="1"
-                      @input="form[`siguiente_${tipo}`] = sanitizeEntero(form[`siguiente_${tipo}`])"
-                      :class="['block w-full p-2 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors[`siguiente_${tipo}`] ? 'bg-red-50 border border-red-500 text-red-900 dark:bg-gray-700 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
-                    >
-                    <p v-if="tallerErrors[`siguiente_${tipo}`]" class="mt-1 text-xs text-red-600 dark:text-red-500">{{ tallerErrors[`siguiente_${tipo}`] }}</p>
-                  </div>
-                  <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                    Último emitido: <span class="font-semibold">{{ form[`ultimo_${tipo}`] || 0 }}</span>
-                    · Siguiente formato: <span class="font-mono font-semibold">{{ formatoEjemplo(tipo) }}</span>
-                  </p>
                 </div>
               </div>
             </div>
@@ -550,23 +552,21 @@ watch(() => props.modelValue, (val) => {
       <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
         <button
           type="button"
-          class="px-5 py-2.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-300"
-          @click="close"
-        >
+          class="px-5 py-2.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded dark:bg-gray-700 dark:text-gray-300"
+          @click="close">
           Cancelar
         </button>
         <button
           type="button"
           :disabled="isSaving || isLoading"
-          class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="submit"
-        >
+          class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          @click="submit">
           <Save v-if="!isSaving" class="w-5 h-5 mr-1.5 -ml-1 text-white" />
           <svg v-else class="w-5 h-5 mr-1.5 animate-spin" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          {{ isSaving ? 'Guardando...' : (isEditMode ? 'Guardar cambios' : 'Crear taller') }}
+          {{ isSaving ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Crear') }}
         </button>
       </div>
     </div>
