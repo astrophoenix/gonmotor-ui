@@ -346,7 +346,7 @@ async function submitPassword() {
           </div>
 
           <div class="col-span-6 sm:col-span-2 w-full max-w-xs">
-            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Foto de perfil</label>
+            <!--label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Foto de perfil</label-->
             <PersonImageField
               :key="profileImageKey"
               :image-url="avatarPreview || ''"

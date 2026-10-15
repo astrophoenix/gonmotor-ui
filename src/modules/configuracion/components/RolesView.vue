@@ -1,10 +1,12 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import {
+  UserRoundPlus,
+  ShieldUser,
   Banknote, BarChart3, Building2, CalendarDays, Car, Circle, CircleCheck,
   ClipboardCheck, ClipboardList, Contact, ChevronDown, ChevronRight, FileText,
   Headset, IdCard, Info, ListChecks, MoreVertical, Package, Pen, Plus,
-  Receipt, RotateCcw, Save, Search, ShieldCheck, Truck, UserCog, Users, Warehouse, Wrench, X,
+  Receipt, RotateCcw, Save, Search, ShieldCheck, Truck, UserCog, Users, Warehouse, Wrench, X
 } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
 import { useToast } from '../../../shared/composables/useToast';
@@ -739,33 +741,28 @@ onMounted(async () => {
     >
       <div class="w-full max-w-lg rounded-base bg-white dark:bg-gray-800 border border-default shadow-lg">
         <div class="flex items-center justify-between px-5 py-4 border-b border-default-medium">
-          <h3 class="text-lg font-semibold text-heading">Nuevo rol</h3>
+          <span class="inline-flex items-center gap-2">
+            <ShieldUser class="w-5 h-5 inline-block me-2" />
+            <h3 class="text-lg font-semibold text-heading">Nuevo rol</h3>
+          </span>
           <button
             type="button"
             class="p-1 rounded text-body hover:bg-neutral-secondary-soft"
-            @click="nuevoRolOpen = false"
-          >
+            @click="nuevoRolOpen = false">
             <X class="w-5 h-5" />
           </button>
         </div>
         <div class="px-5 py-4">
-          <Alert
-            v-if="nuevoRolErrors.general"
-            type="error"
-            :message="nuevoRolErrors.general"
-            dismissible
-            @dismiss="nuevoRolErrors.general = ''"
-          />
+          <Alert v-if="nuevoRolErrors.general" type="error" :message="nuevoRolErrors.general" dismissible @dismiss="nuevoRolErrors.general = ''"/>
           <div class="grid grid-cols-1 gap-4">
             <div>
-              <label for="rol-nombre" class="block mb-1 text-sm font-medium text-heading">Nombre del rol</label>
+              <label for="rol-nombre" class="block mb-1 text-sm font-medium text-heading">Nombre <span class="text-accent-500">*</span></label>
               <input
                 id="rol-nombre"
                 v-model="nuevoRol.nombre"
                 type="text"
                 placeholder="Ej. Supervisor de taller"
-                class="w-full rounded-base border border-default-medium bg-white dark:bg-gray-800 px-3 py-2 text-sm text-heading placeholder:text-body/60 focus:border-brand focus:ring-1 focus:ring-brand-700 focus:outline-none"
-              >
+                class="w-full rounded-base border border-default-medium bg-white dark:bg-gray-800 px-3 py-2 text-sm text-heading placeholder:text-body/60 focus:border-brand focus:ring-1 focus:ring-brand-700 focus:outline-none">
               <p v-if="nuevoRolErrors.nombre" class="mt-1 text-xs text-accent-500">{{ nuevoRolErrors.nombre }}</p>
             </div>
             <div>
@@ -794,14 +791,14 @@ onMounted(async () => {
         <div class="flex items-center justify-end gap-2 px-5 py-4 border-t border-default-medium">
           <button
             type="button"
-            class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-base bg-neutral-secondary-soft border border-default text-body hover:bg-neutral-secondary-soft/70"
+            class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded shadow-sm bg-neutral-secondary-soft border border-default text-body hover:bg-neutral-secondary-soft/70"
             @click="nuevoRolOpen = false"
           >
             Cancelar
           </button>
           <button
             type="button"
-            class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-base bg-primary-600 text-white border border-primary-600 hover:bg-primary-700 disabled:opacity-50"
+            class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded shadow-sm bg-primary-600 text-white border border-primary-600 hover:bg-primary-700 disabled:opacity-50"
             :disabled="guardandoNuevoRol || !nuevoRol.nombre.trim()"
             @click="crearRol"
           >
