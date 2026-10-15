@@ -10,6 +10,7 @@ import EntityTable from '../../../shared/components/EntityTable.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import FilterActions from '../../../shared/components/FilterActions.vue';
+import { useFiltrosReactivos } from '../../../shared/composables/useFiltrosReactivos';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import TallerSelect from '../../../shared/components/TallerSelect.vue';
 import GastosModal from './GastosModal.vue';
@@ -112,8 +113,16 @@ function clearFilters() {
   tallerId.value = null;
   fechaDesde.value = '';
   fechaHasta.value = '';
+  marcarAplicado();
   loadGastos(1);
 }
+
+// Los filtros se aplican al cambiar (sin botón "Buscar").
+const { marcarAplicado } = useFiltrosReactivos({
+  filtros: [categoria, tallerId, fechaDesde, fechaHasta],
+  firma: () => [categoria.value, tallerId.value, fechaDesde.value, fechaHasta.value],
+  aplicar: applyFilters,
+});
 
 function formatearFecha(fecha) {
   if (!fecha) return '—';
@@ -157,8 +166,8 @@ onMounted(() => loadGastos());
           <div class="flex flex-wrap items-center gap-2">
             <FilterActions
               :loading="isLoading"
+              :show-search="false"
               @clear="clearFilters"
-              @search="applyFilters"
             />
           </div>
         </div>

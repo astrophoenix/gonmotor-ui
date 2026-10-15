@@ -20,6 +20,15 @@ const props = defineProps({
     type: String,
     default: 'Buscando...',
   },
+  /**
+   * `false` en listados con filtros reactivos (`useFiltrosReactivos`): se
+   * aplican al cambiar, así que solo queda "Limpiar", que además no se
+   * bloquea durante la carga (la petición en curso se cancela).
+   */
+  showSearch: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 const emit = defineEmits(['clear', 'search']);
@@ -41,8 +50,10 @@ watch(() => props.loading, (loading) => {
   }
 });
 
+const clearDisabled = computed(() => props.showSearch && props.loading);
+
 function handleClear() {
-  if (pending.value || props.loading) return;
+  if (props.showSearch && (pending.value || props.loading)) return;
   pending.value = true;
   userInitiated.value = true;
   emit('clear');
@@ -60,13 +71,14 @@ function handleSearch() {
   <div class="flex flex-wrap items-center gap-2">
     <button
       type="button"
-      :disabled="loading"
+      :disabled="clearDisabled"
       class="inline-flex items-center px-3 py-2 text-sm font-medium rounded text-heading bg-neutral-secondary-medium border border-default-medium shadow-xs hover:bg-neutral-secondary focus:ring-4 focus:ring-gray/20 disabled:cursor-not-allowed disabled:opacity-60"
       @click="handleClear">
       <RotateCcw class="w-4 h-4 mr-1.5" />
       {{ clearLabel }}
     </button>
     <button
+      v-if="showSearch"
       type="button"
       :disabled="loading"
       class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded bg-gray-700 shadow-xs hover:bg-gray-800 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-700 disabled:cursor-wait disabled:opacity-70"

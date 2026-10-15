@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, watch, onUnmounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { Eye, Pen, Trash2, Filter, Search, CalendarDays, Wrench, Car, Gauge, IdCard, Phone, ChevronsDown, Equal, ChevronsUp, Siren } from 'lucide-vue-next';
 import { Icon } from '@iconify/vue';
 import filePdfIcon from '@iconify-icons/fa6-regular/file-pdf';
@@ -8,7 +8,7 @@ import { useAuthStore } from '../../auth/stores/authStore';
 import { talleresService } from '../../configuracion/services/talleresService';
 import FilterActions from '../../../shared/components/FilterActions.vue';
 import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
-import { SEARCH_DEBOUNCE_MS, isSearchable } from '../../../shared/utils/search';
+import { useFiltrosReactivos } from '../../../shared/composables/useFiltrosReactivos';
 import { estadoADisplay } from '../../../shared/utils/estadoFlujo';
 import { ESTADOS_ORDEN_FILTRABLE, PRIORIDADES_ORDEN } from '../constants/estadosOrden';
 import { TIPOS_TRABAJO_OPCIONES } from '../../../shared/config/tiposTrabajo';
@@ -50,7 +50,6 @@ function hideAlert() {
 
 const showDeleteModal = ref(false);
 const ordenToDelete = ref(null);
-let searchTimer;
 
 const talleres = ref([]);
 
@@ -67,7 +66,7 @@ function tallerLabel(taller) {
   return [taller.nombre, taller.ciudad].filter(Boolean).join(' · ') || `Taller ${taller.id}`;
 }
 
-// --- PANEL DE FILTROS (no reactivos hasta "Buscar") ---
+// --- PANEL DE FILTROS (se aplican al cambiar: useFiltrosReactivos) ---
 const search = ref('');
 
 const emptyAdvancedFilters = () => ({
@@ -127,7 +126,6 @@ async function reloadList(page = 1) {
 }
 
 function applyAdvancedFilters() {
-  if (loading.value) return;
   appliedFilters.value = {
     ...draftFilters.value,
     fechaDesde: fechaInputAIso(fechaDesdeInput.value),
@@ -137,13 +135,28 @@ function applyAdvancedFilters() {
 }
 
 function clearAdvancedFilters() {
-  if (loading.value) return;
   search.value = '';
   draftFilters.value = emptyAdvancedFilters();
   appliedFilters.value = emptyAdvancedFilters();
   limpiarCamposFecha();
+  marcarAplicado();
   reloadList(1);
 }
+
+const { aplicarYa, marcarAplicado } = useFiltrosReactivos({
+  filtros: draftFilters,
+  busqueda: search,
+  camposFecha: [fechaDesdeInput, fechaHastaInput],
+  firma: () => ({
+    ...draftFilters.value,
+    fechaDesde: fechaInputAIso(fechaDesdeInput.value),
+    fechaHasta: fechaInputAIso(fechaHastaInput.value),
+    search: search.value.trim(),
+  }),
+  aplicar: () => {
+    applyAdvancedFilters();
+  },
+});
 
 function handleVer(id) {
   window.location.assign(`/crud/ordenes/ver/?id=${encodeURIComponent(id)}`);
@@ -237,21 +250,10 @@ function prioridadConfig(prioridad) {
   return map[prioridad] || { label: prioridad || '-', icon: Minus, color: 'text-gray-500 dark:text-gray-400' };
 }
 
-function scheduleSearch() {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => reloadList(1), SEARCH_DEBOUNCE_MS);
-}
 
-watch(search, () => {
-  if (isSearchable(search.value)) scheduleSearch();
-});
 onMounted(() => {
   loadTalleres();
   reloadList();
-});
-
-onUnmounted(() => {
-  clearTimeout(searchTimer);
 });
 </script>
 
@@ -287,8 +289,8 @@ onUnmounted(() => {
         <div class="flex flex-wrap items-center gap-2">
           <FilterActions
             :loading="loading"
-            @clear="clearAdvancedFilters"
-            @search="applyAdvancedFilters" />
+            :show-search="false"
+            @clear="clearAdvancedFilters" />
         </div>
       </div>
 
@@ -298,7 +300,7 @@ onUnmounted(() => {
             <label for="ordenes-search" class="block mb-1 text-sm font-medium text-heading">
               Buscar orden
             </label>
-            <form class="relative" @submit.prevent="applyAdvancedFilters">
+            <form class="relative" @submit.prevent="aplicarYa">
               <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
                 <Search class="w-4 h-4 text-body" />
               </div>

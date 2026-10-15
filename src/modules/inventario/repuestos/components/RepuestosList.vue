@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { Package, Pen, Search, Trash2, Filter } from 'lucide-vue-next';
 import { useRepuestos } from '../composables/useRepuestos';
 import ConfirmModal from '../../../../shared/components/ConfirmModal.vue';
@@ -12,7 +12,7 @@ import Pagination from '../../../../shared/components/Pagination.vue';
 import RepuestoModal from './RepuestoModal.vue';
 import { formatCurrency } from '../../../../shared/utils/format';
 import { vSanitizeSearch } from '../../../../shared/directives/sanitizeSearch';
-import { SEARCH_DEBOUNCE_MS, isSearchable } from '../../../../shared/utils/search';
+import { useFiltrosReactivos } from '../../../../shared/composables/useFiltrosReactivos';
 
 const {
   repuestos,
@@ -80,10 +80,8 @@ const showDeleteModal = ref(false);
 const repuestoToDelete = ref(null);
 const showRepuestoModal = ref(false);
 const repuestoModalId = ref(null);
-let searchTimer;
 
 function applyAdvancedFilters() {
-  if (isLoading.value) return;
   estado.value = draftFilters.value.estado;
   categoria.value = draftFilters.value.categoria;
   stockBajo.value = draftFilters.value.stockBajo;
@@ -92,15 +90,27 @@ function applyAdvancedFilters() {
 }
 
 function clearAdvancedFilters() {
-  if (isLoading.value) return;
   search.value = '';
   estado.value = '';
   categoria.value = '';
   stockBajo.value = false;
   draftFilters.value = emptyAdvancedFilters();
   appliedFilters.value = emptyAdvancedFilters();
+  marcarAplicado();
   loadRepuestos(1);
 }
+
+const { aplicarYa, marcarAplicado } = useFiltrosReactivos({
+  filtros: draftFilters,
+  busqueda: search,
+  firma: () => ({
+    ...draftFilters.value,
+    search: search.value.trim(),
+  }),
+  aplicar: () => {
+    applyAdvancedFilters();
+  },
+});
 
 async function loadRepuestos(page = 1) {
   try {
@@ -161,16 +171,8 @@ function handleExcelError(message) {
   showAlert('error', '', message || 'No se pudo generar el Excel.');
 }
 
-function scheduleSearch() {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => loadRepuestos(1), SEARCH_DEBOUNCE_MS);
-}
 
-watch(search, () => {
-  if (isSearchable(search.value)) scheduleSearch();
-});
 onMounted(() => loadRepuestos());
-onUnmounted(() => clearTimeout(searchTimer));
 </script>
 
 <template>
@@ -205,8 +207,8 @@ onUnmounted(() => clearTimeout(searchTimer));
         <div class="flex flex-wrap items-center gap-2">
           <FilterActions
             :loading="isLoading"
-            @clear="clearAdvancedFilters"
-            @search="applyAdvancedFilters" />
+            :show-search="false"
+            @clear="clearAdvancedFilters" />
         </div>
       </div>
 
@@ -214,7 +216,7 @@ onUnmounted(() => clearTimeout(searchTimer));
         <div class="flex flex-wrap items-end gap-3 min-w-0">
           <div class="w-full min-w-60 shrink-0 lg:flex-1 lg:max-w-md">
             <label for="repuestos-search" class="block mb-1 text-sm font-medium text-heading">Buscar repuesto</label>
-            <form class="relative" @submit.prevent="applyAdvancedFilters">
+            <form class="relative" @submit.prevent="aplicarYa">
               <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
                 <Search class="w-4 h-4 text-body" />
               </div>

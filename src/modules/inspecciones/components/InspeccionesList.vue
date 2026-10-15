@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, watch, onUnmounted, nextTick } from 'vue';
+import { onMounted, ref, onUnmounted, nextTick } from 'vue';
 import {
   FileSearchCorner, Pen, Trash2, Search, Receipt, Filter, CalendarDays, Flag,
   Car, Gauge, IdCard, Phone, MoreVertical,
@@ -14,7 +14,7 @@ import { talleresService } from '../../configuracion/services/talleresService';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import FilterActions from '../../../shared/components/FilterActions.vue';
 import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
-import { SEARCH_DEBOUNCE_MS, isSearchable } from '../../../shared/utils/search';
+import { useFiltrosReactivos } from '../../../shared/composables/useFiltrosReactivos';
 import { estadoADisplay } from '../../../shared/utils/estadoFlujo';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
@@ -124,7 +124,6 @@ const inspeccionToDelete = ref(null);
 const showReabrirModal = ref(false);
 const inspeccionToReabrir = ref(null);
 const isReopening = ref(false);
-let searchTimer;
 
 function handleEditar(inspeccion) {
   window.location.assign(`/crud/inspecciones/editar/?id=${encodeURIComponent(inspeccion.id)}`);
@@ -178,7 +177,7 @@ function solicitarReabrir(inspeccion) {
   showReabrirModal.value = true;
 }
 
-// --- PANEL DE FILTROS (no reactivos hasta "Buscar") ---
+// --- PANEL DE FILTROS (se aplican al cambiar: useFiltrosReactivos) ---
 const emptyAdvancedFilters = () => ({
   estado: '',
   tipoInspeccion: '',
@@ -234,7 +233,6 @@ async function reloadList(page = 1) {
 }
 
 function applyAdvancedFilters() {
-  if (loading.value) return;
   appliedFilters.value = {
     ...draftFilters.value,
     fechaDesde: fechaInputAIso(fechaDesdeInput.value),
@@ -244,13 +242,28 @@ function applyAdvancedFilters() {
 }
 
 function clearAdvancedFilters() {
-  if (loading.value) return;
   search.value = '';
   draftFilters.value = emptyAdvancedFilters();
   appliedFilters.value = emptyAdvancedFilters();
   limpiarCamposFecha();
+  marcarAplicado();
   reloadList(1);
 }
+
+const { aplicarYa, marcarAplicado } = useFiltrosReactivos({
+  filtros: draftFilters,
+  busqueda: search,
+  camposFecha: [fechaDesdeInput, fechaHastaInput],
+  firma: () => ({
+    ...draftFilters.value,
+    fechaDesde: fechaInputAIso(fechaDesdeInput.value),
+    fechaHasta: fechaInputAIso(fechaHastaInput.value),
+    search: search.value.trim(),
+  }),
+  aplicar: () => {
+    applyAdvancedFilters();
+  },
+});
 
 async function confirmarReabrir() {
   if (!inspeccionToReabrir.value || isReopening.value) return;
@@ -330,14 +343,7 @@ function fechaDisplay(valor) {
   };
 }
 
-function scheduleSearch() {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => reloadList(1), SEARCH_DEBOUNCE_MS);
-}
 
-watch(search, () => {
-  if (isSearchable(search.value)) scheduleSearch();
-});
 onMounted(() => {
   loadPrefijosInspeccion();
   reloadList();
@@ -345,7 +351,6 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  clearTimeout(searchTimer);
   document.removeEventListener('keydown', onAccionesKeydown);
 });
 </script>
@@ -382,8 +387,8 @@ onUnmounted(() => {
         <div class="flex flex-wrap items-center gap-2">
           <FilterActions
             :loading="loading"
-            @clear="clearAdvancedFilters"
-            @search="applyAdvancedFilters" />
+            :show-search="false"
+            @clear="clearAdvancedFilters" />
         </div>
       </div>
 
@@ -393,7 +398,7 @@ onUnmounted(() => {
             <label for="inspecciones-search" class="block mb-1 text-sm font-medium text-heading">
               Buscar inspección
             </label>
-            <form class="relative" @submit.prevent="applyAdvancedFilters">
+            <form class="relative" @submit.prevent="aplicarYa">
               <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
                 <Search class="w-4 h-4 text-body" />
               </div>

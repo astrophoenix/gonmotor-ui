@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, watch, onUnmounted, computed } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { Truck, Phone, Mail, Pen, Trash2, IdCard, Search, RotateCcw, Filter, UserRound } from 'lucide-vue-next';
 import { useProveedores } from '../composables/useProveedores';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
@@ -8,7 +8,7 @@ import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import FilterActions from '../../../shared/components/FilterActions.vue';
 import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
-import { SEARCH_DEBOUNCE_MS, isSearchable } from '../../../shared/utils/search';
+import { useFiltrosReactivos } from '../../../shared/composables/useFiltrosReactivos';
 import EntityTable from '../../../shared/components/EntityTable.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
 import ProveedorModal from './ProveedorModal.vue';
@@ -57,7 +57,6 @@ const showDeleteModal = ref(false);
 const proveedorToDelete = ref(null);
 const showReactivateModal = ref(false);
 const proveedorToReactivate = ref(null);
-let searchTimer;
 
 const showProveedorModal = ref(false);
 const proveedorModalId = ref(null);
@@ -78,20 +77,31 @@ const exportParams = computed(() => ({
 }));
 
 function applyAdvancedFilters() {
-  if (isLoading.value) return;
   estado.value = draftFilters.value.estado;
   appliedFilters.value = { ...draftFilters.value };
   loadProveedores(1);
 }
 
 function clearAdvancedFilters() {
-  if (isLoading.value) return;
   search.value = '';
   estado.value = '';
   draftFilters.value = emptyAdvancedFilters();
   appliedFilters.value = emptyAdvancedFilters();
+  marcarAplicado();
   loadProveedores(1);
 }
+
+const { aplicarYa, marcarAplicado } = useFiltrosReactivos({
+  filtros: draftFilters,
+  busqueda: search,
+  firma: () => ({
+    ...draftFilters.value,
+    search: search.value.trim(),
+  }),
+  aplicar: () => {
+    applyAdvancedFilters();
+  },
+});
 
 function openCreateModal() {
   proveedorModalId.value = null;
@@ -191,20 +201,9 @@ async function confirmReactivate() {
   }
 }
 
-function scheduleSearch() {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => loadProveedores(1), SEARCH_DEBOUNCE_MS);
-}
 
-watch(search, () => {
-  if (isSearchable(search.value)) scheduleSearch();
-});
 onMounted(() => {
   loadProveedores();
-});
-
-onUnmounted(() => {
-  clearTimeout(searchTimer);
 });
 </script>
 
@@ -240,8 +239,8 @@ onUnmounted(() => {
         <div class="flex flex-wrap items-center gap-2">
           <FilterActions
             :loading="isLoading"
-            @clear="clearAdvancedFilters"
-            @search="applyAdvancedFilters" />
+            :show-search="false"
+            @clear="clearAdvancedFilters" />
         </div>
       </div>
 
@@ -249,7 +248,7 @@ onUnmounted(() => {
         <div class="flex flex-wrap items-end gap-3 min-w-0">
           <div class="w-full min-w-60 shrink-0 lg:flex-1 lg:max-w-md">
             <label for="proveedores-search" class="block mb-1 text-sm font-medium text-heading">Buscar proveedor</label>
-            <form class="relative" @submit.prevent="applyAdvancedFilters">
+            <form class="relative" @submit.prevent="aplicarYa">
               <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
                 <Search class="w-4 h-4 text-body" />
               </div>

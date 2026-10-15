@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { Car, MessageCircle, Pen, Trash2, Search, Filter } from 'lucide-vue-next';
 import { useVehicles } from '../composables/useVehicles';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
@@ -8,7 +8,7 @@ import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import FilterActions from '../../../shared/components/FilterActions.vue';
 import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
-import { SEARCH_DEBOUNCE_MS, isSearchable } from '../../../shared/utils/search';
+import { useFiltrosReactivos } from '../../../shared/composables/useFiltrosReactivos';
 import EntityTable from '../../../shared/components/EntityTable.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
 import VehicleModal from './VehicleModal.vue';
@@ -64,7 +64,6 @@ const draftAnioInput = computed({
 });
 
 function applyAdvancedFilters() {
-  if (isLoading.value) return;
   estado.value = draftFilters.value.estado;
   anio.value = draftFilters.value.anio;
   appliedFilters.value = { ...draftFilters.value };
@@ -72,14 +71,26 @@ function applyAdvancedFilters() {
 }
 
 function clearAdvancedFilters() {
-  if (isLoading.value) return;
   search.value = '';
   estado.value = '';
   anio.value = '';
   draftFilters.value = emptyAdvancedFilters();
   appliedFilters.value = emptyAdvancedFilters();
+  marcarAplicado();
   loadVehicles(1);
 }
+
+const { aplicarYa, marcarAplicado } = useFiltrosReactivos({
+  filtros: draftFilters,
+  busqueda: search,
+  firma: () => ({
+    ...draftFilters.value,
+    search: search.value.trim(),
+  }),
+  aplicar: () => {
+    applyAdvancedFilters();
+  },
+});
 
 function showAlert(type, title, message) {
   alert.value = { type, title, message };
@@ -95,7 +106,6 @@ const showVehicleModal = ref(false);
 const vehicleModalId = ref(null);
 const showEnviarRecordatorio = ref(false);
 const enviarRecordatorioVehicle = ref(null);
-let searchTimer;
 
 async function loadVehicles(page = 1) {
   try {
@@ -184,16 +194,8 @@ function handleExcelError(message) {
   showAlert('error', '', message || 'No se pudo generar el Excel.');
 }
 
-function scheduleSearch() {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => loadVehicles(1), SEARCH_DEBOUNCE_MS);
-}
 
-watch(search, () => {
-  if (isSearchable(search.value)) scheduleSearch();
-});
 onMounted(() => loadVehicles());
-onUnmounted(() => clearTimeout(searchTimer));
 </script>
 
 <template>
@@ -228,8 +230,8 @@ onUnmounted(() => clearTimeout(searchTimer));
         <div class="flex flex-wrap items-center gap-2">
           <FilterActions
             :loading="isLoading"
-            @clear="clearAdvancedFilters"
-            @search="applyAdvancedFilters" />
+            :show-search="false"
+            @clear="clearAdvancedFilters" />
         </div>
       </div>
 
@@ -237,7 +239,7 @@ onUnmounted(() => clearTimeout(searchTimer));
         <div class="flex flex-wrap items-end gap-3 min-w-0">
           <div class="w-full min-w-60 shrink-0 lg:flex-1 lg:max-w-md">
             <label for="vehicles-search" class="block mb-1 text-sm font-medium text-heading">Buscar vehículo</label>
-            <form class="relative" @submit.prevent="applyAdvancedFilters">
+            <form class="relative" @submit.prevent="aplicarYa">
               <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
                 <Search class="w-4 h-4 text-body" />
               </div>

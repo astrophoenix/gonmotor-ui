@@ -11,6 +11,7 @@ import { IconFileTypePdf, IconFileTypeXls } from '@tabler/icons-vue';
 import Alert from '../../../shared/components/Alert.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import FilterActions from '../../../shared/components/FilterActions.vue';
+import { useFiltrosReactivos } from '../../../shared/composables/useFiltrosReactivos';
 import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
 import {
   MIN_SEARCH_LENGTH,
@@ -100,7 +101,7 @@ function recargar() {
 
 /* ------------------------------------------------------------------ filtros */
 
-/** Pulso de carga para que el panel no deje bloqueados Limpiar/Buscar. */
+/** Pulso de carga para que el panel no deje bloqueado "Limpiar". */
 function liberarFiltros() {
   aplicando.value = true;
   nextTick(() => {
@@ -124,8 +125,16 @@ function limpiarFiltros() {
   draftFecha.value = '';
   resultados.value = [];
   mostrarResultados.value = false;
+  marcarAplicado();
   liberarFiltros();
 }
+
+// El borrador del panel se aplica al cambiar (sin botón "Buscar").
+const { marcarAplicado } = useFiltrosReactivos({
+  filtros: [draftEstado, draftFecha],
+  firma: () => [draftEstado.value, draftFecha.value],
+  aplicar: aplicarFiltros,
+});
 
 /** Enter en el buscador: en Lista aplica el borrador; en Calendario solo cierra. */
 function onSubmitBusqueda() {
@@ -442,8 +451,8 @@ onUnmounted(() => {
           <div v-if="!ES_CALENDARIO" class="flex flex-wrap items-center gap-2">
             <FilterActions
               :loading="aplicando || listaCargando"
-              @clear="limpiarFiltros"
-              @search="aplicarFiltros" />
+              :show-search="false"
+              @clear="limpiarFiltros" />
           </div>
         </div>
 
