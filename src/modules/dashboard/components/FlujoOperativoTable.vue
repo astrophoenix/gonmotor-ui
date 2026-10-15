@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { CalendarDays, ClipboardPlus, Eye, Inbox, Loader2 } from 'lucide-vue-next';
+import { CalendarDays, ClipboardPlus, Eye, Inbox, Loader2, FileSearchCorner } from 'lucide-vue-next';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
 import EstadoRecepcionBadge from '../../recepciones/components/EstadoRecepcionBadge.vue';
@@ -139,8 +139,7 @@ async function crearInspeccion(recepcion) {
                   :href="`/crud/recepciones/ver/?id=${encodeURIComponent(item.id)}`"
                   class="inline-flex items-center p-1.5 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700"
                   :aria-label="`Ver recepción ${item.numero_recepcion}`"
-                  title="Ver recepción"
-                >
+                  title="Ver recepción">
                   <Eye class="w-4 h-4" />
                 </a>
 
@@ -149,22 +148,19 @@ async function crearInspeccion(recepcion) {
                   :href="`/crud/inspecciones/ver/?id=${encodeURIComponent(item.inspeccion_id)}`"
                   class="inline-flex items-center p-1.5 text-brand-700 rounded border border-brand-500/40 hover:bg-brand-500/10 dark:text-brand-100"
                   aria-label="Ver inspección"
-                  title="Ver inspección"
-                >
-                  <ClipboardPlus class="w-4 h-4" />
+                  title="Ver inspección">
+                  <FileSearchCorner class="w-4 h-4" />
                 </a>
 
                 <button
                   v-else-if="item.puede_crear_inspeccion"
                   type="button"
                   :disabled="creandoInspeccion === item.id"
-                  class="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-white rounded bg-brand-900 hover:bg-brand-700 focus:ring-4 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  class="inline-flex items-center p-1.5 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700"
                   :title="`Crear inspección para ${item.numero_recepcion}`"
-                  @click="crearInspeccion(item)"
-                >
+                  @click="crearInspeccion(item)">
                   <Loader2 v-if="creandoInspeccion === item.id" class="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
                   <ClipboardPlus v-else class="w-3.5 h-3.5" aria-hidden="true" />
-                  Crear inspección
                 </button>
               </div>
             </td>

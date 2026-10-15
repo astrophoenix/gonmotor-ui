@@ -149,7 +149,7 @@ function validate(file) {
     return `Formato no permitido. Solo ${typesText.value}.`;
   }
   if (file.size > props.maxSize) {
-    return `La imagen supera el tamaño máximo permitido (${maxSizeText.value}).`;
+    return `La imagen supera los ${maxSizeText.value}.`;
   }
   return '';
 }

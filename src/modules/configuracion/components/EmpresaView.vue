@@ -50,6 +50,10 @@ function validateForm() {
     errors.nombre_comercial = 'El nombre comercial es obligatorio.';
   }
 
+  if (!form.razon_social || !form.razon_social.trim()) {
+    errors.razon_social = 'La razón social es obligatoria.';
+  }
+
   const ruc = form.ruc || '';
   if (!ruc) {
     errors.ruc = 'El RUC es obligatorio.';
@@ -90,8 +94,6 @@ function onLogoRemove() {
 }
 
 async function loadEmpresa() {
-  errorMessage.value = '';
-  successMessage.value = '';
   try {
     const data = await empresaConfigService.getEmpresa();
     empresaId.value = data.id;
@@ -203,15 +205,16 @@ onMounted(loadEmpresa);
                 </div>
                 <div class="md:col-span-2">
                   <label for="razon_social" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                    Razón social
+                    Razón social <span class="text-accent-500">*</span>
                   </label>
                   <input
                     id="razon_social"
                     v-model="form.razon_social"
                     maxlength="200"
                     @input="form.razon_social = sanitizeNombre(form.razon_social)"
-                    class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                    :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.razon_social ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
                   >
+                  <p v-if="formErrors.razon_social" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.razon_social }}</p>
                 </div>
                 <div>
                   <label for="ruc" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
@@ -258,7 +261,7 @@ onMounted(loadEmpresa);
             </div>
 
             <div class="col-span-6 sm:col-span-2 w-full max-w-xs">
-              <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Logotipo oficial</label>
+              <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Logo</label>
               <ImageField
                 :key="logoImageKey"
                 :image-url="currentLogoUrl"

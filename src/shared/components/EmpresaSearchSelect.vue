@@ -119,7 +119,7 @@ onUnmounted(() => {
     <button
       data-disparador
       type="button"
-      class="flex h-[52px] w-full items-center justify-between gap-3 rounded-xl border-[1.5px] border-brand-line bg-white px-3.5 text-base text-brand-ink outline-none transition-colors focus:border-brand-ink focus:ring-4 focus:ring-brand-focus-ring disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+      class="flex h-10 w-full items-center justify-between gap-3 rounded-xl border-[1.5px] border-brand-line bg-white px-3.5 text-base text-brand-ink outline-none transition-colors focus:border-brand-ink focus:ring-4 focus:ring-brand-focus-ring disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-white text-sm"
       aria-haspopup="listbox"
       :aria-expanded="String(abierto)"
       aria-controls="empresa-select-panel"
@@ -129,7 +129,7 @@ onUnmounted(() => {
       @keydown.down.prevent="abrir()"
     >
       <Building2 class="h-5 w-5 shrink-0 text-brand-700 dark:text-brand-100" aria-hidden="true" />
-      <span class="flex-1 truncate text-left font-medium">{{ etiqueta }}</span>
+      <span class="flex-1 truncate text-left">{{ etiqueta }}</span>
       <ChevronDown
         class="h-4 w-4 shrink-0 text-muted transition-transform"
         :class="abierto && 'rotate-180'"

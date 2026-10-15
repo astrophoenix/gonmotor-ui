@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
-import { User, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, CheckCircle2, Loader2, Building2, Store, ChevronRight } from 'lucide-vue-next';
+import { User, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, CheckCircle2, Loader2, Building2, ChevronRight } from 'lucide-vue-next';
 import { useAuthStore } from '../stores/authStore';
 import Alert from '../../../shared/components/Alert.vue';
 import TallerSelect from '../../../shared/components/TallerSelect.vue';
@@ -347,7 +347,7 @@ async function confirmCompany() {
               @click="irAEmpresa"
             >
               <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-900 text-white">
-                <Store class="h-5 w-5" aria-hidden="true" />
+                <Building2 class="h-6 w-6" aria-hidden="true" />
               </span>
               <span class="flex-1">
                 <span class="block text-sm font-semibold text-gray-900 dark:text-white">Ir a empresa</span>
@@ -361,13 +361,19 @@ async function confirmCompany() {
             <button
               type="button"
               class="flex w-full items-center gap-3 rounded-lg border border-gray-200 p-4 text-left transition-colors hover:border-brand-500 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:border-gray-600 dark:hover:bg-gray-700"
-              @click="registrarEmpresa"
-            >
+              @click="registrarEmpresa">
               <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-900 text-white">
-                <Building2 class="h-5 w-5" aria-hidden="true" />
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-building-complex-plus preview-icon">
+                  <path d="M10 12h4"/><path d="M10 21v-3a2 2 0 013.05-1.702"/>
+                  <path d="M10 8h4"/><path d="M16 19h6"/>
+                  <path d="M18 7h2a2 2 0 012 2v4.355"/>
+                  <path d="M19 16v6"/>
+                  <path d="M6 10H4a2 2 0 00-2 2v7a2 2 0 002 2h8.535"/>
+                  <path d="M6 21V5a2 2 0 012-2h8a2 2 0 012 2v7.126"/>
+                </svg>
               </span>
               <span class="flex-1">
-                <span class="block text-sm font-semibold text-gray-900 dark:text-white">Registrar una nueva empresa</span>
+                <span class="block text-sm font-semibold text-gray-900 dark:text-white">Registrar nueva empresa</span>
                 <span class="block text-xs text-gray-500 dark:text-gray-400">Gestiona las empresas del sistema: crear, editar y eliminar.</span>
               </span>
               <ChevronRight class="h-5 w-5 text-gray-400" aria-hidden="true" />

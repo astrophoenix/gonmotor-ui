@@ -182,11 +182,9 @@
               <span class="ml-3" sidebar-toggle-item>Rentabilidad</span>
             </a>
           </li>
-          {{- /* Solo admin SaaS (superusuario): usePermisos quita `hidden` o elimina el <li>. */ -}}
-          <li data-solo-admin-saas hidden>
-            <hr class="my-1 border-brand-700/40" />
-          </li>
-          {{- end }}
+          {{- else }}
+          {{- /* Solo en la gestión de empresas («Registrar una nueva empresa») y solo
+               para el superusuario: usePermisos quita `hidden` o elimina el <li>. */}}
           <li class="sidebar-section-label" data-solo-admin-saas hidden sidebar-toggle-item>Administración</li>
           <li data-solo-admin-saas hidden>
             <a href="{{ "crud/empresas/" | relURL }}" sidebar-tooltip="Empresas" class="flex items-center py-2.5 px-2 text-base text-white hover:bg-brand-700 group transition duration-75 dark:text-white dark:hover:bg-brand-700 {{ if eq $sub "empresas" }}is-current{{ end }}" {{ if eq $sub "empresas" }}aria-current="page"{{ end }}>
@@ -196,6 +194,7 @@
               <span class="ml-3" sidebar-toggle-item>Empresas</span>
             </a>
           </li>
+          {{- end }}
 
         </ul>
       </div>
