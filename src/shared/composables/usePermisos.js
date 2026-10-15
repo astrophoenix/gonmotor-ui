@@ -30,10 +30,19 @@ function ocultarEnlacesSinPermiso(permisos) {
   });
 }
 
+/** Enlaces del administrador del SaaS: ocultos (`hidden`) salvo para el superusuario. */
+function mostrarEnlacesAdminSaas(esSuperusuario) {
+  document.querySelectorAll('[data-solo-admin-saas]').forEach((el) => {
+    if (esSuperusuario) el.removeAttribute('hidden');
+    else el.remove();
+  });
+}
+
 export async function iniciarPermisosGlobal() {
   try {
     const data = await cargar();
     ocultarEnlacesSinPermiso(data.permisos || {});
+    mostrarEnlacesAdminSaas(Boolean(data.es_superusuario));
   } catch {
     // Sin sesión (login/registro): no se oculta nada del sidebar.
   }

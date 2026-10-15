@@ -6,6 +6,7 @@ import './dark-mode';
 import { iniciarResaltadoHoyDatepickers } from './shared/utils/datepicker';
 import { mountLogin, mountRegister, mountForgotPassword, mountResetPassword } from './modules/auth';
 import { mountClients, mountClientEdit, mountClientDetail } from './modules/clientes';
+import { mountEmpresas } from './modules/empresas';
 import { mountProveedores, mountProveedorEdit, mountProveedorDetail } from './modules/proveedores';
 import { mountVehicles, mountVehicleEdit, mountVehicleDetail } from './modules/vehiculos';
 import { mountRecepciones, mountRecepcionDetail, mountRecepcionEdit } from './modules/recepciones';
@@ -90,6 +91,12 @@ const clientDetailApp = document.getElementById('client-detail-app');
 
 if (clientDetailApp) {
   mountClientDetail(clientDetailApp, pinia);
+}
+
+const empresasApp = document.getElementById('empresas-app');
+
+if (empresasApp) {
+  mountEmpresas(empresasApp, pinia);
 }
 
 const proveedoresApp = document.getElementById('proveedores-app');

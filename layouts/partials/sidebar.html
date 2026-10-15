@@ -9,13 +9,15 @@
 {{- $subsInventario := slice "repuestos" "servicios" -}}
 {{- $enOperacion := or (eq .Params.group "operacion") (in $subsOperacion $sub) -}}
 {{- $enInventario := or (eq .Params.group "inventario") (in $subsInventario $sub) -}}
+{{- /* Gestión de empresas (admin SaaS): solo se muestra la sección Administración. */ -}}
+{{- $enAdminSaas := and (eq $mod "crud") (eq $sub "empresas") -}}
 
 <aside id="sidebar" class="fixed top-0 left-0 z-50 flex flex-col flex-shrink-0 hidden w-64 h-full font-normal duration-75 lg:flex transition-width sidebar-collapsed:w-16" aria-label="Sidebar">
   <div class="relative flex flex-col flex-1 min-h-0 bg-brand-900 border-r border-gray-200 dark:bg-brand-900 dark:border-gray-700">
     <div class="sidebar-scroll flex flex-col flex-1 pt-0 pb-4 overflow-y-auto">
       <div class="flex-1 space-y-1 bg-brand-900 divide-y divide-white/10 dark:bg-brand-900 dark:divide-white/10">
         <div class="sidebar-header bg-brand-900">
-          <a href="{{ "/" | relURL }}" sidebar-logo class="sidebar-brand flex items-center justify-center">
+          <a href="{{ if $enAdminSaas }}{{ "crud/empresas/" | relURL }}{{ else }}{{ "/" | relURL }}{{ end }}" sidebar-logo class="sidebar-brand flex items-center justify-center">
             <img src="/images/isotipo-blanco.svg" class="h-12 w-auto" alt="gonmotor Logo" />
             <span sidebar-toggle-item class="sidebar-wordmark self-center font-brand text-2xl font-extrabold leading-none tracking-tight whitespace-nowrap ml-2 sm:text-3xl"><span class="text-white">gon</span><span class="text-brand-coral">motor</span></span>
           </a>
@@ -28,6 +30,7 @@
           </button>
         </div>
         <ul class="pb-2 space-y-1">
+          {{- if not $enAdminSaas }}
           <li class="sidebar-section-label" sidebar-toggle-item>Panel</li>
           <li>
             <a href="{{ "/" | relURL }}" sidebar-tooltip="Dashboard" class="flex items-center py-2.5 px-2 text-base text-white hover:bg-brand-700 group transition duration-75 dark:text-white dark:hover:bg-brand-700 {{ if eq .RelPermalink "/" }}is-current{{ end }}" {{ if eq .RelPermalink "/" }}aria-current="page"{{ end }}>
@@ -177,6 +180,20 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M9 17V9m4 8V5m4 12v-6" />
               </svg>
               <span class="ml-3" sidebar-toggle-item>Rentabilidad</span>
+            </a>
+          </li>
+          {{- /* Solo admin SaaS (superusuario): usePermisos quita `hidden` o elimina el <li>. */ -}}
+          <li data-solo-admin-saas hidden>
+            <hr class="my-1 border-brand-700/40" />
+          </li>
+          {{- end }}
+          <li class="sidebar-section-label" data-solo-admin-saas hidden sidebar-toggle-item>Administración</li>
+          <li data-solo-admin-saas hidden>
+            <a href="{{ "crud/empresas/" | relURL }}" sidebar-tooltip="Empresas" class="flex items-center py-2.5 px-2 text-base text-white hover:bg-brand-700 group transition duration-75 dark:text-white dark:hover:bg-brand-700 {{ if eq $sub "empresas" }}is-current{{ end }}" {{ if eq $sub "empresas" }}aria-current="page"{{ end }}>
+              <svg class="flex-shrink-0 w-5 h-5 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>
+              </svg>
+              <span class="ml-3" sidebar-toggle-item>Empresas</span>
             </a>
           </li>
 

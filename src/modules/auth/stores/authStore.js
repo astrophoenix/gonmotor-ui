@@ -62,6 +62,10 @@ export const useAuthStore = defineStore('auth', () => {
     if (userData.empresa_id) {
       targetStorage.setItem(EMPRESA_ID_KEY, String(userData.empresa_id));
       empresaId.value = String(userData.empresa_id);
+    } else {
+      // Admin SaaS en la gestión de empresas: sin empresa activa heredada.
+      targetStorage.removeItem(EMPRESA_ID_KEY);
+      empresaId.value = null;
     }
 
     if (userData.taller_id) {
@@ -200,6 +204,17 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Admin SaaS: abre la sesión sin empresa (tokens que llegan en el login)
+   * para gestionar empresas.
+   */
+  function iniciarSesionAdminSaaS(data, remember = false) {
+    if (!data?.access) {
+      throw new Error('La respuesta del servidor no incluye el token de acceso.');
+    }
+    persistSession(data, remember);
+  }
+
   function logout() {
     [localStorage, sessionStorage].forEach((currentStorage) => {
       [ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, USER_KEY, LOGGED_IN_KEY, EMPRESA_ID_KEY, TALLER_ID_KEY, TALLER_NOMBRE_KEY].forEach((key) => {
@@ -225,6 +240,7 @@ export const useAuthStore = defineStore('auth', () => {
     esTodosLosTalleres,
     authenticate,
     selectCompany,
+    iniciarSesionAdminSaaS,
     updateProfile,
     changePassword,
     setTaller,

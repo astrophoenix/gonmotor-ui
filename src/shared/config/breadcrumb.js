@@ -17,6 +17,7 @@ const GRUPOS = {
   negocio: 'Negocio',
   sistema: 'Sistema',
   cuenta: 'Cuenta',
+  administracion: 'Administración',
 };
 
 /** Módulo (segmento de URL) → grupo + etiqueta de la entidad. */
@@ -39,6 +40,7 @@ const MODULOS = {
   usuarios: { grupo: 'sistema', entidad: 'Usuarios' },
   roles: { grupo: 'sistema', entidad: 'Roles' },
   perfil: { grupo: 'cuenta', entidad: 'Editar perfil' },
+  empresas: { grupo: 'administracion', entidad: 'Empresas' },
 };
 
 /**

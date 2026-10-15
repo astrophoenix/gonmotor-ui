@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
-import { User, Lock, Eye, EyeOff, ArrowRight, CheckCircle2, Loader2 } from 'lucide-vue-next';
+import { User, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, CheckCircle2, Loader2, Building2, Store, ChevronRight } from 'lucide-vue-next';
 import { useAuthStore } from '../stores/authStore';
 import Alert from '../../../shared/components/Alert.vue';
 import TallerSelect from '../../../shared/components/TallerSelect.vue';
@@ -27,7 +27,14 @@ const showCompanyModal = ref(false);
 const userCompanies = ref([]);
 const selectedCompanyId = ref(null);
 const selectedTallerId = ref(null);
-const tempUserId = ref(null);
+// Token firmado y de vida corta del login; se canjea en select-company.
+const selectionToken = ref(null);
+
+// Admin SaaS: el modal arranca en «opciones» (ir a empresa / registrar empresa);
+// el resto de usuarios va directo al paso «empresa».
+const esAdminSaas = ref(false);
+const adminSaasSesion = ref(null);
+const pasoModal = ref('empresa');
 
 const selectedCompany = computed(
   () => userCompanies.value.find((emp) => String(emp.id) === String(selectedCompanyId.value)) || null
@@ -74,13 +81,37 @@ async function submit() {
     }
 
     // 🟡 CASO 2: Si tiene MÚLTIPLES empresas
-    userCompanies.value = response.empresas;
-    tempUserId.value = response.user_id;
+    userCompanies.value = response.empresas || [];
+    selectionToken.value = response.selection_token;
+    esAdminSaas.value = Boolean(response.es_admin_saas);
+    adminSaasSesion.value = esAdminSaas.value ? response : null;
+    pasoModal.value = esAdminSaas.value ? 'opciones' : 'empresa';
     showCompanyModal.value = true;
 
   } catch (error) {
     errorMessage.value = error.message || 'Usuario o contraseña incorrectos';
   }
+}
+
+function irAEmpresa() {
+  if (!userCompanies.value.length) return;
+  pasoModal.value = 'empresa';
+}
+
+function registrarEmpresa() {
+  try {
+    authStore.iniciarSesionAdminSaaS(adminSaasSesion.value, remember.value);
+    window.location.assign('/crud/empresas/');
+  } catch (error) {
+    errorMessage.value = error.message || 'No se pudo iniciar la sesión.';
+    cerrarModal();
+  }
+}
+
+function cerrarModal() {
+  showCompanyModal.value = false;
+  selectedCompanyId.value = null;
+  pasoModal.value = esAdminSaas.value ? 'opciones' : 'empresa';
 }
 
 // Confirmar selección del modal
@@ -90,7 +121,7 @@ async function confirmCompany() {
   try {
     await authStore.selectCompany(
       {
-        user_id: tempUserId.value,
+        selection_token: selectionToken.value,
         empresa_id: selectedCompanyId.value,
       },
       remember.value
@@ -105,7 +136,7 @@ async function confirmCompany() {
     window.location.assign('/');
   } catch (error) {
     errorMessage.value = error.message || 'Error al seleccionar la empresa.';
-    showCompanyModal.value = false;
+    cerrarModal();
   }
 }
 </script>
@@ -296,57 +327,124 @@ async function confirmCompany() {
       </div>
     </section>
 
-    <!-- ===== Modal multi-empresa (lógica intacta) ===== -->
+    <!-- ===== Modal multi-empresa / admin SaaS ===== -->
     <div v-if="showCompanyModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-sm">
       <div class="w-full max-w-md p-6 bg-white rounded-lg shadow-xl dark:bg-gray-800 border border-gray-200 dark:border-gray-700 space-y-4">
-        <h3 class="text-xl font-bold text-gray-900 dark:text-white">
-          Selecciona Empresa
-        </h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          Tu cuenta está asociada a más de una empresa. Elige con cuál deseas trabajar hoy:
-        </p>
+        <!-- Paso 1 (solo admin SaaS): elegir qué hacer -->
+        <template v-if="pasoModal === 'opciones'">
+          <h3 class="text-xl font-bold text-gray-900 dark:text-white">
+            ¿Qué deseas hacer?
+          </h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            Ingresaste como administrador del sistema. Elige cómo continuar:
+          </p>
 
-        <div>
-          <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-            Empresa
-          </label>
-          <EmpresaSearchSelect
-            v-model="selectedCompanyId"
-            :empresas="userCompanies"
-            placeholder="Selecciona una empresa"
-          />
-        </div>
+          <div class="space-y-3">
+            <button
+              type="button"
+              :disabled="!userCompanies.length"
+              class="flex w-full items-center gap-3 rounded-lg border border-gray-200 p-4 text-left transition-colors hover:border-brand-500 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent dark:border-gray-600 dark:hover:bg-gray-700"
+              @click="irAEmpresa"
+            >
+              <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-900 text-white">
+                <Store class="h-5 w-5" aria-hidden="true" />
+              </span>
+              <span class="flex-1">
+                <span class="block text-sm font-semibold text-gray-900 dark:text-white">Ir a empresa</span>
+                <span class="block text-xs text-gray-500 dark:text-gray-400">
+                  {{ userCompanies.length ? 'Selecciona la empresa y el taller con los que trabajarás.' : 'Aún no hay empresas activas registradas.' }}
+                </span>
+              </span>
+              <ChevronRight class="h-5 w-5 text-gray-400" aria-hidden="true" />
+            </button>
 
-        <div>
-          <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-            Taller
-          </label>
-          <TallerSelect
-            v-model="selectedTallerId"
-            :talleres="selectedCompanyTalleres"
-            :permitir-todos="permiteTodosEmpresa"
-            variante="campo"
-            placeholder="Selecciona un taller"
-          />
-        </div>
+            <button
+              type="button"
+              class="flex w-full items-center gap-3 rounded-lg border border-gray-200 p-4 text-left transition-colors hover:border-brand-500 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:border-gray-600 dark:hover:bg-gray-700"
+              @click="registrarEmpresa"
+            >
+              <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-900 text-white">
+                <Building2 class="h-5 w-5" aria-hidden="true" />
+              </span>
+              <span class="flex-1">
+                <span class="block text-sm font-semibold text-gray-900 dark:text-white">Registrar una nueva empresa</span>
+                <span class="block text-xs text-gray-500 dark:text-gray-400">Gestiona las empresas del sistema: crear, editar y eliminar.</span>
+              </span>
+              <ChevronRight class="h-5 w-5 text-gray-400" aria-hidden="true" />
+            </button>
+          </div>
 
-        <div class="flex justify-end gap-3 pt-2">
-          <button
-            type="button"
-            @click="showCompanyModal = false"
-            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded shadow-xs hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
-            Cancelar
-          </button>
-          <button
-            type="button"
-            :disabled="!selectedCompanyId || authStore.isLoading"
-            @click="confirmCompany"
-            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded shadow-xs hover:bg-primary-800 disabled:opacity-50 dark:bg-primary-600 dark:hover:bg-primary-700">
-            <Loader2 v-if="authStore.isLoading" class="h-4 w-4 animate-spin mr-2" aria-hidden="true" />
-            <CheckCircle2 v-else class="h-4 w-4 mr-2" aria-hidden="true" />
-            {{ authStore.isLoading ? 'Ingresando...' : 'Ingresar' }}
-          </button>
-        </div>
+          <div class="flex justify-end pt-2">
+            <button
+              type="button"
+              @click="cerrarModal"
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded shadow-xs hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
+              Cancelar
+            </button>
+          </div>
+        </template>
+
+        <!-- Paso 2: empresa y taller -->
+        <template v-else>
+          <h3 class="text-xl font-bold text-gray-900 dark:text-white">
+            Selecciona Empresa
+          </h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            {{ esAdminSaas
+              ? 'Elige la empresa y el taller con los que deseas trabajar:'
+              : 'Tu cuenta está asociada a más de una empresa. Elige con cuál deseas trabajar hoy:' }}
+          </p>
+
+          <div>
+            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+              Empresa
+            </label>
+            <EmpresaSearchSelect
+              v-model="selectedCompanyId"
+              :empresas="userCompanies"
+              placeholder="Selecciona una empresa"
+            />
+          </div>
+
+          <div>
+            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+              Taller
+            </label>
+            <TallerSelect
+              v-model="selectedTallerId"
+              :talleres="selectedCompanyTalleres"
+              :permitir-todos="permiteTodosEmpresa"
+              variante="campo"
+              placeholder="Selecciona un taller"
+            />
+          </div>
+
+          <div class="flex justify-end gap-3 pt-2">
+            <button
+              v-if="esAdminSaas"
+              type="button"
+              class="me-auto inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 rounded hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+              @click="pasoModal = 'opciones'">
+              <ArrowLeft class="h-4 w-4 mr-1.5" aria-hidden="true" />
+              Volver
+            </button>
+            <button
+              type="button"
+              @click="cerrarModal"
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded shadow-xs hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
+              Cancelar
+            </button>
+            <button
+              type="button"
+              :disabled="!selectedCompanyId || authStore.isLoading"
+              @click="confirmCompany"
+              class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded shadow-xs hover:bg-primary-800 disabled:opacity-50 dark:bg-primary-600 dark:hover:bg-primary-700">
+              <Loader2 v-if="authStore.isLoading" class="h-4 w-4 animate-spin mr-2" aria-hidden="true" />
+              <CheckCircle2 v-else class="h-4 w-4 mr-2" aria-hidden="true" />
+              {{ authStore.isLoading ? 'Ingresando...' : 'Ingresar' }}
+            </button>
+          </div>
+        </template>
       </div>
     </div>
   </div>

@@ -25,6 +25,9 @@ const enlacesConfiguracion = [
 
 const enConfiguracion = computed(() => window.location.pathname.startsWith('/configuracion/'));
 
+/** Gestión de empresas (admin SaaS): sin búsqueda global, notificaciones ni configuración. */
+const enAdminSaas = window.location.pathname.startsWith('/crud/empresas/');
+
 function cerrarConfiguracionAlClickFuera(event) {
   if (!menuConfiguracionRef.value?.contains(event.target)) {
     configuracionAbierta.value = false;
@@ -99,7 +102,7 @@ function claseCrumble(indice) {
     </span>
 
     <div class="flex shrink-0 items-center gap-1.5">
-      <GlobalSearch />
+      <GlobalSearch v-if="!enAdminSaas" />
 
       <!-- Taller activo -->
       <TallerSelect
@@ -117,6 +120,7 @@ function claseCrumble(indice) {
 
       <!-- Notificaciones -->
       <a
+        v-if="!enAdminSaas"
         href="/notificaciones/"
         class="inline-flex items-center justify-center rounded-lg p-2 text-ink-soft transition-colors hover:bg-surface hover:text-brand-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:text-brand-300 dark:hover:bg-brand-800 dark:hover:text-white"
         aria-label="Notificaciones"
@@ -125,7 +129,7 @@ function claseCrumble(indice) {
       </a>
 
       <!-- Configuración -->
-      <div ref="menuConfiguracionRef" class="relative">
+      <div v-if="!enAdminSaas" ref="menuConfiguracionRef" class="relative">
         <button
           type="button"
           class="inline-flex items-center justify-center rounded-lg p-2 text-ink-soft transition-colors hover:bg-surface hover:text-brand-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:text-brand-300 dark:hover:bg-brand-800 dark:hover:text-white"

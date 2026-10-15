@@ -8,6 +8,7 @@ export const ADD_MODE = {
 // (el listado escucha el evento 'add'), 'page' redirige a la pantalla
 // /crud/<entidad>/agregar/.
 export const ENTITY_ADD_MODES = {
+  empresas: ADD_MODE.modal,
   clientes: ADD_MODE.modal,
   proveedores: ADD_MODE.modal,
   vehiculos: ADD_MODE.modal,
