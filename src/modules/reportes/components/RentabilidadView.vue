@@ -162,27 +162,53 @@
         </div>
       </div>
 
-      <!-- Gráfico de composición -->
-      <div class="grid gap-4 lg:grid-cols-3">
-        <div class="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700 p-4">
+      <!-- Cascada: de los ingresos a la utilidad neta -->
+      <div>
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700 p-4">
           <h3 class="text-base font-semibold text-gray-900 dark:text-white flex items-center mb-4">
             <BarChart3 class="w-5 h-5 mr-2 text-brand-500" />
-            Composición de la rentabilidad
+            De los ingresos a la utilidad
           </h3>
-          <RentabilidadChart
+          <div
+            v-if="avisoDatosFaltantes"
+            class="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-200"
+            role="status"
+          >
+            <AlertTriangle class="w-4 h-4 shrink-0" aria-hidden="true" />
+            <span>{{ avisoDatosFaltantes }}</span>
+            <a href="/crud/gastos/" class="font-medium underline hover:no-underline">Ir a Gastos</a>
+          </div>
+          <RentabilidadCascadaChart
             :ingresos="Number(ingresosTotal)"
-            :cmv="Number(cmvTotal)"
+            :costo-repuestos="Number(cmvRepuestos)"
+            :costo-mano-obra="Number(cmvServicios)"
+            :margen-bruto="Number(margenBruto)"
             :gastos="Number(gastosTotal)"
             :utilidad="Number(utilidadNeta)"
-            :margen-bruto="Number(margenBruto)"
           />
         </div>
-        <SaludNegocio
-          :ingresos="Number(ingresosTotal)"
-          :margen-bruto="Number(margenBruto)"
-          :gastos="Number(gastosTotal)"
-          :utilidad="Number(utilidadNeta)"
-        />
+        <!-- «Salud del negocio» oculto por ahora (SaludNegocio.vue se conserva). -->
+      </div>
+
+      <!-- Lectura sencilla: de cada $100 cobrados -->
+      <CadaCienDolares
+        :ingresos="Number(ingresosTotal)"
+        :costo-repuestos="Number(cmvRepuestos)"
+        :costo-mano-obra="Number(cmvServicios)"
+        :gastos="Number(gastosTotal)"
+        :utilidad="Number(utilidadNeta)"
+      />
+
+      <!-- Evolución mensual -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700 p-4">
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white flex items-center">
+          <TrendingUp class="w-5 h-5 mr-2 text-brand-500" aria-hidden="true" />
+          Evolución mensual
+        </h3>
+        <p class="mt-1 mb-2 text-sm text-gray-500 dark:text-gray-400">
+          Últimos 12 meses hasta la fecha «Hasta».
+        </p>
+        <EvolucionMensualChart :meses="evolucionMensual" />
       </div>
     </div>
 
@@ -193,7 +219,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import { computed, ref, watch, onMounted } from 'vue';
 import EntityHeader from '@/shared/components/EntityHeader.vue';
 import Alert from '@/shared/components/Alert.vue';
 import FilterActions from '@/shared/components/FilterActions.vue';
@@ -201,15 +227,18 @@ import InfoPopover from '@/shared/components/InfoPopover.vue';
 import { useAuthStore } from '@/modules/auth/stores/authStore';
 import { talleresService } from '@/modules/configuracion/services/talleresService';
 import { useReportes } from '../composables/useReportes';
-import RentabilidadChart from './RentabilidadChart.vue';
+import RentabilidadCascadaChart from './RentabilidadCascadaChart.vue';
+import EvolucionMensualChart from './EvolucionMensualChart.vue';
+import CadaCienDolares from './CadaCienDolares.vue';
 import ResultadoNegocio from './ResultadoNegocio.vue';
-import SaludNegocio from './SaludNegocio.vue';
 import {
   ChartColumn,
   CalendarDays,
   Filter,
   Loader2,
   BarChart3,
+  AlertTriangle,
+  TrendingUp,
 } from 'lucide-vue-next';
 
 /**
@@ -282,6 +311,21 @@ const {
   resetFilters,
   formatCurrency,
 } = useReportes();
+
+const evolucionMensual = computed(() => data.value?.evolucion_mensual || []);
+
+/**
+ * Sin costos (con trabajos entregados) o sin gastos en el periodo, la utilidad
+ * sale inflada: se avisa para que se registren antes de leerla como real.
+ */
+const avisoDatosFaltantes = computed(() => {
+  if (!data.value) return '';
+  const faltanCostos = Number(ingresosTotal.value) > 0 && Number(cmvTotal.value) === 0;
+  const faltanGastos = Number(gastosTotal.value) === 0;
+  if (!faltanCostos && !faltanGastos) return '';
+  const que = faltanCostos && faltanGastos ? 'costos y gastos' : faltanCostos ? 'costos' : 'gastos';
+  return `Faltan ${que} registrados; la utilidad no es real.`;
+});
 
 watch(errorMessage, (msg) => {
   if (msg) setAlert('danger', 'Error', msg);
