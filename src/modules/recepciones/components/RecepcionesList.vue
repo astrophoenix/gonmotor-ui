@@ -194,17 +194,25 @@ function formatAntiguedad(date) {
   return `hace ${meses} ${meses === 1 ? 'mes' : 'meses'}`;
 }
 
-function getFechaIngreso(item) {
-  const valor = item.fecha_ingreso || item.created_at;
-  if (!valor) return { fecha: '-', hora: '', antiguedad: '', completo: '' };
-  const date = new Date(valor);
-  if (Number.isNaN(date.getTime())) return { fecha: '-', hora: '', antiguedad: '', completo: '' };
+function formatFecha(valor) {
+  const date = valor ? new Date(valor) : null;
+  if (!date || Number.isNaN(date.getTime())) return null;
   return {
+    date,
     fecha: date.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric' }),
     hora: date.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' }),
-    antiguedad: formatAntiguedad(date),
     completo: date.toLocaleString('es-EC', { dateStyle: 'long', timeStyle: 'short' }),
   };
+}
+
+function getFechaIngreso(item) {
+  const info = formatFecha(item.fecha_ingreso || item.created_at);
+  if (!info) return { fecha: '-', hora: '', antiguedad: '', completo: '' };
+  return { ...info, antiguedad: formatAntiguedad(info.date) };
+}
+
+function getFechaSalida(item) {
+  return formatFecha(item.fecha_salida);
 }
 
 function handleEditar(id) {
@@ -429,12 +437,12 @@ onUnmounted(() => {
         </div>
       </div>
       <EntityTable
-        :columns="['Nº Recepción', 'Vehículo', 'Cliente', 'Tipo', 'Fecha ingreso', 'Estado', 'Relaciones', 'Acciones']"
+        :columns="['Nº Recepción', 'Vehículo', 'Cliente', 'Tipo', 'Fecha ingreso', 'Fecha salida', 'Estado', 'Relaciones', 'Acciones']"
         :items="recepciones"
         :loading="loading"
         loading-text="Cargando recepciones..."
         empty-text="No hay recepciones registradas."
-        :empty-colspan="8"
+        :empty-colspan="9"
         :wrapper-class="'w-full'"
       >
     <template #row="{ item, index }">
@@ -445,16 +453,16 @@ onUnmounted(() => {
             {{ numeroDisplay(item) }}
           </a>
         </td>
-        <td class="p-4 whitespace-nowrap align-top">
+        <td class="p-4 align-top max-w-40">
           <span class="flex items-center gap-1.5">
             <a v-if="vehiculoUrl(item)" :href="vehiculoUrl(item)" class="font-semibold text-gray-900 hover:text-primary-600 dark:text-white dark:hover:text-primary-400">
               {{ item.vehiculo?.placa || '-' }}</a>
             <span v-else class="font-semibold text-gray-900 dark:text-white">{{ item.vehiculo?.placa || '-' }}</span>
           </span>
           <div class="mt-1 flex flex-col gap-1 ps-0.5 text-xs text-gray-500 dark:text-gray-400">
-            <span class="flex items-center gap-1.5">
+            <span class="flex items-center gap-1.5 min-w-0">
               <Car class="w-3.5 h-3.5 shrink-0" />
-              <span class="truncate">
+              <span class="truncate" :title="[item.vehiculo?.marca, item.vehiculo?.modelo, item.vehiculo?.color].filter(Boolean).join(' · ')">
                 {{ [item.vehiculo?.marca, item.vehiculo?.modelo].filter(Boolean).join(' ') || '-' }}
                 <span v-if="item.vehiculo?.color" class="text-gray-400 dark:text-gray-500">· {{ item.vehiculo.color }}</span>
               </span>
@@ -465,11 +473,11 @@ onUnmounted(() => {
             </span>
           </div>
         </td>
-        <td class="p-4 whitespace-nowrap align-top">
-          <a v-if="clienteUrl(item)" :href="clienteUrl(item)" class="font-medium text-gray-800 hover:text-primary-600 dark:text-white dark:hover:text-primary-400">
+        <td class="p-4 align-top max-w-44">
+          <a v-if="clienteUrl(item)" :href="clienteUrl(item)" :title="item.cliente?.nombre" class="block truncate font-medium text-gray-800 hover:text-primary-600 dark:text-white dark:hover:text-primary-400">
             {{ item.cliente?.nombre || '-' }}</a>
-          <span v-else class="font-medium text-gray-800 dark:text-white">{{ item.cliente?.nombre || '-' }}</span>
-          <div class="mt-1 flex flex-col gap-1 ps-0.5 text-xs text-gray-500 dark:text-gray-400">
+          <span v-else :title="item.cliente?.nombre" class="block truncate font-medium text-gray-800 dark:text-white">{{ item.cliente?.nombre || '-' }}</span>
+          <div class="mt-1 flex flex-col gap-1 ps-0.5 text-xs text-gray-500 whitespace-nowrap dark:text-gray-400">
             <span v-if="item.cliente?.identificacion" class="flex items-center gap-1.5">
               <IdCard class="w-3.5 h-3.5 shrink-0" />
               <span>{{ item.cliente.identificacion }}</span>
@@ -498,6 +506,13 @@ onUnmounted(() => {
             <MdiIcon :path="mdiTowTruck" class="w-5 h-5 shrink-0" />
             {{ item.ingreso_en_grua ? 'Ingresó en grúa' : 'Sin grúa' }}
           </span>
+        </td>
+        <td class="p-4 text-gray-800 whitespace-nowrap align-top dark:text-white">
+          <div v-if="getFechaSalida(item)" class="flex flex-col gap-1" :title="getFechaSalida(item).completo">
+            <span class="font-medium text-gray-900 dark:text-white">{{ getFechaSalida(item).fecha }}</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{ getFechaSalida(item).hora }}</span>
+          </div>
+          <span v-else class="text-xs text-gray-400 dark:text-gray-500">Sin salida</span>
         </td>
         <td class="p-4 whitespace-nowrap">
           <EstadoRecepcionBadge :estado="item.estado" :estado-display="item.estado_display" />

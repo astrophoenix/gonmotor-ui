@@ -47,7 +47,9 @@ function opciones() {
         data: props.datos.map((fila) => Number(fila.ordenes_completadas) || 0),
       },
     ],
-    colors: [PALETA_GRAFICAS[0], PALETA_GRAFICAS[2], PALETA_GRAFICAS[4]],
+    // Ingresos navy, creadas ámbar, completadas esmeralda: tonos bien distintos
+    // (PALETA_GRAFICAS[2] es el mismo navy que [0]).
+    colors: [PALETA_GRAFICAS[0], PALETA_GRAFICAS[3], PALETA_GRAFICAS[4]],
     stroke: { width: [0, 3, 3], curve: 'smooth', dashArray: [0, 0, 6] },
     plotOptions: {
       bar: { columnWidth: '55%', borderRadius: 4 },

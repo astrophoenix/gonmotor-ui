@@ -3,6 +3,7 @@ import { dashboardService } from '../services/dashboardService';
 import { talleresService } from '../../configuracion/services/talleresService';
 import { request } from '../../../shared/services/httpClient';
 import { createLatestRequest, isAbortError } from '../../../shared/utils/search';
+import { useAuthStore } from '../../auth/stores/authStore';
 
 export const RANGOS = [
   { clave: 'hoy', etiqueta: 'Hoy' },
@@ -12,6 +13,9 @@ export const RANGOS = [
 ];
 
 const PAGINAS_MAX_SUCURSALES = 5;
+
+/** Días dentro del taller a partir de los cuales un vehículo se considera demorado. */
+export const DIAS_ALERTA_EN_TALLER = 3;
 
 /** Lee `?sucursal=<id>` de la URL (el selector del topbar redirige aquí). */
 function leerSucursalDeUrl() {
@@ -71,6 +75,7 @@ export function calcularRango(clave, base = new Date()) {
  * mientras carga (sin parpadeos de la pantalla).
  */
 export function useDashboard() {
+  const authStore = useAuthStore();
   const datos = ref(null);
   const cargando = ref(false);
   const error = ref(null);
@@ -80,7 +85,9 @@ export function useDashboard() {
   const rangoInicial = calcularRango('mes');
   const fechaDesde = ref(rangoInicial.desde);
   const fechaHasta = ref(rangoInicial.hasta);
-  const sucursal = ref(leerSucursalDeUrl());
+  // El filtro de taller solo existe con «Todos los talleres»; con un taller
+  // activo manda la cabecera X-Taller-ID (se ignora `?sucursal=` de la URL).
+  const sucursal = ref(authStore.esTodosLosTalleres ? leerSucursalDeUrl() : null);
 
   const sucursales = ref([]);
   const cargandoSucursales = ref(false);
@@ -108,7 +115,8 @@ export function useDashboard() {
   });
 
   const hayFiltroSucursal = computed(() => Boolean(sucursal.value));
-  const nombreSucursal = computed(() => filtros.value.sucursal_nombre || 'Todos los talleres');
+  const nombreSucursal = computed(() => filtros.value.sucursal_nombre
+    || (authStore.esTodosLosTalleres ? 'Todos los talleres' : authStore.tallerNombre || 'Taller activo'));
 
   async function cargar() {
     const { signal, id } = latestRequest.begin();
@@ -119,7 +127,8 @@ export function useDashboard() {
       const respuesta = await dashboardService.get({
         fechaDesde: fechaDesde.value,
         fechaHasta: fechaHasta.value,
-        sucursal: sucursal.value,
+        sucursal: authStore.esTodosLosTalleres ? sucursal.value : null,
+        diasEnTaller: DIAS_ALERTA_EN_TALLER,
         signal,
       });
       if (!latestRequest.isCurrent(id)) return;

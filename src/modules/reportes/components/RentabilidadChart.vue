@@ -34,7 +34,7 @@ function opciones() {
       Number(props.gastos) || 0,
       Number(props.utilidad) > 0 ? Number(props.utilidad) : 0,
     ],
-    labels: ['CMV (Costo de Ventas)', 'Gastos Operativos', 'Utilidad Neta'],
+    labels: ['Costo de los trabajos', 'Gastos Operativos', 'Utilidad Neta'],
     colors: [PALETA_GRAFICAS[1], PALETA_GRAFICAS[3], PALETA_GRAFICAS[4]],
     dataLabels: {
       enabled: true,

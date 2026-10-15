@@ -3,6 +3,7 @@ import 'flowbite/dist/flowbite.js';
 import './sidebar';
 import './charts';
 import './dark-mode';
+import { iniciarResaltadoHoyDatepickers } from './shared/utils/datepicker';
 import { mountLogin, mountRegister, mountForgotPassword, mountResetPassword } from './modules/auth';
 import { mountClients, mountClientEdit, mountClientDetail } from './modules/clientes';
 import { mountProveedores, mountProveedorEdit, mountProveedorDetail } from './modules/proveedores';
@@ -39,6 +40,9 @@ if (document.getElementById("default-table") && typeof simpleDatatables.DataTabl
 }
 
 const pinia = createPinia();
+
+// Marca el día actual en los calendarios de Flowbite (filtros Desde/Hasta, etc.).
+iniciarResaltadoHoyDatepickers();
 
 const dashboardApp = document.getElementById('dashboard-app');
 

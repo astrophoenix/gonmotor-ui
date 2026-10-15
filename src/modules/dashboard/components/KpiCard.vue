@@ -42,7 +42,9 @@ const TONOS = {
     </div>
 
     <div class="flex items-end justify-between gap-2 min-h-5">
-      <p class="text-xs text-body" :title="subtitulo">{{ subtitulo }}</p>
+      <p class="text-xs text-body" :title="subtitulo">
+        <slot name="subtitulo">{{ subtitulo }}</slot>
+      </p>
       <a
         v-if="href"
         :href="href"

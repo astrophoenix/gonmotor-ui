@@ -11,7 +11,7 @@ import {
 import Alert from '../../../shared/components/Alert.vue';
 import { formatCurrency, formatNumber } from '../../../shared/utils/format';
 import { useAuthStore } from '../../auth/stores/authStore';
-import { useDashboard } from '../composables/useDashboard';
+import { DIAS_ALERTA_EN_TALLER, useDashboard } from '../composables/useDashboard';
 import AlertasInventario from './AlertasInventario.vue';
 import BarrasDistribucionChart from './BarrasDistribucionChart.vue';
 import DistribucionTipoChart from './DistribucionTipoChart.vue';
@@ -65,8 +65,12 @@ const nombreUsuario = computed(() => {
 
 onMounted(() => {
   cargar();
-  cargarSucursales();
+  // El selector de taller solo se muestra con «Todos los talleres».
+  if (authStore.esTodosLosTalleres) cargarSucursales();
 });
+
+const vehiculosDemorados = computed(() => kpis.value.vehiculos_demorados ?? 0);
+const diasAlertaTaller = computed(() => kpis.value.dias_alerta_en_taller ?? DIAS_ALERTA_EN_TALLER);
 
 const primeraCarga = computed(() => cargando.value && !periodo.value);
 
@@ -188,12 +192,23 @@ async function refrescar() {
           <KpiCard
             titulo="Vehículos en taller"
             :valor="kpis.vehiculos_en_taller ?? 0"
-            subtitulo="Recepciones sin salida registrada"
+            :subtitulo="`Recepciones sin salida registrada · ${vehiculosDemorados} con más de ${diasAlertaTaller} días`"
             :icono="Car"
             tono="brand"
             href="/crud/recepciones/"
             texto-accion="Ver recepciones"
-          />
+          >
+            <template #subtitulo>
+              Recepciones sin salida registrada ·
+              <span
+                :class="vehiculosDemorados > 0
+                  ? 'font-semibold text-accent-600 dark:text-accent-400'
+                  : ''"
+              >
+                {{ vehiculosDemorados }} con más de {{ diasAlertaTaller }} días
+              </span>
+            </template>
+          </KpiCard>
 
           <KpiCard
             titulo="Facturación del mes"

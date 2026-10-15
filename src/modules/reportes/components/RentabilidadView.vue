@@ -88,12 +88,14 @@
             </div>
           </div>
 
-          <p class="mt-3 text-xs text-body">
+          <!--p class="mt-3 text-xs text-body">
             <template v-if="periodo.desde || periodo.hasta">
               Periodo: {{ periodo.desde || '—' }} al {{ periodo.hasta || '—' }}
             </template>
-            <template v-else>Sin rango (OT entregadas)</template>
-          </p>
+            <template v-else>
+              No se han seleccionado fechas.
+            </template>
+          </p-->
         </div>
       </div>
     </div>
@@ -105,64 +107,56 @@
     </div>
 
     <div v-if="data && !isLoading" class="px-4 sm:px-6 lg:px-8 pb-4 space-y-4">
-      <div class="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-            Resultado
-            <span
-              v-if="esRentable"
-              class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200"
-            >
-              <TrendingUp class="w-3.5 h-3.5 mr-1" />
-              Rentable
-            </span>
-            <span
-              v-else-if="enEquilibrio"
-              class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
-            >
-              Equilibrio
-            </span>
-            <span
-              v-else
-              class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-            >
-              <TrendingDown class="w-3.5 h-3.5 mr-1" />
-              Pérdida
-            </span>
-          </h2>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Órdenes de Trabajo <strong>ENTREGADAS</strong>
-          </p>
-        </div>
-      </div>
+      <ResultadoNegocio
+        :ingresos="Number(ingresosTotal)"
+        :gastos="Number(gastosTotal)"
+        :utilidad="Number(utilidadNeta)"
+        :taller="tallerConsultado"
+        :periodo="periodo"
+      />
 
       <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700 p-4">
-          <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Ingresos</p>
+          <div class="flex items-center gap-1.5">
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Ingresos</p>
+            <InfoPopover etiqueta="Qué significa Ingresos" :secciones="AYUDA_CARDS.ingresos" />
+          </div>
           <p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ formatCurrency(ingresosTotal) }}</p>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Ventas OT entregadas</p>
         </div>
 
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700 p-4">
-          <p class="text-sm font-medium text-gray-500 dark:text-gray-400">CMV Total</p>
+          <div class="flex items-center gap-1.5">
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Costo de los trabajos</p>
+            <InfoPopover etiqueta="Qué significa Costo de los trabajos" :secciones="AYUDA_CARDS.costo" />
+          </div>
           <p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ formatCurrency(cmvTotal) }}</p>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Repuestos: {{ formatCurrency(cmvRepuestos) }} • Servicios: {{ formatCurrency(cmvServicios) }}</p>
         </div>
 
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700 p-4">
-          <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Margen Bruto</p>
+          <div class="flex items-center gap-1.5">
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Margen Bruto</p>
+            <InfoPopover etiqueta="Qué significa Margen Bruto" :secciones="AYUDA_CARDS.margen" />
+          </div>
           <p class="text-xl sm:text-2xl font-bold mt-1" :class="margenBruto >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">{{ formatCurrency(margenBruto) }}</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Ingresos − CMV</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Ingresos − Costo de los trabajos</p>
         </div>
 
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700 p-4">
-          <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Gastos Operativos</p>
+          <div class="flex items-center gap-1.5">
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Gastos Operativos</p>
+            <InfoPopover etiqueta="Qué significa Gastos Operativos" :secciones="AYUDA_CARDS.gastos" />
+          </div>
           <p class="text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">{{ formatCurrency(gastosTotal) }}</p>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Del periodo</p>
         </div>
 
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700 p-4">
-          <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Utilidad Neta</p>
+          <div class="flex items-center gap-1.5">
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Utilidad Neta</p>
+            <InfoPopover etiqueta="Qué significa Utilidad Neta" :secciones="AYUDA_CARDS.utilidad" />
+          </div>
           <p class="text-xl sm:text-2xl font-bold mt-1" :class="utilidadNeta > 0 ? 'text-emerald-600 dark:text-emerald-400' : utilidadNeta < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'">{{ formatCurrency(utilidadNeta) }}</p>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Margen Bruto − Gastos</p>
         </div>
@@ -183,26 +177,12 @@
             :margen-bruto="Number(margenBruto)"
           />
         </div>
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700 p-4">
-          <h3 class="text-base font-semibold text-gray-900 dark:text-white flex items-center mb-3">
-            <Info class="w-5 h-5 mr-2 text-blue-500" />
-            ¿Qué significa?
-          </h3>
-          <div class="space-y-3 text-sm text-gray-600 dark:text-gray-300">
-            <div>
-              <p class="font-medium text-gray-900 dark:text-white mb-1">CMV</p>
-              <p>Costo de repuestos y mano de obra aplicada.</p>
-            </div>
-            <div>
-              <p class="font-medium text-gray-900 dark:text-white mb-1">Gastos Operativos</p>
-              <p>Arriendo, sueldos, servicios, etc. del periodo.</p>
-            </div>
-            <div>
-              <p class="font-medium text-gray-900 dark:text-white mb-1">Utilidad Neta</p>
-              <p>Margen Bruto − Gastos. Muestra si gana o pierde.</p>
-            </div>
-          </div>
-        </div>
+        <SaludNegocio
+          :ingresos="Number(ingresosTotal)"
+          :margen-bruto="Number(margenBruto)"
+          :gastos="Number(gastosTotal)"
+          :utilidad="Number(utilidadNeta)"
+        />
       </div>
     </div>
 
@@ -217,20 +197,49 @@ import { ref, watch, onMounted } from 'vue';
 import EntityHeader from '@/shared/components/EntityHeader.vue';
 import Alert from '@/shared/components/Alert.vue';
 import FilterActions from '@/shared/components/FilterActions.vue';
+import InfoPopover from '@/shared/components/InfoPopover.vue';
 import { useAuthStore } from '@/modules/auth/stores/authStore';
 import { talleresService } from '@/modules/configuracion/services/talleresService';
 import { useReportes } from '../composables/useReportes';
 import RentabilidadChart from './RentabilidadChart.vue';
+import ResultadoNegocio from './ResultadoNegocio.vue';
+import SaludNegocio from './SaludNegocio.vue';
 import {
   ChartColumn,
   CalendarDays,
   Filter,
   Loader2,
   BarChart3,
-  TrendingUp,
-  TrendingDown,
-  Info,
 } from 'lucide-vue-next';
+
+/**
+ * Ayuda de cada card en lenguaje de taller (sin jerga contable): qué es y un
+ * ejemplo con números redondos.
+ */
+const AYUDA_CARDS = {
+  ingresos: [
+    { titulo: '¿Qué es?', texto: 'Todo lo que cobraste a tus clientes por los trabajos entregados en el periodo: repuestos y mano de obra.' },
+    { titulo: 'Ejemplo', texto: 'Si entregaste 3 trabajos de $100 cada uno, tus ingresos son $300.' },
+  ],
+  costo: [
+    { titulo: '¿Qué es?', texto: 'Lo que a ti te costó hacer esos trabajos: lo que pagaste por los repuestos y por la mano de obra.' },
+    { titulo: 'Ejemplo', texto: 'Si compraste un filtro en $40 y se lo cobraste al cliente en $60, aquí se cuentan los $40.' },
+  ],
+  margen: [
+    { titulo: '¿Qué es?', texto: 'Lo que te queda de los trabajos después de pagar repuestos y mano de obra, antes de los gastos fijos del taller.' },
+    { titulo: 'Ejemplo', texto: 'Cobraste $300 y te costaron $180: tu margen es $120.' },
+    { titulo: 'Ojo', texto: 'Si sale en rojo, estás cobrando menos de lo que te cuestan los trabajos.' },
+  ],
+  gastos: [
+    { titulo: '¿Qué es?', texto: 'Lo que cuesta mantener el taller abierto, haya o no trabajos: arriendo, sueldos, luz, agua, internet. Se registran en el módulo Gastos.' },
+    { titulo: 'Ejemplo', texto: 'Arriendo $500 + luz $50 = $550 de gastos en el mes.' },
+  ],
+  utilidad: [
+    { titulo: '¿Qué es?', texto: 'Lo que realmente ganaste: el margen de los trabajos menos los gastos del taller.' },
+    { titulo: 'Ejemplo', texto: 'Margen $1.200 − gastos $550 = $650 de ganancia real.' },
+    { titulo: 'Ojo', texto: 'Si sale en rojo, el taller perdió dinero en este periodo.' },
+  ],
+};
 
 const authStore = useAuthStore();
 const talleres = ref([]);
@@ -268,8 +277,6 @@ const {
   margenBruto,
   gastosTotal,
   utilidadNeta,
-  esRentable,
-  enEquilibrio,
   periodo,
   fetchData,
   resetFilters,
@@ -318,6 +325,16 @@ function limpiarCamposFecha() {
   });
 }
 
+/** Nombre del taller de la última consulta; vacío = todos los talleres. */
+const tallerConsultado = ref('');
+
+function nombreTaller(id) {
+  if (!id) return '';
+  if (!authStore.esTodosLosTalleres) return authStore.tallerNombre || 'Taller activo';
+  const taller = talleres.value.find((item) => String(item.id) === String(id));
+  return taller ? tallerLabel(taller) : `Taller ${id}`;
+}
+
 function consultar() {
   clearAlert();
   filters.value.fechaDesde = fechaInputAIso(fechaDesdeInput.value) || null;
@@ -326,6 +343,7 @@ function consultar() {
   if (!authStore.esTodosLosTalleres) filters.value.tallerId = authStore.tallerId;
   // Sin taller elegido → rentabilidad de la empresa; con taller → la de ese taller.
   viewMode.value = filters.value.tallerId ? 'taller' : 'empresa';
+  tallerConsultado.value = nombreTaller(filters.value.tallerId);
   fetchData();
 }
 
