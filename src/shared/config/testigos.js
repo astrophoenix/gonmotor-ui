@@ -12,14 +12,16 @@ import {
   mdiGasStation,
   mdiCarLightFog,
   mdiCarTractionControl,
-  mdiFootPrint,
-  mdiTriangleOutline,
-  mdiCarDoor,
   mdiSeatbelt,
-  mdiAlphaPCircle,
   mdiCarBrakeAlert,
-  mdiHelpCircleOutline,
 } from '@mdi/js';
+import {
+  iconPrecalentamiento,
+  iconPedalFreno,
+  iconLucesEmergencia,
+  iconPuertaAbierta,
+  iconFrenoMano,
+} from './iconosTestigos';
 
 // Fuente única de verdad de los testigos del tablero.
 // Para agregar un testigo: añadir un objeto al array (key debe coincidir
@@ -107,25 +109,25 @@ export const TESTIGOS = [
     key: 'testigo_bujias_precalentamiento',
     label: 'Precalentamiento',
     color: 'yellow',
-    path: mdiHelpCircleOutline,
+    path: iconPrecalentamiento,
   },
   {
     key: 'testigo_pedal_freno',
     label: 'Pedal de Freno',
     color: 'yellow',
-    path: mdiFootPrint,
+    path: iconPedalFreno,
   },
   {
     key: 'testigo_luces_emergencia',
     label: 'Emergencia',
     color: 'red',
-    path: mdiTriangleOutline,
+    path: iconLucesEmergencia,
   },
   {
     key: 'testigo_puerta_maletero',
     label: 'Puerta o Maletero',
     color: 'red',
-    path: mdiCarDoor,
+    path: iconPuertaAbierta,
   },
   {
     key: 'testigo_cinturon',
@@ -137,7 +139,7 @@ export const TESTIGOS = [
     key: 'testigo_freno_estacionamiento',
     label: 'Freno de Mano',
     color: 'red',
-    path: mdiAlphaPCircle,
+    path: iconFrenoMano,
   },
   {
     key: 'testigo_frenos_fallo',
