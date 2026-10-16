@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { FilePen, Mail, Phone, Building2, KeyRound } from 'lucide-vue-next';
+import { FilePen, Mail, Phone, Warehouse, KeyRound } from 'lucide-vue-next';
 import { empleadosService } from '../services/empleadosService';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
@@ -197,7 +197,7 @@ onMounted(async () => {
           </div>
           <div class="min-w-0">
             <dt class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
-              <Building2 class="h-3.5 w-3.5" aria-hidden="true" />
+              <Warehouse class="h-3.5 w-3.5" aria-hidden="true" />
               Talleres
             </dt>
             <dd class="mt-2 text-base font-semibold tabular-nums text-gray-900 dark:text-white">
@@ -274,7 +274,7 @@ onMounted(async () => {
                 class="-mx-2 flex items-center gap-3 rounded-lg px-2 py-2"
               >
                 <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300">
-                  <Building2 class="h-4 w-4" aria-hidden="true" />
+                  <Warehouse class="h-4 w-4" aria-hidden="true" />
                 </span>
                 <span class="min-w-0 truncate text-sm font-medium text-gray-900 dark:text-white">{{ taller.nombre }}</span>
               </li>
