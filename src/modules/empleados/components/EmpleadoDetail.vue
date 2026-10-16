@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { IdCard, Pencil, Building2, UserRound, Mail, Phone, MapPin, CalendarDays, ShieldCheck } from 'lucide-vue-next';
+import { IdCard, FilePen, Building2, UserRound, Mail, Phone, MapPin, CalendarDays, ShieldCheck } from 'lucide-vue-next';
 import { empleadosService } from '../services/empleadosService';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
@@ -92,10 +92,10 @@ onMounted(async () => {
         v-if="empleado"
         type="button"
         title="Editar empleado"
-        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:text-brand-300 dark:border-brand-300 dark:hover:bg-gray-700"
-        @click="abrirEditar"
-      >
-        <Pencil class="w-4 h-4" aria-hidden="true" />
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
+        @click="abrirEditar">
+        <!--Pencil class="w-4 h-4" aria-hidden="true" /-->
+        <FilePen class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
         Editar
       </button>
     </template>
