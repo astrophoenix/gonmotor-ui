@@ -35,7 +35,7 @@ const COMBUSTIBLE_LABELS = {
 };
 
 const params = new URLSearchParams(window.location.search);
-const clientId = Number(params.get('id'));
+const clientId = params.get('id') || '';
 
 function formatDate(dateString) {
   if (!dateString) return '-';

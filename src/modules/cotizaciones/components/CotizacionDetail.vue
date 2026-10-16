@@ -33,6 +33,7 @@ import PdfExportButton from '../../../shared/components/PdfExportButton.vue';
 import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
 import { relacionesDeCotizacion } from '../../../shared/utils/relacionesFlujo';
 import EstadoCotizacionBadge from './EstadoCotizacionBadge.vue';
+import { referenciaCorta } from '../../../shared/utils/format';
 
 const METODOS_ACEPTACION = [
   { value: 'PRESENCIAL', label: 'Presencial en taller' },
@@ -349,19 +350,19 @@ onMounted(cargar);
                     <template v-if="cotizacion.inspeccion_origen">
                       <a
                         :href="`/crud/inspecciones/ver/?id=${encodeURIComponent(cotizacion.inspeccion_origen)}`"
-                        class="font-medium text-primary-blue-700 hover:underline dark:text-primary-blue-400">Cod Inspección {{ cotizacion.inspeccion_numero || `#${cotizacion.inspeccion_origen}` }}</a>
+                        class="font-medium text-primary-blue-700 hover:underline dark:text-primary-blue-400">Cod Inspección {{ cotizacion.inspeccion_numero || referenciaCorta(cotizacion.inspeccion_origen) }}</a>
                       <a
                         v-if="cotizacion.recepcion_origen"
                         :href="`/crud/recepciones/ver/?id=${encodeURIComponent(cotizacion.recepcion_origen)}`"
                         class="font-medium text-primary-blue-700 hover:underline dark:text-primary-blue-400">
-                        / Recepción {{ cotizacion.recepcion_numero || `#${cotizacion.recepcion_origen}` }}
+                        / Recepción {{ cotizacion.recepcion_numero || referenciaCorta(cotizacion.recepcion_origen) }}
                       </a>
                     </template>
                     <a
                       v-else-if="cotizacion.recepcion_origen"
                       :href="`/crud/recepciones/ver/?id=${encodeURIComponent(cotizacion.recepcion_origen)}`"
                       class="font-medium text-primary-blue-700 hover:underline dark:text-primary-blue-400">
-                      Recepción {{ cotizacion.recepcion_numero || `#${cotizacion.recepcion_origen}` }}
+                      Recepción {{ cotizacion.recepcion_numero || referenciaCorta(cotizacion.recepcion_origen) }}
                     </a>
                     <span v-else>Independiente</span>
                   </span-->

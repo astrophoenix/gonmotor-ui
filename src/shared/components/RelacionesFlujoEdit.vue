@@ -17,6 +17,7 @@ import RecepcionSearchSelect from './RecepcionSearchSelect.vue';
 import InspeccionSearchSelect from './InspeccionSearchSelect.vue';
 import CotizacionSearchSelect from './CotizacionSearchSelect.vue';
 import OrdenSearchSelect from './OrdenSearchSelect.vue';
+import { etiquetaCita, referenciaCorta } from '../utils/format';
 
 const props = defineProps({
   tipoEntidad: { type: String, required: true },
@@ -85,8 +86,8 @@ function urlItem(item) {
 
 function nombreItem(item) {
   if (item.label) return item.label;
-  if (item.tipo === 'cita') return `Cita #${item.id}`;
-  return item.numero || `#${item.id}`;
+  if (item.tipo === 'cita') return etiquetaCita(item);
+  return item.numero || referenciaCorta(item.id);
 }
 
 function fechaCotizacion(item) {
@@ -112,11 +113,11 @@ function normalizarSeleccion(grupo, item) {
     || item.numero_inspeccion
     || item.numero_cotizacion
     || item.numero_orden
-    || `#${item.id}`;
+    || referenciaCorta(item.id);
   return {
     ...item,
     tipo: grupo.tipo,
-    label: item.label || (grupo.tipo === 'cita' ? `Cita #${item.id}` : numero),
+    label: item.label || (grupo.tipo === 'cita' ? etiquetaCita(item) : numero),
     numero,
     estadoDisplay: item.estadoDisplay || item.estado_display || '',
     url: item.url || urlItem({ ...item, tipo: grupo.tipo }),

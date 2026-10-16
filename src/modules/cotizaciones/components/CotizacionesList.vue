@@ -21,6 +21,7 @@ import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
 import { relacionesDeCotizacion } from '../../../shared/utils/relacionesFlujo';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import EntityActionsMenu from '../../../shared/components/EntityActionsMenu.vue';
+import { referenciaCorta } from '../../../shared/utils/format';
 
 const {
   cotizaciones,
@@ -480,7 +481,7 @@ onMounted(() => {
   <ConfirmModal
     v-model="showDeleteModal"
     entity-name="cotización"
-    :item-name="cotizacionToDelete?.numero_cotizacion || `#${cotizacionToDelete?.id || ''}`"
+    :item-name="cotizacionToDelete?.numero_cotizacion || referenciaCorta(cotizacionToDelete?.id)"
     :is-deleting="isDeleting"
     @confirm="confirmDelete"
     @cancel="cotizacionToDelete = null"

@@ -460,8 +460,8 @@ function aplicarOrden(data) {
 }
 
 async function guardarDetalles(idOrden) {
-  const ordenRef = Number(idOrden);
-  if (!ordenRef) return;
+  const ordenRef = idOrden ? String(idOrden) : '';
+  if (!ordenRef) throw new Error('No se pudo identificar la orden para guardar sus detalles.');
   const errores = [];
 
   for (const s of servicios.value) {
@@ -509,14 +509,14 @@ async function guardarDetalles(idOrden) {
     try {
       await ordenesService.deleteServicio(id);
     } catch (err) {
-      errores.push(`Servicio eliminado (#${id})`);
+      errores.push('Servicio eliminado');
     }
   }
   for (const id of repuestosEliminados.value) {
     try {
       await ordenesService.deleteRepuesto(id);
     } catch (err) {
-      errores.push(`Repuesto eliminado (#${id})`);
+      errores.push('Repuesto eliminado');
     }
   }
 

@@ -106,6 +106,7 @@ src/modules/<nombre>/
 - **Todo** pasa por `request()` de `src/shared/services/httpClient.js`: inyecta `Authorization: Bearer`, `X-Empresa-ID` y `X-Taller-ID`, ante un 401 refresca el JWT y reintenta, si el refresh falla limpia la sesión, y normaliza los errores DRF a mensajes en español.
 - Nunca uses `fetch` directo ni pases `token`/`empresaId` como parámetros. Las funciones legacy `fetch(token, empresaId, ...)` que quedan en algunos servicios son código muerto.
 - `API_BASE_URL` (`src/shared/config/env.js`): `localhost`/`127.0.0.1` → `http://localhost:8000`; cualquier otro host → `https://gonmotor-api.onrender.com`.
+- Los IDs que devuelve la API son **opacos** (en migración a UUID): trátalos como string; nunca `Number(id)`/`parseInt(id)` ni `v-model.number` en selectores de registros.
 - Los listados de la API paginan de 10 en 10 (`count`, `next`, `previous`, `results`); los composables guardan `nextUrl`/`previousUrl`.
 
 ### UI y componentes

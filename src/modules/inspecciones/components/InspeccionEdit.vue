@@ -618,8 +618,8 @@ function traducirErrorItem(descripcion, fallback) {
 }
 
 async function guardarDetalles(idInspeccion) {
-  const inspeccionRef = Number(idInspeccion);
-  if (!inspeccionRef) return;
+  const inspeccionRef = idInspeccion ? String(idInspeccion) : '';
+  if (!inspeccionRef) throw new Error('No se pudo identificar la inspección para guardar sus detalles.');
 
   const errores = [];
 
@@ -675,7 +675,7 @@ async function guardarDetalles(idInspeccion) {
     try {
       await request(`/api/ordenes/inspeccion-servicios/${id}/`, { method: 'DELETE' });
     } catch (error) {
-      errores.push(`Servicio eliminado (#${id})`);
+      errores.push('Servicio eliminado');
     }
   }
 
@@ -683,7 +683,7 @@ async function guardarDetalles(idInspeccion) {
     try {
       await request(`/api/ordenes/inspeccion-repuestos/${id}/`, { method: 'DELETE' });
     } catch (error) {
-      errores.push(`Repuesto eliminado (#${id})`);
+      errores.push('Repuesto eliminado');
     }
   }
 

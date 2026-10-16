@@ -30,6 +30,7 @@ import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
 import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
 import EstadoOrdenBadge from './EstadoOrdenBadge.vue';
 import { relacionesDeOrden } from '../../../shared/utils/relacionesFlujo';
+import { referenciaCorta } from '../../../shared/utils/format';
 
 const orden = ref(null);
 const loading = ref(true);
@@ -473,7 +474,7 @@ onMounted(async () => {
                 </h4>
                 <div v-for="recepcion in recepcionesConFotos" :key="recepcion.id" class="mb-5 last:mb-0">
                   <h5 class="mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                    {{ recepcion.numero_recepcion || `Recepción #${recepcion.id}` }}
+                    {{ recepcion.numero_recepcion || `Recepción ${referenciaCorta(recepcion.id)}` }}
                   </h5>
                   <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                     <figure
@@ -501,7 +502,7 @@ onMounted(async () => {
                       :href="`/crud/inspecciones/ver/?id=${inspeccion.id}`"
                       class="text-xs font-medium text-primary-600 hover:underline dark:text-primary-400"
                     >
-                      {{ inspeccion.numero_inspeccion || `#${inspeccion.id}` }}
+                      {{ inspeccion.numero_inspeccion || referenciaCorta(inspeccion.id) }}
                     </a>
                   </span>
                 </h4>

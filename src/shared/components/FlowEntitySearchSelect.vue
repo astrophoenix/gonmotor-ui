@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { Plus, Search, X } from 'lucide-vue-next';
 import FlowStatusBadge from './FlowStatusBadge.vue';
+import { etiquetaCita, referenciaCorta } from '../utils/format';
 
 const props = defineProps({
   tipo: { type: String, required: true },
@@ -105,8 +106,8 @@ function itemLabel(item) {
 }
 
 function itemNumber(item) {
-  if (props.tipo === 'cita') return `Cita #${item.id}`;
-  return item.numero_recepcion || item.numero_inspeccion || item.numero_cotizacion || item.numero_orden || `#${item.id}`;
+  if (props.tipo === 'cita') return etiquetaCita(item);
+  return item.numero_recepcion || item.numero_inspeccion || item.numero_cotizacion || item.numero_orden || referenciaCorta(item.id);
 }
 
 function itemClient(item) {

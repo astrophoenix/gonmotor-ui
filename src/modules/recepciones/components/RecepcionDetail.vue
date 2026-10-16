@@ -52,6 +52,7 @@ import { recepcionesService } from '../services/recepcionesService';
 import { inspeccionesService } from '../../inspecciones/services/inspeccionesService';
 import { request } from '../../../shared/services/httpClient';
 import { useAuthStore } from '../../auth/stores/authStore';
+import { referenciaCorta } from '../../../shared/utils/format';
 
 const { loading, error, loadRecepcion } = useRecepciones();
 const authStore = useAuthStore();
@@ -271,7 +272,7 @@ const vehiculo = computed(() => recepcion.value?.vehiculo || null);
 const relacionesRecepcion = computed(() => relacionesDeRecepcion(recepcion.value));
 
 const numeroRecepcion = computed(
-  () => recepcion.value?.numero_recepcion || `#${recepcion.value?.id}`
+  () => recepcion.value?.numero_recepcion || referenciaCorta(recepcion.value?.id)
 );
 
 const tipoRecepcionDisplay = computed(() => {
@@ -921,7 +922,7 @@ function irAInspeccion(recepcion) {
                       :href="`/crud/inspecciones/ver/?id=${recepcion.inspecciones[0]?.id}`"
                       class="text-primary-600 hover:underline dark:text-primary-400"
                     >
-                      {{ recepcion.inspecciones[0]?.numero_inspeccion || `#${recepcion.inspecciones[0]?.id}` }}
+                      {{ recepcion.inspecciones[0]?.numero_inspeccion || referenciaCorta(recepcion.inspecciones[0]?.id) }}
                     </a>
                   </dd>
                 </div-->

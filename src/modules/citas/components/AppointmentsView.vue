@@ -6,6 +6,7 @@ import EntityTable from '../../../shared/components/EntityTable.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
 import { SEARCH_DEBOUNCE_MS, isSearchable } from '../../../shared/utils/search';
 import CitaAccionesMenu from './CitaAccionesMenu.vue';
+import { referenciaCorta } from '../../../shared/utils/format';
 
 /**
  * Tabla de la pantalla unificada de citas (vista lista).
@@ -159,7 +160,7 @@ onUnmounted(() => clearTimeout(searchTimer));
             class="mt-1 text-xs text-green-600 dark:text-green-400"
             :title="item.recepcion_generada_numero || ''"
           >
-            Recepción: {{ item.recepcion_generada_numero || `#${item.recepcion_generada}` }}
+            Recepción: {{ item.recepcion_generada_numero || referenciaCorta(item.recepcion_generada) }}
           </p>
         </td>
         <td class="p-4 whitespace-nowrap">

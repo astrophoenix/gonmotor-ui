@@ -14,6 +14,7 @@ import {
   useCalendario,
 } from '../composables/useCalendario';
 import { BRAND } from '../../../shared/config/branding';
+import { referenciaCorta } from '../../../shared/utils/format';
 
 /**
  * Panel de calendario de la pantalla unificada de citas.
@@ -84,7 +85,7 @@ const resaltadas = computed(() => {
       cita.cliente && cita.cliente.identificacion,
       cita.motivo_descripcion,
     ].filter(Boolean).join(' ').toLowerCase();
-    if (texto.includes(termino)) ids.add(Number(cita.id));
+    if (texto.includes(termino)) ids.add(String(cita.id));
   }
   return ids;
 });
@@ -147,7 +148,7 @@ function recepcionDe(cita) {
   if (!cita || cita.estado !== 'COMPLETADA' || !cita.recepcion_generada) return null;
   return {
     id: cita.recepcion_generada,
-    numero: cita.recepcion_generada_numero || `#${cita.recepcion_generada}`,
+    numero: cita.recepcion_generada_numero || referenciaCorta(cita.recepcion_generada),
   };
 }
 
@@ -188,7 +189,7 @@ const calendarOptions = computed(() => ({
     timeGridDay: { buttonText: 'Día', titleFormat: { day: 'numeric', month: 'long', year: 'numeric' } },
   },
   events: eventosVisibles.value,
-  eventClassNames: (info) => (resaltadas.value.has(Number(info.event.id)) ? ['cita-resaltada'] : []),
+  eventClassNames: (info) => (resaltadas.value.has(String(info.event.id)) ? ['cita-resaltada'] : []),
   select: onSelect,
   eventClick: onEventClick,
   datesSet: onDatesSet,

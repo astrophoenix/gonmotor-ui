@@ -15,6 +15,7 @@ import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
 import { relacionesDeInspeccion } from '../../../shared/utils/relacionesFlujo';
 import { formatDateTime, formatDuration, minutesBetween } from '../../../shared/utils/datetime';
 import EstadoInspeccionBadge from './EstadoInspeccionBadge.vue';
+import { referenciaCorta } from '../../../shared/utils/format';
 
 const inspeccion = ref(null);
 const loading = ref(true);
@@ -28,7 +29,7 @@ const isReopening = ref(false);
 const isGeneratingCotizacion = ref(false);
 
 const params = new URLSearchParams(window.location.search);
-const inspeccionId = Number(params.get('id'));
+const inspeccionId = params.get('id') || '';
 
 const activeTab = ref('informacion');
 const TAB_ORDER = ['informacion', 'testigos', 'evidencias', 'servicios'];
@@ -317,7 +318,7 @@ async function confirmarReabrir() {
 }
 
 const numeroInspeccion = computed(
-  () => inspeccion.value?.numero_inspeccion || `#${inspeccion.value?.id}`
+  () => inspeccion.value?.numero_inspeccion || referenciaCorta(inspeccion.value?.id)
 );
 
 onBeforeUnmount(() => {
@@ -413,7 +414,7 @@ onMounted(async () => {
   </EntityHeader>
 
   <div class="p-4">
-    <div class="relative mx-auto max-w-8xl">
+    <div class="relative mx-auto max-w-10xl">
       <Alert v-if="error" type="error" :message="error" dismissible @dismiss="error = ''"/>
       <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''"/>
       <Alert
@@ -597,7 +598,7 @@ onMounted(async () => {
                         :href="`/crud/cotizaciones/ver/?id=${encodeURIComponent(inspeccion.cotizacion_activa_id)}`"
                         class="text-primary-600 hover:underline dark:text-primary-400"
                       >
-                        {{ inspeccion.numero_cotizacion || `#${inspeccion.cotizacion_activa_id}` }}
+                        {{ inspeccion.numero_cotizacion || referenciaCorta(inspeccion.cotizacion_activa_id) }}
                       </a>
                       <span v-else>—</span>
                     </dd>

@@ -23,6 +23,7 @@ import { relacionesDeOrden } from '../../../shared/utils/relacionesFlujo';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import EntityActionsMenu from '../../../shared/components/EntityActionsMenu.vue';
 import EstadoOrdenBadge from './EstadoOrdenBadge.vue';
+import { referenciaCorta } from '../../../shared/utils/format';
 
 const {
   ordenes,
@@ -421,7 +422,7 @@ onMounted(() => {
         <td class="p-4 whitespace-nowrap">
           <a :href="`/crud/ordenes/ver/?id=${encodeURIComponent(item.id)}`"
             class="font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
-            {{ item.numero_orden || `#${item.id}` }}
+            {{ item.numero_orden || referenciaCorta(item.id) }}
           </a>
         </td>
         <td class="p-4 whitespace-nowrap align-top">

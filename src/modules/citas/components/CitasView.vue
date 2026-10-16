@@ -25,6 +25,7 @@ import CitaCalendarModal from './CitaCalendarModal.vue';
 import CitaModal from './CitaModal.vue';
 import { ESTADOS_CITA, fechaLocal, proximaHoraFutura } from '../../calendario/composables/useCalendario';
 import CalendarioView from '../../calendario/components/CalendarioView.vue';
+import { referenciaCorta } from '../../../shared/utils/format';
 
 const CLAVE_VISTA = 'gonmotor_citas_vista';
 const MENSAJE_REFERENCIAL = 'Esta acción es solo referencial y estará disponible próximamente.';
@@ -261,7 +262,7 @@ async function confirmarConvertir() {
     avisar(
       'success',
       '',
-      `Cita convertida. Recepción ${response.numero_recepcion || `#${response.recepcion_id}`} generada correctamente.`
+      `Cita convertida. Recepción ${response.numero_recepcion || referenciaCorta(response.recepcion_id)} generada correctamente.`
     );
     citaAConvertir.value = null;
     recargar();

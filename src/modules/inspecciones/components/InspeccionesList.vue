@@ -27,6 +27,7 @@ import { relacionesDeInspeccion } from '../../../shared/utils/relacionesFlujo';
 import Pagination from '../../../shared/components/Pagination.vue';
 import { ESTADOS_INSPECCION_FILTRABLE } from '../constants/estadosInspeccion';
 import { TIPOS_TRABAJO_OPCIONES } from '../../../shared/config/tiposTrabajo';
+import { referenciaCorta } from '../../../shared/utils/format';
 
 const {
   inspecciones,
@@ -655,7 +656,7 @@ onUnmounted(() => {
   <ConfirmModal
     v-model="showDeleteModal"
     entity-name="inspección"
-    :item-name="`#${inspeccionToDelete?.id || ''}`"
+    :item-name="inspeccionToDelete?.numero_inspeccion || referenciaCorta(inspeccionToDelete?.id)"
     :is-deleting="isDeleting"
     @confirm="confirmDelete"
     @cancel="inspeccionToDelete = null"

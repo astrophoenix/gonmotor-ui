@@ -59,13 +59,14 @@ import VehiculoSearchSelect from '../../../shared/components/VehiculoSearchSelec
 import EmpleadoSearchSelect from '../../../shared/components/EmpleadoSearchSelect.vue';
 import CatalogoSelect from '../../../shared/components/CatalogoSelect.vue';
 import EstadoCotizacionBadge from './EstadoCotizacionBadge.vue';
+import { referenciaCorta } from '../../../shared/utils/format';
 
 const urlParams = new URLSearchParams(window.location.search);
 const cotizacionParamId = urlParams.get('id');
 const inspeccionParamId = urlParams.get('inspeccion');
 
 const isEditModeUrl = Boolean(cotizacionParamId);
-const inspeccionId = inspeccionParamId ? Number(inspeccionParamId) : null;
+const inspeccionId = inspeccionParamId || null;
 
 const VALIDEZ_OPCIONES = [7, 15, 30, 60];
 const METODOS_ACEPTACION = [
@@ -76,7 +77,7 @@ const METODOS_ACEPTACION = [
 ];
 
 const isEditMode = ref(isEditModeUrl);
-const cotizacionId = ref(cotizacionParamId ? Number(cotizacionParamId) : null);
+const cotizacionId = ref(cotizacionParamId || null);
 const isLoading = ref(true);
 const isSaving = ref(false);
 const isCreando = ref(false);
@@ -110,7 +111,7 @@ const breadcrumb = computed(() => [
   { label: 'Cotizaciones', href: '/crud/cotizaciones/' },
   ...(inspeccionOrigen.value
     ? [{
-        label: `Inspección ${inspeccionNumero.value || `#${inspeccionOrigen.value}`}`,
+        label: `Inspección ${inspeccionNumero.value || referenciaCorta(inspeccionOrigen.value)}`,
         href: `/crud/inspecciones/editar/?id=${inspeccionOrigen.value}`,
       }]
     : []),
@@ -541,8 +542,8 @@ function aplicarCotizacion(data) {
   createdAt.value = data.created_at || '';
   fechaAceptacion.value = data.fecha_aceptacion || null;
   metodoAceptacion.value = data.metodo_aceptacion || '';
-  inspeccionOrigen.value = data.inspeccion_origen ? Number(data.inspeccion_origen) : null;
-  recepcionOrigen.value = data.recepcion_origen ? Number(data.recepcion_origen) : null;
+  inspeccionOrigen.value = data.inspeccion_origen || null;
+  recepcionOrigen.value = data.recepcion_origen || null;
   inspeccionNumero.value = data.inspeccion_numero || '';
   recepcionNumero.value = data.recepcion_numero || '';
   ordenTrabajoNumero.value = data.orden_trabajo_numero || '';
@@ -551,11 +552,11 @@ function aplicarCotizacion(data) {
   form.validez_dias = Number(data.validez_dias) || 15;
   form.observaciones = data.observaciones || '';
   form.cliente = data.cliente
-    ? { id: Number(data.cliente), nombre: data.cliente_nombre || '' }
+    ? { id: data.cliente, nombre: data.cliente_nombre || '' }
     : null;
   form.vehiculo = data.vehiculo
     ? {
-        id: Number(data.vehiculo),
+        id: data.vehiculo,
         placa: data.vehiculo_placa || '',
         marca: data.vehiculo_marca || '',
         modelo: data.vehiculo_modelo || '',
@@ -598,7 +599,7 @@ function aplicarCotizacion(data) {
 async function cargarCotizacion(id) {
   try {
     const data = await cotizacionesService.getById(id);
-    cotizacionId.value = Number(id);
+    cotizacionId.value = id;
     isEditMode.value = true;
     aplicarCotizacion(data);
     await cargarRelacionesCotizacion(cotizacionId.value);
@@ -765,8 +766,8 @@ function quitarRepuesto(index) {
 }
 
 async function guardarDetalles(idCotizacion) {
-  const cotizacionRef = Number(idCotizacion);
-  if (!cotizacionRef) return;
+  const cotizacionRef = idCotizacion ? String(idCotizacion) : '';
+  if (!cotizacionRef) throw new Error('No se pudo identificar la cotización para guardar sus detalles.');
   const errores = [];
 
   async function guardarServicio(s) {
@@ -819,14 +820,14 @@ async function guardarDetalles(idCotizacion) {
     try {
       await cotizacionesService.deleteServicio(id);
     } catch (error) {
-      errores.push(`Servicio eliminado (#${id})`);
+      errores.push('Servicio eliminado');
     }
   }
   for (const id of repuestosEliminados.value) {
     try {
       await cotizacionesService.deleteRepuesto(id);
     } catch (error) {
-      errores.push(`Repuesto eliminado (#${id})`);
+      errores.push('Repuesto eliminado');
     }
   }
 
@@ -1347,7 +1348,7 @@ onMounted(() => {
                     <template v-if="inspeccionOrigen">
                       <a
                         :href="`/crud/inspecciones/editar/?id=${encodeURIComponent(inspeccionOrigen)}`"
-                        class="font-medium text-primary-blue-700 hover:underline dark:text-primary-blue-400">Cod Inspección {{ inspeccionNumero || `#${inspeccionOrigen}` }}</a>
+                        class="font-medium text-primary-blue-700 hover:underline dark:text-primary-blue-400">Cod Inspección {{ inspeccionNumero || referenciaCorta(inspeccionOrigen) }}</a>
                       <span v-if="recepcionOrigen" class="font-medium text-primary-blue-700 dark:text-primary-blue-400">
                         / Recepción {{ recepcionNumero || `#${recepcionOrigen}` }}
                       </span>

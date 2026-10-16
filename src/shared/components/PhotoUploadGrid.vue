@@ -136,7 +136,7 @@ function traducirErrorItem(valor, porDefecto) {
 }
 
 async function guardarFotos() {
-  const entidadRef = Number(props.entityId);
+  const entidadRef = props.entityId ? String(props.entityId) : '';
   if (!entidadRef) return;
   const errores = [];
 
@@ -144,7 +144,7 @@ async function guardarFotos() {
     try {
       await props.service.deleteFoto(id);
     } catch (err) {
-      errores.push(`Foto eliminada (#${id})`);
+      errores.push('Foto eliminada');
     }
   }
 
