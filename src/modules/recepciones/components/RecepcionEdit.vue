@@ -1251,7 +1251,13 @@ async function ejecutarGuardado() {
       ...testigoPayload(testigos),
       datos_danos_carroceria: marcas.value,
       detalles_carroceria: form.detalles_carroceria || "",
-      firma_cliente: esNoAceptada.value ? null : firmaClienteData.value,
+      // Solo una firma recién dibujada (data URL); la guardada llega como URL
+      // del archivo y no se reenvía.
+      firma_cliente: esNoAceptada.value
+        ? null
+        : String(firmaClienteData.value || '').startsWith('data:')
+          ? firmaClienteData.value
+          : undefined,
       aceptacion_condiciones: esNoAceptada.value
         ? false
         : !!form.aceptacion_condiciones,

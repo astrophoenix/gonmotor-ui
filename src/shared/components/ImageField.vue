@@ -1,9 +1,16 @@
 <script setup>
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
-import { Image as ImageIcon, Plus, RefreshCw, Trash2, X, ZoomIn, ZoomOut } from 'lucide-vue-next';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { Image as ImageIcon, Loader2, Plus, RefreshCw, Trash2, X, ZoomIn, ZoomOut } from 'lucide-vue-next';
+import { cargarLimitesImagenes, limitesImagenes, perfilImagen } from '@/shared/services/imagenesService';
+import { comprimirImagen } from '@/shared/utils/imagenes';
 
 const props = defineProps({
   imageUrl: {
+    type: String,
+    default: '',
+  },
+  // Miniatura para la casilla; el visor (zoom) carga siempre `imageUrl`.
+  thumbUrl: {
     type: String,
     default: '',
   },
@@ -35,13 +42,22 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  /**
+   * Perfil del backend (`evidencia`, `vehiculo`, `repuesto`, `avatar`, `logo`):
+   * define a qué tamaño se comprime en el navegador antes de subir.
+   */
+  perfil: {
+    type: String,
+    default: 'evidencia',
+  },
+  // Por defecto, los límites publicados por el backend para el perfil.
   maxSize: {
     type: Number,
-    default: 5 * 1024 * 1024,
+    default: null,
   },
   allowedTypes: {
     type: Array,
-    default: () => ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+    default: null,
   },
   aspect: {
     type: String,
@@ -77,7 +93,10 @@ const TYPE_LABELS = {
   'image/png': 'PNG',
   'image/webp': 'WebP',
   'image/gif': 'GIF',
+  'image/heic': 'HEIC',
+  'image/heif': 'HEIC',
 };
+const EXTENSIONES_HEIC = /\.(heic|heif)$/i;
 
 const internalFile = ref(null);
 const internalUrl = ref('');
@@ -86,13 +105,24 @@ const dragging = ref(false);
 const showViewer = ref(false);
 const scale = ref(1);
 const cleared = ref(false);
+const procesando = ref(false);
+
+const perfilActual = computed(() => perfilImagen(props.perfil));
+const limiteBytes = computed(() => props.maxSize ?? perfilActual.value.max_bytes);
+const tipos = computed(() => props.allowedTypes ?? limitesImagenes.value.formatos_aceptados);
+// Algunos navegadores no reconocen el MIME de HEIC: se acepta también por extensión.
+const accept = computed(() => {
+  const lista = [...tipos.value];
+  if (lista.includes('image/heic')) lista.push('.heic', '.heif');
+  return lista.join(',');
+});
 
 const aspectClass = computed(() =>
   props.aspect === 'landscape' ? 'aspect-[4/3]' : 'aspect-square',
 );
 
 const maxSizeText = computed(() => {
-  const bytes = props.maxSize;
+  const bytes = limiteBytes.value;
   if (bytes >= 1024 * 1024) {
     const mb = bytes / (1024 * 1024);
     return `${Number.isInteger(mb) ? mb : mb.toFixed(1)} MB`;
@@ -102,7 +132,7 @@ const maxSizeText = computed(() => {
 
 const typesText = computed(() => {
   const labels = [];
-  props.allowedTypes.forEach((type) => {
+  tipos.value.forEach((type) => {
     const label = TYPE_LABELS[type] || type.split('/').pop().toUpperCase();
     if (!labels.includes(label)) labels.push(label);
   });
@@ -120,10 +150,16 @@ const currentSrc = computed(() =>
   cleared.value ? '' : internalUrl.value || props.imageUrl,
 );
 const hasImage = computed(() => Boolean(currentSrc.value));
+const tileSrc = computed(() =>
+  !cleared.value && !internalUrl.value && props.thumbUrl ? props.thumbUrl : currentSrc.value,
+);
 const errorMessage = computed(() => localError.value || props.error);
 
-function isTypeAllowed(type) {
-  return props.allowedTypes.some((allowed) => {
+function isTypeAllowed(type, name = '') {
+  if (!type && EXTENSIONES_HEIC.test(name)) {
+    return tipos.value.includes('image/heic');
+  }
+  return tipos.value.some((allowed) => {
     if (allowed.endsWith('/*')) {
       return String(type).startsWith(allowed.slice(0, -1));
     }
@@ -144,21 +180,22 @@ function setInternalFile(file) {
   internalUrl.value = file ? URL.createObjectURL(file) : '';
 }
 
-function validate(file) {
-  if (!isTypeAllowed(file.type)) {
-    return `Formato no permitido. Solo ${typesText.value}.`;
+async function handleFile(original) {
+  if (!original || props.disabled || procesando.value) return;
+  if (!isTypeAllowed(original.type, original.name)) {
+    localError.value = `Formato no permitido. Solo ${typesText.value}.`;
+    return;
   }
-  if (file.size > props.maxSize) {
-    return `La imagen supera los ${maxSizeText.value}.`;
+  // Se comprime antes de validar el peso: una foto de 15 MB llega a ~400 KB.
+  procesando.value = true;
+  let file;
+  try {
+    file = await comprimirImagen(original, perfilActual.value);
+  } finally {
+    procesando.value = false;
   }
-  return '';
-}
-
-function handleFile(file) {
-  if (!file || props.disabled) return;
-  const invalid = validate(file);
-  if (invalid) {
-    localError.value = invalid;
+  if (file.size > limiteBytes.value) {
+    localError.value = `La imagen supera los ${maxSizeText.value}.`;
     return;
   }
   localError.value = '';
@@ -250,6 +287,7 @@ watch(
   },
 );
 
+onMounted(cargarLimitesImagenes);
 onBeforeUnmount(revokeInternal);
 
 defineExpose({ resetPreview, clearImage, hasImage, currentSrc });
@@ -276,7 +314,7 @@ defineExpose({ resetPreview, clearImage, hasImage, currentSrc });
       :class="[aspectClass, !previewable ? 'cursor-default' : '']"
       @click="openViewer"
     >
-      <img :src="currentSrc" :alt="alt" class="h-full w-full object-cover" />
+      <img :src="tileSrc" :alt="alt" loading="lazy" decoding="async" class="h-full w-full object-cover" />
       <span
         v-if="previewable"
         class="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition group-hover:bg-black/20 group-hover:opacity-100"
@@ -304,7 +342,7 @@ defineExpose({ resetPreview, clearImage, hasImage, currentSrc });
         <input
           type="file"
           class="sr-only"
-          :accept="allowedTypes.join(',')"
+          :accept="accept"
           @change="onFileChange"
         />
       </label>
@@ -319,14 +357,15 @@ defineExpose({ resetPreview, clearImage, hasImage, currentSrc });
         disabled ? 'cursor-not-allowed opacity-60' : '',
       ]"
     >
-      <ImageIcon :class="compact ? 'w-5 h-5 text-body' : 'w-8 h-8 text-body'" />
-      <span :class="compact ? 'text-xs font-medium leading-tight text-heading' : 'text-sm font-medium text-heading'">{{ emptyLabel }}</span>
+      <Loader2 v-if="procesando" :class="compact ? 'w-5 h-5 text-body animate-spin' : 'w-8 h-8 text-body animate-spin'" />
+      <ImageIcon v-else :class="compact ? 'w-5 h-5 text-body' : 'w-8 h-8 text-body'" />
+      <span :class="compact ? 'text-xs font-medium leading-tight text-heading' : 'text-sm font-medium text-heading'">{{ procesando ? 'Procesando…' : emptyLabel }}</span>
       <span v-if="showHint && !compact" class="text-xs text-body">{{ hintText }}</span>
       <input
         type="file"
         class="sr-only"
-        :accept="allowedTypes.join(',')"
-        :disabled="disabled"
+        :accept="accept"
+        :disabled="disabled || procesando"
         @change="onFileChange"
       />
     </label>
@@ -340,7 +379,7 @@ defineExpose({ resetPreview, clearImage, hasImage, currentSrc });
       <input
         type="file"
         class="sr-only"
-        :accept="allowedTypes.join(',')"
+        :accept="accept"
         @change="onFileChange"
       />
     </label>

@@ -9,8 +9,6 @@ import { sanitizeTelefono } from '../../../shared/utils/sanitize';
 
 const authStore = useAuthStore();
 
-const AVATAR_FORMATOS = ['image/jpeg', 'image/png', 'image/webp'];
-const MAX_AVATAR_BYTES = 1024 * 1024;
 
 const FIELD_MAX = {
   first_name: 150,
@@ -350,9 +348,6 @@ async function submitPassword() {
             <PersonImageField
               :key="profileImageKey"
               :image-url="avatarPreview || ''"
-              :max-size="MAX_AVATAR_BYTES"
-              :allowed-types="AVATAR_FORMATOS"
-              hint="JPG, PNG o WebP. Máximo 1 MB"
               @upload="onAvatarUpload"
               @remove="removeAvatar"
             />

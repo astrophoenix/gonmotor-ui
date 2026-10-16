@@ -530,8 +530,6 @@ watch(() => form.observaciones, (val) => {
               <VehicleImageField
                 :image-url="form.imagen"
                 :disabled="isLoadingChoices"
-                :max-size="2 * 1024 * 1024"
-                :allowed-types="['image/jpeg', 'image/jpg', 'image/png', 'image/webp']"
                 @upload="(file) => { imagenFile = file; }"
                 @remove="() => { imagenFile = null; form.imagen = ''; }"
               />

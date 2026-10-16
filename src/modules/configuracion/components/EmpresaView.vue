@@ -24,8 +24,6 @@ const logoImageKey = ref(0);
 const logoError = ref('');
 const logoRemoved = ref(false);
 
-const MARKETING_ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/svg+xml'];
-const LOGO_MAX_SIZE = 2 * 1024 * 1024; // 2MB
 
 const form = reactive({
   nombre_comercial: '',
@@ -265,8 +263,7 @@ onMounted(loadEmpresa);
               <ImageField
                 :key="logoImageKey"
                 :image-url="currentLogoUrl"
-                :max-size="LOGO_MAX_SIZE"
-                :allowed-types="MARKETING_ALLOWED_TYPES"
+                perfil="logo"
                 hint="JPG, PNG, WebP o SVG. Máximo 2 MB"
                 alt="Logotipo de la empresa"
                 empty-label="Subir logotipo"

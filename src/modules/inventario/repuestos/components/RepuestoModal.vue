@@ -40,12 +40,10 @@ const UNIDADES = [
 
 const MIN_IMAGENES = 1;
 const MAX_IMAGENES = 3;
-const IMAGEN_MAX_SIZE = 5 * 1024 * 1024;
-const IMAGEN_ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
 const ERROR_IMAGEN_MENSAJE = {
-  formato: 'Formato no compatible. Usa JPG, PNG o WebP.',
-  peso: 'Pesa más de 5 MB. Usa una imagen más liviana.',
+  formato: 'Formato no compatible. Usa JPG, PNG, WebP o HEIC.',
+  peso: 'Supera el tamaño máximo. Usa una imagen más liviana.',
   subida: 'No se pudo subir. Intenta nuevamente.',
   principal: 'No se pudo marcar como principal. Intenta nuevamente.',
 };
@@ -54,12 +52,12 @@ const ERROR_IMAGEN_DESCRIPCION = {
   formato: {
     singular: 'no tiene un formato válido',
     plural: 'no tienen un formato válido',
-    solucion: 'Cámbiala por un archivo JPG, PNG o WebP.',
-    solucionPlural: 'Cámbialas por archivos JPG, PNG o WebP.',
+    solucion: 'Cámbiala por un archivo JPG, PNG, WebP o HEIC.',
+    solucionPlural: 'Cámbialas por archivos JPG, PNG, WebP o HEIC.',
   },
   peso: {
-    singular: 'pesa más de 5 MB',
-    plural: 'pesan más de 5 MB',
+    singular: 'supera el tamaño máximo',
+    plural: 'superan el tamaño máximo',
     solucion: 'Cámbiala por una más liviana.',
     solucionPlural: 'Cámbialas por unas más livianas.',
   },
@@ -747,7 +745,7 @@ watch(() => form.codigo, (val) => {
 
           <h4 v-show="activeTab === 'imagenes'" class="pt-4 mb-2 text-base font-semibold dark:text-white">Imágenes del Repuesto</h4>
           <p v-show="activeTab === 'imagenes'" class="mb-3 text-sm text-gray-500 dark:text-gray-400">
-            Sube de {{ MIN_IMAGENES }} a {{ MAX_IMAGENES }} imágenes (JPG, PNG o WebP, máx. 5 MB). Marca una como principal.
+            Sube de {{ MIN_IMAGENES }} a {{ MAX_IMAGENES }} imágenes. Marca una como principal.
           </p>
           <div v-show="activeTab === 'imagenes'" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div
@@ -758,8 +756,7 @@ watch(() => form.codigo, (val) => {
               <ImageField
                 :image-url="img.preview || img.url || ''"
                 :alt="'Imagen ' + (index + 1)"
-                :max-size="IMAGEN_MAX_SIZE"
-                :allowed-types="IMAGEN_ALLOWED_TYPES"
+                perfil="repuesto"
                 :show-hint="false"
                 :droppable="false"
                 :error="img.error ? img.error.mensaje : ''"
@@ -788,8 +785,7 @@ watch(() => form.codigo, (val) => {
               <ImageField
                 ref="addImagenField"
                 empty-label="Agregar imagen"
-                :max-size="IMAGEN_MAX_SIZE"
-                :allowed-types="IMAGEN_ALLOWED_TYPES"
+                perfil="repuesto"
                 compact
                 @upload="agregarImagen"
               />

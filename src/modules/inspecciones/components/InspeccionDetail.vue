@@ -715,8 +715,9 @@ onMounted(async () => {
                   >
                     <img
                       v-if="foto.url || foto.imagen"
-                      :src="foto.url || foto.imagen"
+                      :src="foto.miniatura || foto.url || foto.imagen"
                       :alt="`Foto ${index + 1}`"
+                      loading="lazy"
                       class="h-full w-full object-cover"
                     />
                     <span v-else class="text-xs text-gray-500 dark:text-gray-400">Sin imagen</span>

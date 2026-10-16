@@ -533,8 +533,6 @@ onMounted(() => {
                 <VehicleImageField
                   :image-url="vehiculo.imagen"
                   :disabled="isLoadingChoices"
-                  :max-size="2 * 1024 * 1024"
-                  :allowed-types="['image/jpeg', 'image/jpg', 'image/png', 'image/webp']"
                   @upload="(file) => { vehiculo.imagenFile = file; }"
                   @remove="() => { vehiculo.imagenFile = null; vehiculo.imagenPreview = ''; vehiculo.imagen = ''; }"
                 />

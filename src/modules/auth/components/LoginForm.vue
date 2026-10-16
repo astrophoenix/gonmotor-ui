@@ -229,7 +229,7 @@ async function confirmCompany() {
                 placeholder="usuario@taller.com"
                 :aria-invalid="hasError"
                 required
-                class="block h-[52px] w-full rounded-xl border-[1.5px] bg-white ps-11 pe-3.5 text-base text-brand-ink outline-none transition-colors placeholder:text-slate-400 focus:ring-4 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500 dark:border-slate-600 dark:focus:border-slate-400"
+                class="block h-[52px] w-full rounded shadow-sm border-[1.5px] bg-white ps-11 pe-3.5 text-base text-brand-ink outline-none transition-colors placeholder:text-slate-400 focus:ring-4 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500 dark:border-slate-600 dark:focus:border-slate-400"
                 :class="hasError
                   ? 'border-brand-red focus:border-brand-red focus:ring-brand-red/15'
                   : 'border-brand-line focus:border-brand-ink focus:ring-brand-focus-ring'"
@@ -255,7 +255,7 @@ async function confirmCompany() {
                 placeholder="Tu contraseña"
                 :aria-invalid="hasError"
                 required
-                class="block h-[52px] w-full rounded-xl border-[1.5px] bg-white ps-11 pe-11 text-base text-brand-ink outline-none transition-colors placeholder:text-slate-400 focus:ring-4 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500 dark:border-slate-600 dark:focus:border-slate-400"
+                class="block h-[52px] w-full rounded shadow-sm border-[1.5px] bg-white ps-11 pe-11 text-base text-brand-ink outline-none transition-colors placeholder:text-slate-400 focus:ring-4 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500 dark:border-slate-600 dark:focus:border-slate-400"
                 :class="hasError
                   ? 'border-brand-red focus:border-brand-red focus:ring-brand-red/15'
                   : 'border-brand-line focus:border-brand-ink focus:ring-brand-focus-ring'"
@@ -283,7 +283,7 @@ async function confirmCompany() {
                 v-model="remember"
                 name="remember"
                 type="checkbox"
-                class="h-4 w-4 shrink-0 cursor-pointer rounded border-brand-line bg-white accent-brand-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-ink focus-visible:ring-offset-2 dark:bg-slate-800 dark:ring-offset-slate-900"
+                class="h-4 w-4 shrink-0 cursor-pointer rounded shadow-sm border-brand-line bg-white accent-brand-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-ink focus-visible:ring-offset-2 dark:bg-slate-800 dark:ring-offset-slate-900"
               >
               <span>Mantener sesión iniciada</span>
             </label>

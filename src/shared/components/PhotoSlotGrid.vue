@@ -15,13 +15,14 @@ const props = defineProps({
     type: Object,
     default: () => ({}),
   },
+  // Por defecto, los límites del backend para el perfil `evidencia`.
   maxSize: {
     type: Number,
-    default: 5 * 1024 * 1024,
+    default: null,
   },
   allowedTypes: {
     type: Array,
-    default: () => ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+    default: null,
   },
   previewable: {
     type: Boolean,
@@ -110,6 +111,7 @@ defineExpose({ getFiles, reset, hasAllFiles, getPresence });
       :file="files[s.key].file"
       :image-url="files[s.key].existingUrl || ''"
       :error="errors[s.key] || ''"
+      perfil="evidencia"
       :max-size="maxSize"
       :allowed-types="allowedTypes"
       :previewable="previewable"

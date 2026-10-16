@@ -440,6 +440,7 @@ function aplicarOrden(data) {
     file: null,
     preview: null,
     url: f.imagen,
+    miniatura: f.miniatura,
     descripcion: f.descripcion || '',
     descripcionOriginal: f.descripcion || '',
   }));
@@ -1021,7 +1022,7 @@ async function handleSubmit() {
                 </span>
               </h4-->
               <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
-                Adjunta evidencia del trabajo realizado (hasta {{ FOTO_MAX }} fotos). Solo JPG, PNG o WebP de máximo 5 MB.
+                Adjunta evidencia del trabajo realizado (hasta {{ FOTO_MAX }} fotos).
               </p>
 
               <PhotoUploadGrid

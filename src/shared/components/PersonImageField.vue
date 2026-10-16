@@ -11,17 +11,18 @@ defineProps({
     type: Boolean,
     default: false,
   },
+  // Por defecto, los límites publicados por el backend para el perfil.
   maxSize: {
     type: Number,
-    default: 1 * 1024 * 1024,
+    default: null,
   },
   allowedTypes: {
     type: Array,
-    default: () => ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+    default: null,
   },
   hint: {
     type: String,
-    default: 'JPG, PNG o WebP.',
+    default: '',
   },
   previewable: {
     type: Boolean,
@@ -66,6 +67,7 @@ defineExpose({ resetPreview, clear });
     ref="field"
     :image-url="imageUrl"
     :alt="imgAlt"
+    perfil="avatar"
     :max-size="maxSize"
     :allowed-types="allowedTypes"
     :hint="hint"

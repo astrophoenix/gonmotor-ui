@@ -31,6 +31,7 @@ Convenciones y estándares del proyecto. El backend Django vive en `../gonmotor-
 - Confirmaciones de borrado: `ConfirmModal.vue` (no volver a crear modales de eliminar).
 - Selectores con búsqueda: `ClienteSearchSelect`, `VehiculoSearchSelect`, `EmpleadoSearchSelect`, `CatalogoSelect`, `TallerSelect`.
 - Fotos: `ImageField` (base de una sola imagen: valida formato/tamaño, drag-and-drop, preview y zoom) y sus wrappers `PhotoUploadGrid` (colección con descripciones y persistencia API), `PhotoSlotGrid` (N vistas obligatorias) y `VehicleImageField` / `PersonImageField`; acciones de fila: `EntityActionButtons`.
+- Imágenes: `ImageField` comprime en el navegador antes de subir (`src/shared/utils/imagenes.js`) según su prop `perfil` (`evidencia`, `vehiculo`, `repuesto`, `avatar`, `logo`). Formatos, peso máximo y tamaños salen del backend (`GET /api/core/limites-imagenes/`, `src/shared/services/imagenesService.js`): **no escribir límites ni formatos a mano** (`maxSize`/`allowedTypes` solo para casos excepcionales). Las casillas y galerías muestran `miniatura` (`thumbUrl`, `loading="lazy"`) y el zoom la `imagen` completa. Las fotos nuevas de `PhotoUploadGrid` envían un `id` generado en el navegador para que un reintento no las duplique.
 
 ## Paleta visual
 - Tokens canónicos en `@theme` de `src/style.css`; espejo en JS (`BRAND`) en `src/shared/config/branding.js` para canvas/SVG (ECharts, FullCalendar). Al cambiar la paleta hay que actualizar AMBOS.

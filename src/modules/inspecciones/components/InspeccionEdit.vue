@@ -711,6 +711,7 @@ async function loadFotos() {
       file: null,
       preview: null,
       url: f.imagen,
+      miniatura: f.miniatura,
       descripcion: f.descripcion || '',
       descripcionOriginal: f.descripcion || '',
     }));
@@ -1439,7 +1440,6 @@ onMounted(() => {
               <div v-show="activeTab === 'fotos'" class="col-span-1">
                   <p class="mb-3 text-sm text-gray-500 dark:text-gray-400">
                     Opcional: hasta {{ FOTO_MAX }} fotos de evidencia de los hallazgos (DTC en pantalla, desgastes, fugas, testigos encendidos).
-                    JPG, PNG o WebP de máximo 5 MB.
                   </p>
 
                   <PhotoUploadGrid

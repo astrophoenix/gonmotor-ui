@@ -357,11 +357,15 @@ const marcasConPosicion = computed(() => marcasCarroceria.value.filter((m) => m.
 
 const fotosOrdenadas = computed(() => {
   const fotos = recepcion.value?.fotos || [];
-  return FOTO_VISTAS.map((v) => ({
-    key: v.key,
-    label: v.label,
-    url: fotos.find((f) => f.tipo_vista === v.key)?.imagen || null,
-  }));
+  return FOTO_VISTAS.map((v) => {
+    const foto = fotos.find((f) => f.tipo_vista === v.key);
+    return {
+      key: v.key,
+      label: v.label,
+      url: foto?.imagen || null,
+      miniatura: foto?.miniatura || foto?.imagen || null,
+    };
+  });
 });
 
 function testigoActivo(testigo) {
@@ -1164,8 +1168,9 @@ function irAInspeccion(recepcion) {
                 >
                   <img
                     v-if="foto.url"
-                    :src="foto.url"
+                    :src="foto.miniatura"
                     :alt="foto.label"
+                    loading="lazy"
                     class="h-full w-full object-cover"
                   />
                   <span v-else class="text-xs text-gray-500 dark:text-gray-400">Sin foto</span>

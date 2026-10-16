@@ -458,7 +458,7 @@ onMounted(async () => {
                     class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-600"
                   >
                     <button type="button" class="block w-full cursor-zoom-in" @click="abrirFoto(resolveMediaUrl(foto.imagen))">
-                      <img :src="resolveMediaUrl(foto.imagen)" :alt="foto.descripcion || `Foto ${foto.id}`" class="w-full h-40 object-cover hover:opacity-90" />
+                      <img :src="resolveMediaUrl(foto.miniatura || foto.imagen)" loading="lazy" :alt="foto.descripcion || `Foto ${foto.id}`" class="w-full h-40 object-cover hover:opacity-90" />
                     </button>
                     <figcaption v-if="foto.descripcion" class="px-3 py-2 text-xs text-gray-600 dark:text-gray-300">{{ foto.descripcion }}</figcaption>
                   </figure>
@@ -483,7 +483,7 @@ onMounted(async () => {
                       class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden"
                     >
                       <button type="button" class="block w-full cursor-zoom-in" @click="abrirFoto(resolveMediaUrl(foto.imagen))">
-                        <img :src="resolveMediaUrl(foto.imagen)" :alt="foto.tipo_vista_display || `Foto ${foto.id}`" class="w-full h-40 object-cover hover:opacity-90" />
+                        <img :src="resolveMediaUrl(foto.miniatura || foto.imagen)" loading="lazy" :alt="foto.tipo_vista_display || `Foto ${foto.id}`" class="w-full h-40 object-cover hover:opacity-90" />
                       </button>
                       <figcaption v-if="foto.tipo_vista_display || foto.descripcion" class="px-3 py-2 text-xs text-gray-600 dark:text-gray-300">
                         {{ foto.tipo_vista_display || foto.descripcion }}
@@ -516,7 +516,7 @@ onMounted(async () => {
                     class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden"
                   >
                     <button type="button" class="block w-full cursor-zoom-in" @click="abrirFoto(resolveMediaUrl(foto.imagen))">
-                      <img :src="resolveMediaUrl(foto.imagen)" :alt="foto.descripcion || `Foto ${foto.id}`" class="w-full h-40 object-cover hover:opacity-90" />
+                      <img :src="resolveMediaUrl(foto.miniatura || foto.imagen)" loading="lazy" :alt="foto.descripcion || `Foto ${foto.id}`" class="w-full h-40 object-cover hover:opacity-90" />
                     </button>
                     <figcaption v-if="foto.descripcion" class="px-3 py-2 text-xs text-gray-600 dark:text-gray-300">{{ foto.descripcion }}</figcaption>
                   </figure>

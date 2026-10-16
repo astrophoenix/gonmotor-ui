@@ -43,9 +43,6 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue']);
 
-const FOTO_MAX_SIZE = 5 * 1024 * 1024;
-const FOTO_ALLOWED = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-
 const items = ref([...props.modelValue]);
 const eliminadas = ref([]);
 const error = ref('');
@@ -90,6 +87,9 @@ function onFotoSelected(file) {
     error.value = '';
     items.value.push({
       id: null,
+      // ID del registro generado aquí: si el guardado se reintenta tras un
+      // corte de red, el backend devuelve la misma foto en vez de duplicarla.
+      idCliente: globalThis.crypto?.randomUUID?.() || null,
       file,
       preview: URL.createObjectURL(file),
       url: null,
@@ -152,12 +152,14 @@ async function guardarFotos() {
     if (!f.id && f.file) {
       try {
         const creada = await props.service.createFoto({
+          ...(f.idCliente ? { id: f.idCliente } : {}),
           [props.entityField]: entidadRef,
           imagen: f.file,
           descripcion: f.descripcion,
         });
         f.id = creada && creada.id;
         f.url = creada && creada.imagen;
+        f.miniatura = creada && creada.miniatura;
         f.file = null;
         if (f.preview) URL.revokeObjectURL(f.preview);
         f.preview = null;
@@ -202,9 +204,9 @@ defineExpose({ guardarFotos });
       >
         <ImageField
           :image-url="foto.preview || foto.url || ''"
+          :thumb-url="foto.preview ? '' : foto.miniatura || ''"
           :alt="'Foto ' + (index + 1)"
-          :max-size="FOTO_MAX_SIZE"
-          :allowed-types="FOTO_ALLOWED"
+          perfil="evidencia"
           :disabled="disabled"
           :show-hint="false"
           :droppable="false"
@@ -227,8 +229,7 @@ defineExpose({ guardarFotos });
         <ImageField
           ref="addField"
           empty-label="Agregar foto"
-          :max-size="FOTO_MAX_SIZE"
-          :allowed-types="FOTO_ALLOWED"
+          perfil="evidencia"
           compact
           @upload="onFotoSelected"
         />
