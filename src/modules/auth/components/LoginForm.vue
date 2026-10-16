@@ -20,6 +20,10 @@ const beneficios = [
   'Inventario de repuestos',
 ];
 
+// Silueta del engranaje decorativo del panel de marca (icono «settings» de Lucide).
+const ENGRANAJE_D =
+  'M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z';
+
 const hasError = computed(() => Boolean(errorMessage.value));
 
 // Variables para el flujo multi-empresa
@@ -145,18 +149,31 @@ async function confirmCompany() {
   <div class="font-brand min-h-screen w-full bg-brand-surface text-brand-ink dark:bg-slate-900 dark:text-slate-100 lg:grid lg:grid-cols-[1.05fr_1fr]">
     <!-- ===== Panel izquierdo (marca) ===== -->
     <aside class="relative hidden overflow-hidden bg-brand-navy px-16 py-14 text-white lg:flex lg:flex-col lg:justify-between">
-      <!-- Decoración: engranaje recortado en la esquina inferior derecha -->
+      <!-- Decoración: engranaje grande en la esquina superior derecha y uno pequeño (acento) engranado con él -->
       <svg
-        class="pointer-events-none absolute -bottom-24 -right-24 h-[28rem] w-[28rem] text-white/[0.07]"
+        class="pointer-events-none absolute -right-36 -top-44 h-[35rem] w-[35rem] text-white/[0.06]"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        stroke-width="1"
+        stroke-width="0.55"
         stroke-linecap="round"
         stroke-linejoin="round"
         aria-hidden="true"
       >
-        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+        <path :d="ENGRANAJE_D"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+      <svg
+        class="pointer-events-none absolute right-[15.5rem] top-[14.5rem] h-[10.5rem] w-[10.5rem] rotate-[18deg] text-brand-coral/[0.16]"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="0.7"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path :d="ENGRANAJE_D"/>
         <circle cx="12" cy="12" r="3"/>
       </svg>
 
@@ -197,8 +214,17 @@ async function confirmCompany() {
     </aside>
 
     <!-- ===== Panel derecho (formulario) ===== -->
-    <section class="flex min-h-screen w-full items-center justify-center px-4 py-10 sm:px-6">
-      <div class="w-full max-w-[420px]">
+    <section class="relative flex min-h-screen w-full items-center justify-center overflow-hidden px-4 py-10 sm:px-6">
+      <!-- Decoración: llave de taller sólida y tenue en la esquina inferior derecha -->
+      <svg
+        class="pointer-events-none absolute -bottom-16 -right-16 hidden h-80 w-80 -rotate-90 text-slate-200/70 md:block dark:text-white/[0.04]"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        aria-hidden="true"
+      >
+        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+      </svg>
+      <div class="relative z-10 w-full max-w-[420px]">
         <h1 class="text-[32px] font-extrabold leading-tight text-brand-ink dark:text-white">
           Bienvenido de nuevo
         </h1>
