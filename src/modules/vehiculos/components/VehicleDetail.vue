@@ -1,6 +1,6 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import { Car, Pencil, Image as ImageIcon, X, UserRound, Gauge, CalendarClock } from 'lucide-vue-next';
+import { ref, computed, onMounted } from 'vue';
+import { Pencil, Image as ImageIcon, X, Gauge, CalendarClock, Wrench, ChevronRight, Maximize2 } from 'lucide-vue-next';
 import { vehiclesService } from '../services/vehiclesService';
 import { request } from '../../../shared/services/httpClient';
 import { formatPlate } from '../../../shared/utils/formatPlate';
@@ -31,18 +31,37 @@ const COMBUSTIBLE_LABELS = {
 const params = new URLSearchParams(window.location.search);
 const vehicleId = params.get('id');
 
-function formatDate(dateString) {
-  if (!dateString) return '—';
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return '—';
-  return date.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+// Las fechas sin hora ('2026-11-02') se leen como fecha local: new Date() las tomaría
+// como UTC y en Guayaquil mostraría el día anterior.
+function parseFecha(value) {
+  if (!value) return null;
+  const soloFecha = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  const date = soloFecha ? new Date(+soloFecha[1], +soloFecha[2] - 1, +soloFecha[3]) : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function formatFecha(dateString) {
-  if (!dateString) return '—';
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return '—';
-  return date.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric' });
+function formatFecha(value) {
+  const date = parseFecha(value);
+  if (!date) return null;
+  return date.toLocaleDateString('es-EC', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function formatKm(value) {
+  if (value == null || value === '') return null;
+  const number = Number(value);
+  return Number.isNaN(number) ? null : `${number.toLocaleString('es-EC')} km`;
+}
+
+const COLORES = {
+  blanco: '#FFFFFF', negro: '#111827', gris: '#9CA3AF', plata: '#D1D5DB', plateado: '#D1D5DB',
+  rojo: '#DC2626', azul: '#2563EB', verde: '#16A34A', amarillo: '#FACC15', naranja: '#F97316',
+  cafe: '#78350F', marron: '#78350F', beige: '#E7D7B8', dorado: '#CA8A04', vino: '#7F1D1D', celeste: '#7DD3FC',
+};
+
+function colorCss(nombre) {
+  if (!nombre) return null;
+  const clave = nombre.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/\s+/)[0];
+  return COLORES[clave] || null;
 }
 
 function labelFor(list, value, key) {
@@ -53,6 +72,65 @@ function labelFor(list, value, key) {
 
 const tipoLabel = (value) => labelFor(tipos, value, 'value');
 const paisLabel = (value) => labelFor(paises, value, 'code');
+
+const titulo = computed(() => {
+  if (!vehicle.value) return '';
+  return [vehicle.value.marca, vehicle.value.modelo].filter(Boolean).join(' ') || 'Vehículo sin marca';
+});
+
+const iniciales = computed(() => {
+  const nombre = (vehicle.value && vehicle.value.cliente_nombre) || '';
+  return nombre.split(/\s+/).filter(Boolean).slice(0, 2).map((parte) => parte[0].toUpperCase()).join('') || '?';
+});
+
+const fichaTecnica = computed(() => {
+  const v = vehicle.value;
+  if (!v) return [];
+  return [
+    { label: 'Marca', value: v.marca, capitalize: true },
+    { label: 'Modelo', value: v.modelo, capitalize: true },
+    { label: 'Año', value: v.anio },
+    { label: 'Color', value: v.color, capitalize: true, color: colorCss(v.color) },
+    { label: 'Tipo', value: v.tipo ? tipoLabel(v.tipo) : null },
+    { label: 'Transmisión', value: TRANSMISION_LABELS[v.transmision] },
+    { label: 'Combustible', value: COMBUSTIBLE_LABELS[v.combustible] },
+    { label: 'País de origen', value: v.pais_origen ? paisLabel(v.pais_origen) : null },
+    { label: 'VIN / Chasis', value: v.vin, mono: true },
+    { label: 'Número de motor', value: v.numero_motor, mono: true },
+  ];
+});
+
+// Estado del próximo mantenimiento: tono 'pendiente' (gris), 'pronto' o 'vencido' (ámbar).
+const mantenimientoKm = computed(() => {
+  const v = vehicle.value;
+  const valor = v && formatKm(v.proximo_mantenimiento_km);
+  if (!valor) return { valor: null, detalle: 'Sin programar', tono: 'vacio' };
+  const actual = Number(v.kilometraje_actual);
+  if (v.kilometraje_actual == null || Number.isNaN(actual)) return { valor, detalle: '', tono: 'pendiente' };
+  const restante = Number(v.proximo_mantenimiento_km) - actual;
+  if (restante <= 0) return { valor, detalle: `Vencido hace ${formatKm(-restante)}`, tono: 'vencido' };
+  return { valor, detalle: `Faltan ${formatKm(restante)}`, tono: restante <= 1000 ? 'pronto' : 'pendiente' };
+});
+
+const mantenimientoFecha = computed(() => {
+  const v = vehicle.value;
+  const fecha = v && parseFecha(v.proxima_mantenimiento_fecha);
+  if (!fecha) return { valor: null, detalle: 'Sin programar', tono: 'vacio' };
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const dias = Math.round((fecha - hoy) / 86400000);
+  const valor = formatFecha(v.proxima_mantenimiento_fecha);
+  if (dias < 0) return { valor, detalle: `Vencido hace ${-dias} ${-dias === 1 ? 'día' : 'días'}`, tono: 'vencido' };
+  if (dias === 0) return { valor, detalle: 'Hoy', tono: 'pronto' };
+  return { valor, detalle: `En ${dias} ${dias === 1 ? 'día' : 'días'}`, tono: dias <= 7 ? 'pronto' : 'pendiente' };
+});
+
+const TONO_DETALLE = {
+  vacio: 'text-gray-400 dark:text-gray-500',
+  pendiente: 'text-gray-500 dark:text-gray-400',
+  pronto: 'text-warning',
+  vencido: 'text-warning font-medium',
+};
 
 function abrirFoto(url) {
   if (!url) return;
@@ -137,146 +215,188 @@ onMounted(async () => {
     </template>
   </EntityHeader>
 
-  <div class="p-4">
-    <div class="relative mx-auto max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
-      <Alert
-        v-if="error"
-        type="error"
-        :title="error"
-        message=""
-        dismissible
-        @dismiss="error = ''"
-      />
+  <div class="mx-auto max-w-6xl space-y-6 p-4 lg:p-6">
+    <Alert
+      v-if="error"
+      type="error"
+      :title="error"
+      message=""
+      dismissible
+      @dismiss="error = ''"
+    />
 
-      <div v-if="loading" class="p-6 text-center text-gray-500 dark:text-gray-400">
-        Cargando vehículo...
+    <!-- Carga -->
+    <div v-if="loading" class="space-y-6 animate-pulse" aria-busy="true" aria-label="Cargando vehículo">
+      <div class="h-64 rounded-2xl bg-gray-200 dark:bg-gray-700"></div>
+      <div class="grid gap-6 lg:grid-cols-3">
+        <div class="h-72 rounded-2xl bg-gray-200 dark:bg-gray-700 lg:col-span-2"></div>
+        <div class="h-40 rounded-2xl bg-gray-200 dark:bg-gray-700"></div>
       </div>
+    </div>
 
-      <template v-else-if="vehicle">
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-4">
-          <div class="lg:col-span-1">
-            <div
-              class="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border border-gray-300 bg-gray-100 p-2 dark:border-gray-600 dark:bg-gray-800"
-              :class="{ 'cursor-zoom-in': vehicle.imagen }"
-              @click="abrirFoto(vehicle.imagen)"
-            >
-              <img
-                v-if="vehicle.imagen"
-                :src="vehicle.imagen"
-                :alt="`Vehículo ${vehicle.placa}`"
-                class="h-full w-full rounded-lg object-contain"
-              />
-              <span v-else class="flex flex-col items-center justify-center gap-2 px-4 text-center">
-                <ImageIcon class="w-10 h-10 text-gray-400 dark:text-gray-500" />
-                <span class="text-xs text-gray-500 dark:text-gray-400">Sin foto</span>
-              </span>
-            </div>
+    <template v-else-if="vehicle">
+      <!-- Resumen: foto, identidad y kilometraje -->
+      <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+        <div class="grid md:grid-cols-[minmax(0,20rem)_1fr]">
+          <button
+            v-if="vehicle.imagen"
+            type="button"
+            class="group relative flex aspect-[4/3] items-center justify-center bg-gray-50 p-6 cursor-zoom-in focus:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-brand-200 dark:bg-gray-900/40 md:aspect-auto md:min-h-64"
+            title="Ampliar foto"
+            @click="abrirFoto(vehicle.imagen)"
+          >
+            <img
+              :src="vehicle.imagen"
+              :alt="`Vehículo ${formatPlate(vehicle.placa)}`"
+              class="max-h-full max-w-full rounded-lg object-contain transition-transform duration-300 group-hover:scale-[1.03]"
+            />
+            <span class="absolute right-3 bottom-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-gray-600 opacity-0 shadow-sm transition-opacity group-hover:opacity-100 dark:bg-gray-800/90 dark:text-gray-300">
+              <Maximize2 class="h-4 w-4" aria-hidden="true" />
+            </span>
+          </button>
+          <div
+            v-else
+            class="flex aspect-[4/3] flex-col items-center justify-center gap-2 bg-gray-50 text-gray-400 dark:bg-gray-900/40 dark:text-gray-500 md:aspect-auto md:min-h-64"
+          >
+            <ImageIcon class="h-10 w-10" aria-hidden="true" />
+            <span class="text-xs">Sin foto</span>
           </div>
 
-          <div class="lg:col-span-3">
-            <h4 class="mb-4 text-xl font-semibold dark:text-white">
-              <span class="inline-flex items-center gap-2">
-                <Car class="w-6 h-6 text-gray-800 dark:text-white" />
-                Información del Vehículo
-              </span>
-            </h4>
-            <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Placa</dt>
-                <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ formatPlate(vehicle.placa) || '—' }}</dd>
+          <div class="flex flex-col justify-between gap-8 border-t border-gray-100 p-6 dark:border-gray-700 md:border-t-0 md:border-l lg:p-8">
+            <div>
+              <p class="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                {{ [vehicle.tipo ? tipoLabel(vehicle.tipo) : null, vehicle.anio].filter(Boolean).join(' · ') || 'Vehículo' }}
+              </p>
+              <h2 class="mt-1 text-2xl font-semibold tracking-tight text-gray-900 capitalize dark:text-white lg:text-3xl">
+                {{ titulo }}
+              </h2>
+              <div class="mt-4 flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center rounded-md border border-gray-300 bg-white px-2.5 py-1 font-mono text-sm font-semibold tracking-widest text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white">
+                  {{ formatPlate(vehicle.placa) || '—' }}
+                </span>
+                <span
+                  v-if="vehicle.color"
+                  class="inline-flex items-center gap-1.5 rounded-md bg-gray-100 px-2.5 py-1 text-sm text-gray-700 capitalize dark:bg-gray-700 dark:text-gray-200"
+                >
+                  <span
+                    v-if="colorCss(vehicle.color)"
+                    class="h-3 w-3 rounded-full ring-1 ring-black/15 dark:ring-white/20"
+                    :style="{ backgroundColor: colorCss(vehicle.color) }"
+                    aria-hidden="true"
+                  ></span>
+                  {{ vehicle.color }}
+                </span>
+                <span
+                  v-if="COMBUSTIBLE_LABELS[vehicle.combustible]"
+                  class="inline-flex items-center rounded-md bg-gray-100 px-2.5 py-1 text-sm text-gray-700 dark:bg-gray-700 dark:text-gray-200"
+                >
+                  {{ COMBUSTIBLE_LABELS[vehicle.combustible] }}
+                </span>
+                <span
+                  v-if="TRANSMISION_LABELS[vehicle.transmision]"
+                  class="inline-flex items-center rounded-md bg-gray-100 px-2.5 py-1 text-sm text-gray-700 dark:bg-gray-700 dark:text-gray-200"
+                >
+                  {{ TRANSMISION_LABELS[vehicle.transmision] }}
+                </span>
               </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Marca</dt>
-                <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ vehicle.marca || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Modelo</dt>
-                <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ vehicle.modelo || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Año</dt>
-                <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ vehicle.anio || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Tipo</dt>
-                <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ tipoLabel(vehicle.tipo) }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Transmisión</dt>
-                <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ TRANSMISION_LABELS[vehicle.transmision] || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Combustible</dt>
-                <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ COMBUSTIBLE_LABELS[vehicle.combustible] || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Color</dt>
-                <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ vehicle.color || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">VIN / Chasis</dt>
-                <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ vehicle.vin || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Número de Motor</dt>
-                <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ vehicle.numero_motor || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">País de Origen</dt>
-                <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ paisLabel(vehicle.pais_origen) }}</dd>
-              </div>
-              <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Kilometraje Actual</dt>
-                <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ vehicle.kilometraje_actual != null ? `${vehicle.kilometraje_actual} km` : '—' }}</dd>
-              </div>
-            </dl>
+            </div>
 
-            <h4 class="mt-8 mb-4 text-lg font-semibold dark:text-white">
-              <span class="inline-flex items-center gap-2">
-                <CalendarClock class="w-5 h-5 text-gray-800 dark:text-white" />
-                Próximo Mantenimiento
-              </span>
-            </h4>
-            <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <dl class="grid grid-cols-1 gap-6 border-t border-gray-100 pt-6 dark:border-gray-700 sm:grid-cols-3">
               <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Por kilometraje</dt>
-                <dd class="mt-1 text-sm text-gray-900 dark:text-white">
-                  <span class="inline-flex items-center gap-1">
-                    <Gauge class="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                    {{ vehicle.proximo_mantenimiento_km != null ? `${vehicle.proximo_mantenimiento_km} km` : '—' }}
-                  </span>
+                <dt class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                  <Gauge class="h-3.5 w-3.5" aria-hidden="true" />
+                  Kilometraje
+                </dt>
+                <dd class="mt-2 text-xl font-semibold tabular-nums text-gray-900 dark:text-white">
+                  {{ formatKm(vehicle.kilometraje_actual) || '—' }}
                 </dd>
               </div>
               <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Por fecha</dt>
-                <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ formatFecha(vehicle.proxima_mantenimiento_fecha) }}</dd>
+                <dt class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                  <Wrench class="h-3.5 w-3.5" aria-hidden="true" />
+                  Próximo servicio
+                </dt>
+                <dd class="mt-2">
+                  <span class="block text-xl font-semibold tabular-nums text-gray-900 dark:text-white">{{ mantenimientoKm.valor || '—' }}</span>
+                  <span class="mt-0.5 block text-sm" :class="TONO_DETALLE[mantenimientoKm.tono]">{{ mantenimientoKm.detalle }}</span>
+                </dd>
+              </div>
+              <div>
+                <dt class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                  <CalendarClock class="h-3.5 w-3.5" aria-hidden="true" />
+                  Fecha de servicio
+                </dt>
+                <dd class="mt-2">
+                  <span class="block text-xl font-semibold text-gray-900 dark:text-white">{{ mantenimientoFecha.valor || '—' }}</span>
+                  <span class="mt-0.5 block text-sm" :class="TONO_DETALLE[mantenimientoFecha.tono]">{{ mantenimientoFecha.detalle }}</span>
+                </dd>
               </div>
             </dl>
-
-            <h4 class="mt-8 mb-4 text-lg font-semibold dark:text-white">
-              <span class="inline-flex items-center gap-2">
-                <UserRound class="w-5 h-5 text-gray-800 dark:text-white" />
-                Propietario / Cliente
-              </span>
-            </h4>
-            <template v-if="vehicle.cliente_id">
-              <a
-                :href="`/crud/clientes/ver/?id=${encodeURIComponent(vehicle.cliente_id)}`"
-                class="inline-flex items-center gap-2 font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
-              >
-                {{ vehicle.cliente_nombre || 'Ver cliente' }}
-              </a>
-            </template>
-            <p v-else class="text-sm text-gray-500 dark:text-gray-400">El vehículo no tiene un propietario asignado.</p>
-
-            <div v-if="vehicle.observaciones" class="mt-8">
-              <h4 class="mb-2 text-lg font-semibold dark:text-white">Observaciones</h4>
-              <p class="text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ vehicle.observaciones }}</p>
-            </div>
           </div>
         </div>
-      </template>
-    </div>
+      </section>
+
+      <div class="grid items-start gap-6 lg:grid-cols-3">
+        <!-- Ficha técnica -->
+        <section class="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 lg:col-span-2">
+          <h3 class="px-6 pt-5 pb-3 text-sm font-semibold text-gray-900 dark:text-white">Ficha técnica</h3>
+          <dl class="grid grid-cols-1 px-6 pb-3 sm:grid-cols-2 sm:gap-x-10">
+            <div
+              v-for="campo in fichaTecnica"
+              :key="campo.label"
+              class="flex items-baseline justify-between gap-4 border-t border-gray-100 py-3 dark:border-gray-700"
+            >
+              <dt class="shrink-0 text-sm text-gray-500 dark:text-gray-400">{{ campo.label }}</dt>
+              <dd
+                class="flex min-w-0 items-center gap-1.5 text-right text-sm font-medium text-gray-900 dark:text-white"
+                :class="{ 'font-mono text-[13px] tracking-wide break-all': campo.mono, capitalize: campo.capitalize }"
+              >
+                <span
+                  v-if="campo.color"
+                  class="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-black/15 dark:ring-white/20"
+                  :style="{ backgroundColor: campo.color }"
+                  aria-hidden="true"
+                ></span>
+                <span v-if="campo.value != null && campo.value !== ''">{{ campo.value }}</span>
+                <span v-else class="font-normal text-gray-400 dark:text-gray-500">—</span>
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        <div class="space-y-6">
+          <!-- Propietario -->
+          <section class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Propietario</h3>
+            <a
+              v-if="vehicle.cliente_id"
+              :href="`/crud/clientes/ver/?id=${encodeURIComponent(vehicle.cliente_id)}`"
+              class="group -mx-2 mt-3 flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
+            >
+              <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-800 dark:bg-brand-800 dark:text-brand-100">
+                {{ iniciales }}
+              </span>
+              <span class="min-w-0 flex-1">
+                <span class="block truncate text-sm font-medium text-gray-900 dark:text-white">{{ vehicle.cliente_nombre || 'Cliente' }}</span>
+                <span class="block text-xs text-gray-500 dark:text-gray-400">Ver ficha del cliente</span>
+              </span>
+              <ChevronRight class="h-4 w-4 text-gray-400 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+            </a>
+            <p v-else class="mt-3 text-sm text-gray-500 dark:text-gray-400">Sin propietario asignado.</p>
+          </section>
+
+          <!-- Observaciones -->
+          <section class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Observaciones</h3>
+            <p
+              v-if="vehicle.observaciones"
+              class="mt-3 text-sm leading-relaxed whitespace-pre-line text-gray-700 dark:text-gray-300"
+            >{{ vehicle.observaciones }}</p>
+            <p v-else class="mt-3 text-sm text-gray-400 dark:text-gray-500">Sin observaciones.</p>
+          </section>
+        </div>
+      </div>
+    </template>
   </div>
 
   <div
