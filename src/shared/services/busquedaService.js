@@ -3,7 +3,7 @@
  *
  * Un solo endpoint agrega clientes, vehículos, recepciones, órdenes,
  * cotizaciones, inspecciones, proveedores, repuestos y servicios, ya
- * filtrados por el tenant activo (el `httpClient` inyecta `X-Empresa-ID`).
+ * filtrados por el tenant activo (la empresa sale del token de la sesión).
  */
 
 import { request } from './httpClient';

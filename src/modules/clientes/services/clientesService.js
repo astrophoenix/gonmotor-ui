@@ -6,11 +6,6 @@ function getAccessToken() {
     || sessionStorage.getItem('gonmotor_access_token');
 }
 
-function getEmpresaId() {
-  return localStorage.getItem('gonmotor_empresa_id')
-    || sessionStorage.getItem('gonmotor_empresa_id');
-}
-
 const ENDPOINT = '/api/clientes/';
 
 function buildUrl(id) {
@@ -20,9 +15,8 @@ function buildUrl(id) {
 function getAuthHeaders() {
   const headers = {};
   const token = getAccessToken();
-  const empresaId = getEmpresaId();
+  // La empresa de la sesión viaja en la claim del token.
   if (token) headers.Authorization = `Bearer ${token}`;
-  if (empresaId) headers['X-Empresa-ID'] = empresaId;
   return headers;
 }
 

@@ -14,7 +14,7 @@ Convenciones y estándares del proyecto. El backend Django vive en `../gonmotor-
 - Layout por módulo: `src/modules/<name>/index.js` (exporta helpers `mount*`), `components/`, `composables/use<Name>.js`, `services/<name>Service.js`.
 
 ## Comunicación con el backend
-- TODO el HTTP va por `src/shared/services/httpClient.js` (`request`): inyecta `Authorization`, `X-Empresa-ID` y `X-Taller-ID` (taller activo, leído de `localStorage`/`sessionStorage` con clave `gonmotor_taller_id`), auto-refresca el JWT y propaga errores en español. No usar `fetch` directo ni pasar `token`/`empresaId` por parámetro.
+- TODO el HTTP va por `src/shared/services/httpClient.js` (`request`): inyecta `Authorization` (el JWT lleva la empresa de la sesión; cambiar de empresa = nuevo token vía `select-company`) y `X-Taller-ID` (taller activo, leído de `localStorage`/`sessionStorage` con clave `gonmotor_taller_id`), auto-refresca el JWT y propaga errores en español. No usar `fetch` directo ni pasar `token`/`empresaId` por parámetro.
 - Taller activo: el selector `src/shared/components/TallerSelect.vue` (icono, buscador debounced, máx. 5 visibles + «y N más») consulta `GET /api/auth/talleres/?search=` (solo talleres permitidos al rol/asignación). Se persiste con `authStore.setTaller({ id, nombre })`. En el login multiempresa los talleres llegan dentro de cada empresa de la respuesta de `/api/auth/login/`.
 - Varios servicios conservan funciones legacy `fetch(token, empresaId, ...)` (ej. `recepcionesService.js`) — es código muerto, no extender ese patrón.
 - `API_BASE_URL` se deriva del hostname en `src/shared/config/env.js`: localhost → `http://localhost:8000`, cualquier otro host → `https://gonmotor-api.onrender.com`.

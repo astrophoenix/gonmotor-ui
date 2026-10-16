@@ -103,7 +103,7 @@ src/modules/<nombre>/
 - **Permisos**: `usePermisos.js` carga `/api/auth/me/` una vez (cacheado) y expone los permisos `{recurso: ['ver','modificar']}`; `iniciarPermisosGlobal()` elimina del sidebar los `<li>` cuyos `data-recurso` no tengan `ver`. Ocultar en UI es cosmética: la autorización real la hace el backend. Hoy llevan `data-recurso` Clientes, Gastos, Notificaciones y Rentabilidad; los demás enlaces todavía no se ocultan.
 
 ### HTTP
-- **Todo** pasa por `request()` de `src/shared/services/httpClient.js`: inyecta `Authorization: Bearer`, `X-Empresa-ID` y `X-Taller-ID`, ante un 401 refresca el JWT y reintenta, si el refresh falla limpia la sesión, y normaliza los errores DRF a mensajes en español.
+- **Todo** pasa por `request()` de `src/shared/services/httpClient.js`: inyecta `Authorization: Bearer` (la empresa de la sesión viaja en la claim del JWT; no hay cabecera de empresa) y `X-Taller-ID`, ante un 401 refresca el JWT y reintenta, si el refresh falla limpia la sesión, y normaliza los errores DRF a mensajes en español.
 - Nunca uses `fetch` directo ni pases `token`/`empresaId` como parámetros. Las funciones legacy `fetch(token, empresaId, ...)` que quedan en algunos servicios son código muerto.
 - `API_BASE_URL` (`src/shared/config/env.js`): `localhost`/`127.0.0.1` → `http://localhost:8000`; cualquier otro host → `https://gonmotor-api.onrender.com`.
 - Los IDs que devuelve la API son **opacos** (en migración a UUID): trátalos como string; nunca `Number(id)`/`parseInt(id)` ni `v-model.number` en selectores de registros.

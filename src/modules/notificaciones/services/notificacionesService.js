@@ -5,7 +5,7 @@ const BASE = '/api/notificaciones';
 /**
  * Servicio del módulo de notificaciones WhatsApp / recordatorios de
  * mantenimiento. Todas las llamadas pasan por `httpClient` para que se
- * adjunten automáticamente el JWT y la cabecera X-Empresa-ID.
+ * adjunten automáticamente el JWT (que lleva la empresa de la sesión).
  */
 export const notificacionesService = {
   /** Estado del proveedor WhatsApp activo (mock / twilio / meta). */

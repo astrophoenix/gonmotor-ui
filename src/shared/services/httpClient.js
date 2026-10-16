@@ -1,7 +1,8 @@
 /**
  * Cliente HTTP central con auto-refresh de JWT y cabecera Tenant (Empresa).
  *
- * - Adjunta el access token y X-Empresa-ID automáticamente a cada request.
+ * - Adjunta el access token (la empresa de la sesión viaja en su claim) y la
+ *   cabecera X-Taller-ID a cada request.
  * - Si el backend responde 401, usa el refresh token para obtener uno nuevo
  *   y reintenta la petición original sin intervención del usuario.
  * - Si el refresh falla, limpia la sesión y lanza un error controlado.
@@ -36,19 +37,6 @@ export function tallerIdVigente(valor) {
     return null;
   }
   return valor || null;
-}
-
-function getEmpresaId() {
-  const valor = localStorage.getItem('gonmotor_empresa_id')
-    || sessionStorage.getItem('gonmotor_empresa_id');
-  // Sesión iniciada antes de los IDs públicos (UUID): la empresa guardada es
-  // el id numérico, que la API ya no acepta. Hay que volver a iniciar sesión.
-  if (valor && /^\d+$/.test(valor)) {
-    clearSession();
-    window.location.assign('/authentication/sign-in/');
-    return null;
-  }
-  return valor;
 }
 
 function getTallerId() {
@@ -197,7 +185,7 @@ async function refreshAccessToken() {
 /**
  * Request HTTP con auto-refresh de JWT ante 401.
  *
- * - Adjunta el access token y la cabecera X-Empresa-ID automáticamente.
+ * - Adjunta el access token y la cabecera X-Taller-ID automáticamente.
  * - Si el access token expiró, usa el refresh token para obtener uno nuevo
  *   y reintenta la petición original una sola vez.
  * - Si el refresh también falla, limpia la sesión y lanza un error controlado.
@@ -210,7 +198,6 @@ async function refreshAccessToken() {
  */
 export async function request(path, options = {}) {
   const token = getAccessToken();
-  const empresaId = getEmpresaId();
   const tallerId = getTallerId();
   const responseType = options.responseType || 'json';
 
@@ -221,7 +208,6 @@ export async function request(path, options = {}) {
       Accept: responseType === 'blob' ? '*/*' : 'application/json',
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(empresaId ? { 'X-Empresa-ID': empresaId } : {}),
       ...(tallerId ? { 'X-Taller-ID': tallerId } : {}),
       ...(options.headers || {})
     }
