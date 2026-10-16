@@ -13,6 +13,7 @@ import {
 } from 'lucide-vue-next';
 import Alert from '../../../shared/components/Alert.vue';
 import ToastContainer from '../../../shared/components/ToastContainer.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
 import { useNotificaciones } from '../composables/useNotificaciones';
 
 const {
@@ -31,6 +32,11 @@ const {
   ejecutar,
   guardarPreferencias,
 } = useNotificaciones();
+
+// Configurar WhatsApp (prueba, envío masivo, preferencias) exige administrar la
+// empresa; el resto de roles con acceso solo consulta. El backend lo valida igual.
+const { puede } = usePermisos();
+const puedeConfigurar = computed(() => puede('empresa', 'modificar'));
 
 const alerta = ref({ type: 'default', title: '', message: '' });
 
@@ -199,7 +205,7 @@ onMounted(init);
       <p v-if="configuracion?.descripcion" class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ configuracion.descripcion }}</p>
     </div>
 
-    <div class="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2">
+    <div v-if="puedeConfigurar" class="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2">
       <!-- Enviar mensaje de prueba -->
       <div class="p-6 bg-white rounded-2xl border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
         <h2 class="flex items-center text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -292,13 +298,17 @@ onMounted(init);
       </div>
     </div>
 
-    <div class="grid grid-cols-1 gap-4 p-4 pt-0 lg:grid-cols-2">
+    <div class="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2" :class="{ 'pt-0': puedeConfigurar }">
       <!-- Preferencias -->
       <div class="p-6 bg-white rounded-2xl border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
         <h2 class="flex items-center text-lg font-semibold text-gray-900 dark:text-white mb-4">
           <Settings2 class="w-5 h-5 mr-2 text-primary-600 dark:text-primary-400" />
           Preferencias de mantenimiento
         </h2>
+        <p v-if="!puedeConfigurar" class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+          Solo un administrador de la empresa puede cambiar estas preferencias.
+        </p>
+        <fieldset :disabled="!puedeConfigurar" class="disabled:opacity-70">
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div>
             <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300" for="pf-intervalo">
@@ -338,7 +348,9 @@ onMounted(init);
           class="mb-2 block w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-gray-50 text-gray-900 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
         ></textarea>
         <p class="text-xs text-gray-400 mb-3">Placeholders: {cliente} {empresa} {marca} {modelo} {placa} {kilometraje}</p>
+        </fieldset>
         <button
+          v-if="puedeConfigurar"
           type="button"
           :disabled="isGuardandoPreferencias"
           class="inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-wait"
