@@ -22,14 +22,39 @@ function getRefreshToken() {
     || sessionStorage.getItem('gonmotor_refresh_token');
 }
 
+/**
+ * Los IDs de taller son UUID. Una sesión guardada antes del cambio conserva un
+ * id numérico que la API ya no acepta: se descarta para que el usuario vuelva
+ * a elegir taller en vez de ver listados vacíos.
+ */
+export function tallerIdVigente(valor) {
+  if (valor && /^\d+$/.test(String(valor))) {
+    ['gonmotor_taller_id', 'gonmotor_taller_nombre'].forEach((clave) => {
+      localStorage.removeItem(clave);
+      sessionStorage.removeItem(clave);
+    });
+    return null;
+  }
+  return valor || null;
+}
+
 function getEmpresaId() {
-  return localStorage.getItem('gonmotor_empresa_id')
+  const valor = localStorage.getItem('gonmotor_empresa_id')
     || sessionStorage.getItem('gonmotor_empresa_id');
+  // Sesión iniciada antes de los IDs públicos (UUID): la empresa guardada es
+  // el id numérico, que la API ya no acepta. Hay que volver a iniciar sesión.
+  if (valor && /^\d+$/.test(valor)) {
+    clearSession();
+    window.location.assign('/authentication/sign-in/');
+    return null;
+  }
+  return valor;
 }
 
 function getTallerId() {
-  return localStorage.getItem('gonmotor_taller_id')
+  const valor = localStorage.getItem('gonmotor_taller_id')
     || sessionStorage.getItem('gonmotor_taller_id');
+  return tallerIdVigente(valor);
 }
 
 function getStorage() {

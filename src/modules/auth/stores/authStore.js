@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { authService } from '../services/authService';
+import { tallerIdVigente } from '../../../shared/services/httpClient';
 
 const ACCESS_TOKEN_KEY = 'gonmotor_access_token';
 const REFRESH_TOKEN_KEY = 'gonmotor_refresh_token';
@@ -35,7 +36,7 @@ export const useAuthStore = defineStore('auth', () => {
   const accessToken = ref(storage?.getItem(ACCESS_TOKEN_KEY) || null);
   const user = ref(readUser(storage));
   const empresaId = ref(storage?.getItem(EMPRESA_ID_KEY) || user.value?.empresa_id || null);
-  const tallerId = ref(storage?.getItem(TALLER_ID_KEY) || user.value?.taller_id || null);
+  const tallerId = ref(tallerIdVigente(storage?.getItem(TALLER_ID_KEY) || user.value?.taller_id || null));
   const tallerNombre = ref(storage?.getItem(TALLER_NOMBRE_KEY) || user.value?.taller_nombre || '');
   const isLoading = ref(false);
   const isAuthenticated = computed(() => Boolean(accessToken.value));

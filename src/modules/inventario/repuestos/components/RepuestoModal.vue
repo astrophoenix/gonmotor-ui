@@ -355,8 +355,8 @@ async function focusPrimeraImagenConError() {
 }
 
 async function guardarImagenes(repuestoId) {
-  const id = Number(repuestoId);
-  if (!id) return;
+  const id = repuestoId ? String(repuestoId) : '';
+  if (!id) throw new Error('No se pudo identificar el repuesto para guardar sus imágenes.');
   const fallosEliminacion = [];
 
   const pendientes = [...imagenesEliminadas.value];

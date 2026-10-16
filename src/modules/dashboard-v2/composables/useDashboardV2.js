@@ -134,7 +134,7 @@ export function useDashboardV2() {
   }
 
   function seleccionarSucursal(id) {
-    sucursal.value = id ? Number(id) : null;
+    sucursal.value = id ? String(id) : null;
     cargar();
   }
 

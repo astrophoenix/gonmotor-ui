@@ -20,7 +20,7 @@ const showProveedorModal = ref(false);
 const proveedorModalId = ref(null);
 
 const params = new URLSearchParams(window.location.search);
-const proveedorId = Number(params.get('id'));
+const proveedorId = params.get('id') || '';
 
 function formatDate(dateString) {
   if (!dateString) return '-';

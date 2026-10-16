@@ -21,9 +21,7 @@ export const DIAS_ALERTA_EN_TALLER = 3;
 function leerSucursalDeUrl() {
   if (typeof window === 'undefined') return null;
   const valor = new URLSearchParams(window.location.search).get('sucursal');
-  if (!valor) return null;
-  const numero = Number(valor);
-  return Number.isFinite(numero) ? numero : null;
+  return valor || null;
 }
 
 /** Refleja el taller activo en la URL sin recargar la página. */
@@ -164,7 +162,7 @@ export function useDashboard() {
   }
 
   function seleccionarSucursal(id) {
-    sucursal.value = id ? Number(id) : null;
+    sucursal.value = id ? String(id) : null;
     sincronizarUrlSucursal(sucursal.value);
     cargar();
   }
