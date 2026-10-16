@@ -192,15 +192,6 @@ onMounted(async () => {
       { label: 'Ver' },
     ]"
   >
-    <template #badges>
-      <span
-        v-if="vehicle && vehicle.is_active !== false"
-        class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-      >
-        Activo
-      </span>
-    </template>
-
     <template #actions>
       <button
         v-if="vehicle"
@@ -263,9 +254,25 @@ onMounted(async () => {
 
           <div class="flex flex-col justify-between gap-8 border-t border-gray-100 p-6 dark:border-gray-700 md:border-t-0 md:border-l lg:p-8">
             <div>
-              <p class="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                {{ [vehicle.tipo ? tipoLabel(vehicle.tipo) : null, vehicle.anio].filter(Boolean).join(' · ') || 'Vehículo' }}
-              </p>
+              <div class="flex items-center justify-between gap-4">
+                <p class="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                  {{ [vehicle.tipo ? tipoLabel(vehicle.tipo) : null, vehicle.anio].filter(Boolean).join(' · ') || 'Vehículo' }}
+                </p>
+                <span
+                  v-if="vehicle.is_active !== false"
+                  class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700 ring-1 ring-green-600/20 ring-inset dark:bg-green-900/30 dark:text-green-300 dark:ring-green-400/30"
+                >
+                  <span class="h-1.5 w-1.5 rounded-full bg-green-500" aria-hidden="true"></span>
+                  Activo
+                </span>
+                <span
+                  v-else
+                  class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600 ring-1 ring-gray-500/20 ring-inset dark:bg-gray-700 dark:text-gray-300"
+                >
+                  <span class="h-1.5 w-1.5 rounded-full bg-gray-400" aria-hidden="true"></span>
+                  Inactivo
+                </span>
+              </div>
               <h2 class="mt-1 text-2xl font-semibold tracking-tight text-gray-900 capitalize dark:text-white lg:text-3xl">
                 {{ titulo }}
               </h2>
