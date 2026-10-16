@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { IdCard, FilePen, Building2, UserRound, Mail, Phone, MapPin, CalendarDays, ShieldCheck } from 'lucide-vue-next';
+import { FilePen, Mail, Phone, Building2, KeyRound } from 'lucide-vue-next';
 import { empleadosService } from '../services/empleadosService';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
@@ -20,12 +20,28 @@ const nombreCompleto = computed(() => {
   return `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || 'Empleado';
 });
 
-function formatDate(dateString) {
-  if (!dateString) return '—';
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return '—';
-  return date.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
+const iniciales = computed(() => {
+  const user = empleado.value?.user || {};
+  const partes = [user.first_name, user.last_name].map((parte) => (parte || '').trim()).filter(Boolean);
+  if (!partes.length) return (user.username || '?').slice(0, 1).toUpperCase();
+  return partes.map((parte) => parte[0].toUpperCase()).join('').slice(0, 2);
+});
+
+const rolLabel = computed(() => empleado.value?.rol_display || empleado.value?.rol || '');
+
+const talleres = computed(() => empleado.value?.talleres || []);
+
+const datosPersonales = computed(() => {
+  const user = empleado.value?.user || {};
+  return [
+    { label: 'Nombres', value: user.first_name },
+    { label: 'Apellidos', value: user.last_name },
+    { label: 'Identificación', value: user.identificacion, mono: true },
+    { label: 'Teléfono', value: user.telefono, href: user.telefono ? `tel:${user.telefono}` : null },
+    { label: 'Correo electrónico', value: user.email, href: user.email ? `mailto:${user.email}` : null },
+    { label: 'Dirección', value: user.direccion },
+  ];
+});
 
 function abrirEditar() {
   if (!empleado.value) return;
@@ -73,20 +89,6 @@ onMounted(async () => {
       { label: 'Ver' },
     ]"
   >
-    <template #badges>
-      <template v-if="empleado">
-        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
-          {{ empleado.rol_display || empleado.rol }}
-        </span>
-        <span
-          class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium"
-          :class="empleado.is_active ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'"
-        >
-          {{ empleado.is_active ? 'Activo' : 'Inactivo' }}
-        </span>
-      </template>
-    </template>
-
     <template #actions>
       <button
         v-if="empleado"
@@ -94,113 +96,194 @@ onMounted(async () => {
         title="Editar empleado"
         class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
         @click="abrirEditar">
-        <!--Pencil class="w-4 h-4" aria-hidden="true" /-->
         <FilePen class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
         Editar
       </button>
     </template>
   </EntityHeader>
 
-  <div class="p-4">
-    <div class="relative mx-auto max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
-      <Alert
-        v-if="error"
-        type="error"
-        :title="error"
-        message=""
-        dismissible
-        @dismiss="error = ''"
-      />
+  <div class="mx-auto max-w-6xl space-y-6 p-4 lg:p-6">
+    <Alert
+      v-if="error"
+      type="error"
+      :title="error"
+      message=""
+      dismissible
+      @dismiss="error = ''"
+    />
 
-      <div v-if="loading" class="p-6 text-center text-gray-500 dark:text-gray-400">
-        Cargando empleado...
+    <!-- Carga -->
+    <div v-if="loading" class="space-y-6 animate-pulse" aria-busy="true" aria-label="Cargando empleado">
+      <div class="h-48 rounded-2xl bg-gray-200 dark:bg-gray-700"></div>
+      <div class="grid gap-6 lg:grid-cols-3">
+        <div class="h-64 rounded-2xl bg-gray-200 dark:bg-gray-700 lg:col-span-2"></div>
+        <div class="h-40 rounded-2xl bg-gray-200 dark:bg-gray-700"></div>
       </div>
+    </div>
 
-      <template v-else-if="empleado">
-        <h4 class="mb-4 text-lg font-semibold dark:text-white">
-          <span class="inline-flex items-center gap-2">
-            <IdCard class="w-5 h-5 text-gray-800 dark:text-white" />
-            Información General
+    <template v-else-if="empleado">
+      <!-- Resumen: identidad, estado y contacto -->
+      <section class="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+        <div class="flex flex-col gap-5 p-6 sm:flex-row sm:items-center lg:p-8">
+          <span
+            class="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xl font-semibold text-brand-800 dark:bg-brand-800 dark:text-brand-100 lg:h-20 lg:w-20 lg:text-2xl"
+            aria-hidden="true"
+          >
+            {{ iniciales }}
           </span>
-        </h4>
-        <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div>
-            <dt class="flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400">
-              <UserRound class="w-3.5 h-3.5" /> Nombres
-            </dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ empleado.user?.first_name || '—' }}</dd>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-4">
+              <p class="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                {{ rolLabel || 'Empleado' }}
+              </p>
+              <span
+                v-if="empleado.is_active !== false"
+                class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700 ring-1 ring-green-600/20 ring-inset dark:bg-green-900/30 dark:text-green-300 dark:ring-green-400/30"
+              >
+                <span class="h-1.5 w-1.5 rounded-full bg-green-500" aria-hidden="true"></span>
+                Activo
+              </span>
+              <span
+                v-else
+                class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600 ring-1 ring-gray-500/20 ring-inset dark:bg-gray-700 dark:text-gray-300"
+              >
+                <span class="h-1.5 w-1.5 rounded-full bg-gray-400" aria-hidden="true"></span>
+                Inactivo
+              </span>
+            </div>
+            <h2 class="mt-1 truncate text-2xl font-semibold tracking-tight text-gray-900 dark:text-white lg:text-3xl">
+              {{ nombreCompleto }}
+            </h2>
+            <div class="mt-3 flex flex-wrap items-center gap-2">
+              <span
+                v-if="empleado.user?.identificacion"
+                class="inline-flex items-center rounded-md border border-gray-300 bg-white px-2.5 py-1 font-mono text-sm font-semibold tracking-wider text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+                title="Identificación"
+              >
+                {{ empleado.user.identificacion }}
+              </span>
+              <span class="inline-flex items-center gap-1.5 rounded-md bg-gray-100 px-2.5 py-1 text-sm text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+                <KeyRound class="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" aria-hidden="true" />
+                {{ empleado.tiene_acceso ? 'Con acceso al sistema' : 'Sin acceso al sistema' }}
+              </span>
+            </div>
           </div>
-          <div>
-            <dt class="flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400">
-              <UserRound class="w-3.5 h-3.5" /> Apellidos
+        </div>
+
+        <dl class="grid grid-cols-1 gap-6 border-t border-gray-100 px-6 py-5 dark:border-gray-700 sm:grid-cols-3 lg:px-8">
+          <div class="min-w-0">
+            <dt class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+              <Phone class="h-3.5 w-3.5" aria-hidden="true" />
+              Teléfono
             </dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ empleado.user?.last_name || '—' }}</dd>
+            <dd class="mt-2 text-base font-semibold tabular-nums text-gray-900 dark:text-white">
+              <a v-if="empleado.user?.telefono" :href="`tel:${empleado.user.telefono}`" class="hover:text-brand-700 hover:underline dark:hover:text-brand-200">
+                {{ empleado.user.telefono }}
+              </a>
+              <span v-else class="font-normal text-gray-400 dark:text-gray-500">—</span>
+            </dd>
           </div>
-          <div>
-            <dt class="flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400">
-              <IdCard class="w-3.5 h-3.5" /> Identificación
+          <div class="min-w-0">
+            <dt class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+              <Mail class="h-3.5 w-3.5" aria-hidden="true" />
+              Correo
             </dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ empleado.user?.identificacion || '—' }}</dd>
+            <dd class="mt-2 truncate text-base font-semibold text-gray-900 dark:text-white">
+              <a v-if="empleado.user?.email" :href="`mailto:${empleado.user.email}`" class="hover:text-brand-700 hover:underline dark:hover:text-brand-200" :title="empleado.user.email">
+                {{ empleado.user.email }}
+              </a>
+              <span v-else class="font-normal text-gray-400 dark:text-gray-500">—</span>
+            </dd>
           </div>
-          <div>
-            <dt class="flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400">
-              <Mail class="w-3.5 h-3.5" /> Correo electrónico
+          <div class="min-w-0">
+            <dt class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+              <Building2 class="h-3.5 w-3.5" aria-hidden="true" />
+              Talleres
             </dt>
-            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ empleado.user?.email || '—' }}</dd>
-          </div>
-          <div>
-            <dt class="flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400">
-              <Phone class="w-3.5 h-3.5" /> Teléfono
-            </dt>
-            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ empleado.user?.telefono || '—' }}</dd>
-          </div>
-          <div>
-            <dt class="flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400">
-              <MapPin class="w-3.5 h-3.5" /> Dirección
-            </dt>
-            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ empleado.user?.direccion || '—' }}</dd>
-          </div>
-          <div>
-            <dt class="flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400">
-              <ShieldCheck class="w-3.5 h-3.5" /> Rol
-            </dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ empleado.rol_display || empleado.rol || '—' }}</dd>
-          </div>
-          <div>
-            <dt class="flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400">
-              <CalendarDays class="w-3.5 h-3.5" /> Fecha de registro
-            </dt>
-            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ formatDate(empleado.created_at) }}</dd>
-          </div>
-          <div>
-            <dt class="flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400">
-              <Building2 class="w-3.5 h-3.5" /> Empresa
-            </dt>
-            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ empleado.empresa?.nombre || '—' }}</dd>
+            <dd class="mt-2 text-base font-semibold tabular-nums text-gray-900 dark:text-white">
+              {{ talleres.length }} {{ talleres.length === 1 ? 'asignado' : 'asignados' }}
+            </dd>
           </div>
         </dl>
+      </section>
 
-        <h4 class="mt-8 mb-4 text-lg font-semibold dark:text-white">
-          <span class="inline-flex items-center gap-2">
-            <Building2 class="w-5 h-5 text-gray-800 dark:text-white" />
-            Talleres Asignados ({{ empleado.talleres?.length || 0 }})
-          </span>
-        </h4>
-        <div v-if="!empleado.talleres || !empleado.talleres.length" class="p-4 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
-          No tiene talleres asignados.
+      <div class="grid items-start gap-6 lg:grid-cols-3">
+        <!-- Datos personales -->
+        <section class="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 lg:col-span-2">
+          <h3 class="px-6 pt-5 pb-3 text-sm font-semibold text-gray-900 dark:text-white">Datos personales</h3>
+          <dl class="grid grid-cols-1 px-6 pb-3 sm:grid-cols-2 sm:gap-x-10">
+            <div
+              v-for="campo in datosPersonales"
+              :key="campo.label"
+              class="flex items-baseline justify-between gap-4 border-t border-gray-100 py-3 dark:border-gray-700"
+            >
+              <dt class="shrink-0 text-sm text-gray-500 dark:text-gray-400">{{ campo.label }}</dt>
+              <dd
+                class="min-w-0 text-right text-sm font-medium break-words text-gray-900 dark:text-white"
+                :class="{ 'font-mono text-[13px] tracking-wide': campo.mono }"
+              >
+                <template v-if="campo.value">
+                  <a v-if="campo.href" :href="campo.href" class="break-all hover:text-brand-700 hover:underline dark:hover:text-brand-200">{{ campo.value }}</a>
+                  <span v-else>{{ campo.value }}</span>
+                </template>
+                <span v-else class="font-normal text-gray-400 dark:text-gray-500">—</span>
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        <div class="space-y-6">
+          <!-- Acceso al sistema -->
+          <section class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Acceso al sistema</h3>
+            <dl class="mt-3">
+              <div class="flex items-baseline justify-between gap-4 py-2">
+                <dt class="text-sm text-gray-500 dark:text-gray-400">Rol</dt>
+                <dd class="text-right text-sm font-medium text-gray-900 dark:text-white">{{ rolLabel || '—' }}</dd>
+              </div>
+              <div class="flex items-baseline justify-between gap-4 border-t border-gray-100 py-2 dark:border-gray-700">
+                <dt class="text-sm text-gray-500 dark:text-gray-400">Inicio de sesión</dt>
+                <dd class="inline-flex items-center gap-1.5 text-right text-sm font-medium text-gray-900 dark:text-white">
+                  <span
+                    class="h-1.5 w-1.5 rounded-full"
+                    :class="empleado.tiene_acceso ? 'bg-green-500' : 'bg-gray-400'"
+                    aria-hidden="true"
+                  ></span>
+                  {{ empleado.tiene_acceso ? 'Permitido' : 'Sin acceso' }}
+                </dd>
+              </div>
+              <div v-if="empleado.user?.username" class="flex items-baseline justify-between gap-4 border-t border-gray-100 py-2 dark:border-gray-700">
+                <dt class="shrink-0 text-sm text-gray-500 dark:text-gray-400">Usuario</dt>
+                <dd class="min-w-0 truncate text-right font-mono text-[13px] text-gray-900 dark:text-white" :title="empleado.user.username">{{ empleado.user.username }}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <!-- Talleres asignados -->
+          <section class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+            <h3 class="flex items-center justify-between text-sm font-semibold text-gray-900 dark:text-white">
+              Talleres asignados
+              <span v-if="talleres.length" class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium tabular-nums text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                {{ talleres.length }}
+              </span>
+            </h3>
+            <ul v-if="talleres.length" class="mt-3 space-y-1">
+              <li
+                v-for="taller in talleres"
+                :key="taller.id"
+                class="-mx-2 flex items-center gap-3 rounded-lg px-2 py-2"
+              >
+                <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300">
+                  <Building2 class="h-4 w-4" aria-hidden="true" />
+                </span>
+                <span class="min-w-0 truncate text-sm font-medium text-gray-900 dark:text-white">{{ taller.nombre }}</span>
+              </li>
+            </ul>
+            <p v-else class="mt-3 text-sm text-gray-500 dark:text-gray-400">No tiene talleres asignados.</p>
+          </section>
         </div>
-        <div v-else class="flex flex-wrap gap-2">
-          <span
-            v-for="taller in empleado.talleres"
-            :key="taller.id"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-full dark:text-gray-300 dark:bg-gray-700"
-          >
-            <Building2 class="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
-            {{ taller.nombre }}
-          </span>
-        </div>
-      </template>
-    </div>
+      </div>
+    </template>
   </div>
 
   <EmpleadoModal
