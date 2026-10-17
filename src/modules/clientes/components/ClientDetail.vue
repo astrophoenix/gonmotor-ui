@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, watch, onMounted } from 'vue';
 import {
   CarFront, ChevronRight, FilePen, Mail, MapPin, MessageCircle, Phone, Plus, Search, Gauge,
 } from 'lucide-vue-next';
@@ -9,6 +9,7 @@ import { request } from '../../../shared/services/httpClient';
 import { formatPlate } from '../../../shared/utils/formatPlate';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
+import Pagination from '../../../shared/components/Pagination.vue';
 import ClientModal from './ClientModal.vue';
 import VehicleModal from '../../vehiculos/components/VehicleModal.vue';
 import {
@@ -31,6 +32,8 @@ const showClientModal = ref(false);
 const clientModalId = ref(null);
 const showVehicleModal = ref(false);
 const busqueda = ref('');
+const pagina = ref(1);
+const seccionVehiculos = ref(null);
 const tipos = ref([]);
 
 const TIPO_IDENTIFICACION = { C: 'Cédula', R: 'RUC', P: 'Pasaporte' };
@@ -39,6 +42,9 @@ const URGENCIA = { vacio: 0, pendiente: 1, pronto: 2, vencido: 3 };
 
 // Con pocos vehículos el buscador estorba; aparece desde este número.
 const MIN_VEHICULOS_BUSQUEDA = 4;
+
+// Clientes empresa con flota: la lista se pagina en el navegador (ya llega completa).
+const VEHICULOS_POR_PAGINA = 10;
 
 const params = new URLSearchParams(window.location.search);
 const clientId = params.get('id') || '';
@@ -94,6 +100,23 @@ const vehiculosFiltrados = computed(() => {
   return vehiculos.value.filter((v) => [v.placa, v.marca, v.modelo, v.color, v.anio]
     .some((campo) => String(campo || '').toLowerCase().replace(/[\s-]/g, '').includes(termino)));
 });
+
+const totalPaginas = computed(() => Math.max(1, Math.ceil(vehiculosFiltrados.value.length / VEHICULOS_POR_PAGINA)));
+
+const vehiculosPagina = computed(() => {
+  const inicio = (pagina.value - 1) * VEHICULOS_POR_PAGINA;
+  return vehiculosFiltrados.value.slice(inicio, inicio + VEHICULOS_POR_PAGINA);
+});
+
+watch(busqueda, () => { pagina.value = 1; });
+
+// Al cambiar de página, volver al inicio de la lista si quedó fuera de la vista.
+function irAPagina(numero) {
+  pagina.value = numero;
+  const seccion = seccionVehiculos.value;
+  if (seccion && seccion.getBoundingClientRect().top < 0) seccion.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+watch(totalPaginas, (total) => { if (pagina.value > total) pagina.value = total; });
 
 const TONO_MANTENIMIENTO = {
   vacio: 'bg-gray-100 text-gray-500 ring-gray-500/10 dark:bg-gray-700 dark:text-gray-400 dark:ring-gray-400/20',
@@ -311,7 +334,7 @@ onMounted(async () => {
       </section>
 
       <!-- Vehículos del cliente -->
-      <section class="shadow-sm rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+      <section ref="seccionVehiculos" class="shadow-sm rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
         <div class="flex flex-col gap-3 px-6 pt-5 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <h3 class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
             Vehículos
@@ -364,7 +387,7 @@ onMounted(async () => {
         </p>
 
         <ul v-else class="divide-y divide-gray-100 border-t border-gray-100 dark:divide-gray-700 dark:border-gray-700">
-          <li v-for="veh in vehiculosFiltrados" :key="veh.id">
+          <li v-for="veh in vehiculosPagina" :key="veh.id">
             <a
               :href="`/crud/vehiculos/ver/?id=${encodeURIComponent(veh.id)}`"
               class="group flex items-center gap-4 px-6 py-4 transition-colors hover:bg-gray-50 focus:outline-none focus-visible:bg-gray-50 dark:hover:bg-gray-700/40 dark:focus-visible:bg-gray-700/40"
@@ -451,6 +474,18 @@ onMounted(async () => {
             </a>
           </li>
         </ul>
+
+        <Pagination
+          v-if="vehiculosFiltrados.length > VEHICULOS_POR_PAGINA"
+          class="border-t border-gray-100 dark:border-gray-700"
+          :total="vehiculosFiltrados.length"
+          :current-page="pagina"
+          :page-size="VEHICULOS_POR_PAGINA"
+          :previous-url="pagina > 1 ? 'anterior' : null"
+          :next-url="pagina < totalPaginas ? 'siguiente' : null"
+          item-word="vehículo"
+          @page="irAPagina"
+        />
       </section>
     </template>
   </div>
