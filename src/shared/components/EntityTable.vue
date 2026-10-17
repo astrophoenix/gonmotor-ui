@@ -75,21 +75,21 @@ const colspan = Math.max(props.emptyColspan, props.columns.length);
       <div class="overflow-x-auto">
         <div class="inline-block min-w-full align-middle">
           <div :class="wrapperClass">
-            <table class="min-w-full divide-y divide-gray-200 table-fixed dark:divide-gray-600">
-              <thead class="bg-gray-200 dark:bg-gray-900">
+            <table class="min-w-full table-fixed">
+              <thead class="bg-brand-50 dark:bg-gray-900/60">
                 <tr>
                   <th
                     v-for="column in columns"
                     :key="typeof column === 'string' ? column : column.key"
                     scope="col"
-                    class="p-4 text-sm font-medium text-left text-gray-900 uppercase dark:text-gray-900"
+                    class="px-4 py-3 text-xs font-semibold tracking-wider text-left uppercase text-brand-500 border-b border-brand-100 dark:text-brand-300 dark:border-gray-700"
                     :class="typeof column === 'object' ? column.thClass : ''"
                   >
                     {{ typeof column === 'string' ? column : column.label }}
                   </th>
                 </tr>
               </thead>
-              <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+              <tbody class="bg-white divide-y divide-slate-100 dark:bg-gray-800 dark:divide-gray-700/60">
                 <tr v-if="loading">
                   <td :colspan="colspan" class="p-4 text-center text-gray-500 dark:text-gray-400">
                     {{ loadingText }}

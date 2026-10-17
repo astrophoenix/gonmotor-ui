@@ -109,42 +109,45 @@ async function exportExcel() {
 
 <template>
   <div class="flex items-center gap-2">
+    <div
+      v-if="showExportPdf || showExportExcel"
+      class="inline-flex overflow-hidden bg-white border rounded-lg shadow-xs border-slate-200 divide-x divide-slate-200 dark:bg-gray-800 dark:border-gray-600 dark:divide-gray-600"
+      role="group"
+      aria-label="Exportar listado"
+    >
+      <button
+        v-if="showExportPdf"
+        type="button"
+        title="Exportar a PDF"
+        :disabled="isExportingPdf"
+        class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-200 dark:hover:bg-gray-700"
+        @click="exportPdf"
+      >
+        <IconFileTypePdf v-if="!isExportingPdf" class="w-4 h-4 text-red-600 dark:text-red-400" />
+        <svg v-else class="w-4 h-4 animate-spin" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        PDF
+      </button>
+      <button
+        v-if="showExportExcel"
+        type="button"
+        title="Exportar a Excel"
+        :disabled="isExportingExcel"
+        class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-200 dark:hover:bg-gray-700"
+        @click="exportExcel"
+      >
+        <IconFileTypeXls v-if="!isExportingExcel" class="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+        <svg v-else class="w-4 h-4 animate-spin" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        Excel
+      </button>
+    </div>
     <button
       v-if="showAdd"
       type="button"
-      class="inline-flex items-center px-3 py-2 text-sm font-medium text-white rounded bg-primary-500 shadow-xs hover:bg-primary-600 focus:ring-4 focus:ring-primary-300 disabled:opacity-50"
+      class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-white rounded-lg shadow-xs bg-brand-900 hover:bg-brand-700 focus:ring-4 focus:ring-brand-200 disabled:opacity-50 dark:bg-brand-600 dark:hover:bg-brand-500 dark:focus:ring-brand-800"
       @click="goToAdd"
     >
-      <Plus class="w-5 h-5 mr-1.5 -ml-1 text-white" />
+      <Plus class="w-4 h-4 -ml-0.5" />
       Agregar
-    </button>
-    <button
-      v-if="showExportPdf"
-      type="button"
-      title="Exportar a PDF"
-      :disabled="isExportingPdf"
-      class="inline-flex items-center px-3 py-2 text-sm font-medium text-red-600 rounded border border-red-600 shadow-xs hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-400 dark:hover:bg-gray-800"
-      @click="exportPdf"
-    >
-      <IconFileTypePdf v-if="!isExportingPdf" class="w-5 h-5" />
-      <svg v-else class="w-5 h-5 animate-spin" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
-    </button>
-    <button
-      v-if="showExportExcel"
-      type="button"
-      title="Exportar a Excel"
-      :disabled="isExportingExcel"
-      class="inline-flex items-center px-3 py-2 text-sm font-medium text-emerald-600 rounded border border-emerald-600 shadow-xs hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-400 dark:border-emerald-400 dark:hover:bg-gray-800"
-      @click="exportExcel"
-    >
-      <IconFileTypeXls v-if="!isExportingExcel" class="w-5 h-5" />
-      <svg v-else class="w-5 h-5 animate-spin" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
     </button>
   </div>
 

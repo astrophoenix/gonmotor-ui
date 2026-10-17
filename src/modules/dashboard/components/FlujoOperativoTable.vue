@@ -111,9 +111,9 @@ async function crearInspeccion(recepcion) {
         :wrapper-class="'overflow-hidden'"
       >
         <template #row="{ item }">
-          <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
-            <td class="p-4 text-sm whitespace-nowrap text-body">{{ item.hora || '—' }}</td>
-            <td class="p-4 text-sm font-medium whitespace-nowrap text-heading">
+          <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
+            <td class="px-4 py-3 text-sm whitespace-nowrap text-body">{{ item.hora || '—' }}</td>
+            <td class="px-4 py-3 text-sm font-medium whitespace-nowrap text-heading">
               <a
                 :href="`/crud/recepciones/ver/?id=${encodeURIComponent(item.id)}`"
                 class="hover:text-brand-coral"
@@ -122,18 +122,18 @@ async function crearInspeccion(recepcion) {
                 {{ item.numero_recepcion }}
               </a>
             </td>
-            <td class="p-4 text-sm whitespace-nowrap text-body">
+            <td class="px-4 py-3 text-sm whitespace-nowrap text-body">
               <span class="font-semibold text-heading">{{ item.placa }}</span>
               <span class="block text-xs">{{ item.vehiculo }}</span>
             </td>
-            <td class="p-4 text-sm whitespace-nowrap text-body" :title="item.cliente">{{ item.cliente }}</td>
-            <td class="p-4 whitespace-nowrap">
+            <td class="px-4 py-3 text-sm whitespace-nowrap text-body" :title="item.cliente">{{ item.cliente }}</td>
+            <td class="px-4 py-3 whitespace-nowrap">
               <EstadoRecepcionBadge :estado="item.estado" :estado-display="item.estado_display" size="sm" />
             </td>
-            <td class="p-4 text-sm whitespace-nowrap text-body">
+            <td class="px-4 py-3 text-sm whitespace-nowrap text-body">
               {{ item.nivel_combustible_display || item.nivel_combustible || '—' }}
             </td>
-            <td class="p-4 whitespace-nowrap">
+            <td class="px-4 py-3 whitespace-nowrap">
               <div class="flex items-center gap-1.5">
                 <a
                   :href="`/crud/recepciones/ver/?id=${encodeURIComponent(item.id)}`"
@@ -179,21 +179,21 @@ async function crearInspeccion(recepcion) {
         :wrapper-class="'overflow-hidden'"
       >
         <template #row="{ item }">
-          <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
-            <td class="p-4 text-sm whitespace-nowrap text-body">{{ item.hora || '—' }}</td>
-            <td class="p-4 text-sm whitespace-nowrap text-body">{{ item.fecha_cita || '—' }}</td>
-            <td class="p-4 text-sm whitespace-nowrap text-body" :title="item.cliente">{{ item.cliente }}</td>
-            <td class="p-4 text-sm whitespace-nowrap text-body">
+          <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
+            <td class="px-4 py-3 text-sm whitespace-nowrap text-body">{{ item.hora || '—' }}</td>
+            <td class="px-4 py-3 text-sm whitespace-nowrap text-body">{{ item.fecha_cita || '—' }}</td>
+            <td class="px-4 py-3 text-sm whitespace-nowrap text-body" :title="item.cliente">{{ item.cliente }}</td>
+            <td class="px-4 py-3 text-sm whitespace-nowrap text-body">
               <span class="font-semibold text-heading">{{ item.placa }}</span>
               <span class="block text-xs">{{ item.vehiculo }}</span>
             </td>
-            <td class="p-4 text-sm whitespace-nowrap text-body">
+            <td class="px-4 py-3 text-sm whitespace-nowrap text-body">
               {{ item.motivo_display || item.motivo || '—' }}
               <span v-if="item.convertida" class="block text-xs text-emerald-600 dark:text-emerald-400">
                 Convertida en recepción
               </span>
             </td>
-            <td class="p-4 whitespace-nowrap">
+            <td class="px-4 py-3 whitespace-nowrap">
               <span
                 class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
                 :class="ESTADO_CITA_BADGES[item.estado] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'"
@@ -201,7 +201,7 @@ async function crearInspeccion(recepcion) {
                 {{ item.estado_display }}
               </span>
             </td>
-            <td class="p-4 whitespace-nowrap">
+            <td class="px-4 py-3 whitespace-nowrap">
               <div class="flex items-center gap-1.5">
                 <a
                   v-if="item.recepcion_id"

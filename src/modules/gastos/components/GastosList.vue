@@ -228,7 +228,7 @@ onMounted(() => loadGastos());
 
       <div class="relative overflow-x-auto bg-white shadow-sm rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
         <div class="flex flex-col gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700 md:flex-row md:items-center md:justify-between">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Listado de Gastos</h2>
+          <h2 class="text-base font-semibold text-slate-900 dark:text-white">Listado de Gastos</h2>
           <div class="flex flex-wrap items-center gap-2">
             <EntityActionButtons
               entity="gastos"
@@ -249,13 +249,13 @@ onMounted(() => loadGastos());
           :wrapper-class="'w-full'"
         >
           <template #row="{ item }">
-            <tr class="border-b border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
-              <td class="p-4 whitespace-nowrap text-gray-800 dark:text-gray-300">
+            <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
+              <td class="px-4 py-3 whitespace-nowrap text-gray-800 dark:text-gray-300">
                 <Wrench v-if="!item.taller_nombre" class="w-4 h-4 inline-block mr-1 text-gray-400" />
                 {{ item.taller_nombre || 'Sin taller' }}
               </td>
-              <td class="p-4 whitespace-nowrap text-gray-800 dark:text-gray-300">{{ formatearFecha(item.fecha) }}</td>
-              <td class="p-4 whitespace-nowrap">
+              <td class="px-4 py-3 whitespace-nowrap text-gray-800 dark:text-gray-300">{{ formatearFecha(item.fecha) }}</td>
+              <td class="px-4 py-3 whitespace-nowrap">
                 <span
                   :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', COLOR_CATEGORIA[item.categoria] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200']"
                 >
@@ -263,28 +263,28 @@ onMounted(() => loadGastos());
                   {{ categoriaLabel(item.categoria) }}
                 </span>
               </td>
-              <td class="p-4 whitespace-nowrap font-medium text-gray-900 dark:text-white">{{ formatCurrency(item.monto) }}</td>
-              <td class="p-4 text-gray-600 dark:text-gray-300 max-w-xs truncate">{{ item.descripcion || '—' }}</td>
-              <td class="p-4 whitespace-nowrap">
+              <td class="px-4 py-3 whitespace-nowrap font-medium text-gray-900 dark:text-white">{{ formatCurrency(item.monto) }}</td>
+              <td class="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-xs truncate">{{ item.descripcion || '—' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap">
                 <div class="flex items-center gap-2">
                   <button
                     type="button"
                     title="Editar gasto"
                     aria-label="Editar gasto"
-                    class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700"
+                    class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-50 hover:text-brand-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
                     @click="openEditModal(item.id)"
                   >
-                    <Pen class="w-5 h-5" />
+                    <Pen class="w-4 h-4" />
                   </button>
                   <button
                     type="button"
                     title="Eliminar gasto"
                     aria-label="Eliminar gasto"
                     :disabled="isDeleting"
-                    class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700"
+                    class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-red-500/10 dark:hover:text-red-400"
                     @click="openDeleteModal(item)"
                   >
-                    <Trash2 class="w-5 h-5" />
+                    <Trash2 class="w-4 h-4" />
                   </button>
                 </div>
               </td>

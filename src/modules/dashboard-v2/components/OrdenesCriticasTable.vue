@@ -71,8 +71,8 @@ function responsable(item) {
         :wrapper-class="'overflow-hidden'"
       >
         <template #row="{ item }">
-          <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
-            <td class="p-4 text-sm font-medium whitespace-nowrap text-heading">
+          <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
+            <td class="px-4 py-3 text-sm font-medium whitespace-nowrap text-heading">
               <a
                 :href="`/crud/ordenes/ver/?id=${encodeURIComponent(item.id)}`"
                 class="hover:text-primary-600 dark:hover:text-primary-400"
@@ -82,11 +82,11 @@ function responsable(item) {
               </a>
               <span class="block text-xs text-body">{{ item.cliente }}</span>
             </td>
-            <td class="p-4 text-sm whitespace-nowrap text-body">
+            <td class="px-4 py-3 text-sm whitespace-nowrap text-body">
               <span class="font-semibold text-heading">{{ item.placa }}</span>
               <span class="block text-xs">{{ item.vehiculo }}</span>
             </td>
-            <td class="p-4 text-sm whitespace-nowrap">
+            <td class="px-4 py-3 text-sm whitespace-nowrap">
               <span
                 class="inline-flex items-center gap-1 font-medium"
                 :class="prioridadConfig(item.prioridad).color"
@@ -96,23 +96,23 @@ function responsable(item) {
                 {{ prioridadConfig(item.prioridad).label }}
               </span>
             </td>
-            <td class="p-4 whitespace-nowrap">
+            <td class="px-4 py-3 whitespace-nowrap">
               <EstadoOrdenBadge :estado="item.estado" :estado-display="item.estado_display" size="sm" />
               <span v-if="item.motivo_espera" class="block mt-1 text-xs text-amber-600 dark:text-amber-400">
                 {{ item.motivo_espera }}
               </span>
             </td>
-            <td class="p-4 text-sm whitespace-nowrap text-body" :title="responsable(item)">
+            <td class="px-4 py-3 text-sm whitespace-nowrap text-body" :title="responsable(item)">
               {{ responsable(item) }}
             </td>
-            <td class="p-4 text-sm whitespace-nowrap tabular-nums text-body">
+            <td class="px-4 py-3 text-sm whitespace-nowrap tabular-nums text-body">
               {{ horasTranscurridas(item.horas_transcurridas) }}
             </td>
-            <td class="p-4 text-sm font-semibold whitespace-nowrap tabular-nums text-heading">
+            <td class="px-4 py-3 text-sm font-semibold whitespace-nowrap tabular-nums text-heading">
               {{ formatCurrency(item.subtotal_neto) }}
               <span class="block text-xs font-normal text-body">Total {{ formatCurrency(item.total) }}</span>
             </td>
-            <td class="p-4 whitespace-nowrap">
+            <td class="px-4 py-3 whitespace-nowrap">
               <a
                 :href="`/crud/ordenes/ver/?id=${encodeURIComponent(item.id)}`"
                 class="inline-flex items-center p-1.5 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700"

@@ -356,7 +356,7 @@ onMounted(() => {
     <!-- PANEL DE LISTADO -->
     <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
       <div class="flex flex-col gap-3 px-4 py-3 border-b border-default-medium md:flex-row md:items-center md:justify-between">
-        <h2 class="text-lg font-semibold text-heading">Listado de Cotizaciones</h2>
+        <h2 class="text-base font-semibold text-slate-900 dark:text-white">Listado de Cotizaciones</h2>
         <div class="flex flex-wrap items-center gap-2">
           <EntityActionButtons
             entity="cotizaciones"
@@ -376,8 +376,8 @@ onMounted(() => {
         :wrapper-class="'w-full'"
       >
     <template #row="{ item, index }">
-      <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
-        <td class="p-4 whitespace-nowrap">
+      <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
+        <td class="px-4 py-3 whitespace-nowrap">
           <a
             :href="`/crud/cotizaciones/ver/?id=${encodeURIComponent(item.id)}`"
             class="font-semibold text-primary-600 hover:text-brand-coral dark:text-primary-400"
@@ -385,7 +385,7 @@ onMounted(() => {
             {{ item.numero_cotizacion }}
           </a>
         </td>
-        <td class="p-4 whitespace-nowrap align-top">
+        <td class="px-4 py-3 whitespace-nowrap align-top">
           <a
             v-if="vehiculoUrl(item)"
             :href="vehiculoUrl(item)"
@@ -406,7 +406,7 @@ onMounted(() => {
               </span>
             </div>
         </td>
-        <td class="p-4 whitespace-nowrap align-top">
+        <td class="px-4 py-3 whitespace-nowrap align-top">
           <a
             v-if="clienteUrl(item)"
             :href="clienteUrl(item)"
@@ -425,11 +425,11 @@ onMounted(() => {
             </span>
           </div>
         </td>
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white font-medium">$ {{ formatMoney(item.total) }}</td>
-        <td class="p-4 whitespace-nowrap align-top">
+        <td class="px-4 py-3 text-gray-800 whitespace-nowrap dark:text-white font-medium">$ {{ formatMoney(item.total) }}</td>
+        <td class="px-4 py-3 whitespace-nowrap align-top">
           <EstadoCotizacionBadge :estado="item.estado" :estado-display="item.estado_display" />
         </td>
-        <td class="p-4 whitespace-nowrap align-top">
+        <td class="px-4 py-3 whitespace-nowrap align-top">
           <div class="flex flex-col gap-1 min-w-48">
             <div v-for="fila in filasFechasCotizacion(item)" :key="fila.key" class="flex items-center gap-1.5">
               <component :is="fila.icon" class="w-3.5 h-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
@@ -438,16 +438,16 @@ onMounted(() => {
             </div>
           </div>
         </td>
-        <td class="p-4 whitespace-nowrap align-top">
+        <td class="px-4 py-3 whitespace-nowrap align-top">
           <RelacionesFlujo :pasos="relacionesDeCotizacion(item)" />
         </td>
-        <td class="p-4 whitespace-nowrap align-top">
+        <td class="px-4 py-3 whitespace-nowrap align-top">
           <div class="flex items-center gap-2">
-            <button type="button" title="Editar cotización" aria-label="Editar cotización" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="handleEditar(item.id)">
-              <Pen class="w-5 h-5" />
+            <button type="button" title="Editar cotización" aria-label="Editar cotización" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-50 hover:text-brand-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" @click="handleEditar(item.id)">
+              <Pen class="w-4 h-4" />
             </button>
-            <button type="button" title="Eliminar cotización" aria-label="Eliminar cotización" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
-              <Trash2 class="w-5 h-5" />
+            <button type="button" title="Eliminar cotización" aria-label="Eliminar cotización" :disabled="isDeleting" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-red-500/10 dark:hover:text-red-400" @click="openDeleteModal(item)">
+              <Trash2 class="w-4 h-4" />
             </button>
             <EntityActionsMenu>
               <template #default="{ cerrar }">

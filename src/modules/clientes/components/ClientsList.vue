@@ -17,6 +17,7 @@ import ImportExcelModal from './ImportExcelModal.vue';
 import ClientModal from './ClientModal.vue';
 import ClienteVehiculosCell from './ClienteVehiculosCell.vue';
 import { usePermisos } from '../../../shared/composables/usePermisos';
+import EstadoActivoBadge from '../../../shared/components/EstadoActivoBadge.vue';
 
 const { puede } = usePermisos();
 const puedeModificarClientes = computed(() => puede('clientes', 'modificar'));
@@ -321,15 +322,15 @@ onMounted(() => {
     <!-- PANEL DE LISTADO -->
     <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
       <div class="flex flex-col gap-3 px-4 py-3 border-b border-default-medium md:flex-row md:items-center md:justify-between">
-        <h2 class="text-lg font-semibold text-heading">Listado de Clientes</h2>
+        <h2 class="text-base font-semibold text-slate-900 dark:text-white">Listado de Clientes</h2>
         <div class="flex flex-wrap items-center gap-2">
           <button
             v-if="puedeModificarClientes"
             type="button"
-            class="inline-flex items-center px-3 py-2 text-sm font-medium text-white rounded bg-emerald-600 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-300 dark:focus:ring-emerald-800"
+            class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border rounded-lg shadow-xs text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-slate-900 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700"
             @click="openImportModal"
           >
-            <Upload class="w-5 h-5 mr-1.5 -ml-1 text-white" />
+            <Upload class="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             Importar
           </button>
           <EntityActionButtons
@@ -351,8 +352,8 @@ onMounted(() => {
         :wrapper-class="'w-full'"
       >
     <template #row="{ item }">
-      <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
-        <td class="p-4 whitespace-nowrap">
+      <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
+        <td class="px-4 py-3 whitespace-nowrap">
           <a :href="`/crud/clientes/ver/?id=${encodeURIComponent(item.id)}`"
             class="inline-flex items-center gap-1.5 font-medium text-primary-600 hover:text-brand-coral dark:text-primary-400">
           {{ item.identificacion }}
@@ -362,8 +363,8 @@ onMounted(() => {
             {{ tipoIdentificacionLabel(item) }}
           </span>
         </td>
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.nombre }}</td>
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-gray-400">
+        <td class="px-4 py-3 text-gray-800 whitespace-nowrap dark:text-white">{{ item.nombre }}</td>
+        <td class="px-4 py-3 text-gray-800 whitespace-nowrap dark:text-gray-400">
           <ul class="space-y-1">
             <li class="flex items-center gap-2">
               <Phone class="w-4 h-4 text-gray-800 dark:text-gray-400" />
@@ -375,27 +376,22 @@ onMounted(() => {
             </li>
           </ul>
         </td>
-        <td class="p-4 whitespace-nowrap align-top">
+        <td class="px-4 py-3 whitespace-nowrap align-top">
           <ClienteVehiculosCell :cliente="item" />
         </td>
-        <td class="p-4 whitespace-nowrap">
-          <span v-if="item.is_active" class="inline-flex items-center bg-success-soft border border-success-subtle text-fg-success-strong text-xs font-medium px-1 py-0.5 rounded">
-            <span class="h-1.5 w-1.5 bg-fg-success-strong rounded-full me-0.5"></span> Activo
-          </span>
-          <span v-else class="inline-flex items-center bg-danger-soft border border-danger-subtle text-fg-danger-strong text-xs font-medium px-1 py-0.5 rounded">
-            <span class="h-1.5 w-1.5 bg-fg-danger-strong rounded-full me-0.5"></span> Inactivo
-          </span>
+        <td class="px-4 py-3 whitespace-nowrap">
+          <EstadoActivoBadge :activo="item.is_active" />
         </td>
-        <td class="p-4 whitespace-nowrap">
+        <td class="px-4 py-3 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <button v-if="puedeModificarClientes && !item.is_active" type="button" title="Reactivar cliente" aria-label="Reactivar cliente" :disabled="isReactivating" class="px-1.5 py-1.5 inline-flex items-center p-2 text-emerald-600 rounded border border-emerald-200 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-400 dark:border-emerald-500 dark:hover:bg-gray-700" @click="onReactivateClient(item)">
-              <RotateCcw class="w-5 h-5" />
+            <button v-if="puedeModificarClientes && !item.is_active" type="button" title="Reactivar cliente" aria-label="Reactivar cliente" :disabled="isReactivating" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400" @click="onReactivateClient(item)">
+              <RotateCcw class="w-4 h-4" />
             </button>
-            <button v-if="puedeModificarClientes" type="button" title="Editar cliente" aria-label="Editar cliente" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="editClient(item.id)">
-              <Pen class="w-5 h-5" />
+            <button v-if="puedeModificarClientes" type="button" title="Editar cliente" aria-label="Editar cliente" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-50 hover:text-brand-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" @click="editClient(item.id)">
+              <Pen class="w-4 h-4" />
             </button>
-            <button v-if="puedeModificarClientes && item.is_active" type="button" title="Eliminar cliente" aria-label="Eliminar cliente" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
-              <Trash2 class="w-5 h-5" />
+            <button v-if="puedeModificarClientes && item.is_active" type="button" title="Eliminar cliente" aria-label="Eliminar cliente" :disabled="isDeleting" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-red-500/10 dark:hover:text-red-400" @click="openDeleteModal(item)">
+              <Trash2 class="w-4 h-4" />
             </button>
           </div>
         </td>
