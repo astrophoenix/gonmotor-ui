@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue';
-import { Truck, Phone, Mail, Pen, Trash2, IdCard, Search, RotateCcw, Filter, UserRound } from 'lucide-vue-next';
+import { Truck, Phone, Mail, Trash2, IdCard, Search, RotateCcw, Filter, UserRound } from 'lucide-vue-next';
 import { useProveedores } from '../composables/useProveedores';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
@@ -10,6 +10,7 @@ import FilterActions from '../../../shared/components/FilterActions.vue';
 import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
 import { useFiltrosReactivos } from '../../../shared/composables/useFiltrosReactivos';
 import EntityTable from '../../../shared/components/EntityTable.vue';
+import EntityRowActions from '../../../shared/components/EntityRowActions.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
 import ProveedorModal from './ProveedorModal.vue';
 import EstadoActivoBadge from '../../../shared/components/EstadoActivoBadge.vue';
@@ -346,12 +347,7 @@ onMounted(() => {
             <button v-if="!item.is_active" type="button" title="Reactivar proveedor" aria-label="Reactivar proveedor" :disabled="isReactivating" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400" @click="onReactivateProveedor(item)">
               <RotateCcw class="w-4 h-4" />
             </button>
-            <button type="button" title="Editar proveedor" aria-label="Editar proveedor" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-50 hover:text-brand-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" @click="editProveedor(item.id)">
-              <Pen class="w-4 h-4" />
-            </button>
-            <button v-if="item.is_active" type="button" title="Eliminar proveedor" aria-label="Eliminar proveedor" :disabled="isDeleting" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-red-500/10 dark:hover:text-red-400" @click="openDeleteModal(item)">
-              <Trash2 class="w-4 h-4" />
-            </button>
+            <EntityRowActions entity="proveedor" :show-delete="item.is_active" :delete-disabled="isDeleting" @edit="editProveedor(item.id)" @delete="openDeleteModal(item)" />
           </div>
         </td>
       </tr>

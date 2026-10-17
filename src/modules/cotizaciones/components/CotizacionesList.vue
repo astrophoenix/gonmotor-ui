@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref } from 'vue';
-import { Pen, Trash2, Search, Filter, CalendarDays, Car, Gauge, IdCard, Phone, CalendarPlus, Send, CheckCircle2, Receipt } from 'lucide-vue-next';
+import { Search, Filter, CalendarDays, Car, Gauge, IdCard, Phone, CalendarPlus, Send, CheckCircle2, Receipt } from 'lucide-vue-next';
 import { Icon } from '@iconify/vue';
 import filePdfIcon from '@iconify-icons/fa6-regular/file-pdf';
 import { useCotizaciones } from '../composables/useCotizaciones';
@@ -16,6 +16,7 @@ import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
+import EntityRowActions from '../../../shared/components/EntityRowActions.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
 import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
 import { relacionesDeCotizacion } from '../../../shared/utils/relacionesFlujo';
@@ -443,12 +444,7 @@ onMounted(() => {
         </td>
         <td class="px-4 py-3 whitespace-nowrap align-top">
           <div class="flex items-center gap-2">
-            <button type="button" title="Editar cotización" aria-label="Editar cotización" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-50 hover:text-brand-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" @click="handleEditar(item.id)">
-              <Pen class="w-4 h-4" />
-            </button>
-            <button type="button" title="Eliminar cotización" aria-label="Eliminar cotización" :disabled="isDeleting" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-red-500/10 dark:hover:text-red-400" @click="openDeleteModal(item)">
-              <Trash2 class="w-4 h-4" />
-            </button>
+            <EntityRowActions entity="cotización" :delete-disabled="isDeleting" @edit="handleEditar(item.id)" @delete="openDeleteModal(item)" />
             <EntityActionsMenu>
               <template #default="{ cerrar }">
                 <button type="button" role="menuitem" title="Descargar PDF" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700" @click="cerrar">

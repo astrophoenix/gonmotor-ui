@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, ref, onUnmounted, nextTick } from 'vue';
 import {
-  FileSearchCorner, Pen, Trash2, Search, Receipt, Filter, CalendarDays, Flag,
+  FileSearchCorner, Search, Receipt, Filter, CalendarDays, Flag,
   Car, Gauge, IdCard, Phone, MoreVertical,
 } from 'lucide-vue-next';
 import { IconLockOpen2 } from '@tabler/icons-vue';
@@ -20,6 +20,7 @@ import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
+import EntityRowActions from '../../../shared/components/EntityRowActions.vue';
 import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
 import EstadoInspeccionBadge from './EstadoInspeccionBadge.vue';
 import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
@@ -600,13 +601,8 @@ onUnmounted(() => {
         </td>
         <td class="px-4 py-3 whitespace-nowrap align-top">
           <div class="flex items-center gap-2">
-            <button v-if="item.estado !== 'FINALIZADA'" type="button" title="Editar inspección" aria-label="Editar inspección" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-50 hover:text-brand-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" @click="handleEditar(item)">
-              <Pen class="w-4 h-4" />
-            </button>
-            <button type="button" title="Eliminar inspección" aria-label="Eliminar inspección" :disabled="isDeleting" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-red-500/10 dark:hover:text-red-400" @click="openDeleteModal(item)">
-              <Trash2 class="w-4 h-4" />
-            </button>
-            <button type="button" title="Más acciones" aria-label="Más acciones de la inspección" :aria-expanded="accionesAbierta === item.id" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-50 hover:text-brand-900 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" @click.stop="toggleAcciones(item, $event)">
+            <EntityRowActions entity="inspección" :show-edit="item.estado !== 'FINALIZADA'" :delete-disabled="isDeleting" @edit="handleEditar(item)" @delete="openDeleteModal(item)" />
+            <button type="button" title="Más acciones" aria-label="Más acciones de la inspección" :aria-expanded="accionesAbierta === item.id" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-100 hover:text-brand-900 hover:ring-1 hover:ring-inset hover:ring-brand-200 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white dark:hover:ring-gray-500 aria-expanded:bg-brand-100 aria-expanded:text-brand-900 aria-expanded:ring-1 aria-expanded:ring-inset aria-expanded:ring-brand-200 dark:aria-expanded:bg-gray-600 dark:aria-expanded:text-white dark:aria-expanded:ring-gray-500" @click.stop="toggleAcciones(item, $event)">
               <MoreVertical class="w-4 h-4" />
             </button>
             <Teleport to="body">

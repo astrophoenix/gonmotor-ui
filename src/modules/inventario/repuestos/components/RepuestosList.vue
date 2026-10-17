@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { Package, Pen, Search, Trash2, Filter } from 'lucide-vue-next';
+import { Package, Search, Filter } from 'lucide-vue-next';
 import { useRepuestos } from '../composables/useRepuestos';
 import ConfirmModal from '../../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../../shared/components/Alert.vue';
@@ -8,6 +8,7 @@ import EntityHeader from '../../../../shared/components/EntityHeader.vue';
 import EntityActionButtons from '../../../../shared/components/EntityActionButtons.vue';
 import FilterActions from '../../../../shared/components/FilterActions.vue';
 import EntityTable from '../../../../shared/components/EntityTable.vue';
+import EntityRowActions from '../../../../shared/components/EntityRowActions.vue';
 import Pagination from '../../../../shared/components/Pagination.vue';
 import RepuestoModal from './RepuestoModal.vue';
 import { formatCurrency } from '../../../../shared/utils/format';
@@ -297,12 +298,7 @@ onMounted(() => loadRepuestos());
         <td class="px-4 py-3 text-heading whitespace-nowrap">{{ formatCurrency(item.precio_venta) }}</td>
         <td class="px-4 py-3 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <button type="button" title="Editar repuesto" aria-label="Editar repuesto" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-50 hover:text-brand-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" @click="openEditModal(item.id)">
-              <Pen class="w-4 h-4" />
-            </button>
-            <button type="button" title="Eliminar repuesto" aria-label="Eliminar repuesto" :disabled="isDeleting" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-red-500/10 dark:hover:text-red-400" @click="openDeleteModal(item)">
-              <Trash2 class="w-4 h-4" />
-            </button>
+            <EntityRowActions entity="repuesto" :delete-disabled="isDeleting" @edit="openEditModal(item.id)" @delete="openDeleteModal(item)" />
           </div>
         </td>
       </tr>

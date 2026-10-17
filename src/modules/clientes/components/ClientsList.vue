@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, computed, h } from 'vue';
-import { UsersRound, Upload, Phone, Mail, Pen, Trash2, IdCard, Search, RotateCcw, Filter } from 'lucide-vue-next';
+import { UsersRound, Upload, Phone, Mail, Trash2, IdCard, Search, RotateCcw, Filter } from 'lucide-vue-next';
 import { useClients } from '../composables/useClients';
 // import { useToast } from '../../../shared/composables/useToast';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
@@ -12,6 +12,7 @@ import FilterActions from '../../../shared/components/FilterActions.vue';
 import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
 import { useFiltrosReactivos } from '../../../shared/composables/useFiltrosReactivos';
 import EntityTable from '../../../shared/components/EntityTable.vue';
+import EntityRowActions from '../../../shared/components/EntityRowActions.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
 import ImportExcelModal from './ImportExcelModal.vue';
 import ClientModal from './ClientModal.vue';
@@ -387,12 +388,7 @@ onMounted(() => {
             <button v-if="puedeModificarClientes && !item.is_active" type="button" title="Reactivar cliente" aria-label="Reactivar cliente" :disabled="isReactivating" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400" @click="onReactivateClient(item)">
               <RotateCcw class="w-4 h-4" />
             </button>
-            <button v-if="puedeModificarClientes" type="button" title="Editar cliente" aria-label="Editar cliente" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-50 hover:text-brand-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" @click="editClient(item.id)">
-              <Pen class="w-4 h-4" />
-            </button>
-            <button v-if="puedeModificarClientes && item.is_active" type="button" title="Eliminar cliente" aria-label="Eliminar cliente" :disabled="isDeleting" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-red-500/10 dark:hover:text-red-400" @click="openDeleteModal(item)">
-              <Trash2 class="w-4 h-4" />
-            </button>
+            <EntityRowActions entity="cliente" :show-edit="puedeModificarClientes" :show-delete="puedeModificarClientes && item.is_active" :delete-disabled="isDeleting" @edit="editClient(item.id)" @delete="openDeleteModal(item)" />
           </div>
         </td>
       </tr>

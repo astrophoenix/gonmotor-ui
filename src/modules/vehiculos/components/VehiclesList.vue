@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { Car, MessageCircle, Pen, Trash2, Search, Filter } from 'lucide-vue-next';
+import { Car, MessageCircle, Search, Filter } from 'lucide-vue-next';
 import { useVehicles } from '../composables/useVehicles';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
@@ -10,6 +10,7 @@ import FilterActions from '../../../shared/components/FilterActions.vue';
 import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
 import { useFiltrosReactivos } from '../../../shared/composables/useFiltrosReactivos';
 import EntityTable from '../../../shared/components/EntityTable.vue';
+import EntityRowActions from '../../../shared/components/EntityRowActions.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
 import VehicleModal from './VehicleModal.vue';
 import EnviarRecordatorioModal from '../../notificaciones/components/EnviarRecordatorioModal.vue';
@@ -350,12 +351,7 @@ onMounted(() => loadVehicles());
             <button type="button" title="Enviar recordatorio de mantenimiento por WhatsApp" aria-label="Enviar recordatorio por WhatsApp" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 dark:text-gray-400 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400" @click="openEnviarRecordatorio(item)">
               <MessageCircle class="w-4 h-4" />
             </button>
-            <button type="button" title="Editar vehículo" aria-label="Editar vehículo" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-50 hover:text-brand-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" @click="openEditModal(item.id)">
-              <Pen class="w-4 h-4" />
-            </button>
-            <button type="button" title="Eliminar vehículo" aria-label="Eliminar vehículo" :disabled="isDeleting" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-red-500/10 dark:hover:text-red-400" @click="openDeleteModal(item)">
-              <Trash2 class="w-4 h-4" />
-            </button>
+            <EntityRowActions entity="vehículo" :delete-disabled="isDeleting" @edit="openEditModal(item.id)" @delete="openDeleteModal(item)" />
           </div>
         </td>
       </tr>

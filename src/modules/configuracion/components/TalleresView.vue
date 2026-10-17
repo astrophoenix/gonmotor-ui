@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue';
-import { Warehouse, Search, Pen, Trash2, Filter } from 'lucide-vue-next';
+import { Warehouse, Search, Filter } from 'lucide-vue-next';
 import { talleresService } from '../services/talleresService';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import FilterActions from '../../../shared/components/FilterActions.vue';
@@ -8,6 +8,7 @@ import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
 import { createLatestRequest, isAbortError } from '../../../shared/utils/search';
 import { useFiltrosReactivos } from '../../../shared/composables/useFiltrosReactivos';
 import EntityTable from '../../../shared/components/EntityTable.vue';
+import EntityRowActions from '../../../shared/components/EntityRowActions.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
@@ -283,12 +284,7 @@ onUnmounted(() => {
             </td>
             <td class="px-4 py-3 whitespace-nowrap">
               <div class="flex items-center justify-end gap-1">
-                <button type="button" title="Editar taller" aria-label="Editar taller" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-50 hover:text-brand-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" @click="openEditModal(item)">
-                  <Pen class="w-4 h-4" />
-                </button>
-                <button type="button" title="Eliminar taller" aria-label="Eliminar taller" :disabled="isDeleting" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-red-500/10 dark:hover:text-red-400" @click="openDeleteModal(item)">
-                  <Trash2 class="w-4 h-4" />
-                </button>
+                <EntityRowActions entity="taller" :delete-disabled="isDeleting" @edit="openEditModal(item)" @delete="openDeleteModal(item)" />
               </div>
             </td>
           </tr>
