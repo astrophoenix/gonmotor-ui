@@ -1,68 +1,159 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue';
-import { Car, IdCard, Pencil, Image as ImageIcon, X } from 'lucide-vue-next';
+import {
+  Car, CarFront, ChevronRight, FilePen, Mail, MapPin, MessageCircle, Phone, Plus, Search, Gauge,
+} from 'lucide-vue-next';
 
 import { clientsService } from '../services/clientesService';
-import { vehiclesService } from '../../vehiculos/services/vehiclesService';
 import { request } from '../../../shared/services/httpClient';
 import { formatPlate } from '../../../shared/utils/formatPlate';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import ClientModal from './ClientModal.vue';
+import VehicleModal from '../../vehiculos/components/VehicleModal.vue';
+import {
+  COMBUSTIBLE_LABELS,
+  colorCss,
+  formatKm,
+  mantenimientoResumen,
+} from '../../vehiculos/utils/fichaVehiculo';
 import { usePermisos } from '../../../shared/composables/usePermisos';
 
 const { puede } = usePermisos();
 const puedeModificarClientes = computed(() => puede('clientes', 'modificar'));
+const puedeModificarVehiculos = computed(() => puede('vehiculos', 'modificar'));
 
 const client = ref(null);
-const vehicles = ref([]);
 const loading = ref(true);
 const error = ref('');
-const previewImg = ref('');
-const showImageModal = ref(false);
+const alert = ref({ type: 'success', message: '' });
 const showClientModal = ref(false);
 const clientModalId = ref(null);
+const showVehicleModal = ref(false);
+const busqueda = ref('');
 const tipos = ref([]);
-const paises = ref([]);
 
-const TRANSMISION_LABELS = { M: 'Manual / Mecánica', A: 'Automática', C: 'CVT' };
+const TIPO_IDENTIFICACION = { C: 'Cédula', R: 'RUC', P: 'Pasaporte' };
 
-const COMBUSTIBLE_LABELS = {
-  GAS: 'Gasolina',
-  DIE: 'Diésel',
-  HIB: 'Híbrido',
-  ELE: 'Eléctrico',
-};
+const URGENCIA = { vacio: 0, pendiente: 1, pronto: 2, vencido: 3 };
+
+// Con pocos vehículos el buscador estorba; aparece desde este número.
+const MIN_VEHICULOS_BUSQUEDA = 4;
 
 const params = new URLSearchParams(window.location.search);
 const clientId = params.get('id') || '';
 
-function formatDate(dateString) {
-  if (!dateString) return '-';
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return '-';
-  return date.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+function formatFechaCorta(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString('es-EC', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function labelFor(list, value, key) {
-  if (value == null || value === '') return '—';
-  const item = list.value.find((entry) => entry[key] === value);
-  return item ? (item.label || item.name) : value;
+function formatMesAnio(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString('es-EC', { month: 'short', year: 'numeric' });
 }
 
-const tipoLabel = (value) => labelFor(tipos, value, 'value');
-const paisLabel = (value) => labelFor(paises, value, 'code');
-
-function abrirFoto(url) {
-  if (!url) return;
-  previewImg.value = url;
-  showImageModal.value = true;
+function tipoLabel(value) {
+  if (!value) return null;
+  const item = tipos.value.find((entry) => entry.value === value);
+  return item ? item.label : null;
 }
 
-function cerrarFoto() {
-  showImageModal.value = false;
-  previewImg.value = '';
+// Enlace de WhatsApp: los móviles ecuatorianos (09…) se pasan a formato internacional (5939…).
+function whatsappHref(telefono) {
+  let digitos = String(telefono || '').replace(/\D/g, '');
+  if (!digitos) return null;
+  if (digitos.length === 10 && digitos.startsWith('0')) digitos = `593${digitos.slice(1)}`;
+  return `https://wa.me/${digitos}`;
 }
+
+const iniciales = computed(() => {
+  const nombre = (client.value && client.value.nombre) || '';
+  return nombre.split(/\s+/).filter(Boolean).slice(0, 2).map((parte) => parte[0].toUpperCase()).join('') || '?';
+});
+
+const vehiculos = computed(() => {
+  const lista = (client.value && Array.isArray(client.value.vehiculos)) ? client.value.vehiculos : [];
+  return lista
+    .map((v) => ({
+      ...v,
+      titulo: [v.marca, v.modelo].filter(Boolean).join(' ') || 'Vehículo sin marca',
+      detalles: [
+        v.anio,
+        v.tipo ? tipoLabel(v.tipo) : null,
+        COMBUSTIBLE_LABELS[v.combustible],
+      ].filter(Boolean),
+      mantenimiento: mantenimientoResumen(v),
+    }))
+    // Activos primero y, entre ellos, los que más urge atender.
+    .sort((a, b) => Number(b.is_active !== false) - Number(a.is_active !== false)
+      || URGENCIA[b.mantenimiento.tono] - URGENCIA[a.mantenimiento.tono]
+      || String(a.placa || '').localeCompare(String(b.placa || '')));
+});
+
+const vehiculosFiltrados = computed(() => {
+  const termino = busqueda.value.trim().toLowerCase().replace(/[\s-]/g, '');
+  if (!termino) return vehiculos.value;
+  return vehiculos.value.filter((v) => [v.placa, v.marca, v.modelo, v.color, v.anio]
+    .some((campo) => String(campo || '').toLowerCase().replace(/[\s-]/g, '').includes(termino)));
+});
+
+const vehiculosActivos = computed(() => vehiculos.value.filter((v) => v.is_active !== false).length);
+
+const avisosMantenimiento = computed(() => {
+  const activos = vehiculos.value.filter((v) => v.is_active !== false);
+  return {
+    vencidos: activos.filter((v) => v.mantenimiento.tono === 'vencido').length,
+    proximos: activos.filter((v) => v.mantenimiento.tono === 'pronto').length,
+  };
+});
+
+const resumenMantenimiento = computed(() => {
+  const { vencidos, proximos } = avisosMantenimiento.value;
+  const partes = [];
+  if (vencidos) partes.push(`${vencidos} con servicio vencido`);
+  if (proximos) partes.push(`${proximos} con servicio próximo`);
+  return partes.join(' · ');
+});
+
+const datosCliente = computed(() => {
+  const c = client.value;
+  if (!c) return [];
+  return [
+    { label: TIPO_IDENTIFICACION[c.tipo_identificacion] || 'Identificación', value: c.identificacion, mono: true },
+    { label: 'Dirección', value: c.direccion },
+    { label: 'Cliente desde', value: formatFechaCorta(c.created_at) },
+    { label: 'Última actualización', value: formatFechaCorta(c.updated_at) },
+  ];
+});
+
+const contactos = computed(() => {
+  const c = client.value;
+  if (!c) return [];
+  return [
+    { label: 'Llamar', detalle: c.telefono, href: c.telefono ? `tel:${c.telefono}` : null, icon: Phone },
+    { label: 'Escribir por WhatsApp', detalle: c.telefono, href: whatsappHref(c.telefono), icon: MessageCircle, externo: true },
+    { label: 'Enviar correo', detalle: c.email, href: c.email ? `mailto:${c.email}` : null, icon: Mail },
+  ];
+});
+
+const TONO_MANTENIMIENTO = {
+  vacio: 'bg-gray-100 text-gray-500 ring-gray-500/10 dark:bg-gray-700 dark:text-gray-400 dark:ring-gray-400/20',
+  pendiente: 'bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/30 dark:text-green-300 dark:ring-green-400/30',
+  pronto: 'bg-amber-50 text-amber-700 ring-amber-600/20 dark:bg-amber-900/30 dark:text-amber-300 dark:ring-amber-400/30',
+  vencido: 'bg-amber-50 text-amber-800 ring-amber-600/30 dark:bg-amber-900/40 dark:text-amber-200 dark:ring-amber-400/40',
+};
+
+const PUNTO_MANTENIMIENTO = {
+  vacio: 'bg-gray-400',
+  pendiente: 'bg-green-500',
+  pronto: 'bg-amber-500',
+  vencido: 'bg-amber-600',
+};
 
 function abrirEditar() {
   if (!client.value) return;
@@ -70,22 +161,32 @@ function abrirEditar() {
   showClientModal.value = true;
 }
 
-async function onClientUpdated() {
-  showClientModal.value = false;
+async function cargarCliente() {
+  client.value = await clientsService.getById(clientId);
+}
+
+async function recargar(mensaje) {
   loading.value = true;
   try {
-    const [clientData, vehiclesData] = await Promise.all([
-      clientsService.getById(clientId),
-      vehiclesService.list({ cliente: clientId }),
-    ]);
-    client.value = clientData;
-    vehicles.value = Array.isArray(vehiclesData) ? vehiclesData : (vehiclesData.results || []);
+    await cargarCliente();
     error.value = '';
+    alert.value = { type: 'success', message: mensaje };
   } catch (fetchError) {
     error.value = fetchError.message || 'No se pudo recargar el cliente.';
   } finally {
     loading.value = false;
   }
+}
+
+function onClientUpdated() {
+  showClientModal.value = false;
+  recargar('Cliente actualizado correctamente.');
+}
+
+function onVehicleCreated() {
+  showVehicleModal.value = false;
+  busqueda.value = '';
+  recargar('Vehículo agregado al cliente.');
 }
 
 onMounted(async () => {
@@ -95,17 +196,18 @@ onMounted(async () => {
     return;
   }
   try {
-    const data = await clientsService.getById(clientId);
-    client.value = data;
-    const vehiclesData = await vehiclesService.list({ cliente: clientId });
-    vehicles.value = Array.isArray(vehiclesData) ? vehiclesData : (vehiclesData.results || []);
-    const choices = await request('/api/vehiculos/choices/');
-    tipos.value = Array.isArray(choices && choices.tipo) ? choices.tipo : [];
-    paises.value = Array.isArray(choices && choices.paises) ? choices.paises : [];
+    await cargarCliente();
   } catch (fetchError) {
     error.value = fetchError.message || 'No se pudo cargar el cliente.';
   } finally {
     loading.value = false;
+  }
+  // Las etiquetas de tipo de vehículo son un extra: si fallan, la ficha se muestra igual.
+  try {
+    const choices = await request('/api/vehiculos/choices/');
+    tipos.value = Array.isArray(choices && choices.tipo) ? choices.tipo : [];
+  } catch {
+    tipos.value = [];
   }
 });
 </script>
@@ -121,31 +223,20 @@ onMounted(async () => {
       { label: 'Ver' },
     ]"
   >
-    <template #badges>
-      <span
-        v-if="client && client.is_active !== false"
-        class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-      >
-        Activo
-      </span>
-    </template>
-
     <template #actions>
       <button
         v-if="client && puedeModificarClientes"
         type="button"
         title="Editar cliente"
-        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:text-brand-300 dark:border-brand-300 dark:hover:bg-gray-700"
-        @click="abrirEditar"
-      >
-        <Pencil class="w-4 h-4" aria-hidden="true" />
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
+        @click="abrirEditar">
+        <FilePen class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
         Editar
       </button>
     </template>
   </EntityHeader>
 
-  <div class="p-4">
-    <div class="relative mx-auto max-w-6xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
+  <div class="mx-auto max-w-6xl space-y-6 p-4 lg:p-6">
     <Alert
       v-if="error"
       type="error"
@@ -154,176 +245,336 @@ onMounted(async () => {
       dismissible
       @dismiss="error = ''"
     />
+    <Alert
+      v-if="alert.message && !error"
+      :type="alert.type"
+      :title="alert.message"
+      message=""
+      dismissible
+      @dismiss="alert.message = ''"
+    />
 
-    <div v-if="loading" class="p-6 text-center text-gray-500 dark:text-gray-400">
-      Cargando cliente...
+    <!-- Carga -->
+    <div v-if="loading" class="space-y-6 animate-pulse" aria-busy="true" aria-label="Cargando cliente">
+      <div class="h-48 rounded-2xl bg-gray-200 dark:bg-gray-700"></div>
+      <div class="grid gap-6 lg:grid-cols-3">
+        <div class="h-80 rounded-2xl bg-gray-200 dark:bg-gray-700 lg:col-span-2"></div>
+        <div class="h-56 rounded-2xl bg-gray-200 dark:bg-gray-700"></div>
+      </div>
     </div>
 
     <template v-else-if="client">
-      <h4 class="mb-4 text-xl font-semibold dark:text-white">
-        <span class="inline-flex items-center gap-2">
-          <IdCard class="w-6 h-6 text-gray-800 dark:text-white" />
-          Información General
-        </span>
-      </h4>
-        <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Identificación</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ client.identificacion || '—' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Nombre / Razón Social</dt>
-            <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ client.nombre || '—' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Correo electrónico</dt>
-            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ client.email || '—' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Teléfono / WhatsApp</dt>
-            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ client.telefono || '—' }}</dd>
-          </div>
-          <div class="sm:col-span-2 lg:col-span-1">
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Dirección</dt>
-            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ client.direccion || '—' }}</dd>
-          </div>
-          <div>
-            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de registro</dt>
-            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ formatDate(client.created_at) }}</dd>
-          </div>
-        </dl>
-
-      <h4 class="mt-10 mb-4 text-xl font-semibold dark:text-white">
-        <span class="inline-flex items-center gap-2">
-          <Car class="w-6 h-6 text-gray-800 dark:text-white" />
-          Vehículos ({{ vehicles.length }})
-        </span>
-      </h4>
-        <div v-if="!vehicles.length" class="p-4 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
-          El cliente no tiene vehículos registrados.
-        </div>
-
-        <div v-else class="space-y-6">
-          <div
-            v-for="(veh, vehIndex) in vehicles"
-            :key="veh.id"
-            class="p-5 bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700"
+      <!-- Resumen: identidad, estado y contacto -->
+      <section class="shadow-sm rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+        <div class="flex flex-col gap-5 p-6 sm:flex-row sm:items-center lg:p-8">
+          <span
+            class="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xl font-semibold text-brand-800 dark:bg-brand-800 dark:text-brand-100 lg:h-20 lg:w-20 lg:text-2xl"
+            aria-hidden="true"
           >
-            <div class="grid grid-cols-1 gap-6 lg:grid-cols-4">
-              <div class="lg:col-span-1">
-                <div
-                  class="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border border-gray-300 bg-gray-100 p-2 dark:border-gray-600 dark:bg-gray-800"
-                  :class="{ 'cursor-zoom-in': veh.imagen }"
-                  @click="abrirFoto(veh.imagen)"
-                >
-                  <img
-                    v-if="veh.imagen"
-                    :src="veh.imagen"
-                    :alt="`Vehículo ${veh.placa}`"
-                    class="h-full w-full rounded-lg object-contain"
-                  />
-                  <span v-else class="flex flex-col items-center justify-center gap-2 px-4 text-center">
-                    <ImageIcon class="w-10 h-10 text-gray-400 dark:text-gray-500" />
-                    <span class="text-xs text-gray-500 dark:text-gray-400">Sin foto</span>
-                  </span>
-                </div>
-              </div>
-
-              <div class="lg:col-span-3">
-                <div class="flex items-center gap-3 flex-wrap mb-4">
-                  <h5 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    Vehículo {{ vehIndex + 1 }} — {{ formatPlate(veh.placa) }}
-                  </h5>
-                  <span
-                    v-if="veh.is_active !== false"
-                    class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-                  >
-                    Activo
-                  </span>
-                </div>
-                <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Placa</dt>
-                    <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ formatPlate(veh.placa) || '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Marca</dt>
-                    <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ veh.marca || '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Modelo</dt>
-                    <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ veh.modelo || '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Año</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ veh.anio || '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Tipo</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ tipoLabel(veh.tipo) }}</dd>
-                  </div>
-                  <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Transmisión</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ TRANSMISION_LABELS[veh.transmision] || '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Combustible</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ COMBUSTIBLE_LABELS[veh.combustible] || '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Color</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ veh.color || '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">VIN / Chasis</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ veh.vin || '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Número de Motor</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ veh.numero_motor || '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">País de Origen</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ paisLabel(veh.pais_origen) }}</dd>
-                  </div>
-                  <div>
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Kilometraje Actual</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ veh.kilometraje_actual != null ? `${veh.kilometraje_actual} km` : '—' }}</dd>
-                  </div>
-                </dl>
-                <div v-if="veh.observaciones" class="mt-4">
-                  <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Observaciones</p>
-                  <p class="mt-1 text-sm whitespace-pre-line text-gray-900 dark:text-white">{{ veh.observaciones }}</p>
-                </div>
-              </div>
+            {{ iniciales }}
+          </span>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-4">
+              <p class="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                Cliente<template v-if="formatMesAnio(client.created_at)"> · desde {{ formatMesAnio(client.created_at) }}</template>
+              </p>
+              <span
+                v-if="client.is_active !== false"
+                class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700 ring-1 ring-green-600/20 ring-inset dark:bg-green-900/30 dark:text-green-300 dark:ring-green-400/30"
+              >
+                <span class="h-1.5 w-1.5 rounded-full bg-green-500" aria-hidden="true"></span>
+                Activo
+              </span>
+              <span
+                v-else
+                class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600 ring-1 ring-gray-500/20 ring-inset dark:bg-gray-700 dark:text-gray-300"
+              >
+                <span class="h-1.5 w-1.5 rounded-full bg-gray-400" aria-hidden="true"></span>
+                Inactivo
+              </span>
+            </div>
+            <h2 class="mt-1 text-2xl font-semibold tracking-tight break-words text-gray-900 dark:text-white lg:text-3xl">
+              {{ client.nombre }}
+            </h2>
+            <div class="mt-3 flex flex-wrap items-center gap-2">
+              <span
+                v-if="client.identificacion"
+                class="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-2.5 py-1 text-sm dark:border-gray-600 dark:bg-gray-900"
+              >
+                <span class="text-xs text-gray-500 dark:text-gray-400">{{ TIPO_IDENTIFICACION[client.tipo_identificacion] || 'ID' }}</span>
+                <span class="font-mono font-semibold tracking-wider text-gray-900 dark:text-white">{{ client.identificacion }}</span>
+              </span>
+              <span
+                v-if="client.direccion"
+                class="inline-flex max-w-full items-center gap-1.5 rounded-md bg-gray-100 px-2.5 py-1 text-sm text-gray-700 dark:bg-gray-700 dark:text-gray-200"
+              >
+                <MapPin class="h-3.5 w-3.5 shrink-0 text-gray-500 dark:text-gray-400" aria-hidden="true" />
+                <span class="truncate">{{ client.direccion }}</span>
+              </span>
             </div>
           </div>
         </div>
-      </template>
-    </div>
-  </div>
 
-  <div
-    v-if="showImageModal"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-    @click="cerrarFoto"
-  >
-    <div class="relative max-h-[90vh] max-w-[90vw] overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl" @click.stop>
-      <button
-        type="button"
-        class="absolute top-2 right-2 z-10 inline-flex items-center justify-center w-8 h-8 rounded-full bg-black/50 text-white hover:bg-black/70"
-        aria-label="Cerrar"
-        @click="cerrarFoto"
-      >
-        <X class="w-5 h-5" />
-      </button>
-      <img :src="previewImg" class="max-h-[90vh] max-w-[90vw] object-contain" alt="Imagen ampliada del vehículo" />
-    </div>
+        <dl class="grid grid-cols-1 gap-6 border-t border-gray-100 px-6 py-5 dark:border-gray-700 sm:grid-cols-3 lg:px-8">
+          <div class="min-w-0">
+            <dt class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+              <Phone class="h-3.5 w-3.5" aria-hidden="true" />
+              Teléfono / WhatsApp
+            </dt>
+            <dd class="mt-2 text-base font-semibold tabular-nums text-gray-900 dark:text-white">
+              <a v-if="client.telefono" :href="`tel:${client.telefono}`" class="hover:text-brand-700 hover:underline dark:hover:text-brand-200">
+                {{ client.telefono }}
+              </a>
+              <span v-else class="font-normal text-gray-400 dark:text-gray-500">—</span>
+            </dd>
+          </div>
+          <div class="min-w-0">
+            <dt class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+              <Mail class="h-3.5 w-3.5" aria-hidden="true" />
+              Correo
+            </dt>
+            <dd class="mt-2 truncate text-base font-semibold text-gray-900 dark:text-white">
+              <a v-if="client.email" :href="`mailto:${client.email}`" class="hover:text-brand-700 hover:underline dark:hover:text-brand-200" :title="client.email">
+                {{ client.email }}
+              </a>
+              <span v-else class="font-normal text-gray-400 dark:text-gray-500">—</span>
+            </dd>
+          </div>
+          <div class="min-w-0">
+            <dt class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+              <Car class="h-3.5 w-3.5" aria-hidden="true" />
+              Vehículos
+            </dt>
+            <dd class="mt-2">
+              <span v-if="!vehiculos.length" class="block text-base font-normal text-gray-400 dark:text-gray-500">Sin vehículos</span>
+              <span v-else class="block text-base font-semibold tabular-nums text-gray-900 dark:text-white">
+                {{ vehiculosActivos }} {{ vehiculosActivos === 1 ? 'activo' : 'activos' }}
+                <span v-if="vehiculos.length > vehiculosActivos" class="font-normal text-gray-500 dark:text-gray-400">
+                  de {{ vehiculos.length }}
+                </span>
+              </span>
+              <span v-if="resumenMantenimiento" class="mt-0.5 block text-sm text-warning">{{ resumenMantenimiento }}</span>
+              <span v-else-if="vehiculosActivos" class="mt-0.5 block text-sm text-gray-500 dark:text-gray-400">Sin servicios pendientes</span>
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <div class="grid items-start gap-6 lg:grid-cols-3">
+        <!-- Vehículos del cliente -->
+        <section class="shadow-sm rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 lg:col-span-2">
+          <div class="flex flex-col gap-3 px-6 pt-5 pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <h3 class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+              Vehículos
+              <span v-if="vehiculos.length" class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium tabular-nums text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                {{ vehiculos.length }}
+              </span>
+            </h3>
+            <div class="flex items-center gap-2">
+              <div v-if="vehiculos.length >= MIN_VEHICULOS_BUSQUEDA" class="relative w-full sm:w-56">
+                <div class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3">
+                  <Search class="h-4 w-4 text-gray-400" aria-hidden="true" />
+                </div>
+                <input
+                  v-model="busqueda"
+                  type="search"
+                  aria-label="Buscar vehículo del cliente"
+                  placeholder="Buscar placa, marca…"
+                  class="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2 ps-9 pe-3 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                />
+              </div>
+              <button
+                v-if="puedeModificarVehiculos"
+                type="button"
+                class="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-900 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-300 dark:bg-brand-500 dark:hover:bg-brand-300 dark:hover:text-brand-900 dark:focus:ring-brand-800"
+                @click="showVehicleModal = true"
+              >
+                <Plus class="h-4 w-4" aria-hidden="true" />
+                Agregar
+              </button>
+            </div>
+          </div>
+
+          <!-- Sin vehículos -->
+          <div v-if="!vehiculos.length" class="mx-6 mb-6 flex flex-col items-center gap-3 rounded-xl border border-dashed border-gray-300 px-6 py-10 text-center dark:border-gray-600">
+            <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500">
+              <CarFront class="h-6 w-6" aria-hidden="true" />
+            </span>
+            <div>
+              <p class="text-sm font-medium text-gray-900 dark:text-white">Este cliente aún no tiene vehículos</p>
+              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Registra su vehículo para crear citas, recepciones y órdenes.</p>
+            </div>
+          </div>
+
+          <!-- Búsqueda sin coincidencias -->
+          <p
+            v-else-if="!vehiculosFiltrados.length"
+            class="mx-6 mb-6 rounded-xl bg-gray-50 px-4 py-6 text-center text-sm text-gray-500 dark:bg-gray-900/40 dark:text-gray-400"
+          >
+            Ningún vehículo coincide con «{{ busqueda }}».
+          </p>
+
+          <ul v-else class="divide-y divide-gray-100 border-t border-gray-100 dark:divide-gray-700 dark:border-gray-700">
+            <li v-for="veh in vehiculosFiltrados" :key="veh.id">
+              <a
+                :href="`/crud/vehiculos/ver/?id=${encodeURIComponent(veh.id)}`"
+                class="group flex items-center gap-4 px-6 py-4 transition-colors hover:bg-gray-50 focus:outline-none focus-visible:bg-gray-50 dark:hover:bg-gray-700/40 dark:focus-visible:bg-gray-700/40"
+                :class="{ 'opacity-60': veh.is_active === false }"
+                :title="`Ver ficha del vehículo ${formatPlate(veh.placa)}`"
+              >
+                <span class="flex h-16 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-50 ring-1 ring-gray-100 dark:bg-gray-900/40 dark:ring-gray-700 sm:h-[4.5rem] sm:w-24">
+                  <img
+                    v-if="veh.imagen"
+                    :src="veh.imagen"
+                    :alt="`Vehículo ${formatPlate(veh.placa)}`"
+                    loading="lazy"
+                    class="h-full w-full object-contain p-1"
+                  />
+                  <CarFront v-else class="h-7 w-7 text-gray-300 dark:text-gray-600" aria-hidden="true" />
+                </span>
+
+                <span class="min-w-0 flex-1">
+                  <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span class="truncate text-sm font-semibold text-gray-900 capitalize dark:text-white">{{ veh.titulo.toLowerCase() }}</span>
+                    <span class="inline-flex items-center rounded border border-gray-300 bg-white px-1.5 py-0.5 font-mono text-xs font-semibold tracking-widest text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white">
+                      {{ formatPlate(veh.placa) || '—' }}
+                    </span>
+                    <span
+                      v-if="veh.is_active === false"
+                      class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                    >
+                      <span class="h-1.5 w-1.5 rounded-full bg-gray-400" aria-hidden="true"></span>
+                      Inactivo
+                    </span>
+                  </span>
+                  <span class="mt-1 flex flex-wrap items-center gap-x-1.5 text-xs text-gray-500 dark:text-gray-400">
+                    <span v-if="veh.color" class="inline-flex items-center gap-1 capitalize">
+                      <span
+                        v-if="colorCss(veh.color)"
+                        class="h-2.5 w-2.5 rounded-full ring-1 ring-black/15 dark:ring-white/20"
+                        :style="{ backgroundColor: colorCss(veh.color) }"
+                        aria-hidden="true"
+                      ></span>
+                      {{ veh.color.toLowerCase() }}
+                    </span>
+                    <template v-for="(detalle, i) in veh.detalles" :key="detalle">
+                      <span v-if="veh.color || i > 0" aria-hidden="true">·</span>
+                      <span>{{ detalle }}</span>
+                    </template>
+                  </span>
+                  <!-- En móvil el kilometraje y el servicio van bajo los datos -->
+                  <span class="mt-2 flex flex-wrap items-center gap-2 sm:hidden">
+                    <span v-if="formatKm(veh.kilometraje_actual)" class="text-xs tabular-nums text-gray-600 dark:text-gray-300">{{ formatKm(veh.kilometraje_actual) }}</span>
+                    <span
+                      class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset"
+                      :class="TONO_MANTENIMIENTO[veh.mantenimiento.tono]"
+                    >
+                      <span class="h-1.5 w-1.5 rounded-full" :class="PUNTO_MANTENIMIENTO[veh.mantenimiento.tono]" aria-hidden="true"></span>
+                      {{ veh.mantenimiento.etiqueta }}
+                    </span>
+                  </span>
+                </span>
+
+                <span class="hidden w-28 shrink-0 text-right sm:block">
+                  <span class="flex items-center justify-end gap-1 text-[11px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                    <Gauge class="h-3 w-3" aria-hidden="true" />
+                    Km
+                  </span>
+                  <span class="mt-0.5 block text-sm font-semibold tabular-nums text-gray-900 dark:text-white">
+                    {{ formatKm(veh.kilometraje_actual) || '—' }}
+                  </span>
+                </span>
+
+                <span class="hidden w-40 shrink-0 text-right sm:block">
+                  <span
+                    class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset"
+                    :class="TONO_MANTENIMIENTO[veh.mantenimiento.tono]"
+                  >
+                    <span class="h-1.5 w-1.5 rounded-full" :class="PUNTO_MANTENIMIENTO[veh.mantenimiento.tono]" aria-hidden="true"></span>
+                    {{ veh.mantenimiento.etiqueta }}
+                  </span>
+                  <span v-if="veh.mantenimiento.detalle" class="mt-1 block truncate text-xs text-gray-500 dark:text-gray-400">
+                    {{ veh.mantenimiento.detalle }}
+                  </span>
+                </span>
+
+                <ChevronRight class="h-4 w-4 shrink-0 text-gray-400 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+              </a>
+            </li>
+          </ul>
+        </section>
+
+        <div class="space-y-6">
+          <!-- Contacto rápido -->
+          <section class="shadow-sm rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Contacto rápido</h3>
+            <ul class="mt-3 space-y-1">
+              <li v-for="contacto in contactos" :key="contacto.label">
+                <a
+                  v-if="contacto.href"
+                  :href="contacto.href"
+                  :target="contacto.externo ? '_blank' : null"
+                  :rel="contacto.externo ? 'noopener noreferrer' : null"
+                  class="group -mx-2 flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                >
+                  <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700 dark:bg-brand-800/60 dark:text-brand-100">
+                    <component :is="contacto.icon" class="h-4 w-4" aria-hidden="true" />
+                  </span>
+                  <span class="min-w-0 flex-1">
+                    <span class="block text-sm font-medium text-gray-900 dark:text-white">{{ contacto.label }}</span>
+                    <span class="block truncate text-xs text-gray-500 dark:text-gray-400">{{ contacto.detalle }}</span>
+                  </span>
+                  <ChevronRight class="h-4 w-4 text-gray-400 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                </a>
+                <span v-else class="-mx-2 flex items-center gap-3 rounded-lg px-2 py-2 text-gray-400 dark:text-gray-500">
+                  <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700">
+                    <component :is="contacto.icon" class="h-4 w-4" aria-hidden="true" />
+                  </span>
+                  <span class="min-w-0 flex-1">
+                    <span class="block text-sm">{{ contacto.label }}</span>
+                    <span class="block text-xs">Sin {{ contacto.icon === Mail ? 'correo' : 'teléfono' }} registrado</span>
+                  </span>
+                </span>
+              </li>
+            </ul>
+          </section>
+
+          <!-- Datos del cliente -->
+          <section class="shadow-sm rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Datos del cliente</h3>
+            <dl class="mt-3">
+              <div
+                v-for="(campo, i) in datosCliente"
+                :key="campo.label"
+                class="flex items-baseline justify-between gap-4 py-2"
+                :class="{ 'border-t border-gray-100 dark:border-gray-700': i > 0 }"
+              >
+                <dt class="shrink-0 text-sm text-gray-500 dark:text-gray-400">{{ campo.label }}</dt>
+                <dd
+                  class="min-w-0 text-right text-sm font-medium break-words text-gray-900 dark:text-white"
+                  :class="{ 'font-mono text-[13px] tracking-wide': campo.mono }"
+                >
+                  <span v-if="campo.value">{{ campo.value }}</span>
+                  <span v-else class="font-normal text-gray-400 dark:text-gray-500">—</span>
+                </dd>
+              </div>
+            </dl>
+          </section>
+        </div>
+      </div>
+    </template>
   </div>
 
   <ClientModal
     v-model="showClientModal"
     :client-id="clientModalId"
     @updated="onClientUpdated"
+  />
+
+  <VehicleModal
+    v-model="showVehicleModal"
+    :cliente="client ? { id: client.id, nombre: client.nombre } : null"
+    @created="onVehicleCreated"
+    @reactivated="onVehicleCreated"
   />
 </template>

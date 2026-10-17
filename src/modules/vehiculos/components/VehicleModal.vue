@@ -20,6 +20,8 @@ import ClienteSearchSelect from '../../../shared/components/ClienteSearchSelect.
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   vehicleId: { type: [Number, String], default: null },
+  // Al crear: propietario ya elegido ({ id, nombre }), p. ej. desde la ficha del cliente.
+  cliente: { type: Object, default: null },
 });
 
 const emit = defineEmits(['update:modelValue', 'created', 'updated', 'reactivated']);
@@ -141,6 +143,7 @@ function resetForm() {
 
 async function open() {
   resetForm();
+  if (!isEditMode.value && props.cliente) selectCliente(props.cliente);
   formSnapshot.value = getComparableState();
   loadChoices();
 
