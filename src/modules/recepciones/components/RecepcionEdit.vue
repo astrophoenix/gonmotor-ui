@@ -463,9 +463,17 @@ const kmVehiculo = computed(() => {
   return km == null || km === "" ? null : Number(km);
 });
 
+// Kilometraje con el que se guardó esta recepción: el del vehículo puede haber
+// subido después por recepciones posteriores y no sirve para compararlo.
+const kmGuardado = ref(null);
+const kmConservado = computed(() => {
+  const km = Number(String(form.kilometraje_ingreso ?? "").replace(/\D/g, ""));
+  return isEditMode && kmGuardado.value != null && km === kmGuardado.value;
+});
+
 const kmDiferencia = computed(() => {
   const km = Number(String(form.kilometraje_ingreso ?? "").replace(/\D/g, ""));
-  if (!km || kmVehiculo.value == null) return null;
+  if (!km || kmVehiculo.value == null || kmConservado.value) return null;
   return km - kmVehiculo.value;
 });
 
@@ -479,7 +487,7 @@ const kmDiferenciaTexto = computed(() => {
 const kmValido = computed(() => {
   const km = Number(String(form.kilometraje_ingreso ?? "").replace(/\D/g, ""));
   if (!km) return false;
-  if (kmVehiculo.value == null) return true;
+  if (kmVehiculo.value == null || kmConservado.value) return true;
   return km > kmVehiculo.value || (isEditMode && km === kmVehiculo.value);
 });
 
@@ -577,10 +585,10 @@ function irARequisito(req) {
   }
 }
 
-const pasosVisitados = ref(new Set(["informacion"]));
-watch(activeTab, (key) => {
-  pasosVisitados.value = new Set([...pasosVisitados.value, key]);
-});
+// Revisión no tiene campos obligatorios: cuenta como completa cuando ya registra algo.
+const revisionConDatos = computed(
+  () => inventarioPresente.value > 0 || testigosEncendidos.value > 0 || marcas.value.length > 0,
+)
 
 const ETIQUETA_A_PASO = { Ingreso: "informacion", Revisión: "inspeccion", Evidencias: "evidencias", Autorización: "autorizacion" };
 
@@ -591,7 +599,7 @@ const estadoPasos = computed(() => {
     const propios = requisitos.value.filter((r) => r.paso === paso.key);
     let estado = "pendiente";
     if (conError.has(paso.key)) estado = "error";
-    else if (propios.every((r) => r.ok) && (propios.length > 0 || pasosVisitados.value.has(paso.key))) estado = "completo";
+    else if (propios.every((r) => r.ok) && (propios.length > 0 || (paso.key === "inspeccion" && revisionConDatos.value))) estado = "completo";
     resultado[paso.key] = estado;
   });
   return resultado;
@@ -1152,6 +1160,8 @@ async function loadRecepcion() {
         estado: data.estado || "PENDIENTE",
         motivo_no_recepcion: data.motivo_no_recepcion || "",
       });
+      kmGuardado.value =
+        data.kilometraje_ingreso != null ? Number(data.kilometraje_ingreso) : null;
       cargarSucursal(data.sucursal);
       await cargarRelacionesRecepcion(data.id);
       clienteNoFirma.value = data.estado === "NO_ACEPTADA";
@@ -1184,6 +1194,10 @@ async function loadRecepcion() {
           }
         });
         fotosExisting.value = existing;
+        // El formulario aún no está montado: la presencia sale de las fotos guardadas.
+        fotosPresence.value = Object.fromEntries(
+          FOTO_VISTAS.map((v) => [v.key, Boolean(existing[v.key])]),
+        );
       } else {
         fotosExisting.value = {};
       }
@@ -1430,8 +1444,9 @@ function validateRecepcion() {
           "El kilometraje debe ser un número entero mayor a 0.";
       } else if (form.vehiculo && form.vehiculo.kilometraje_actual != null) {
         const kmVehiculo = Number(form.vehiculo.kilometraje_actual);
-        const conservarKmEnEdicion = isEditMode && km === kmVehiculo;
-        if (km < kmVehiculo || (km === kmVehiculo && !conservarKmEnEdicion)) {
+        const conservarKmEnEdicion =
+          isEditMode && (km === kmVehiculo || km === kmGuardado.value);
+        if (!conservarKmEnEdicion && km <= kmVehiculo) {
           errors.kilometraje_ingreso = `El kilometraje de ingreso debe ser mayor al kilometraje registrado del vehículo (${kmVehiculo} km).`;
         }
       }
@@ -2120,7 +2135,7 @@ onMounted(() => {
                           <span class="absolute inset-y-0 end-0 flex items-center pe-3 text-sm text-gray-500 pointer-events-none dark:text-gray-400">km</span>
                         </div>
                         <p v-if="formErrors.kilometraje_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.kilometraje_ingreso }}</p>
-                        <p v-else-if="vehiculoKilometrajeText" class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                        <p v-else-if="vehiculoKilometrajeText && !kmConservado" class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
                           Último registro: {{ vehiculoKilometrajeText }} km
                           <span
                             v-if="kmDiferencia != null"
