@@ -104,22 +104,6 @@ const vehiculosFiltrados = computed(() => {
 
 const vehiculosActivos = computed(() => vehiculos.value.filter((v) => v.is_active !== false).length);
 
-const avisosMantenimiento = computed(() => {
-  const activos = vehiculos.value.filter((v) => v.is_active !== false);
-  return {
-    vencidos: activos.filter((v) => v.mantenimiento.tono === 'vencido').length,
-    proximos: activos.filter((v) => v.mantenimiento.tono === 'pronto').length,
-  };
-});
-
-const resumenMantenimiento = computed(() => {
-  const { vencidos, proximos } = avisosMantenimiento.value;
-  const partes = [];
-  if (vencidos) partes.push(`${vencidos} con servicio vencido`);
-  if (proximos) partes.push(`${proximos} con servicio próximo`);
-  return partes.join(' · ');
-});
-
 const datosCliente = computed(() => {
   const c = client.value;
   if (!c) return [];
@@ -353,8 +337,6 @@ onMounted(async () => {
                   de {{ vehiculos.length }}
                 </span>
               </span>
-              <span v-if="resumenMantenimiento" class="mt-0.5 block text-sm text-warning">{{ resumenMantenimiento }}</span>
-              <span v-else-if="vehiculosActivos" class="mt-0.5 block text-sm text-gray-500 dark:text-gray-400">Sin servicios pendientes</span>
             </dd>
           </div>
         </dl>
