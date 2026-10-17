@@ -12,6 +12,7 @@ import { useFiltrosReactivos } from '../../../shared/composables/useFiltrosReact
 import EntityTable from '../../../shared/components/EntityTable.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
 import EmpresaModal from './EmpresaModal.vue';
+import EstadoActivoBadge from '../../../shared/components/EstadoActivoBadge.vue';
 
 const {
   empresas,
@@ -208,7 +209,7 @@ onMounted(() => loadEmpresas());
     <!-- PANEL DE LISTADO -->
     <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded border border-default">
       <div class="flex flex-col gap-3 px-4 py-3 border-b border-default-medium md:flex-row md:items-center md:justify-between">
-        <h2 class="text-lg font-semibold text-heading">Listado de Empresas</h2>
+        <h2 class="text-base font-semibold text-slate-900 dark:text-white">Listado de Empresas</h2>
         <div class="flex flex-wrap items-center gap-2">
           <EntityActionButtons
             entity="empresas"
@@ -227,29 +228,22 @@ onMounted(() => loadEmpresas());
         :wrapper-class="'w-full'"
       >
     <template #row="{ item }">
-      <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
-        <td class="p-4 font-medium text-gray-800 whitespace-nowrap dark:text-white">{{ item.nombre_comercial }}</td>
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.razon_social || '—' }}</td>
-        <td class="p-4 font-mono text-sm text-gray-800 whitespace-nowrap dark:text-white">{{ item.ruc }}</td>
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.telefono || '—' }}</td>
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-gray-400">{{ item.email_contacto || '—' }}</td>
-        <td class="p-4 whitespace-nowrap">
-          <span v-if="item.is_active" class="inline-flex items-center bg-success-soft border border-success-subtle text-fg-success-strong text-xs font-medium px-1 py-0.5 rounded">
-            <span class="h-1.5 w-1.5 bg-fg-success-strong rounded-full me-0.5"></span>
-            Activa
-          </span>
-          <span v-else class="inline-flex items-center bg-danger-soft border border-danger-subtle text-fg-danger-strong text-xs font-medium px-1 py-0.5 rounded">
-            <span class="h-1.5 w-1.5 bg-fg-danger-strong rounded-full me-0.5"></span>
-            Inactiva
-          </span>
+      <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
+        <td class="px-4 py-3 font-medium text-gray-800 whitespace-nowrap dark:text-white">{{ item.nombre_comercial }}</td>
+        <td class="px-4 py-3 text-gray-800 whitespace-nowrap dark:text-white">{{ item.razon_social || '—' }}</td>
+        <td class="px-4 py-3 font-mono text-sm text-gray-800 whitespace-nowrap dark:text-white">{{ item.ruc }}</td>
+        <td class="px-4 py-3 text-gray-800 whitespace-nowrap dark:text-white">{{ item.telefono || '—' }}</td>
+        <td class="px-4 py-3 text-gray-800 whitespace-nowrap dark:text-gray-400">{{ item.email_contacto || '—' }}</td>
+        <td class="px-4 py-3 whitespace-nowrap">
+          <EstadoActivoBadge :activo="item.is_active" femenino />
         </td>
-        <td class="p-4 whitespace-nowrap">
+        <td class="px-4 py-3 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <button type="button" title="Editar empresa" aria-label="Editar empresa" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="openEditModal(item.id)">
-              <Pen class="w-5 h-5" />
+            <button type="button" title="Editar empresa" aria-label="Editar empresa" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-50 hover:text-brand-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" @click="openEditModal(item.id)">
+              <Pen class="w-4 h-4" />
             </button>
-            <button type="button" title="Eliminar empresa" aria-label="Eliminar empresa" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
-              <Trash2 class="w-5 h-5" />
+            <button type="button" title="Eliminar empresa" aria-label="Eliminar empresa" :disabled="isDeleting" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-red-500/10 dark:hover:text-red-400" @click="openDeleteModal(item)">
+              <Trash2 class="w-4 h-4" />
             </button>
           </div>
         </td>

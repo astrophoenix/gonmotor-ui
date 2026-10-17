@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref } from 'vue';
-import { Eye, Pen, Trash2, Filter, Search, CalendarDays, Wrench, Car, Gauge, IdCard, Phone, ChevronsDown, Equal, ChevronsUp, Siren } from 'lucide-vue-next';
+import { Eye, Pen, Trash2, Filter, Search, CalendarDays, Wrench, Car, Gauge, IdCard, Phone, ChevronsDown, Equal, ChevronsUp, Siren, Minus } from 'lucide-vue-next';
 import { Icon } from '@iconify/vue';
 import filePdfIcon from '@iconify-icons/fa6-regular/file-pdf';
 import { useOrdenes } from '../composables/useOrdenes';
@@ -397,7 +397,7 @@ onMounted(() => {
     <!-- PANEL DE LISTADO -->
     <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
       <div class="flex flex-col gap-3 px-4 py-3 border-b border-default-medium md:flex-row md:items-center md:justify-between">
-        <h2 class="text-lg font-semibold text-heading">Listado de Órdenes de Trabajo</h2>
+        <h2 class="text-base font-semibold text-slate-900 dark:text-white">Listado de Órdenes de Trabajo</h2>
         <div class="flex flex-wrap items-center gap-2">
           <EntityActionButtons
             entity="ordenes"
@@ -418,14 +418,14 @@ onMounted(() => {
         :wrapper-class="'w-full'"
       >
     <template #row="{ item, index }">
-      <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
-        <td class="p-4 whitespace-nowrap">
+      <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
+        <td class="px-4 py-3 whitespace-nowrap">
           <a :href="`/crud/ordenes/ver/?id=${encodeURIComponent(item.id)}`"
             class="font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
             {{ item.numero_orden || referenciaCorta(item.id) }}
           </a>
         </td>
-        <td class="p-4 whitespace-nowrap align-top">
+        <td class="px-4 py-3 whitespace-nowrap align-top">
           <a v-if="vehiculoUrl(item)" :href="vehiculoUrl(item)" class="font-medium text-gray-800 hover:text-primary-600 dark:text-white dark:hover:text-primary-400">
             {{ item.vehiculo?.placa || '-' }}
           </a>
@@ -444,7 +444,7 @@ onMounted(() => {
             </span>
           </div>
         </td>
-        <td class="p-4 whitespace-nowrap align-top">
+        <td class="px-4 py-3 whitespace-nowrap align-top">
           <a v-if="clienteUrl(item)" :href="clienteUrl(item)" class="font-medium text-gray-800 hover:text-primary-600 dark:text-white dark:hover:text-primary-400">
             {{ item.cliente?.nombre || '-' }}
           </a>
@@ -460,10 +460,10 @@ onMounted(() => {
             </span>
           </div>
         </td>
-        <td class="p-4 whitespace-nowrap">
+        <td class="px-4 py-3 whitespace-nowrap">
           <TipoTrabajoBadge :tipo="item.tipo_trabajo" size="sm" />
         </td>
-        <td class="p-4 whitespace-nowrap align-top">
+        <td class="px-4 py-3 whitespace-nowrap align-top">
           <EstadoOrdenBadge :estado="item.estado" :estado-display="item.estado_display" size="sm" />
           <span
             class="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300"
@@ -473,7 +473,7 @@ onMounted(() => {
             {{ prioridadConfig(item.prioridad).label }}
           </span>
         </td>
-        <td class="p-4 text-gray-800 whitespace-nowrap align-top dark:text-white">
+        <td class="px-4 py-3 text-gray-800 whitespace-nowrap align-top dark:text-white">
           <div class="flex flex-col gap-1" :title="getFechaOrden(item).completo">
             <span class="font-medium text-gray-900 dark:text-white">{{ getFechaOrden(item).fecha }}</span>
             <span class="text-xs text-gray-500 dark:text-gray-400">
@@ -482,16 +482,16 @@ onMounted(() => {
             </span>
           </div>
         </td>
-        <td class="p-4 whitespace-nowrap align-top">
+        <td class="px-4 py-3 whitespace-nowrap align-top">
           <RelacionesFlujo :pasos="relacionesDeOrden(item)" />
         </td>
-        <td class="p-4 whitespace-nowrap">
+        <td class="px-4 py-3 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <button type="button" title="Editar orden" aria-label="Editar orden" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="handleEditar(item.id)">
-              <Pen class="w-5 h-5" />
+            <button type="button" title="Editar orden" aria-label="Editar orden" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-50 hover:text-brand-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" @click="handleEditar(item.id)">
+              <Pen class="w-4 h-4" />
             </button>
-            <button type="button" title="Eliminar orden" aria-label="Eliminar orden" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
-              <Trash2 class="w-5 h-5" />
+            <button type="button" title="Eliminar orden" aria-label="Eliminar orden" :disabled="isDeleting" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-red-500/10 dark:hover:text-red-400" @click="openDeleteModal(item)">
+              <Trash2 class="w-4 h-4" />
             </button>
             <EntityActionsMenu>
               <template #default="{ cerrar }">

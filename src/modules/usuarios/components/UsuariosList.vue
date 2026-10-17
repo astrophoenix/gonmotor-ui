@@ -13,6 +13,7 @@ import EntityTable from '../../../shared/components/EntityTable.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
 import UsuarioModal from './UsuarioModal.vue';
 import { useRolesOtorgables } from '../../../shared/composables/useRolesOtorgables';
+import EstadoActivoBadge from '../../../shared/components/EstadoActivoBadge.vue';
 
 const {
   usuarios,
@@ -234,7 +235,7 @@ onMounted(() => {
     <!-- PANEL DE LISTADO -->
     <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
       <div class="flex flex-col gap-3 px-4 py-3 border-b border-default-medium md:flex-row md:items-center md:justify-between">
-        <h2 class="text-lg font-semibold text-heading">Listado de Usuarios</h2>
+        <h2 class="text-base font-semibold text-slate-900 dark:text-white">Listado de Usuarios</h2>
         <div class="flex flex-wrap items-center gap-2">
           <EntityActionButtons
             entity="usuarios"
@@ -253,23 +254,23 @@ onMounted(() => {
         :wrapper-class="'w-full'"
       >
     <template #row="{ item }">
-      <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
-        <td class="p-4 whitespace-nowrap">
+      <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
+        <td class="px-4 py-3 whitespace-nowrap">
           <span class="inline-flex items-center gap-1.5 font-medium text-primary-600 dark:text-primary-400">
             <ShieldCheck class="w-4 h-4" />
             {{ item.user?.identificacion || '—' }}
           </span>
         </td>
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">
+        <td class="px-4 py-3 text-gray-800 whitespace-nowrap dark:text-white">
           {{ item.user?.first_name }} {{ item.user?.last_name }}
         </td>
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-gray-400">
+        <td class="px-4 py-3 text-gray-800 whitespace-nowrap dark:text-gray-400">
           {{ item.user?.email || 'Sin correo' }}
         </td>
-        <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">
+        <td class="px-4 py-3 text-gray-800 whitespace-nowrap dark:text-white">
           {{ item.rol_display || item.rol }}
         </td>
-        <td class="p-4 text-gray-800 dark:text-gray-400">
+        <td class="px-4 py-3 text-gray-800 dark:text-gray-400">
           <div v-if="!item.talleres || !item.talleres.length" class="text-gray-500 dark:text-gray-400">
             Sin talleres
           </div>
@@ -277,23 +278,16 @@ onMounted(() => {
             {{ item.talleres.map(t => t.nombre).join(', ') }}
           </div>
         </td>
-        <td class="p-4 whitespace-nowrap">
-          <span v-if="item.is_active" class="inline-flex items-center bg-success-soft border border-success-subtle text-fg-success-strong text-xs font-medium px-2.5 py-0.5 rounded">
-            <span class="h-1.5 w-1.5 bg-fg-success-strong rounded-full me-0.5"></span>
-            Activo
-          </span>
-          <span v-else class="inline-flex items-center bg-danger-soft border border-danger-subtle text-fg-danger-strong text-xs font-medium px-2.5 py-0.5 rounded">
-            <span class="h-1.5 w-1.5 bg-fg-danger-strong rounded-full me-0.5"></span>
-            Inactivo
-          </span>
+        <td class="px-4 py-3 whitespace-nowrap">
+          <EstadoActivoBadge :activo="item.is_active" />
         </td>
-        <td class="p-4 whitespace-nowrap">
+        <td class="px-4 py-3 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <button type="button" title="Editar usuario" aria-label="Editar usuario" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="editUsuario(item.id)">
-              <Pen class="w-5 h-5" />
+            <button type="button" title="Editar usuario" aria-label="Editar usuario" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-50 hover:text-brand-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" @click="editUsuario(item.id)">
+              <Pen class="w-4 h-4" />
             </button>
-            <button type="button" title="Eliminar usuario" aria-label="Eliminar usuario" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
-              <Trash2 class="w-5 h-5" />
+            <button type="button" title="Eliminar usuario" aria-label="Eliminar usuario" :disabled="isDeleting" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-red-500/10 dark:hover:text-red-400" @click="openDeleteModal(item)">
+              <Trash2 class="w-4 h-4" />
             </button>
           </div>
         </td>

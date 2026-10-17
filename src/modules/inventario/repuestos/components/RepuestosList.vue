@@ -260,7 +260,7 @@ onMounted(() => loadRepuestos());
     <!-- PANEL DE LISTADO -->
     <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
       <div class="flex flex-col gap-3 px-4 py-3 border-b border-default-medium md:flex-row md:items-center md:justify-between">
-        <h2 class="text-lg font-semibold text-heading">Listado de Repuestos</h2>
+        <h2 class="text-base font-semibold text-slate-900 dark:text-white">Listado de Repuestos</h2>
         <div class="flex flex-wrap items-center gap-2">
           <EntityActionButtons
             entity="repuestos"
@@ -281,25 +281,25 @@ onMounted(() => loadRepuestos());
         :wrapper-class="'w-full'"
       >
     <template #row="{ item }">
-      <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
-        <td class="p-4 font-medium text-heading whitespace-nowrap">{{ item.codigo }}</td>
-        <td class="p-4 text-heading whitespace-nowrap">{{ item.nombre }}</td>
-        <td class="p-4 text-heading whitespace-nowrap">{{ categoriaLabel(item.categoria) }}</td>
-        <td class="p-4 text-heading whitespace-nowrap">{{ item.marca || '—' }}</td>
-        <td class="p-4 whitespace-nowrap">
+      <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
+        <td class="px-4 py-3 font-medium text-heading whitespace-nowrap">{{ item.codigo }}</td>
+        <td class="px-4 py-3 text-heading whitespace-nowrap">{{ item.nombre }}</td>
+        <td class="px-4 py-3 text-heading whitespace-nowrap">{{ categoriaLabel(item.categoria) }}</td>
+        <td class="px-4 py-3 text-heading whitespace-nowrap">{{ item.marca || '—' }}</td>
+        <td class="px-4 py-3 whitespace-nowrap">
           <span :class="item.stock_bajo ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-heading'">
             {{ item.stock_actual }} {{ item.stock_minimo ? `(mín ${item.stock_minimo})` : '' }}
           </span>
           <span v-if="item.stock_bajo" class="inline-block ml-1 px-2 py-0.5 text-xs font-medium rounded-full bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">Stock bajo</span>
         </td>
-        <td class="p-4 text-heading whitespace-nowrap">{{ formatCurrency(item.precio_venta) }}</td>
-        <td class="p-4 whitespace-nowrap">
+        <td class="px-4 py-3 text-heading whitespace-nowrap">{{ formatCurrency(item.precio_venta) }}</td>
+        <td class="px-4 py-3 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <button type="button" title="Editar repuesto" aria-label="Editar repuesto" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="openEditModal(item.id)">
-              <Pen class="w-5 h-5" />
+            <button type="button" title="Editar repuesto" aria-label="Editar repuesto" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-50 hover:text-brand-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" @click="openEditModal(item.id)">
+              <Pen class="w-4 h-4" />
             </button>
-            <button type="button" title="Eliminar repuesto" aria-label="Eliminar repuesto" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
-              <Trash2 class="w-5 h-5" />
+            <button type="button" title="Eliminar repuesto" aria-label="Eliminar repuesto" :disabled="isDeleting" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-red-500/10 dark:hover:text-red-400" @click="openDeleteModal(item)">
+              <Trash2 class="w-4 h-4" />
             </button>
           </div>
         </td>

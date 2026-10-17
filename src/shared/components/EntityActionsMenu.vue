@@ -56,10 +56,10 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown));
     aria-label="Más acciones"
     :aria-expanded="abierto"
     :disabled="disabled"
-    class="px-1.5 py-1.5 inline-flex items-center p-2 text-gray-900 rounded border border-gray-300 hover:bg-primary-100 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-primary-400"
+    class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-50 hover:text-brand-900 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
     @click.stop="alternar"
   >
-    <MoreVertical class="w-5 h-5" />
+    <MoreVertical class="w-4 h-4" />
   </button>
   <Teleport to="body">
     <div v-if="abierto" class="fixed inset-0 z-40" @click="cerrar" @contextmenu.prevent="cerrar" />

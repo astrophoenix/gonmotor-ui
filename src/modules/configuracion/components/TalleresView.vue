@@ -12,6 +12,7 @@ import Pagination from '../../../shared/components/Pagination.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
+import EstadoActivoBadge from '../../../shared/components/EstadoActivoBadge.vue';
 import TallerModal from './TallerModal.vue';
 
 const talleres = ref([]);
@@ -37,7 +38,7 @@ const exportParams = computed(() => ({
   ciudad: appliedFilters.value.ciudad,
 }));
 
-const columns = ['Nombre', 'Código', 'Ciudad', 'Dirección', 'Teléfono', 'Estado', 'Acciones'];
+const columns = ['Nombre', 'Código', 'Ciudad', 'Dirección', 'Teléfono', 'Estado', { key: 'acciones', label: 'Acciones', thClass: '!text-right' }];
 
 const alert = ref({ type: 'default', title: '', message: '' });
 
@@ -250,7 +251,7 @@ onUnmounted(() => {
     <!-- PANEL DE LISTADO -->
     <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
       <div class="flex flex-col gap-3 px-4 py-3 border-b border-default-medium md:flex-row md:items-center md:justify-between">
-        <h2 class="text-lg font-semibold text-heading">Listado de Talleres</h2>
+        <h2 class="text-base font-semibold text-slate-900 dark:text-white">Listado de Talleres</h2>
         <div class="flex flex-wrap items-center gap-2">
           <EntityActionButtons
             entity="talleres"
@@ -271,29 +272,22 @@ onUnmounted(() => {
         :wrapper-class="'w-full'"
       >
         <template #row="{ item }">
-          <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
-            <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.nombre }}</td>
-            <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.codigo_sucursal }}</td>
-            <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.ciudad || '—' }}</td>
-            <td class="p-4 text-gray-800 dark:text-white">{{ item.direccion }}</td>
-            <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.telefono || '—' }}</td>
-            <td class="p-4 whitespace-nowrap">
-              <span v-if="item.is_active" class="inline-flex items-center bg-success-soft border border-success-subtle text-fg-success-strong text-xs font-medium px-1.5 py-0.5 rounded">
-                <span class="h-1.5 w-1.5 bg-fg-success-strong rounded-full me-0.5"></span>
-                Activo
-              </span>
-              <span v-else class="inline-flex items-center bg-danger-soft border border-danger-subtle text-fg-danger-strong text-xs font-medium px-1.5 py-0.5 rounded">
-                <span class="h-1.5 w-1.5 bg-fg-danger-strong rounded-full me-0.5"></span>
-                Inactivo
-              </span>
+          <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
+            <td class="px-4 py-3 font-medium text-slate-900 whitespace-nowrap dark:text-white">{{ item.nombre }}</td>
+            <td class="px-4 py-3 whitespace-nowrap"><span class="px-1.5 py-0.5 font-mono text-xs border rounded text-slate-700 bg-slate-50 border-slate-200 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200">{{ item.codigo_sucursal }}</span></td>
+            <td class="px-4 py-3 text-slate-600 whitespace-nowrap dark:text-gray-300">{{ item.ciudad || '—' }}</td>
+            <td class="px-4 py-3 text-slate-600 dark:text-gray-300">{{ item.direccion }}</td>
+            <td class="px-4 py-3 text-slate-600 whitespace-nowrap tabular-nums dark:text-gray-300">{{ item.telefono || '—' }}</td>
+            <td class="px-4 py-3 whitespace-nowrap">
+              <EstadoActivoBadge :activo="item.is_active" />
             </td>
-            <td class="p-4 whitespace-nowrap">
-              <div class="flex items-center gap-2">
-                <button type="button" title="Editar taller" aria-label="Editar taller" class="px-1.5 py-1.5 inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700" @click="openEditModal(item)">
-                  <Pen class="w-5 h-5" />
+            <td class="px-4 py-3 whitespace-nowrap">
+              <div class="flex items-center justify-end gap-1">
+                <button type="button" title="Editar taller" aria-label="Editar taller" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-50 hover:text-brand-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" @click="openEditModal(item)">
+                  <Pen class="w-4 h-4" />
                 </button>
-                <button type="button" title="Eliminar taller" aria-label="Eliminar taller" :disabled="isDeleting" class="px-1.5 py-1.5 inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700" @click="openDeleteModal(item)">
-                  <Trash2 class="w-5 h-5" />
+                <button type="button" title="Eliminar taller" aria-label="Eliminar taller" :disabled="isDeleting" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-red-500/10 dark:hover:text-red-400" @click="openDeleteModal(item)">
+                  <Trash2 class="w-4 h-4" />
                 </button>
               </div>
             </td>
