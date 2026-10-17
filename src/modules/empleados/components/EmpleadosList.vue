@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { IdCard, Users, Search, Filter } from 'lucide-vue-next';
+import { IdCard, IdCardLanyard, Search, Filter } from 'lucide-vue-next';
 import { useEmpleados } from '../composables/useEmpleados';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
@@ -179,7 +179,7 @@ onMounted(() => {
 <template>
   <EntityHeader
     mode="list"
-    :icon="Users"
+    :icon="IdCardLanyard"
     entity="Empleados"
     :breadcrumb="[
       { label: 'Inicio', href: '/' },

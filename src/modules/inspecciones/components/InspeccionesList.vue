@@ -1,12 +1,14 @@
 <script setup>
-import { onMounted, ref, onUnmounted, nextTick } from 'vue';
+import { onMounted, ref, onUnmounted, nextTick, h } from 'vue';
 import {
-  FileSearchCorner, Search, Receipt, Filter, CalendarDays, Flag,
+  Search, Receipt, Filter, CalendarDays, Flag,
   Car, Gauge, IdCard, Phone, MoreVertical,
 } from 'lucide-vue-next';
 import { IconLockOpen2 } from '@tabler/icons-vue';
+import { mdiCarSearchOutline } from '@mdi/js';
 import { Icon } from '@iconify/vue';
 import filePdfIcon from '@iconify-icons/fa6-regular/file-pdf';
+import MdiIcon from '@/shared/components/MdiIcon.vue';
 import { useInspecciones } from '../composables/useInspecciones';
 import { inspeccionesService } from '../services/inspeccionesService';
 import { useAuthStore } from '../../auth/stores/authStore';
@@ -29,6 +31,9 @@ import Pagination from '../../../shared/components/Pagination.vue';
 import { ESTADOS_INSPECCION_FILTRABLE } from '../constants/estadosInspeccion';
 import { TIPOS_TRABAJO_OPCIONES } from '../../../shared/config/tiposTrabajo';
 import { referenciaCorta } from '../../../shared/utils/format';
+
+// Mismo icono que el enlace de Inspecciones del sidebar.
+const CarSearchIcon = { render: () => h(MdiIcon, { path: mdiCarSearchOutline }) };
 
 const {
   inspecciones,
@@ -360,7 +365,7 @@ onUnmounted(() => {
 <template>
   <EntityHeader
     mode="list"
-    :icon="FileSearchCorner"
+    :icon="CarSearchIcon"
     entity="Inspecciones"
     :breadcrumb="[
       { label: 'Inicio', href: '/' },
