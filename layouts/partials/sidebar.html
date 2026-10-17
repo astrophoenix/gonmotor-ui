@@ -13,75 +13,68 @@
 {{- $enAdminSaas := and (eq $mod "crud") (eq $sub "empresas") -}}
 
 <aside id="sidebar" class="fixed top-0 left-0 z-50 flex flex-col flex-shrink-0 hidden w-64 h-full font-normal duration-75 lg:flex transition-width sidebar-collapsed:w-16" aria-label="Sidebar">
-  <div class="relative flex flex-col flex-1 min-h-0 bg-brand-900 border-r border-gray-200 dark:bg-brand-900 dark:border-gray-700">
-    <div class="sidebar-scroll flex flex-col flex-1 pt-0 pb-4 overflow-y-auto">
-      <div class="flex-1 space-y-1 bg-brand-900 divide-y divide-white/10 dark:bg-brand-900 dark:divide-white/10">
-        <div class="sidebar-header bg-brand-900">
-          <a href="{{ if $enAdminSaas }}{{ "crud/empresas/" | relURL }}{{ else }}{{ "/" | relURL }}{{ end }}" sidebar-logo class="sidebar-brand flex items-center justify-center">
-            <img src="/images/isotipo-blanco.svg" class="h-12 w-auto" alt="gonmotor Logo" />
-            <span sidebar-toggle-item class="sidebar-wordmark self-center font-brand text-2xl font-extrabold leading-none tracking-tight whitespace-nowrap ml-2 sm:text-3xl"><span class="text-white">gon</span><span class="text-brand-coral">motor</span></span>
+  <div class="sidebar-panel relative flex flex-col flex-1 min-h-0">
+    <div class="sidebar-scroll flex flex-col flex-1 pt-0 pb-6 overflow-y-auto">
+      <div class="flex-1">
+        <div class="sidebar-header">
+          <a href="{{ if $enAdminSaas }}{{ "crud/empresas/" | relURL }}{{ else }}{{ "/" | relURL }}{{ end }}" sidebar-logo class="sidebar-brand flex items-center">
+            <img src="/images/isotipo-blanco.svg" class="h-10 w-auto" alt="gonmotor Logo" />
+            <span sidebar-toggle-item class="sidebar-wordmark self-center font-brand text-2xl font-extrabold leading-none tracking-tight whitespace-nowrap ml-2 sm:text-[1.75rem]"><span class="text-white">gon</span><span class="text-brand-coral">motor</span></span>
           </a>
           <button id="toggleSidebarDesktop" type="button" class="sidebar-toggle-btn" aria-label="Contraer menú" aria-expanded="true" title="Contraer menú">
-            <svg id="toggleSidebarDesktopCollapse" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-            <svg id="toggleSidebarDesktopExpand" class="hidden h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+            <svg id="toggleSidebarDesktopCollapse" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="m11 17-5-5 5-5"/><path d="m18 17-5-5 5-5"/></svg>
+            <svg id="toggleSidebarDesktopExpand" class="hidden h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="m6 17 5-5-5-5"/><path d="m13 17 5-5-5-5"/></svg>
           </button>
           <button id="sidebarCloseMobile" type="button" class="sidebar-close-mobile" aria-label="Cerrar menú" title="Cerrar menú">
             <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
           </button>
         </div>
-        <ul class="pb-2 space-y-1">
+        <ul class="sidebar-nav">
           {{- if not $enAdminSaas }}
           <li class="sidebar-section-label" sidebar-toggle-item>Panel</li>
           <li>
-            <a href="{{ "/" | relURL }}" sidebar-tooltip="Dashboard" class="flex items-center py-2.5 px-2 text-base text-white hover:bg-brand-700 group transition duration-75 dark:text-white dark:hover:bg-brand-700 {{ if eq .RelPermalink "/" }}is-current{{ end }}" {{ if eq .RelPermalink "/" }}aria-current="page"{{ end }}>
-                <svg class="flex-shrink-0 w-5 h-5 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"></path><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"></path></svg>
-                <span class="ml-3" sidebar-toggle-item>Dashboard</span>
+            <a href="{{ "/" | relURL }}" sidebar-tooltip="Dashboard" class="sidebar-link{{ if eq .RelPermalink "/" }} is-current{{ end }}" {{ if eq .RelPermalink "/" }}aria-current="page"{{ end }}>
+              <svg class="sidebar-icon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
+              <span class="sidebar-label" sidebar-toggle-item>Dashboard</span>
             </a>
           </li>
-          <li>
-            <hr class="my-1 border-brand-700/40" />
-          </li>
+          <li class="sidebar-separator" aria-hidden="true"></li>
           <li class="sidebar-section-label" sidebar-toggle-item>Taller</li>
           <li>
-            <button type="button" sidebar-tooltip="Operación" class="flex items-center w-full py-2.5 px-2 text-base text-white transition duration-75 group hover:bg-brand-700 dark:text-white dark:hover:bg-brand-700 {{ if $enOperacion }}is-current{{ end }}" aria-controls="dropdown-operacion" aria-expanded="{{ if $enOperacion }}true{{ else }}false{{ end }}" data-collapse-toggle="dropdown-operacion">
-                <svg class="flex-shrink-0 w-5 h-5 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="currentColor" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg">
-                  <path fill-rule="evenodd" d="M9 2a1 1 0 0 0-1 1H6a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-2a1 1 0 0 0-1-1H9Zm1 2h4v2h1a1 1 0 1 1 0 2H9a1 1 0 0 1 0-2h1V4Zm5.707 8.707a1 1 0 0 0-1.414-1.414L11 14.586l-1.293-1.293a1 1 0 0 0-1.414 1.414l2 2a1 1 0 0 0 1.414 0l4-4Z" clip-rule="evenodd"/>
-                </svg>
-                <span class="flex-1 ml-3 text-left whitespace-nowrap" sidebar-toggle-item>Operación</span>
-                <svg sidebar-toggle-item class="sidebar-chevron w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+            <button type="button" sidebar-tooltip="Operación" class="sidebar-link sidebar-group{{ if $enOperacion }} is-current{{ end }}" aria-controls="dropdown-operacion" aria-expanded="{{ if $enOperacion }}true{{ else }}false{{ end }}" data-collapse-toggle="dropdown-operacion">
+              <svg class="sidebar-icon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 21h4l13 -13a1.5 1.5 0 0 0 -4 -4l-13 13v4"/><path d="M14.5 5.5l4 4"/><path d="M12 8l-5 -5l-4 4l5 5"/><path d="M7 8l-1.5 1.5"/><path d="M16 12l5 5l-4 4l-5 -5"/><path d="M16 17l-1.5 1.5"/></svg>
+              <span class="sidebar-label flex-1 text-left whitespace-nowrap" sidebar-toggle-item>Operación</span>
+              <svg sidebar-toggle-item class="sidebar-chevron" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
             </button>
             <div sidebar-dropdown class="relative">
-              <ul id="dropdown-operacion" class="space-y-1 py-0 bg-brand-700 {{ if not $enOperacion }}hidden{{ end }}">
-              <li>
-                  <a href="{{ "crud/citas/" | relURL }}" class="flex items-center gap-2.5 py-2.5 pl-10 pr-2 text-base text-white hover:bg-brand-700 transition duration-75 dark:text-white dark:hover:bg-brand-700 {{ if eq $sub "citas" }}is-current{{ end }}" {{ if eq $sub "citas" }}aria-current="page"{{ end }}>
-                    <svg class="flex-shrink-0 w-4 h-4 text-white/80" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              <ul id="dropdown-operacion" class="sidebar-submenu{{ if not $enOperacion }} hidden{{ end }}">
+                <li>
+                  <a href="{{ "crud/citas/" | relURL }}" class="sidebar-sublink{{ if eq $sub "citas" }} is-current{{ end }}" {{ if eq $sub "citas" }}aria-current="page"{{ end }}>
+                    <svg class="sidebar-subicon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
                     Citas
                   </a>
-               </li>
-              <li>
-                  <a href="{{ "crud/recepciones/" | relURL }}" class="flex items-center gap-2.5 py-2.5 pl-10 pr-2 text-base text-white hover:bg-brand-700 transition duration-75 dark:text-white dark:hover:bg-brand-700 {{ if eq $sub "recepciones" }}is-current{{ end }}" {{ if eq $sub "recepciones" }}aria-current="page"{{ end }}>
-                    <svg class="flex-shrink-0 w-4 h-4 text-white/80" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+                </li>
+                <li>
+                  <a href="{{ "crud/recepciones/" | relURL }}" class="sidebar-sublink{{ if eq $sub "recepciones" }} is-current{{ end }}" {{ if eq $sub "recepciones" }}aria-current="page"{{ end }}>
+                    <svg class="sidebar-subicon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg>
                     Recepción
                   </a>
-               </li>
-               <li>
-                  <a href="{{ "crud/inspecciones/" | relURL }}" class="flex items-center gap-2.5 py-2.5 pl-10 pr-2 text-base text-white hover:bg-brand-700 transition duration-75 dark:text-white dark:hover:bg-brand-700 {{ if eq $sub "inspecciones" }}is-current{{ end }}" {{ if eq $sub "inspecciones" }}aria-current="page"{{ end }}>
-                    <svg class="flex-shrink-0 w-4 h-4 text-white/80" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </li>
+                <li>
+                  <a href="{{ "crud/inspecciones/" | relURL }}" class="sidebar-sublink{{ if eq $sub "inspecciones" }} is-current{{ end }}" {{ if eq $sub "inspecciones" }}aria-current="page"{{ end }}>
+                    <svg class="sidebar-subicon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/><path d="m16 16-1.9-1.9"/></svg>
                     Inspecciones
                   </a>
                 </li>
                 <li>
-                  <a href="{{ "crud/cotizaciones/" | relURL }}" class="flex items-center gap-2.5 py-2.5 pl-10 pr-2 text-base text-white hover:bg-brand-700 transition duration-75 dark:text-white dark:hover:bg-brand-700 {{ if eq $sub "cotizaciones" }}is-current{{ end }}" {{ if eq $sub "cotizaciones" }}aria-current="page"{{ end }}>
-                    <svg class="flex-shrink-0 w-4 h-4 text-white/80" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+                  <a href="{{ "crud/cotizaciones/" | relURL }}" class="sidebar-sublink{{ if eq $sub "cotizaciones" }} is-current{{ end }}" {{ if eq $sub "cotizaciones" }}aria-current="page"{{ end }}>
+                    <svg class="sidebar-subicon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
                     Cotizaciones
                   </a>
                 </li>
                 <li>
-                  <a href="{{ "crud/ordenes/" | relURL }}" class="flex items-center gap-2.5 py-2.5 pl-10 pr-2 text-base text-white hover:bg-brand-700 transition duration-75 dark:text-white dark:hover:bg-brand-700 {{ if eq $sub "ordenes" }}is-current{{ end }}" {{ if eq $sub "ordenes" }}aria-current="page"{{ end }}>
-                    <svg class="flex-shrink-0 w-4 h-4 text-white/80" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"/>
-                    </svg>
+                  <a href="{{ "crud/ordenes/" | relURL }}" class="sidebar-sublink{{ if eq $sub "ordenes" }} is-current{{ end }}" {{ if eq $sub "ordenes" }}aria-current="page"{{ end }}>
+                    <svg class="sidebar-subicon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"/></svg>
                     Órdenes
                   </a>
                 </li>
@@ -89,28 +82,22 @@
             </div>
           </li>
           <li>
-            <button type="button" sidebar-tooltip="Inventario" class="flex items-center w-full py-2.5 px-2 text-base text-white transition duration-75 group hover:bg-brand-700 dark:text-white dark:hover:bg-brand-700 {{ if $enInventario }}is-current{{ end }}" aria-controls="dropdown-inventario" aria-expanded="{{ if $enInventario }}true{{ else }}false{{ end }}" data-collapse-toggle="dropdown-inventario">
-                <svg class="flex-shrink-0 w-5 h-5 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="currentColor" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <path fill-rule="evenodd" d="M20 10H4v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8ZM9 13v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1Z" clip-rule="evenodd"/>
-                  <path d="M2 6a2 2 0 0 1 2-2h16a2 2 0 1 1 0 4H4a2 2 0 0 1-2-2Z"/>
-                </svg>
-                <span class="flex-1 ml-3 text-left whitespace-nowrap" sidebar-toggle-item>Inventario</span>
-                <svg sidebar-toggle-item class="sidebar-chevron w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+            <button type="button" sidebar-tooltip="Inventario" class="sidebar-link sidebar-group{{ if $enInventario }} is-current{{ end }}" aria-controls="dropdown-inventario" aria-expanded="{{ if $enInventario }}true{{ else }}false{{ end }}" data-collapse-toggle="dropdown-inventario">
+              <svg class="sidebar-icon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M18 21V10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v11"/><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 1.132-1.803l7.95-3.974a2 2 0 0 1 1.837 0l7.948 3.974A2 2 0 0 1 22 8z"/><path d="M6 13h12"/><path d="M6 17h12"/></svg>
+              <span class="sidebar-label flex-1 text-left whitespace-nowrap" sidebar-toggle-item>Inventario</span>
+              <svg sidebar-toggle-item class="sidebar-chevron" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
             </button>
             <div sidebar-dropdown class="relative">
-              <ul id="dropdown-inventario" class="space-y-1 py-0 bg-brand-700 {{ if not $enInventario }}hidden{{ end }}">
+              <ul id="dropdown-inventario" class="sidebar-submenu{{ if not $enInventario }} hidden{{ end }}">
                 <li>
-                  <a href="{{ "crud/repuestos/" | relURL }}" class="flex items-center gap-2.5 py-2.5 pl-10 pr-2 text-base text-white hover:bg-brand-700 transition duration-75 dark:text-white dark:hover:bg-brand-700 {{ if eq $sub "repuestos" }}is-current{{ end }}" {{ if eq $sub "repuestos" }}aria-current="page"{{ end }}>
-                    <svg class="flex-shrink-0 w-4 h-4 text-white/80" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+                  <a href="{{ "crud/repuestos/" | relURL }}" class="sidebar-sublink{{ if eq $sub "repuestos" }} is-current{{ end }}" {{ if eq $sub "repuestos" }}aria-current="page"{{ end }}>
+                    <svg class="sidebar-subicon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M11 10.27 7 3.34"/><path d="m11 13.73-4 6.93"/><path d="M12 22v-2"/><path d="M12 2v2"/><path d="M14 12h8"/><path d="m17 20.66-1-1.73"/><path d="m17 3.34-1 1.73"/><path d="M2 12h2"/><path d="m20.66 17-1.73-1"/><path d="m20.66 7-1.73 1"/><path d="m3.34 17 1.73-1"/><path d="m3.34 7 1.73 1"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="12" r="8"/></svg>
                     Repuestos
                   </a>
                 </li>
                 <li>
-                  <a href="{{ "crud/servicios/" | relURL }}" class="flex items-center gap-2.5 py-2.5 pl-10 pr-2 text-base text-white hover:bg-brand-700 transition duration-75 dark:text-white dark:hover:bg-brand-700 {{ if eq $sub "servicios" }}is-current{{ end }}" {{ if eq $sub "servicios" }}aria-current="page"{{ end }}>
-                    <svg class="flex-shrink-0 w-4 h-4 text-white/80" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M16 12v4"/><path d="M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><path d="M17 6a2 2 0 011.414.586l3 3A2 2 0 0122 11v8a2 2 0 01-2 2H4a2 2 0 01-2-2v-8a2 2 0 01.586-1.414l3-3A2 2 0 017 6z"/>
-                      <path d="M2 14h20"/><path d="M8 12v4"/>
-                    </svg>
+                  <a href="{{ "crud/servicios/" | relURL }}" class="sidebar-sublink{{ if eq $sub "servicios" }} is-current{{ end }}" {{ if eq $sub "servicios" }}aria-current="page"{{ end }}>
+                    <svg class="sidebar-subicon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M16 12v4"/><path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M17 6a2 2 0 0 1 1.414.586l3 3A2 2 0 0 1 22 11v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 .586-1.414l3-3A2 2 0 0 1 7 6z"/><path d="M2 14h20"/><path d="M8 12v4"/></svg>
                     Servicios
                   </a>
                 </li>
@@ -120,66 +107,47 @@
           <li class="sidebar-separator" aria-hidden="true"></li>
           <li class="sidebar-section-label" sidebar-toggle-item>Negocio</li>
           <li>
-            <a href="{{ "crud/clientes/" | relURL }}" data-recurso="clientes" sidebar-tooltip="Clientes" class="flex items-center py-2.5 px-2 text-base text-white hover:bg-brand-700 group transition duration-75 dark:text-white dark:hover:bg-brand-700 {{ if eq $sub "clientes" }}is-current{{ end }}" {{ if eq $sub "clientes" }}aria-current="page"{{ end }}>
-                <svg class="flex-shrink-0 w-5 h-5 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="currentColor" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <path d="M12 6a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm-1.5 8a4 4 0 0 0-4 4 2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 4 4 0 0 0-4-4h-3Zm6.82-3.096a5.51 5.51 0 0 0-2.797-6.293 3.5 3.5 0 1 1 2.796 6.292ZM19.5 18h.5a2 2 0 0 0 2-2 4 4 0 0 0-4-4h-1.1a5.503 5.503 0 0 1-.471.762A5.998 5.998 0 0 1 19.5 18ZM4 7.5a3.5 3.5 0 0 1 5.477-2.889 5.5 5.5 0 0 0-2.796 6.293A3.501 3.501 0 0 1 4 7.5ZM7.1 12H6a4 4 0 0 0-4 4 2 2 0 0 0 2 2h.5a5.998 5.998 0 0 1 3.071-5.238A5.505 5.505 0 0 1 7.1 12Z"></path>
-                </svg>
-                <span class="ml-3" sidebar-toggle-item>Clientes</span>
+            <a href="{{ "crud/clientes/" | relURL }}" data-recurso="clientes" sidebar-tooltip="Clientes" class="sidebar-link{{ if eq $sub "clientes" }} is-current{{ end }}" {{ if eq $sub "clientes" }}aria-current="page"{{ end }}>
+              <svg class="sidebar-icon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></svg>
+              <span class="sidebar-label" sidebar-toggle-item>Clientes</span>
             </a>
           </li>
-
           <li>
-            <a href="{{ "crud/proveedores/" | relURL }}" sidebar-tooltip="Proveedores" class="flex items-center py-2.5 px-2 text-base text-white hover:bg-brand-700 group transition duration-75 dark:text-white dark:hover:bg-brand-700 {{ if eq $sub "proveedores" }}is-current{{ end }}" {{ if eq $sub "proveedores" }}aria-current="page"{{ end }}>
-                <svg class="flex-shrink-0 w-5 h-5 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="currentColor" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <path fill="currentColor" d="M9.98189 4.50602c1.24881-.67469 2.78741-.67469 4.03621 0l3.9638 2.14148c.3634.19632.6862.44109.9612.72273l-6.9288 3.60207L5.20654 7.225c.2403-.22108.51215-.41573.81157-.5775l3.96378-2.14148ZM4.16678 8.84364C4.05757 9.18783 4 9.5493 4 9.91844v4.28296c0 1.3494.7693 2.5963 2.01811 3.2709l3.96378 2.1415c.32051.1732.66011.3019 1.00901.3862v-7.4L4.16678 8.84364ZM13.009 20c.3489-.0843.6886-.213 1.0091-.3862l3.9638-2.1415C19.2307 16.7977 20 15.5508 20 14.2014V9.91844c0-.30001-.038-.59496-.1109-.87967L13.009 12.6155V20Z"/>
-                </svg>
-                <span class="ml-3" sidebar-toggle-item>Proveedores</span>
+            <a href="{{ "crud/proveedores/" | relURL }}" sidebar-tooltip="Proveedores" class="sidebar-link{{ if eq $sub "proveedores" }} is-current{{ end }}" {{ if eq $sub "proveedores" }}aria-current="page"{{ end }}>
+              <svg class="sidebar-icon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+              <span class="sidebar-label" sidebar-toggle-item>Proveedores</span>
             </a>
           </li>
-
           <li>
-            <a href="{{ "crud/vehiculos/" | relURL }}" sidebar-tooltip="Vehículos" class="flex items-center py-2.5 px-2 text-base text-white hover:bg-brand-700 group transition duration-75 dark:text-white dark:hover:bg-brand-700 {{ if eq $sub "vehiculos" }}is-current{{ end }}" {{ if eq $sub "vehiculos" }}aria-current="page"{{ end }}>
-              <svg class="flex-shrink-0 w-5 h-5 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="currentColor" fill-rule="evenodd" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M128 298.666c23.564 0 42.667 19.103 42.667 42.667S151.564 384 128 384s-42.666-19.103-42.666-42.667s19.102-42.667 42.666-42.667m245.334 0c23.564 0 42.666 19.103 42.666 42.667S396.898 384 373.334 384s-42.667-19.103-42.667-42.667s19.103-42.667 42.667-42.667m-88.89-149.333l5.69 4.267l81.856 61.397l65.025 16.266c17.877 4.47 30.731 19.85 32.182 37.966l.137 3.427v74.667l-16.16 4.04l-17.466 4.367a64.2 64.2 0 0 0 1.626-14.397c0-35.346-28.654-64-64-64s-64 28.654-64 64c0 7.48 1.283 14.661 3.642 21.334H188.358A63.9 63.9 0 0 0 192 341.333c0-35.346-28.653-64-64-64c-35.346 0-64 28.654-64 64c0 3.244 0.242 6.431 0.707 9.545l-22.04-22.042V226.943l4.945-5.934l53.333-64l6.397-7.676zM270.23 192H127.318l-35.55 42.666h206.899l12.192-12.192z"/></svg>
-              <span class="ml-3" sidebar-toggle-item>Vehículos</span>
+            <a href="{{ "crud/vehiculos/" | relURL }}" sidebar-tooltip="Vehículos" class="sidebar-link{{ if eq $sub "vehiculos" }} is-current{{ end }}" {{ if eq $sub "vehiculos" }}aria-current="page"{{ end }}>
+              <svg class="sidebar-icon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="m21 8-2 2-1.5-3.7A2 2 0 0 0 15.646 5H8.4a2 2 0 0 0-1.903 1.257L5 10 3 8"/><path d="M7 14h.01"/><path d="M17 14h.01"/><rect width="18" height="8" x="3" y="10" rx="2"/><path d="M5 18v2"/><path d="M19 18v2"/></svg>
+              <span class="sidebar-label" sidebar-toggle-item>Vehículos</span>
             </a>
           </li>
-
           <li>
-            <a href="{{ "notificaciones/" | relURL }}" data-recurso="notificaciones" sidebar-tooltip="Notificaciones" class="flex items-center py-2.5 px-2 text-base text-white hover:bg-brand-700 group transition duration-75 dark:text-white dark:hover:bg-brand-700 {{ if eq $sub "notificaciones" }}is-current{{ end }}" {{ if eq $sub "notificaciones" }}aria-current="page"{{ end }}>
-              <svg class="flex-shrink-0 w-5 h-5 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/></svg>
-              <span class="ml-3" sidebar-toggle-item>Notificaciones</span>
+            <a href="{{ "notificaciones/" | relURL }}" data-recurso="notificaciones" sidebar-tooltip="Notificaciones" class="sidebar-link{{ if eq $sub "notificaciones" }} is-current{{ end }}" {{ if eq $sub "notificaciones" }}aria-current="page"{{ end }}>
+              <svg class="sidebar-icon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>
+              <span class="sidebar-label" sidebar-toggle-item>Notificaciones</span>
             </a>
           </li>
-
           <li>
-            <a href="{{ "crud/empleados/" | relURL }}" sidebar-tooltip="Empleados" class="flex items-center py-2.5 px-2 text-base text-white hover:bg-brand-700 group transition duration-75 dark:text-white dark:hover:bg-brand-700 {{ if eq $sub "empleados" }}is-current{{ end }}" {{ if eq $sub "empleados" }}aria-current="page"{{ end }}>
-                <svg class="flex-shrink-0 w-5 h-5 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <path d="M6 2c-1.10457 0-2 .89543-2 2v4c0 .55228.44772 1 1 1s1-.44772 1-1V4h12v7h-2c-.5523 0-1 .4477-1 1v2h-1c-.5523 0-1 .4477-1 1s.4477 1 1 1h5c.5523 0 1-.4477 1-1V3.85714C20 2.98529 19.3667 2 18.268 2H6Z"/>
-                  <path d="M6 11.5C6 9.567 7.567 8 9.5 8S13 9.567 13 11.5 11.433 15 9.5 15 6 13.433 6 11.5ZM4 20c0-2.2091 1.79086-4 4-4h3c2.2091 0 4 1.7909 4 4 0 1.1046-.8954 2-2 2H6c-1.10457 0-2-.8954-2-2Z"/>
-                </svg>
-
-                <span class="ml-3" sidebar-toggle-item>Empleados</span>
-             </a>
+            <a href="{{ "crud/empleados/" | relURL }}" sidebar-tooltip="Empleados" class="sidebar-link{{ if eq $sub "empleados" }} is-current{{ end }}" {{ if eq $sub "empleados" }}aria-current="page"{{ end }}>
+              <svg class="sidebar-icon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M16 10h2"/><path d="M16 14h2"/><path d="M6.17 15a3 3 0 0 1 5.66 0"/><circle cx="9" cy="11" r="2"/><rect x="2" y="5" width="20" height="14" rx="2"/></svg>
+              <span class="sidebar-label" sidebar-toggle-item>Empleados</span>
+            </a>
           </li>
           <li>
-             <a href="{{ "crud/gastos/" | relURL }}" data-recurso="gastos" sidebar-tooltip="Gastos" class="flex items-center py-2.5 px-2 text-base text-white hover:bg-brand-700 group transition duration-75 dark:text-white dark:hover:bg-brand-700 {{ if eq $sub "gastos" }}is-current{{ end }}" {{ if eq $sub "gastos" }}aria-current="page"{{ end }}>
-               <svg class="flex-shrink-0 w-5 h-5 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/>
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>
-               </svg>
-               <span class="ml-3" sidebar-toggle-item>Gastos</span>
-             </a>
+            <a href="{{ "crud/gastos/" | relURL }}" data-recurso="gastos" sidebar-tooltip="Gastos" class="sidebar-link{{ if eq $sub "gastos" }} is-current{{ end }}" {{ if eq $sub "gastos" }}aria-current="page"{{ end }}>
+              <svg class="sidebar-icon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 17V7"/><path d="M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8"/><path d="M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z"/></svg>
+              <span class="sidebar-label" sidebar-toggle-item>Gastos</span>
+            </a>
           </li>
-          <li>
-            <hr class="my-1 border-brand-700/40" />
-          </li>
+          <li class="sidebar-separator" aria-hidden="true"></li>
           <li class="sidebar-section-label" sidebar-toggle-item>Reportes</li>
           <li>
-            <a href="{{ "reportes/rentabilidad/" | relURL }}" data-recurso="reportes" sidebar-tooltip="Rentabilidad" class="flex items-center py-2.5 px-2 text-base text-white hover:bg-brand-700 group transition duration-75 dark:text-white dark:hover:bg-brand-700 {{ if and (eq $mod "reportes") (eq $sub "rentabilidad") }}is-current{{ end }}" {{ if and (eq $mod "reportes") (eq $sub "rentabilidad") }}aria-current="page"{{ end }}>
-              <svg class="flex-shrink-0 w-5 h-5 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M9 17V9m4 8V5m4 12v-6" />
-              </svg>
-              <span class="ml-3" sidebar-toggle-item>Rentabilidad</span>
+            <a href="{{ "reportes/rentabilidad/" | relURL }}" data-recurso="reportes" sidebar-tooltip="Rentabilidad" class="sidebar-link{{ if and (eq $mod "reportes") (eq $sub "rentabilidad") }} is-current{{ end }}" {{ if and (eq $mod "reportes") (eq $sub "rentabilidad") }}aria-current="page"{{ end }}>
+              <svg class="sidebar-icon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M13 17V9"/><path d="M18 17V5"/><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M8 17v-3"/></svg>
+              <span class="sidebar-label" sidebar-toggle-item>Rentabilidad</span>
             </a>
           </li>
           {{- else }}
@@ -187,15 +155,12 @@
                para el superusuario: usePermisos quita `hidden` o elimina el <li>. */}}
           <li class="sidebar-section-label" data-solo-admin-saas hidden sidebar-toggle-item>Administración</li>
           <li data-solo-admin-saas hidden>
-            <a href="{{ "crud/empresas/" | relURL }}" sidebar-tooltip="Empresas" class="flex items-center py-2.5 px-2 text-base text-white hover:bg-brand-700 group transition duration-75 dark:text-white dark:hover:bg-brand-700 {{ if eq $sub "empresas" }}is-current{{ end }}" {{ if eq $sub "empresas" }}aria-current="page"{{ end }}>
-              <svg class="flex-shrink-0 w-5 h-5 text-white transition duration-75 group-hover:text-white dark:text-white dark:group-hover:text-white lg:mx-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>
-              </svg>
-              <span class="ml-3" sidebar-toggle-item>Empresas</span>
+            <a href="{{ "crud/empresas/" | relURL }}" sidebar-tooltip="Empresas" class="sidebar-link{{ if eq $sub "empresas" }} is-current{{ end }}" {{ if eq $sub "empresas" }}aria-current="page"{{ end }}>
+              <svg class="sidebar-icon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10 12h4"/><path d="M10 8h4"/><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"/><path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/></svg>
+              <span class="sidebar-label" sidebar-toggle-item>Empresas</span>
             </a>
           </li>
           {{- end }}
-
         </ul>
       </div>
     </div>
@@ -214,10 +179,7 @@
     if (!target) return;
 
     const sincronizar = () => {
-      const abierto = !target.classList.contains('hidden');
-      button.setAttribute('aria-expanded', String(abierto));
-      button.classList.toggle('bg-brand-700', abierto);
-      button.classList.toggle('dark:bg-brand-700', abierto);
+      button.setAttribute('aria-expanded', String(!target.classList.contains('hidden')));
     };
 
     new MutationObserver(sincronizar).observe(target, {
