@@ -116,7 +116,7 @@ async function crearInspeccion(recepcion) {
             <td class="p-4 text-sm font-medium whitespace-nowrap text-heading">
               <a
                 :href="`/crud/recepciones/ver/?id=${encodeURIComponent(item.id)}`"
-                class="hover:text-primary-600 dark:hover:text-primary-400"
+                class="hover:text-brand-coral"
                 :title="`Ver recepción ${item.numero_recepcion}`"
               >
                 {{ item.numero_recepcion }}

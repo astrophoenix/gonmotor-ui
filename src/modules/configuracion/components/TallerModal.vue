@@ -166,6 +166,10 @@ function validateTaller() {
     errors.codigo_sucursal = 'El código del taller es obligatorio.';
   }
 
+  if (!form.ciudad || !form.ciudad.trim()) {
+    errors.ciudad = 'La ciudad es obligatoria.';
+  }
+
   if (!form.direccion || !form.direccion.trim()) {
     errors.direccion = 'La dirección es obligatoria.';
   }
@@ -349,21 +353,20 @@ watch(() => props.modelValue, (val) => {
         <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando taller...</div>
         <template v-else>
           <div class="space-y-4">
-            <div>
-              <label for="modal_taller_nombre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre *</label>
-              <input
-                id="modal_taller_nombre"
-                v-model="form.nombre"
-                maxlength="150"
-                @input="form.nombre = sanitizeTaller(form.nombre)"
-                :class="['block w-full p-2.5 text-sm rounded shadow-sm focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors.nombre ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
-              >
-              <p v-if="tallerErrors.nombre" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ tallerErrors.nombre }}</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div class="md:col-span-2">
+                <label for="modal_taller_nombre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre <span class="text-red-500">*</span></label>
+                <input
+                  id="modal_taller_nombre"
+                  v-model="form.nombre"
+                  maxlength="150"
+                  @input="form.nombre = sanitizeTaller(form.nombre)"
+                  :class="['block w-full p-2.5 text-sm rounded shadow-sm focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors.nombre ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                >
+                <p v-if="tallerErrors.nombre" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ tallerErrors.nombre }}</p>
+              </div>
               <div>
-                <label for="modal_taller_codigo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Código del taller *</label>
+                <label for="modal_taller_codigo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Código del taller <span class="text-red-500">*</span></label>
                 <input
                   id="modal_taller_codigo"
                   v-model="form.codigo_sucursal"
@@ -374,19 +377,20 @@ watch(() => props.modelValue, (val) => {
                 <p v-if="tallerErrors.codigo_sucursal" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ tallerErrors.codigo_sucursal }}</p>
               </div>
               <div>
-                <label for="modal_taller_ciudad" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Ciudad</label>
+                <label for="modal_taller_ciudad" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Ciudad <span class="text-red-500">*</span></label>
                 <input
                   id="modal_taller_ciudad"
                   v-model="form.ciudad"
                   maxlength="100"
                   @input="form.ciudad = sanitizeNombre(form.ciudad)"
-                  class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-sm border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                  :class="['block w-full p-2.5 text-sm rounded shadow-sm focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', tallerErrors.ciudad ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
                 >
+                <p v-if="tallerErrors.ciudad" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ tallerErrors.ciudad }}</p>
               </div>
             </div>
 
             <div>
-              <label for="modal_taller_direccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Dirección *</label>
+              <label for="modal_taller_direccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Dirección <span class="text-red-500">*</span></label>
               <textarea
                 id="modal_taller_direccion"
                 v-model="form.direccion"

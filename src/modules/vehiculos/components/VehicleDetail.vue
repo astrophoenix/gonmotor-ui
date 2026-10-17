@@ -217,16 +217,16 @@ onMounted(async () => {
 
     <!-- Carga -->
     <div v-if="loading" class="space-y-6 animate-pulse" aria-busy="true" aria-label="Cargando vehículo">
-      <div class="h-64 rounded-2xl bg-gray-200 dark:bg-gray-700"></div>
+      <div class="h-64 rounded-xl bg-gray-200 dark:bg-gray-700"></div>
       <div class="grid gap-6 lg:grid-cols-3">
-        <div class="h-72 rounded-2xl bg-gray-200 dark:bg-gray-700 lg:col-span-2"></div>
-        <div class="h-40 rounded-2xl bg-gray-200 dark:bg-gray-700"></div>
+        <div class="h-72 rounded-xl bg-gray-200 dark:bg-gray-700 lg:col-span-2"></div>
+        <div class="h-40 rounded-xl bg-gray-200 dark:bg-gray-700"></div>
       </div>
     </div>
 
     <template v-else-if="vehicle">
       <!-- Resumen: foto, identidad y kilometraje -->
-      <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+      <section class="overflow-hidden shadow-sm rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
         <div class="grid md:grid-cols-[minmax(0,20rem)_1fr]">
           <button
             v-if="vehicle.imagen"
@@ -344,7 +344,7 @@ onMounted(async () => {
 
       <div class="grid items-start gap-6 lg:grid-cols-3">
         <!-- Ficha técnica -->
-        <section class="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 lg:col-span-2">
+        <section class="shadow-sm rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 lg:col-span-2">
           <h3 class="px-6 pt-5 pb-3 text-sm font-semibold text-gray-900 dark:text-white">Ficha técnica</h3>
           <dl class="grid grid-cols-1 px-6 pb-3 sm:grid-cols-2 sm:gap-x-10">
             <div
@@ -372,7 +372,7 @@ onMounted(async () => {
 
         <div class="space-y-6">
           <!-- Propietario -->
-          <section class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+          <section class="shadow-sm rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Propietario</h3>
             <a
               v-if="vehicle.cliente_id"
@@ -392,7 +392,7 @@ onMounted(async () => {
           </section>
 
           <!-- Observaciones -->
-          <section class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+          <section class="shadow-sm rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Observaciones</h3>
             <p
               v-if="vehicle.observaciones"

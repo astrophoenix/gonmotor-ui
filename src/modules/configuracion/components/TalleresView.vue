@@ -223,8 +223,7 @@ onUnmounted(() => {
             <select
               id="filtro-estado"
               v-model="draftFilters.estado"
-              class="block w-full sm:w-36 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800"
-            >
+              class="block w-full sm:w-36 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800">
               <option value="">Todos</option>
               <option value="activo">Activo</option>
               <option value="inactivo">Inactivo</option>
@@ -240,8 +239,7 @@ onUnmounted(() => {
               v-sanitize-search
               maxlength="100"
               placeholder="Ej. Quito"
-              class="block w-full sm:w-40 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand dark:bg-gray-800"
-            />
+              class="block w-full sm:w-40 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded-base shadow-xs placeholder:text-body focus:ring-brand focus:border-brand dark:bg-gray-800"/>
           </div>
         </div>
       </div>
@@ -272,7 +270,9 @@ onUnmounted(() => {
       >
         <template #row="{ item }">
           <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
-            <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.nombre }}</td>
+            <td class="p-4 whitespace-nowrap">
+              <button type="button" title="Editar taller" class="font-medium text-gray-800 cursor-pointer hover:text-brand-coral dark:text-white" @click="openEditModal(item)">{{ item.nombre }}</button>
+            </td>
             <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.codigo_sucursal }}</td>
             <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.ciudad || '—' }}</td>
             <td class="p-4 text-gray-800 dark:text-white">{{ item.direccion }}</td>
@@ -319,6 +319,7 @@ onUnmounted(() => {
     v-model="showDeleteModal"
     entity-name="taller"
     :item-name="tallerToDelete?.nombre"
+    :itemPlural="'talleres'"
     :is-deleting="isDeleting"
     @confirm="confirmDelete"
     @cancel="tallerToDelete = null"

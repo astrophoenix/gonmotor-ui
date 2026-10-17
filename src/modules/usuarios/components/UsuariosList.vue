@@ -255,10 +255,10 @@ onMounted(() => {
     <template #row="{ item }">
       <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
         <td class="p-4 whitespace-nowrap">
-          <span class="inline-flex items-center gap-1.5 font-medium text-primary-600 dark:text-primary-400">
+          <button type="button" title="Editar usuario" class="inline-flex items-center gap-1.5 font-medium text-primary-600 cursor-pointer hover:text-brand-coral dark:text-primary-400" @click="editUsuario(item.id)">
             <ShieldCheck class="w-4 h-4" />
             {{ item.user?.identificacion || '—' }}
-          </span>
+          </button>
         </td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">
           {{ item.user?.first_name }} {{ item.user?.last_name }}

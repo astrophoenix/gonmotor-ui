@@ -450,7 +450,7 @@ onMounted(async () => {
       <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
         <td class="p-4 whitespace-nowrap">
           <a :href="`/crud/recepciones/ver/?id=${encodeURIComponent(item.id)}`"
-            class="font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
+            class="font-semibold text-primary-600 hover:text-brand-coral dark:text-primary-400">
             {{ numeroDisplay(item) }}
           </a>
         </td>

@@ -354,7 +354,7 @@ onMounted(() => {
       <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
         <td class="p-4 whitespace-nowrap">
           <a :href="`/crud/clientes/ver/?id=${encodeURIComponent(item.id)}`"
-            class="inline-flex items-center gap-1.5 font-medium text-primary-600 hover:text-primary-800 hover:underline dark:text-primary-400">
+            class="inline-flex items-center gap-1.5 font-medium text-primary-600 hover:text-brand-coral dark:text-primary-400">
           {{ item.identificacion }}
           </a>
           <span class="mt-1 flex items-center gap-1 text-sm font-normal text-body text-gray-900">

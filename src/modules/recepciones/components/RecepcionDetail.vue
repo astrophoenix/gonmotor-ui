@@ -639,8 +639,7 @@ function irAInspeccion(recepcion) {
         <button
           type="button"
           class="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-base hover:bg-gray-100 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
-          @click="showModalCrearInspeccion = false"
-        >
+          @click="showModalCrearInspeccion = false">
           Cancelar
         </button>
         <button
@@ -698,14 +697,12 @@ function irAInspeccion(recepcion) {
               @pointerdown="onFirmaPointerDown"
               @pointermove="onFirmaPointerMove"
               @pointerup="onFirmaPointerUp"
-              @pointerleave="onFirmaPointerUp"
-            ></canvas>
+              @pointerleave="onFirmaPointerUp"></canvas>
             <button
               type="button"
               title="Borrar firma"
               class="absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-1.5 text-sm font-medium text-red-700 border border-red-400 rounded hover:bg-red-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-red-900/20"
-              @click="borrarFirmaCliente"
-            >
+              @click="borrarFirmaCliente">
               <BrushCleaning class="w-4 h-4" />
             </button>
           </div>

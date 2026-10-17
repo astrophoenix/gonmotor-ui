@@ -282,7 +282,9 @@ onMounted(() => loadRepuestos());
       >
     <template #row="{ item }">
       <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
-        <td class="p-4 font-medium text-heading whitespace-nowrap">{{ item.codigo }}</td>
+        <td class="p-4 whitespace-nowrap">
+          <button type="button" title="Editar repuesto" class="font-medium text-heading cursor-pointer hover:text-brand-coral" @click="openEditModal(item.id)">{{ item.codigo }}</button>
+        </td>
         <td class="p-4 text-heading whitespace-nowrap">{{ item.nombre }}</td>
         <td class="p-4 text-heading whitespace-nowrap">{{ categoriaLabel(item.categoria) }}</td>
         <td class="p-4 text-heading whitespace-nowrap">{{ item.marca || '—' }}</td>

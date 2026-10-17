@@ -421,7 +421,7 @@ onMounted(() => {
       <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
         <td class="p-4 whitespace-nowrap">
           <a :href="`/crud/ordenes/ver/?id=${encodeURIComponent(item.id)}`"
-            class="font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
+            class="font-semibold text-primary-600 hover:text-brand-coral dark:text-primary-400">
             {{ item.numero_orden || referenciaCorta(item.id) }}
           </a>
         </td>

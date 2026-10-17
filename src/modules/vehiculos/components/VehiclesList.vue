@@ -331,7 +331,7 @@ onMounted(() => loadVehicles());
         <td class="p-4 whitespace-nowrap">
           <a
             :href="`/crud/vehiculos/ver/?id=${encodeURIComponent(item.id)}`"
-            class="font-medium text-gray-800 hover:text-primary-600 dark:text-white dark:hover:text-primary-400"
+            class="font-medium text-gray-800 hover:text-brand-coral dark:text-white"
           >{{ formatPlate(item.placa) }}</a>
         </td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.marca }}</td>

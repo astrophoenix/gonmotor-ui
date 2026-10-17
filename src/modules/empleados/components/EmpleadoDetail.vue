@@ -123,7 +123,7 @@ onMounted(async () => {
 
     <template v-else-if="empleado">
       <!-- Resumen: identidad, estado y contacto -->
-      <section class="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+      <section class="shadow-sm rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
         <div class="flex flex-col gap-5 p-6 sm:flex-row sm:items-center lg:p-8">
           <span
             class="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xl font-semibold text-brand-800 dark:bg-brand-800 dark:text-brand-100 lg:h-20 lg:w-20 lg:text-2xl"
@@ -209,7 +209,7 @@ onMounted(async () => {
 
       <div class="grid items-start gap-6 lg:grid-cols-3">
         <!-- Datos personales -->
-        <section class="rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 lg:col-span-2">
+        <section class="shadow-sm rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 lg:col-span-2">
           <h3 class="px-6 pt-5 pb-3 text-sm font-semibold text-gray-900 dark:text-white">Datos personales</h3>
           <dl class="grid grid-cols-1 px-6 pb-3 sm:grid-cols-2 sm:gap-x-10">
             <div
@@ -234,7 +234,7 @@ onMounted(async () => {
 
         <div class="space-y-6">
           <!-- Acceso al sistema -->
-          <section class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+          <section class="shadow-sm rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Acceso al sistema</h3>
             <dl class="mt-3">
               <div class="flex items-baseline justify-between gap-4 py-2">
@@ -260,7 +260,7 @@ onMounted(async () => {
           </section>
 
           <!-- Talleres asignados -->
-          <section class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+          <section class="shadow-sm rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
             <h3 class="flex items-center justify-between text-sm font-semibold text-gray-900 dark:text-white">
               Talleres asignados
               <span v-if="talleres.length" class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium tabular-nums text-gray-600 dark:bg-gray-700 dark:text-gray-300">

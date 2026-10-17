@@ -380,7 +380,7 @@ onMounted(() => {
         <td class="p-4 whitespace-nowrap">
           <a
             :href="`/crud/cotizaciones/ver/?id=${encodeURIComponent(item.id)}`"
-            class="font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+            class="font-semibold text-primary-600 hover:text-brand-coral dark:text-primary-400"
           >
             {{ item.numero_cotizacion }}
           </a>

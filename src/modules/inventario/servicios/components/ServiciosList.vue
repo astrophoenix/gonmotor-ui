@@ -275,7 +275,9 @@ onMounted(() => loadServicios());
       >
     <template #row="{ item }">
       <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
-        <td class="p-4 font-medium text-gray-800 whitespace-nowrap dark:text-white">{{ item.codigo }}</td>
+        <td class="p-4 whitespace-nowrap">
+          <button type="button" title="Editar servicio" class="font-medium text-gray-800 cursor-pointer hover:text-brand-coral dark:text-white" @click="openEditModal(item.id)">{{ item.codigo }}</button>
+        </td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ item.nombre }}</td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ categoriaLabel(item.categoria) }}</td>
         <td class="p-4 text-gray-800 whitespace-nowrap dark:text-white">{{ formatTiempo(item.tiempo_estimado_minutos) }}</td>

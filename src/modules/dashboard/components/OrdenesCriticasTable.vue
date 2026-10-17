@@ -75,7 +75,7 @@ function responsable(item) {
             <td class="p-4 text-sm font-medium whitespace-nowrap text-heading">
               <a
                 :href="`/crud/ordenes/ver/?id=${encodeURIComponent(item.id)}`"
-                class="hover:text-primary-600 dark:hover:text-primary-400"
+                class="hover:text-brand-coral"
                 :title="`Ver orden ${item.numero_orden}`"
               >
                 {{ item.numero_orden }}
