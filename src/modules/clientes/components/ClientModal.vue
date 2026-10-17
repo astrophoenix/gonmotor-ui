@@ -1,10 +1,11 @@
 <script setup>
 import { computed, nextTick, reactive, ref, watch } from 'vue';
-import { Car, X, Trash2, Save, FileText, UserRoundPlus, UserRoundPen } from 'lucide-vue-next';
+import { Car, X, Trash2, Save, IdCard, Phone, Mail, MapPin, Contact, Plus, ChevronDown, CarFront, Gauge, NotebookPen, Wand2, Loader2, CircleAlert, UserRoundPlus, UserRoundPen } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
 import { sanitizeIdentificacion, sanitizeNombreUpper, sanitizeEmail, sanitizeTelefono, formatPlaca, sanitizeVin, sanitizeText, recortarEspacios, sanitizeColor, sanitizeMotor, sanitizeObservaciones, sanitizeDireccion, sanitizeAnio, sanitizeKilometraje, getItemKey as getVehicleKey, validatePlaca, validateTelefono } from '../../../shared/utils/sanitize';
 import Alert from '../../../shared/components/Alert.vue';
 import VehicleImageField from '../../../shared/components/VehicleImageField.vue';
+import TextImprover from '../../../shared/components/TextImprover.vue';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -35,6 +36,52 @@ const vehiculoErrors = ref({});
 const clientErrors = ref({});
 const formSnapshot = ref(null);
 const showDiscardWarning = ref(false);
+// Vehículos desplegados, por clave (_uid o id). Fuera del objeto para no ensuciar el payload.
+const vehiculosAbiertos = ref({});
+const cuerpo = ref(null);
+
+const TIPOS_IDENTIFICACION = [
+  { value: 'C', label: 'Cédula', largo: 10 },
+  { value: 'R', label: 'RUC', largo: 13 },
+  { value: 'P', label: 'Pasaporte', largo: null },
+];
+const largoIdentificacion = computed(() => (TIPOS_IDENTIFICACION.find((t) => t.value === form.tipo_identificacion) || {}).largo);
+
+const BASE_INPUT = 'block w-full p-2.5 text-sm rounded shadow-xs focus:outline-none focus:ring-2 dark:bg-gray-700 dark:placeholder-gray-400';
+const INPUT_OK = 'bg-gray-50 border border-gray-300 text-gray-900 focus:ring-brand-200 focus:border-brand-500 dark:border-gray-600 dark:text-white dark:focus:ring-brand-500/40 dark:focus:border-brand-300';
+const INPUT_ERROR = 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 focus:ring-red-200 focus:border-red-500 dark:text-red-400 dark:border-red-500 dark:placeholder-red-400';
+
+// Clases de un input/select del cliente según tenga o no error de validación.
+function inputClass(campo, extra = '') {
+  return [BASE_INPUT, clientErrors.value[campo] ? INPUT_ERROR : INPUT_OK, extra];
+}
+
+function errorVehiculo(vehiculo, campo) {
+  const errores = vehiculoErrors.value[getVehicleKey(vehiculo)];
+  return errores ? errores[campo] : '';
+}
+
+function vehiculoClass(vehiculo, campo, extra = '') {
+  return [BASE_INPUT, errorVehiculo(vehiculo, campo) ? INPUT_ERROR : INPUT_OK, extra];
+}
+
+function vehiculoTieneErrores(vehiculo) {
+  const errores = vehiculoErrors.value[getVehicleKey(vehiculo)];
+  return Boolean(errores && Object.keys(errores).length);
+}
+
+function resumenVehiculo(vehiculo) {
+  return [[vehiculo.marca, vehiculo.modelo].filter(Boolean).join(' '), vehiculo.anio].filter(Boolean).join(' · ');
+}
+
+function estaAbierto(vehiculo) {
+  return Boolean(vehiculosAbiertos.value[getVehicleKey(vehiculo)]);
+}
+
+function toggleVehiculo(vehiculo) {
+  const key = getVehicleKey(vehiculo);
+  vehiculosAbiertos.value = { ...vehiculosAbiertos.value, [key]: !vehiculosAbiertos.value[key] };
+}
 
 function getComparableState() {
   return {
@@ -158,7 +205,22 @@ function createEmptyVehiculo() {
 }
 
 function addVehiculo() {
-  vehiculos.value.push(createEmptyVehiculo());
+  const nuevo = createEmptyVehiculo();
+  vehiculos.value.push(nuevo);
+  // Solo el nuevo queda desplegado: los anteriores se resumen en su cabecera.
+  vehiculosAbiertos.value = { [getVehicleKey(nuevo)]: true };
+  const index = vehiculos.value.length - 1;
+  nextTick(() => {
+    const placa = document.getElementById(`modal_cli_veh${index}_placa`);
+    if (!placa) return;
+    placa.focus({ preventScroll: true });
+    // Desplaza solo el cuerpo del modal (scrollIntoView movería también el fondo).
+    const tarjeta = placa.closest('article');
+    if (cuerpo.value && tarjeta) {
+      const desplazamiento = tarjeta.getBoundingClientRect().top - cuerpo.value.getBoundingClientRect().top - 16;
+      cuerpo.value.scrollBy({ top: desplazamiento, behavior: 'smooth' });
+    }
+  });
 }
 
 function removeVehiculo(index) {
@@ -187,6 +249,7 @@ function resetForm() {
   form.direccion = '';
   vehiculos.value = [];
   vehiculoErrors.value = {};
+  vehiculosAbiertos.value = {};
   clientErrors.value = {};
   errorMessage.value = '';
   showDiscardWarning.value = false;
@@ -304,9 +367,15 @@ async function submit() {
 
     if (!formValid || !vehiculosValid) {
       const parts = [];
-      if (!formValid) parts.push('Información General');
-      if (!vehiculosValid) parts.push('Vehículos');
-      errorMessage.value = 'Completa correctamente los campos de: ' + parts.join(' y ');
+      if (!formValid) parts.push('datos del cliente');
+      if (!vehiculosValid) {
+        parts.push('vehículos');
+        // Despliega los vehículos con errores para que se vean los campos marcados.
+        const abiertos = { ...vehiculosAbiertos.value };
+        vehiculos.value.forEach((v) => { if (vehiculoTieneErrores(v)) abiertos[getVehicleKey(v)] = true; });
+        vehiculosAbiertos.value = abiertos;
+      }
+      errorMessage.value = 'Revisa los campos marcados en ' + parts.join(' y ') + '.';
       isSaving.value = false;
       return;
     }
@@ -401,16 +470,24 @@ watch(vehiculos, (list) => {
 </script>
 
 <template>
-  <div v-if="modelValue" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4">
-    <div class="relative block w-full max-w-5xl rounded-lg bg-white shadow-xl dark:bg-gray-800 my-auto">
-      <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-          <span class="inline-flex items-center gap-2">
-            <UserRoundPlus v-if="!isEditMode" class="w-5 h-5 inline-block me-2" />
-            <UserRoundPen v-if="isEditMode" class="w-5 h-5 inline-block me-2" />
-            {{ isEditMode ? 'Editar cliente' : 'Nuevo cliente' }}
+  <div v-if="modelValue" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-brand-950/70 p-2 sm:p-4">
+    <div class="relative flex flex-col w-full max-w-5xl max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)] my-auto rounded-xl bg-white shadow-xl dark:bg-gray-800">
+      <!-- Cabecera -->
+      <div class="flex items-start justify-between gap-4 border-b border-gray-200 px-4 py-4 sm:px-6 dark:border-gray-700">
+        <div class="flex items-center gap-3">
+          <span class="inline-flex items-center justify-center w-10 h-10 shrink-0 rounded-lg bg-brand-50 text-brand-700 dark:bg-brand-500/20 dark:text-brand-200">
+            <UserRoundPen v-if="isEditMode" class="w-5 h-5" />
+            <UserRoundPlus v-else class="w-5 h-5" />
           </span>
-        </h3>
+          <div>
+            <h3 class="text-lg font-semibold leading-tight text-gray-900 dark:text-white">
+              {{ isEditMode ? 'Editar cliente' : 'Nuevo cliente' }}
+            </h3>
+            <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+              {{ isEditMode ? 'Actualiza los datos del cliente y sus vehículos.' : 'Registra los datos del cliente y, si quieres, sus vehículos.' }}
+            </p>
+          </div>
+        </div>
         <button
           type="button"
           class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200"
@@ -421,7 +498,8 @@ watch(vehiculos, (list) => {
         </button>
       </div>
 
-      <div class="px-6 py-4">
+      <!-- Cuerpo con scroll propio: cabecera y botones siempre visibles -->
+      <div ref="cuerpo" class="flex-1 overflow-y-auto px-4 py-5 sm:px-6 bg-gray-50/60 dark:bg-gray-900/30">
         <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
         <Alert
           v-if="showDiscardWarning"
@@ -433,180 +511,322 @@ watch(vehiculos, (list) => {
         />
 
         <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando cliente...</div>
-        <template v-else>
-          <h4 class="mb-4 text-base font-semibold dark:text-white">
-            <span class="inline-flex items-center gap-2">
-              <FileText class="w-4 h-4 text-gray-800 dark:text-white" />
-              Información General
-            </span>
-          </h4>
-          <div class="grid grid-cols-6 gap-4">
-            <div class="col-span-6 sm:col-span-3">
-              <label for="modal_tipo_identificacion" class="block mb-2.5 text-sm font-medium text-heading">Tipo de identificación</label>
-              <select id="modal_tipo_identificacion" v-model="form.tipo_identificacion" required class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
-                <option value="C">Cédula</option>
-                <option value="R">RUC</option>
-                <option value="P">Pasaporte</option>
-              </select>
-            </div>
-            <div class="col-span-6 sm:col-span-3">
-              <label for="modal_identificacion" :class="['block mb-2.5 text-sm font-medium', clientErrors.identificacion ? 'text-fg-danger-strong' : 'text-gray-900 dark:text-white']">Identificación <span class="text-accent-500">*</span> </label>
-              <input id="modal_identificacion" v-model="form.identificacion" required maxlength="20" :class="clientErrors.identificacion ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
-              <p v-if="clientErrors.identificacion" class="mt-2.5 text-sm text-fg-danger-strong">{{ clientErrors.identificacion }}</p>
-            </div>
-            <div class="col-span-6 sm:col-span-3">
-              <label for="modal_nombre" :class="['block mb-2.5 text-sm font-medium', clientErrors.nombre ? 'text-fg-danger-strong' : 'text-heading']">Nombre o razón social <span class="text-accent-500">*</span></label>
-              <input id="modal_nombre" v-model="form.nombre" @blur="form.nombre = recortarEspacios(form.nombre)" required maxlength="200" :class="clientErrors.nombre ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
-              <p v-if="clientErrors.nombre" class="mt-2.5 text-sm text-fg-danger-strong">{{ clientErrors.nombre }}</p>
-            </div>
-            <div class="col-span-6 sm:col-span-3">
-              <label for="modal_email" :class="['block mb-2.5 text-sm font-medium', clientErrors.email ? 'text-fg-danger-strong' : 'text-heading']">Correo electrónico <span class="text-accent-500">*</span></label>
-              <input id="modal_email" v-model="form.email" type="email" required maxlength="100" :class="clientErrors.email ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
-              <p v-if="clientErrors.email" class="mt-2.5 text-sm text-fg-danger-strong">{{ clientErrors.email }}</p>
-            </div>
-            <div class="col-span-6 sm:col-span-3">
-              <label for="modal_telefono" :class="['block mb-2.5 text-sm font-medium', clientErrors.telefono ? 'text-fg-danger-strong' : 'text-heading']">Teléfono <span class="text-accent-500">*</span></label>
-              <input id="modal_telefono" v-model="form.telefono" maxlength="15" :class="clientErrors.telefono ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
-              <p v-if="clientErrors.telefono" class="mt-2.5 text-sm text-fg-danger-strong">{{ clientErrors.telefono }}</p>
-            </div>
-            <div class="col-span-6 sm:col-span-3">
-              <label for="modal_direccion" :class="['block mb-2.5 text-sm font-medium', clientErrors.direccion ? 'text-fg-danger-strong' : 'text-heading']">Dirección <span class="text-accent-500">*</span></label>
-              <textarea id="modal_direccion" v-model="form.direccion" rows="2" maxlength="150" :class="clientErrors.direccion ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'"></textarea>
-              <p v-if="clientErrors.direccion" class="mt-2.5 text-sm text-fg-danger-strong">{{ clientErrors.direccion }}</p>
-            </div>
+        <div v-else class="space-y-5">
+          <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <!-- Identificación -->
+            <section class="p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+              <h4 class="flex items-center gap-2 mb-4 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200">
+                <IdCard class="w-4 h-4" />
+                Identificación
+              </h4>
+              <div class="space-y-4">
+                <div>
+                  <span id="modal_tipo_identificacion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de identificación</span>
+                  <div role="radiogroup" aria-labelledby="modal_tipo_identificacion" class="grid grid-cols-3 gap-1 p-1 rounded-lg bg-gray-100 dark:bg-gray-700">
+                    <button
+                      v-for="tipo in TIPOS_IDENTIFICACION"
+                      :key="tipo.value"
+                      type="button"
+                      role="radio"
+                      :aria-checked="form.tipo_identificacion === tipo.value"
+                      :class="[
+                        'px-3 py-1.5 text-sm font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-brand-300',
+                        form.tipo_identificacion === tipo.value
+                          ? 'bg-white text-brand-900 shadow-xs dark:bg-gray-800 dark:text-white'
+                          : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white',
+                      ]"
+                      @click="form.tipo_identificacion = tipo.value"
+                    >
+                      {{ tipo.label }}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label for="modal_identificacion" class="flex items-center justify-between mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                    <span>Número de identificación <span class="text-accent-500">*</span></span>
+                    <span v-if="largoIdentificacion" class="text-xs font-normal tabular-nums text-gray-400">{{ (form.identificacion || '').length }}/{{ largoIdentificacion }}</span>
+                  </label>
+                  <input id="modal_identificacion" v-model="form.identificacion" required :maxlength="largoIdentificacion || 20" :inputmode="largoIdentificacion ? 'numeric' : 'text'" :placeholder="form.tipo_identificacion === 'R' ? '13 dígitos' : (form.tipo_identificacion === 'C' ? '10 dígitos' : '')" :class="inputClass('identificacion', 'font-mono tracking-wider placeholder:font-sans placeholder:tracking-normal')">
+                  <p v-if="clientErrors.identificacion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.identificacion }}</p>
+                </div>
+                <div>
+                  <label for="modal_nombre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre o razón social <span class="text-accent-500">*</span></label>
+                  <input id="modal_nombre" v-model="form.nombre" required maxlength="200" placeholder="Como aparece en la factura" :class="inputClass('nombre')" @blur="form.nombre = recortarEspacios(form.nombre)">
+                  <p v-if="clientErrors.nombre" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.nombre }}</p>
+                </div>
+              </div>
+            </section>
+
+            <!-- Contacto -->
+            <section class="p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+              <h4 class="flex items-center gap-2 mb-4 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200">
+                <Contact class="w-4 h-4" />
+                Contacto
+              </h4>
+              <div class="space-y-4">
+                <div>
+                  <label for="modal_telefono" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Teléfono <span class="text-accent-500">*</span></label>
+                  <div class="relative">
+                    <Phone class="absolute w-4 h-4 text-gray-400 -translate-y-1/2 pointer-events-none top-1/2 start-3" />
+                    <input id="modal_telefono" v-model="form.telefono" type="tel" maxlength="15" placeholder="0991234567" :class="inputClass('telefono', 'ps-9 tabular-nums')">
+                  </div>
+                  <p v-if="clientErrors.telefono" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.telefono }}</p>
+                  <p v-else class="mt-2 text-xs text-gray-500 dark:text-gray-400">Lo usamos para los recordatorios por WhatsApp.</p>
+                </div>
+                <div>
+                  <label for="modal_email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Correo electrónico <span class="text-accent-500">*</span></label>
+                  <div class="relative">
+                    <Mail class="absolute w-4 h-4 text-gray-400 -translate-y-1/2 pointer-events-none top-1/2 start-3" />
+                    <input id="modal_email" v-model="form.email" type="email" required maxlength="100" placeholder="cliente@correo.com" :class="inputClass('email', 'ps-9')">
+                  </div>
+                  <p v-if="clientErrors.email" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.email }}</p>
+                </div>
+                <div>
+                  <label for="modal_direccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Dirección <span class="text-accent-500">*</span></label>
+                  <div class="relative">
+                    <MapPin class="absolute w-4 h-4 text-gray-400 -translate-y-1/2 pointer-events-none top-1/2 start-3" />
+                    <input id="modal_direccion" v-model="form.direccion" maxlength="150" placeholder="Calle, número y ciudad" :class="inputClass('direccion', 'ps-9')">
+                  </div>
+                  <p v-if="clientErrors.direccion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.direccion }}</p>
+                </div>
+              </div>
+            </section>
           </div>
 
-          <h4 class="mt-6 mb-4 text-base font-semibold dark:text-white">
-            <span class="inline-flex items-center gap-2">
-              <Car class="w-4 h-4 text-gray-800 dark:text-white" />
-              Vehículos del Cliente
-            </span>
-          </h4>
-          <div v-if="!vehiculos.length" class="p-4 text-sm text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600">
-            No hay vehículos asociados. Presiona "Agregar Vehículo" para crear uno.
-          </div>
-
-          <div v-for="(vehiculo, index) in vehiculos" :key="vehiculo._uid || vehiculo.id" class="p-4 mb-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600">
-            <div class="flex items-center justify-between mb-4">
-              <h5 class="text-base font-medium text-gray-900 dark:text-white">Vehículo {{ index + 1 }}</h5>
-              <button type="button" @click="removeVehiculo(index)" class="inline-flex items-center p-2 text-red-600 border border-red-500 rounded hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-600" title="Eliminar vehículo" aria-label="Eliminar vehículo">
-                <Trash2 class="w-5 h-5" />
+          <!-- Vehículos -->
+          <section class="p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+            <div class="flex items-center justify-between gap-3 mb-4">
+              <h4 class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200">
+                <Car class="w-4 h-4" />
+                Vehículos
+                <span v-if="vehiculos.length" class="px-2 py-0.5 text-xs font-semibold normal-case tracking-normal rounded-full bg-brand-50 text-brand-700 dark:bg-brand-500/20 dark:text-brand-200">{{ vehiculos.length }}</span>
+              </h4>
+              <button
+                v-if="vehiculos.length"
+                type="button"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-brand-700 text-brand-700 hover:bg-brand-50 focus:ring-4 focus:ring-brand-100 dark:border-brand-300 dark:text-brand-200 dark:hover:bg-gray-700 dark:focus:ring-gray-700"
+                @click="addVehiculo"
+              >
+                <Plus class="w-4 h-4" />
+                Agregar vehículo
               </button>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div class="col-span-1">
-                <label :class="['block mb-2.5 text-sm font-medium', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].placa) ? 'text-fg-danger-strong' : 'text-heading']">Placa</label>
-                <input v-model="vehiculo.placa" maxlength="10" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].placa) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
-                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].placa" class="mt-2.5 text-sm text-fg-danger-strong">{{ vehiculoErrors[getVehicleKey(vehiculo)].placa }}</p>
-              </div>
-              <div class="col-span-1">
-                <label :class="['block mb-2.5 text-sm font-medium', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca) ? 'text-fg-danger-strong' : 'text-heading']">Marca</label>
-                <input v-model="vehiculo.marca" maxlength="50" @blur="vehiculo.marca = recortarEspacios(vehiculo.marca)" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
-                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca" class="mt-2.5 text-sm text-fg-danger-strong">{{ vehiculoErrors[getVehicleKey(vehiculo)].marca }}</p>
-              </div>
-              <div class="col-span-1">
-                <label :class="['block mb-2.5 text-sm font-medium', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo) ? 'text-fg-danger-strong' : 'text-heading']">Modelo</label>
-                <input v-model="vehiculo.modelo" maxlength="50" @blur="vehiculo.modelo = recortarEspacios(vehiculo.modelo)" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
-                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo" class="mt-2.5 text-sm text-fg-danger-strong">{{ vehiculoErrors[getVehicleKey(vehiculo)].modelo }}</p>
-              </div>
-              <div class="col-span-1">
-                <label :class="['block mb-2.5 text-sm font-medium', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].anio) ? 'text-fg-danger-strong' : 'text-heading']">Año</label>
-                <input v-model="vehiculo.anio" type="number" min="1900" :max="new Date().getFullYear() + 1" maxlength="4" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].anio) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
-                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].anio" class="mt-2.5 text-sm text-fg-danger-strong">{{ vehiculoErrors[getVehicleKey(vehiculo)].anio }}</p>
-              </div>
-              <div class="col-span-1">
-                <label class="block mb-2.5 text-sm font-medium text-heading">Tipo</label>
-                <select v-model="vehiculo.tipo" :disabled="isLoadingChoices" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
-                  <option v-for="item in tipos" :key="item.value" :value="item.value">{{ item.label }}</option>
-                </select>
-              </div>
-              <div class="col-span-1">
-                <label class="block mb-2.5 text-sm font-medium text-heading">Transmisión</label>
-                <select v-model="vehiculo.transmision" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
-                  <option value="M">Manual / Mecánica</option>
-                  <option value="A">Automática</option>
-                  <option value="C">CVT</option>
-                </select>
-              </div>
-              <div class="col-span-1">
-                <label class="block mb-2.5 text-sm font-medium text-heading">Combustible</label>
-                <select v-model="vehiculo.combustible" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
-                  <option value="GAS">Gasolina</option>
-                  <option value="DIE">Diésel</option>
-                  <option value="HIB">Híbrido</option>
-                  <option value="ELE">Eléctrico</option>
-                </select>
-              </div>
-              <div class="col-span-1">
-                <label class="block mb-2.5 text-sm font-medium text-heading">Color</label>
-                <input v-model="vehiculo.color" maxlength="30" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body">
-              </div>
-              <div class="col-span-1">
-                <label :class="['block mb-2.5 text-sm font-medium', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].vin) ? 'text-fg-danger-strong' : 'text-heading']">VIN / Chasis</label>
-                <input v-model="vehiculo.vin" maxlength="17" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].vin) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
-                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].vin" class="mt-2.5 text-sm text-fg-danger-strong">{{ vehiculoErrors[getVehicleKey(vehiculo)].vin }}</p>
-              </div>
-              <div class="col-span-1">
-                <label class="block mb-2.5 text-sm font-medium text-heading">Motor</label>
-                <input v-model="vehiculo.numero_motor" maxlength="50" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body">
-              </div>
-              <div class="col-span-1">
-                <label class="block mb-2.5 text-sm font-medium text-heading">País de Origen</label>
-                <select v-model="vehiculo.pais_origen" :disabled="isLoadingChoices" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
-                  <option v-for="item in paises" :key="item.code" :value="item.code">{{ item.name }}</option>
-                </select>
-              </div>
-              <div class="col-span-1">
-                <label :class="['block mb-2.5 text-sm font-medium', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual) ? 'text-fg-danger-strong' : 'text-heading']">Kilometraje</label>
-                <input v-model="vehiculo.kilometraje_actual" type="number" min="0" maxlength="9" :class="(vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual) ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
-                <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual" class="mt-2.5 text-sm text-fg-danger-strong">{{ vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual }}</p>
-              </div>
-              <div class="col-span-1 md:col-span-1">
-                <p class="block mb-2.5 text-sm font-medium text-heading">Imagen</p>
-                <VehicleImageField
-                  :image-url="vehiculo.imagen"
-                  :disabled="isLoadingChoices"
-                  @upload="(file) => { vehiculo.imagenFile = file; }"
-                  @remove="() => { vehiculo.imagenFile = null; vehiculo.imagenPreview = ''; vehiculo.imagen = ''; }"
-                />
-              </div>
-              <div class="col-span-1 md:col-span-3">
-                <label class="block mb-2.5 text-sm font-medium text-heading">Observaciones</label>
-                <textarea v-model="vehiculo.observaciones" rows="7" maxlength="500" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"></textarea>
-              </div>
-            </div>
-          </div>
 
-          <div class="mt-4 flex justify-end">
-            <button type="button" @click="addVehiculo" class="inline-flex items-center px-4 py-2 text-sm font-medium text-primary-blue-700 border border-primary-blue-700 rounded-lg hover:bg-primary-blue-50 focus:ring-4 focus:ring-primary-blue-300">
-              <svg class="w-4 h-4 mr-2 -ml-1" fill="currentColor" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="M24,16c-4.4,0-8,3.6-8,8s3.6,8,8,8s8-3.6,8-8S28.4,16,24,16z M27,25h-2v2c0,0.6-0.4,1-1,1s-1-0.4-1-1v-2h-2c-0.6,0-1-0.4-1-1s0.4-1,1-1h2v-2c0-0.6,0.4-1,1-1s1,0.4,1,1v2h2c0.6,0,1,0.4,1,1S27.6,25,27,25z"/><path d="M8.4,22l1.2-2.3c0.5-1,1.5-1.7,2.7-1.7h3.5c0.1,0,0.2,0,0.2,0c1.8-2.4,4.7-4,8-4c1.2,0,2.3,0.2,3.4,0.6C27,14,26.5,13.4,26,13h1c0.6,0,1-0.4,1-1s-0.4-1-1-1h-2.8L23,8c-0.8-1.8-2.6-3-4.6-3H9.6C7.6,5,5.8,6.2,5,8l-1.3,3H1c-0.6,0-1,0.4-1,1s0.4,1,1,1h1c-1.2,0.9-2,2.4-2,4v4c0,0.9,0.4,1.7,1,2.2V25c0,1.7,1.3,3,3,3h2c1.7,0,3-1.3,3-3v-1h5c0-0.7,0.1-1.4,0.2-2H8.4z M7,19H4c-0.6,0-1-0.4-1-1s0.4-1,1-1h3c0.6,0,1,0.4,1,1S7.6,19,7,19z M5.5,12l1.4-3.2C7.4,7.7,8.4,7,9.6,7h8.7c1.2,0,2.3,0.7,2.8,1.8l1.4,3.2H5.5z"/></svg>
-              Agregar Vehículo
-            </button>
-          </div>
-        </template>
+            <!-- Sin vehículos -->
+            <div v-if="!vehiculos.length" class="flex flex-col items-center px-4 py-8 text-center border-2 border-dashed rounded-lg border-gray-200 dark:border-gray-600">
+              <span class="inline-flex items-center justify-center w-12 h-12 mb-3 rounded-full bg-brand-50 text-brand-700 dark:bg-brand-500/20 dark:text-brand-200">
+                <Car class="w-6 h-6" />
+              </span>
+              <p class="text-sm font-medium text-gray-900 dark:text-white">Este cliente aún no tiene vehículos</p>
+              <p class="mt-1 mb-4 text-sm text-gray-500 dark:text-gray-400">Regístralos ahora o más tarde desde su ficha.</p>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg border border-brand-700 text-brand-700 hover:bg-brand-50 focus:ring-4 focus:ring-brand-100 dark:border-brand-300 dark:text-brand-200 dark:hover:bg-gray-700 dark:focus:ring-gray-700"
+                @click="addVehiculo"
+              >
+                <Plus class="w-4 h-4" />
+                Agregar vehículo
+              </button>
+            </div>
+
+            <div v-else class="space-y-3">
+              <article
+                v-for="(vehiculo, index) in vehiculos"
+                :key="vehiculo._uid || vehiculo.id"
+                :class="[
+                  'rounded-lg border transition-colors',
+                  vehiculoTieneErrores(vehiculo) ? 'border-red-300 dark:border-red-500/60' : (estaAbierto(vehiculo) ? 'border-brand-200 dark:border-gray-600' : 'border-gray-200 dark:border-gray-700'),
+                ]"
+              >
+                <!-- Resumen del vehículo: siempre visible -->
+                <div :class="['flex items-center gap-3 px-3 py-2.5 sm:px-4', estaAbierto(vehiculo) ? 'border-b border-gray-200 bg-gray-50 rounded-t-lg dark:bg-gray-700/40 dark:border-gray-700' : '']">
+                  <button
+                    type="button"
+                    class="flex items-center flex-1 min-w-0 gap-3 text-start focus:outline-none"
+                    :aria-expanded="estaAbierto(vehiculo)"
+                    @click="toggleVehiculo(vehiculo)"
+                  >
+                    <span class="inline-flex items-center justify-center w-8 h-8 text-sm font-semibold rounded-full shrink-0 bg-brand-900 text-white dark:bg-brand-600">{{ index + 1 }}</span>
+                    <span class="min-w-0">
+                      <span v-if="vehiculo.placa" class="block font-mono text-sm font-semibold tracking-widest text-gray-900 uppercase truncate dark:text-white">{{ vehiculo.placa }}</span>
+                      <span v-else class="block text-sm font-semibold text-gray-900 dark:text-white">Vehículo nuevo</span>
+                      <span class="block text-xs text-gray-500 truncate dark:text-gray-400">{{ resumenVehiculo(vehiculo) || 'Completa placa, marca y modelo' }}</span>
+                    </span>
+                    <span v-if="vehiculoTieneErrores(vehiculo)" class="inline-flex items-center gap-1 px-2 py-0.5 ms-auto text-xs font-medium rounded-full shrink-0 bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-400">
+                      <CircleAlert class="w-3.5 h-3.5" />
+                      <span class="hidden sm:inline">Revisar</span>
+                    </span>
+                    <ChevronDown :class="['w-5 h-5 shrink-0 text-gray-400 transition-transform', vehiculoTieneErrores(vehiculo) ? '' : 'ms-auto', estaAbierto(vehiculo) ? 'rotate-180' : '']" />
+                  </button>
+                  <button
+                    type="button"
+                    class="inline-flex items-center justify-center w-8 h-8 rounded-lg shrink-0 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/15 dark:hover:text-red-400"
+                    :title="`Quitar vehículo ${index + 1}`"
+                    :aria-label="`Quitar vehículo ${index + 1}`"
+                    @click="removeVehiculo(index)"
+                  >
+                    <Trash2 class="w-4 h-4" />
+                  </button>
+                </div>
+
+                <!-- Formulario del vehículo -->
+                <div v-show="estaAbierto(vehiculo)" class="p-3 space-y-5 sm:p-4">
+                  <div>
+                    <p class="flex items-center gap-1.5 mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"><IdCard class="w-3.5 h-3.5" /> Identificación</p>
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      <div>
+                        <label :for="`modal_cli_veh${index}_placa`" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Placa <span class="text-accent-500">*</span></label>
+                        <input :id="`modal_cli_veh${index}_placa`" v-model="vehiculo.placa" maxlength="10" placeholder="ABC-1234" :class="vehiculoClass(vehiculo, 'placa', 'font-mono text-base font-semibold uppercase tracking-widest placeholder:font-normal')">
+                        <p v-if="errorVehiculo(vehiculo, 'placa')" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ errorVehiculo(vehiculo, 'placa') }}</p>
+                      </div>
+                      <div>
+                        <label :for="`modal_cli_veh${index}_vin`" class="flex items-center justify-between mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                          <span>VIN / Chasis <span class="text-accent-500">*</span></span>
+                          <span class="text-xs font-normal tabular-nums text-gray-400">{{ (vehiculo.vin || '').length }}/17</span>
+                        </label>
+                        <input :id="`modal_cli_veh${index}_vin`" v-model="vehiculo.vin" maxlength="17" placeholder="17 caracteres" :class="vehiculoClass(vehiculo, 'vin', 'font-mono uppercase placeholder:normal-case placeholder:font-sans')">
+                        <p v-if="errorVehiculo(vehiculo, 'vin')" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ errorVehiculo(vehiculo, 'vin') }}</p>
+                      </div>
+                      <div>
+                        <label :for="`modal_cli_veh${index}_motor`" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Número de motor</label>
+                        <input :id="`modal_cli_veh${index}_motor`" v-model="vehiculo.numero_motor" maxlength="50" :class="vehiculoClass(vehiculo, 'numero_motor', 'font-mono uppercase')">
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p class="flex items-center gap-1.5 mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"><CarFront class="w-3.5 h-3.5" /> Características</p>
+                    <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+                      <div>
+                        <label :for="`modal_cli_veh${index}_marca`" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Marca <span class="text-accent-500">*</span></label>
+                        <input :id="`modal_cli_veh${index}_marca`" v-model="vehiculo.marca" maxlength="50" placeholder="Toyota" :class="vehiculoClass(vehiculo, 'marca')" @blur="vehiculo.marca = recortarEspacios(vehiculo.marca)">
+                        <p v-if="errorVehiculo(vehiculo, 'marca')" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ errorVehiculo(vehiculo, 'marca') }}</p>
+                      </div>
+                      <div>
+                        <label :for="`modal_cli_veh${index}_modelo`" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Modelo <span class="text-accent-500">*</span></label>
+                        <input :id="`modal_cli_veh${index}_modelo`" v-model="vehiculo.modelo" maxlength="50" placeholder="Hilux" :class="vehiculoClass(vehiculo, 'modelo')" @blur="vehiculo.modelo = recortarEspacios(vehiculo.modelo)">
+                        <p v-if="errorVehiculo(vehiculo, 'modelo')" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ errorVehiculo(vehiculo, 'modelo') }}</p>
+                      </div>
+                      <div>
+                        <label :for="`modal_cli_veh${index}_anio`" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Año</label>
+                        <input :id="`modal_cli_veh${index}_anio`" v-model="vehiculo.anio" type="number" min="1900" :max="new Date().getFullYear() + 1" placeholder="2024" :class="vehiculoClass(vehiculo, 'anio')">
+                        <p v-if="errorVehiculo(vehiculo, 'anio')" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ errorVehiculo(vehiculo, 'anio') }}</p>
+                      </div>
+                      <div>
+                        <label :for="`modal_cli_veh${index}_color`" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Color</label>
+                        <input :id="`modal_cli_veh${index}_color`" v-model="vehiculo.color" maxlength="30" placeholder="Blanco" :class="vehiculoClass(vehiculo, 'color')">
+                      </div>
+                      <div>
+                        <label :for="`modal_cli_veh${index}_tipo`" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo</label>
+                        <select :id="`modal_cli_veh${index}_tipo`" v-model="vehiculo.tipo" :disabled="isLoadingChoices" :class="vehiculoClass(vehiculo, 'tipo')">
+                          <option v-for="item in tipos" :key="item.value" :value="item.value">{{ item.label }}</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label :for="`modal_cli_veh${index}_transmision`" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Transmisión</label>
+                        <select :id="`modal_cli_veh${index}_transmision`" v-model="vehiculo.transmision" :class="vehiculoClass(vehiculo, 'transmision')">
+                          <option value="M">Manual / Mecánica</option>
+                          <option value="A">Automática</option>
+                          <option value="C">CVT</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label :for="`modal_cli_veh${index}_combustible`" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Combustible</label>
+                        <select :id="`modal_cli_veh${index}_combustible`" v-model="vehiculo.combustible" :class="vehiculoClass(vehiculo, 'combustible')">
+                          <option value="GAS">Gasolina</option>
+                          <option value="DIE">Diésel</option>
+                          <option value="HIB">Híbrido</option>
+                          <option value="ELE">Eléctrico</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label :for="`modal_cli_veh${index}_pais`" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">País de origen</label>
+                        <select :id="`modal_cli_veh${index}_pais`" v-model="vehiculo.pais_origen" :disabled="isLoadingChoices" :class="vehiculoClass(vehiculo, 'pais_origen')">
+                          <option v-for="item in paises" :key="item.code" :value="item.code">{{ item.name }}</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div>
+                      <p class="flex items-center h-8 gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"><Gauge class="w-3.5 h-3.5" /> Kilometraje y foto</p>
+                      <label :for="`modal_cli_veh${index}_km`" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kilometraje actual <span class="text-accent-500">*</span></label>
+                      <div class="relative">
+                        <input :id="`modal_cli_veh${index}_km`" v-model="vehiculo.kilometraje_actual" type="number" min="0" :class="vehiculoClass(vehiculo, 'kilometraje_actual', 'pe-12 tabular-nums')">
+                        <span class="absolute inset-y-0 flex items-center text-sm text-gray-500 pointer-events-none end-0 pe-3 dark:text-gray-400">km</span>
+                      </div>
+                      <p v-if="errorVehiculo(vehiculo, 'kilometraje_actual')" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ errorVehiculo(vehiculo, 'kilometraje_actual') }}</p>
+                      <div class="mt-4">
+                        <VehicleImageField
+                          :image-url="vehiculo.imagen"
+                          :disabled="isLoadingChoices"
+                          @upload="(file) => { vehiculo.imagenFile = file; }"
+                          @remove="() => { vehiculo.imagenFile = null; vehiculo.imagenPreview = ''; vehiculo.imagen = ''; }"
+                        />
+                      </div>
+                    </div>
+                    <div class="md:col-span-2">
+                      <TextImprover
+                        v-model="vehiculo.observaciones"
+                        contexto="observaciones de un vehículo en un taller mecánico"
+                        v-slot="{ mejorar, restaurar, mejorando, error: errorMejora, mejorado, tieneOriginal }">
+                        <div class="flex items-center justify-between h-8 gap-2 mb-2">
+                          <p class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                            <NotebookPen class="w-3.5 h-3.5" />
+                            <label :for="`modal_cli_veh${index}_obs`">Observaciones</label>
+                          </p>
+                          <button
+                            type="button"
+                            title="Mejorar el texto con IA"
+                            :disabled="mejorando || !vehiculo.observaciones"
+                            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-brand-700 text-brand-700 hover:bg-brand-50 dark:border-brand-300 dark:text-brand-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            @click="mejorar">
+                            <Loader2 v-if="mejorando" class="w-4 h-4 animate-spin" />
+                            <Wand2 v-else class="w-4 h-4" />
+                            {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
+                          </button>
+                        </div>
+                        <textarea :id="`modal_cli_veh${index}_obs`" v-model="vehiculo.observaciones" rows="9" maxlength="500" placeholder="Golpes, accesorios, detalles a tener en cuenta..." :class="vehiculoClass(vehiculo, 'observaciones')"></textarea>
+                        <p v-if="errorMejora" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ errorMejora }}</p>
+                        <div v-if="mejorado && !errorMejora" class="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-emerald-700 dark:text-emerald-400">
+                          <p>Texto mejorado. Revisa antes de guardar.</p>
+                          <button v-if="tieneOriginal" type="button" class="font-medium underline hover:no-underline" @click="restaurar">Restaurar original</button>
+                        </div>
+                      </TextImprover>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </section>
+        </div>
       </div>
 
-      <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
-        <button
-          type="button"
-          class="text-body bg-neutral-primary-soft border border-default hover:bg-neutral-secondary-medium hover:text-heading focus:ring-4 focus:ring-neutral-tertiary-soft shadow-xs font-medium leading-5 rounded text-sm px-4 py-2.5 focus:outline-none"
-          @click="close"
-        >
-          Cancelar
-        </button>
-        <button
-          type="button"
-          :disabled="isSaving || isLoading"
-          class="inline-flex items-center text-white bg-brand box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded text-sm px-4 py-2.5 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="submit"
-        >
-          <Save v-if="!isSaving" class="w-5 h-5 mr-1.5 -ml-1 text-white" />
-          <svg v-else class="w-5 h-5 mr-1.5 animate-spin" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          {{ isSaving ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Crear') }}
-        </button>
+      <!-- Pie fijo -->
+      <div class="flex flex-col-reverse gap-3 border-t border-gray-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:border-gray-700">
+        <p class="hidden text-xs text-gray-500 sm:block dark:text-gray-400"><span class="text-accent-500">*</span> Campos obligatorios</p>
+        <div class="flex items-center justify-end gap-3">
+          <button
+            type="button"
+            class="px-5 py-2.5 text-sm font-medium text-gray-900 rounded bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700"
+            @click="close">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            :disabled="isSaving || isLoading"
+            class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded bg-brand-900 hover:bg-brand-700 focus:ring-4 focus:ring-brand-300 dark:bg-brand-600 dark:hover:bg-brand-500 dark:focus:ring-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="submit"
+          >
+            <Save v-if="!isSaving" class="w-5 h-5 mr-1.5 -ml-1 text-white" />
+            <svg v-else class="w-5 h-5 mr-1.5 animate-spin" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            {{ isSaving ? 'Guardando...' : (isEditMode ? 'Guardar cambios' : 'Crear cliente') }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
