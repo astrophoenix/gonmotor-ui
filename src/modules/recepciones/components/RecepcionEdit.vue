@@ -577,10 +577,10 @@ function irARequisito(req) {
   }
 }
 
-const pasosVisitados = ref(new Set(["informacion"]));
-watch(activeTab, (key) => {
-  pasosVisitados.value = new Set([...pasosVisitados.value, key]);
-});
+// Revisión no tiene campos obligatorios: cuenta como completa cuando ya registra algo.
+const revisionConDatos = computed(
+  () => inventarioPresente.value > 0 || testigosEncendidos.value > 0 || marcas.value.length > 0,
+)
 
 const ETIQUETA_A_PASO = { Ingreso: "informacion", Revisión: "inspeccion", Evidencias: "evidencias", Autorización: "autorizacion" };
 
@@ -591,7 +591,7 @@ const estadoPasos = computed(() => {
     const propios = requisitos.value.filter((r) => r.paso === paso.key);
     let estado = "pendiente";
     if (conError.has(paso.key)) estado = "error";
-    else if (propios.every((r) => r.ok) && (propios.length > 0 || pasosVisitados.value.has(paso.key))) estado = "completo";
+    else if (propios.every((r) => r.ok) && (propios.length > 0 || (paso.key === "inspeccion" && revisionConDatos.value))) estado = "completo";
     resultado[paso.key] = estado;
   });
   return resultado;
