@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue';
 import {
-  Car, CarFront, ChevronRight, FilePen, Mail, MapPin, MessageCircle, Phone, Plus, Search, Gauge,
+  CarFront, ChevronRight, FilePen, Mail, MapPin, MessageCircle, Phone, Plus, Search, Gauge,
 } from 'lucide-vue-next';
 
 import { clientsService } from '../services/clientesService';
@@ -42,13 +42,6 @@ const MIN_VEHICULOS_BUSQUEDA = 4;
 
 const params = new URLSearchParams(window.location.search);
 const clientId = params.get('id') || '';
-
-function formatFechaCorta(value) {
-  if (!value) return null;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleDateString('es-EC', { day: 'numeric', month: 'short', year: 'numeric' });
-}
 
 function formatMesAnio(value) {
   if (!value) return null;
@@ -100,29 +93,6 @@ const vehiculosFiltrados = computed(() => {
   if (!termino) return vehiculos.value;
   return vehiculos.value.filter((v) => [v.placa, v.marca, v.modelo, v.color, v.anio]
     .some((campo) => String(campo || '').toLowerCase().replace(/[\s-]/g, '').includes(termino)));
-});
-
-const vehiculosActivos = computed(() => vehiculos.value.filter((v) => v.is_active !== false).length);
-
-const datosCliente = computed(() => {
-  const c = client.value;
-  if (!c) return [];
-  return [
-    { label: TIPO_IDENTIFICACION[c.tipo_identificacion] || 'Identificación', value: c.identificacion, mono: true },
-    { label: 'Dirección', value: c.direccion },
-    { label: 'Cliente desde', value: formatFechaCorta(c.created_at) },
-    { label: 'Última actualización', value: formatFechaCorta(c.updated_at) },
-  ];
-});
-
-const contactos = computed(() => {
-  const c = client.value;
-  if (!c) return [];
-  return [
-    { label: 'Llamar', detalle: c.telefono, href: c.telefono ? `tel:${c.telefono}` : null, icon: Phone },
-    { label: 'Escribir por WhatsApp', detalle: c.telefono, href: whatsappHref(c.telefono), icon: MessageCircle, externo: true },
-    { label: 'Enviar correo', detalle: c.email, href: c.email ? `mailto:${c.email}` : null, icon: Mail },
-  ];
 });
 
 const TONO_MANTENIMIENTO = {
@@ -241,10 +211,7 @@ onMounted(async () => {
     <!-- Carga -->
     <div v-if="loading" class="space-y-6 animate-pulse" aria-busy="true" aria-label="Cargando cliente">
       <div class="h-48 rounded-2xl bg-gray-200 dark:bg-gray-700"></div>
-      <div class="grid gap-6 lg:grid-cols-3">
-        <div class="h-80 rounded-2xl bg-gray-200 dark:bg-gray-700 lg:col-span-2"></div>
-        <div class="h-56 rounded-2xl bg-gray-200 dark:bg-gray-700"></div>
-      </div>
+      <div class="h-80 rounded-2xl bg-gray-200 dark:bg-gray-700"></div>
     </div>
 
     <template v-else-if="client">
@@ -288,13 +255,6 @@ onMounted(async () => {
                 <span class="text-xs text-gray-500 dark:text-gray-400">{{ TIPO_IDENTIFICACION[client.tipo_identificacion] || 'ID' }}</span>
                 <span class="font-mono font-semibold tracking-wider text-gray-900 dark:text-white">{{ client.identificacion }}</span>
               </span>
-              <span
-                v-if="client.direccion"
-                class="inline-flex max-w-full items-center gap-1.5 rounded-md bg-gray-100 px-2.5 py-1 text-sm text-gray-700 dark:bg-gray-700 dark:text-gray-200"
-              >
-                <MapPin class="h-3.5 w-3.5 shrink-0 text-gray-500 dark:text-gray-400" aria-hidden="true" />
-                <span class="truncate">{{ client.direccion }}</span>
-              </span>
             </div>
           </div>
         </div>
@@ -305,10 +265,23 @@ onMounted(async () => {
               <Phone class="h-3.5 w-3.5" aria-hidden="true" />
               Teléfono / WhatsApp
             </dt>
-            <dd class="mt-2 text-base font-semibold tabular-nums text-gray-900 dark:text-white">
-              <a v-if="client.telefono" :href="`tel:${client.telefono}`" class="hover:text-brand-700 hover:underline dark:hover:text-brand-200">
-                {{ client.telefono }}
-              </a>
+            <dd class="mt-2 flex items-center gap-2 text-base font-semibold tabular-nums text-gray-900 dark:text-white">
+              <template v-if="client.telefono">
+                <a :href="`tel:${client.telefono}`" class="hover:text-brand-700 hover:underline dark:hover:text-brand-200">
+                  {{ client.telefono }}
+                </a>
+                <a
+                  v-if="whatsappHref(client.telefono)"
+                  :href="whatsappHref(client.telefono)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Escribir por WhatsApp"
+                  aria-label="Escribir por WhatsApp"
+                  class="inline-flex h-7 w-7 items-center justify-center rounded-full text-gray-500 hover:bg-emerald-50 hover:text-emerald-600 dark:text-gray-400 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400"
+                >
+                  <MessageCircle class="h-4 w-4" aria-hidden="true" />
+                </a>
+              </template>
               <span v-else class="font-normal text-gray-400 dark:text-gray-500">—</span>
             </dd>
           </div>
@@ -326,148 +299,121 @@ onMounted(async () => {
           </div>
           <div class="min-w-0">
             <dt class="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
-              <Car class="h-3.5 w-3.5" aria-hidden="true" />
-              Vehículos
+              <MapPin class="h-3.5 w-3.5" aria-hidden="true" />
+              Dirección
             </dt>
-            <dd class="mt-2">
-              <span v-if="!vehiculos.length" class="block text-base font-normal text-gray-400 dark:text-gray-500">Sin vehículos</span>
-              <span v-else class="block text-base font-semibold tabular-nums text-gray-900 dark:text-white">
-                {{ vehiculosActivos }} {{ vehiculosActivos === 1 ? 'activo' : 'activos' }}
-                <span v-if="vehiculos.length > vehiculosActivos" class="font-normal text-gray-500 dark:text-gray-400">
-                  de {{ vehiculos.length }}
-                </span>
-              </span>
+            <dd class="mt-2 text-base font-semibold break-words text-gray-900 dark:text-white">
+              <span v-if="client.direccion">{{ client.direccion }}</span>
+              <span v-else class="font-normal text-gray-400 dark:text-gray-500">—</span>
             </dd>
           </div>
         </dl>
       </section>
 
-      <div class="grid items-start gap-6 lg:grid-cols-3">
-        <!-- Vehículos del cliente -->
-        <section class="shadow-sm rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 lg:col-span-2">
-          <div class="flex flex-col gap-3 px-6 pt-5 pb-4 sm:flex-row sm:items-center sm:justify-between">
-            <h3 class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
-              Vehículos
-              <span v-if="vehiculos.length" class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium tabular-nums text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                {{ vehiculos.length }}
-              </span>
-            </h3>
-            <div class="flex items-center gap-2">
-              <div v-if="vehiculos.length >= MIN_VEHICULOS_BUSQUEDA" class="relative w-full sm:w-56">
-                <div class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3">
-                  <Search class="h-4 w-4 text-gray-400" aria-hidden="true" />
-                </div>
-                <input
-                  v-model="busqueda"
-                  type="search"
-                  aria-label="Buscar vehículo del cliente"
-                  placeholder="Buscar placa, marca…"
-                  class="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2 ps-9 pe-3 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
-                />
-              </div>
-              <button
-                v-if="puedeModificarVehiculos"
-                type="button"
-                class="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-900 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-300 dark:bg-brand-500 dark:hover:bg-brand-300 dark:hover:text-brand-900 dark:focus:ring-brand-800"
-                @click="showVehicleModal = true"
-              >
-                <Plus class="h-4 w-4" aria-hidden="true" />
-                Agregar
-              </button>
-            </div>
-          </div>
-
-          <!-- Sin vehículos -->
-          <div v-if="!vehiculos.length" class="mx-6 mb-6 flex flex-col items-center gap-3 rounded-xl border border-dashed border-gray-300 px-6 py-10 text-center dark:border-gray-600">
-            <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500">
-              <CarFront class="h-6 w-6" aria-hidden="true" />
+      <!-- Vehículos del cliente -->
+      <section class="shadow-sm rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+        <div class="flex flex-col gap-3 px-6 pt-5 pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <h3 class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+            Vehículos
+            <span v-if="vehiculos.length" class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium tabular-nums text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+              {{ vehiculos.length }}
             </span>
-            <div>
-              <p class="text-sm font-medium text-gray-900 dark:text-white">Este cliente aún no tiene vehículos</p>
-              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Registra su vehículo para crear citas, recepciones y órdenes.</p>
+          </h3>
+          <div class="flex items-center gap-2">
+            <div v-if="vehiculos.length >= MIN_VEHICULOS_BUSQUEDA" class="relative w-full sm:w-56">
+              <div class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3">
+                <Search class="h-4 w-4 text-gray-400" aria-hidden="true" />
+              </div>
+              <input
+                v-model="busqueda"
+                type="search"
+                aria-label="Buscar vehículo del cliente"
+                placeholder="Buscar placa, marca…"
+                class="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2 ps-9 pe-3 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              />
             </div>
+            <button
+              v-if="puedeModificarVehiculos"
+              type="button"
+              class="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-900 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-300 dark:bg-brand-500 dark:hover:bg-brand-300 dark:hover:text-brand-900 dark:focus:ring-brand-800"
+              @click="showVehicleModal = true"
+            >
+              <Plus class="h-4 w-4" aria-hidden="true" />
+              Agregar
+            </button>
           </div>
+        </div>
 
-          <!-- Búsqueda sin coincidencias -->
-          <p
-            v-else-if="!vehiculosFiltrados.length"
-            class="mx-6 mb-6 rounded-xl bg-gray-50 px-4 py-6 text-center text-sm text-gray-500 dark:bg-gray-900/40 dark:text-gray-400"
-          >
-            Ningún vehículo coincide con «{{ busqueda }}».
-          </p>
+        <!-- Sin vehículos -->
+        <div v-if="!vehiculos.length" class="mx-6 mb-6 flex flex-col items-center gap-3 rounded-xl border border-dashed border-gray-300 px-6 py-10 text-center dark:border-gray-600">
+          <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500">
+            <CarFront class="h-6 w-6" aria-hidden="true" />
+          </span>
+          <div>
+            <p class="text-sm font-medium text-gray-900 dark:text-white">Este cliente aún no tiene vehículos</p>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Registra su vehículo para crear citas, recepciones y órdenes.</p>
+          </div>
+        </div>
 
-          <ul v-else class="divide-y divide-gray-100 border-t border-gray-100 dark:divide-gray-700 dark:border-gray-700">
-            <li v-for="veh in vehiculosFiltrados" :key="veh.id">
-              <a
-                :href="`/crud/vehiculos/ver/?id=${encodeURIComponent(veh.id)}`"
-                class="group flex items-center gap-4 px-6 py-4 transition-colors hover:bg-gray-50 focus:outline-none focus-visible:bg-gray-50 dark:hover:bg-gray-700/40 dark:focus-visible:bg-gray-700/40"
-                :class="{ 'opacity-60': veh.is_active === false }"
-                :title="`Ver ficha del vehículo ${formatPlate(veh.placa)}`"
-              >
-                <span class="flex h-16 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-50 ring-1 ring-gray-100 dark:bg-gray-900/40 dark:ring-gray-700 sm:h-[4.5rem] sm:w-24">
-                  <img
-                    v-if="veh.imagen"
-                    :src="veh.imagen"
-                    :alt="`Vehículo ${formatPlate(veh.placa)}`"
-                    loading="lazy"
-                    class="h-full w-full object-contain p-1"
-                  />
-                  <CarFront v-else class="h-7 w-7 text-gray-300 dark:text-gray-600" aria-hidden="true" />
+        <!-- Búsqueda sin coincidencias -->
+        <p
+          v-else-if="!vehiculosFiltrados.length"
+          class="mx-6 mb-6 rounded-xl bg-gray-50 px-4 py-6 text-center text-sm text-gray-500 dark:bg-gray-900/40 dark:text-gray-400"
+        >
+          Ningún vehículo coincide con «{{ busqueda }}».
+        </p>
+
+        <ul v-else class="divide-y divide-gray-100 border-t border-gray-100 dark:divide-gray-700 dark:border-gray-700">
+          <li v-for="veh in vehiculosFiltrados" :key="veh.id">
+            <a
+              :href="`/crud/vehiculos/ver/?id=${encodeURIComponent(veh.id)}`"
+              class="group flex items-center gap-4 px-6 py-4 transition-colors hover:bg-gray-50 focus:outline-none focus-visible:bg-gray-50 dark:hover:bg-gray-700/40 dark:focus-visible:bg-gray-700/40"
+              :class="{ 'opacity-60': veh.is_active === false }"
+              :title="`Ver ficha del vehículo ${formatPlate(veh.placa)}`"
+            >
+              <span class="flex h-16 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-50 ring-1 ring-gray-100 dark:bg-gray-900/40 dark:ring-gray-700 sm:h-[4.5rem] sm:w-24">
+                <img
+                  v-if="veh.imagen"
+                  :src="veh.imagen"
+                  :alt="`Vehículo ${formatPlate(veh.placa)}`"
+                  loading="lazy"
+                  class="h-full w-full object-contain p-1"
+                />
+                <CarFront v-else class="h-7 w-7 text-gray-300 dark:text-gray-600" aria-hidden="true" />
+              </span>
+
+              <span class="min-w-0 flex-1">
+                <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span class="truncate text-sm font-semibold text-gray-900 capitalize dark:text-white">{{ veh.titulo.toLowerCase() }}</span>
+                  <span class="inline-flex items-center rounded border border-gray-300 bg-white px-1.5 py-0.5 font-mono text-xs font-semibold tracking-widest text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white">
+                    {{ formatPlate(veh.placa) || '—' }}
+                  </span>
+                  <span
+                    v-if="veh.is_active === false"
+                    class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                  >
+                    <span class="h-1.5 w-1.5 rounded-full bg-gray-400" aria-hidden="true"></span>
+                    Inactivo
+                  </span>
                 </span>
-
-                <span class="min-w-0 flex-1">
-                  <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span class="truncate text-sm font-semibold text-gray-900 capitalize dark:text-white">{{ veh.titulo.toLowerCase() }}</span>
-                    <span class="inline-flex items-center rounded border border-gray-300 bg-white px-1.5 py-0.5 font-mono text-xs font-semibold tracking-widest text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white">
-                      {{ formatPlate(veh.placa) || '—' }}
-                    </span>
+                <span class="mt-1 flex flex-wrap items-center gap-x-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  <span v-if="veh.color" class="inline-flex items-center gap-1 capitalize">
                     <span
-                      v-if="veh.is_active === false"
-                      class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300"
-                    >
-                      <span class="h-1.5 w-1.5 rounded-full bg-gray-400" aria-hidden="true"></span>
-                      Inactivo
-                    </span>
+                      v-if="colorCss(veh.color)"
+                      class="h-2.5 w-2.5 rounded-full ring-1 ring-black/15 dark:ring-white/20"
+                      :style="{ backgroundColor: colorCss(veh.color) }"
+                      aria-hidden="true"
+                    ></span>
+                    {{ veh.color.toLowerCase() }}
                   </span>
-                  <span class="mt-1 flex flex-wrap items-center gap-x-1.5 text-xs text-gray-500 dark:text-gray-400">
-                    <span v-if="veh.color" class="inline-flex items-center gap-1 capitalize">
-                      <span
-                        v-if="colorCss(veh.color)"
-                        class="h-2.5 w-2.5 rounded-full ring-1 ring-black/15 dark:ring-white/20"
-                        :style="{ backgroundColor: colorCss(veh.color) }"
-                        aria-hidden="true"
-                      ></span>
-                      {{ veh.color.toLowerCase() }}
-                    </span>
-                    <template v-for="(detalle, i) in veh.detalles" :key="detalle">
-                      <span v-if="veh.color || i > 0" aria-hidden="true">·</span>
-                      <span>{{ detalle }}</span>
-                    </template>
-                  </span>
-                  <!-- En móvil el kilometraje y el servicio van bajo los datos -->
-                  <span class="mt-2 flex flex-wrap items-center gap-2 sm:hidden">
-                    <span v-if="formatKm(veh.kilometraje_actual)" class="text-xs tabular-nums text-gray-600 dark:text-gray-300">{{ formatKm(veh.kilometraje_actual) }}</span>
-                    <span
-                      class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset"
-                      :class="TONO_MANTENIMIENTO[veh.mantenimiento.tono]"
-                    >
-                      <span class="h-1.5 w-1.5 rounded-full" :class="PUNTO_MANTENIMIENTO[veh.mantenimiento.tono]" aria-hidden="true"></span>
-                      {{ veh.mantenimiento.etiqueta }}
-                    </span>
-                  </span>
+                  <template v-for="(detalle, i) in veh.detalles" :key="detalle">
+                    <span v-if="veh.color || i > 0" aria-hidden="true">·</span>
+                    <span>{{ detalle }}</span>
+                  </template>
                 </span>
-
-                <span class="hidden w-28 shrink-0 text-right sm:block">
-                  <span class="flex items-center justify-end gap-1 text-[11px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                    <Gauge class="h-3 w-3" aria-hidden="true" />
-                    Km
-                  </span>
-                  <span class="mt-0.5 block text-sm font-semibold tabular-nums text-gray-900 dark:text-white">
-                    {{ formatKm(veh.kilometraje_actual) || '—' }}
-                  </span>
-                </span>
-
-                <span class="hidden w-40 shrink-0 text-right sm:block">
+                <!-- En móvil el kilometraje y el servicio van bajo los datos -->
+                <span class="mt-2 flex flex-wrap items-center gap-2 sm:hidden">
+                  <span v-if="formatKm(veh.kilometraje_actual)" class="text-xs tabular-nums text-gray-600 dark:text-gray-300">{{ formatKm(veh.kilometraje_actual) }}</span>
                   <span
                     class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset"
                     :class="TONO_MANTENIMIENTO[veh.mantenimiento.tono]"
@@ -475,75 +421,37 @@ onMounted(async () => {
                     <span class="h-1.5 w-1.5 rounded-full" :class="PUNTO_MANTENIMIENTO[veh.mantenimiento.tono]" aria-hidden="true"></span>
                     {{ veh.mantenimiento.etiqueta }}
                   </span>
-                  <span v-if="veh.mantenimiento.detalle" class="mt-1 block truncate text-xs text-gray-500 dark:text-gray-400">
-                    {{ veh.mantenimiento.detalle }}
-                  </span>
                 </span>
+              </span>
 
-                <ChevronRight class="h-4 w-4 shrink-0 text-gray-400 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-              </a>
-            </li>
-          </ul>
-        </section>
-
-        <div class="space-y-6">
-          <!-- Contacto rápido -->
-          <section class="shadow-sm rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Contacto rápido</h3>
-            <ul class="mt-3 space-y-1">
-              <li v-for="contacto in contactos" :key="contacto.label">
-                <a
-                  v-if="contacto.href"
-                  :href="contacto.href"
-                  :target="contacto.externo ? '_blank' : null"
-                  :rel="contacto.externo ? 'noopener noreferrer' : null"
-                  class="group -mx-2 flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                >
-                  <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700 dark:bg-brand-800/60 dark:text-brand-100">
-                    <component :is="contacto.icon" class="h-4 w-4" aria-hidden="true" />
-                  </span>
-                  <span class="min-w-0 flex-1">
-                    <span class="block text-sm font-medium text-gray-900 dark:text-white">{{ contacto.label }}</span>
-                    <span class="block truncate text-xs text-gray-500 dark:text-gray-400">{{ contacto.detalle }}</span>
-                  </span>
-                  <ChevronRight class="h-4 w-4 text-gray-400 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-                </a>
-                <span v-else class="-mx-2 flex items-center gap-3 rounded-lg px-2 py-2 text-gray-400 dark:text-gray-500">
-                  <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700">
-                    <component :is="contacto.icon" class="h-4 w-4" aria-hidden="true" />
-                  </span>
-                  <span class="min-w-0 flex-1">
-                    <span class="block text-sm">{{ contacto.label }}</span>
-                    <span class="block text-xs">Sin {{ contacto.icon === Mail ? 'correo' : 'teléfono' }} registrado</span>
-                  </span>
+              <span class="hidden w-28 shrink-0 text-right sm:block">
+                <span class="flex items-center justify-end gap-1 text-[11px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                  <Gauge class="h-3 w-3" aria-hidden="true" />
+                  Km
                 </span>
-              </li>
-            </ul>
-          </section>
+                <span class="mt-0.5 block text-sm font-semibold tabular-nums text-gray-900 dark:text-white">
+                  {{ formatKm(veh.kilometraje_actual) || '—' }}
+                </span>
+              </span>
 
-          <!-- Datos del cliente -->
-          <section class="shadow-sm rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Datos del cliente</h3>
-            <dl class="mt-3">
-              <div
-                v-for="(campo, i) in datosCliente"
-                :key="campo.label"
-                class="flex items-baseline justify-between gap-4 py-2"
-                :class="{ 'border-t border-gray-100 dark:border-gray-700': i > 0 }"
-              >
-                <dt class="shrink-0 text-sm text-gray-500 dark:text-gray-400">{{ campo.label }}</dt>
-                <dd
-                  class="min-w-0 text-right text-sm font-medium break-words text-gray-900 dark:text-white"
-                  :class="{ 'font-mono text-[13px] tracking-wide': campo.mono }"
+              <span class="hidden w-40 shrink-0 text-right sm:block">
+                <span
+                  class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset"
+                  :class="TONO_MANTENIMIENTO[veh.mantenimiento.tono]"
                 >
-                  <span v-if="campo.value">{{ campo.value }}</span>
-                  <span v-else class="font-normal text-gray-400 dark:text-gray-500">—</span>
-                </dd>
-              </div>
-            </dl>
-          </section>
-        </div>
-      </div>
+                  <span class="h-1.5 w-1.5 rounded-full" :class="PUNTO_MANTENIMIENTO[veh.mantenimiento.tono]" aria-hidden="true"></span>
+                  {{ veh.mantenimiento.etiqueta }}
+                </span>
+                <span v-if="veh.mantenimiento.detalle" class="mt-1 block truncate text-xs text-gray-500 dark:text-gray-400">
+                  {{ veh.mantenimiento.detalle }}
+                </span>
+              </span>
+
+              <ChevronRight class="h-4 w-4 shrink-0 text-gray-400 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+            </a>
+          </li>
+        </ul>
+      </section>
     </template>
   </div>
 
