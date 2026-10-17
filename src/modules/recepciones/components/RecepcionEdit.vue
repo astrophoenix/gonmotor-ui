@@ -2135,10 +2135,7 @@ onMounted(() => {
                           <span class="absolute inset-y-0 end-0 flex items-center pe-3 text-sm text-gray-500 pointer-events-none dark:text-gray-400">km</span>
                         </div>
                         <p v-if="formErrors.kilometraje_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.kilometraje_ingreso }}</p>
-                        <p v-else-if="kmConservado && vehiculoKilometrajeText && kmGuardado !== kmVehiculo" class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                          Registrado en esta recepción. El vehículo marca hoy {{ vehiculoKilometrajeText }} km.
-                        </p>
-                        <p v-else-if="vehiculoKilometrajeText" class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                        <p v-else-if="vehiculoKilometrajeText && !kmConservado" class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
                           Último registro: {{ vehiculoKilometrajeText }} km
                           <span
                             v-if="kmDiferencia != null"
