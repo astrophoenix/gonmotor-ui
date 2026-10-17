@@ -1173,16 +1173,6 @@ onMounted(() => {
     </template>
     <template #actions>
       <button
-        v-if="estadoInspeccion === 'PENDIENTE'"
-        type="button"
-        :disabled="transicionEstado"
-        title="Marcar la inspección como en proceso"
-        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded-lg shadow-xs bg-brand-900 hover:bg-brand-700 focus:ring-4 focus:ring-brand-300 disabled:opacity-60 dark:bg-brand-300 dark:text-brand-900 dark:hover:bg-brand-200"
-        @click="solicitarIniciar">
-        <Play class="w-4 h-4" />
-        Iniciar inspección
-      </button>
-      <button
         v-if="estadoInspeccion === 'EN_PROCESO'"
         type="button"
         :disabled="transicionEstado"
@@ -1209,6 +1199,27 @@ onMounted(() => {
   -->
 
   <div class="px-4 pt-4">
+    <!-- Aviso: sin iniciar no se puede guardar. Único punto para iniciar la inspección. -->
+    <div
+      v-if="estadoInspeccion === 'PENDIENTE' && !readOnly"
+      class="flex flex-col gap-3 p-4 mb-4 text-sm border rounded-lg sm:flex-row sm:items-center sm:justify-between bg-brand-50 border-brand-200 text-brand-900 dark:bg-brand-700/20 dark:border-brand-500/40 dark:text-brand-100">
+      <div class="flex items-start gap-3">
+        <CircleStop class="w-5 h-5 mt-0.5 shrink-0" />
+        <p>
+          <span class="font-semibold">La inspección aún no ha comenzado.</span>
+          Iníciala cuando el técnico tome el vehículo para poder registrar y guardar el diagnóstico.
+        </p>
+      </div>
+      <button
+        type="button"
+        :disabled="transicionEstado"
+        class="inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-white rounded-lg shrink-0 bg-brand-900 hover:bg-brand-700 focus:ring-4 focus:ring-brand-300 disabled:opacity-60 dark:bg-brand-300 dark:text-brand-900 dark:hover:bg-brand-200"
+        @click="solicitarIniciar">
+        <Play class="w-4 h-4" />
+        Iniciar inspección
+      </button>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
       <div class="lg:col-span-3 space-y-4">
         <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
@@ -1404,27 +1415,6 @@ onMounted(() => {
             </nav>
 
             <div class="p-4 sm:p-5 space-y-4 bg-gray-50/60 dark:bg-gray-900/30">
-              <!-- Aviso: sin iniciar no se puede guardar -->
-              <div
-                v-if="estadoInspeccion === 'PENDIENTE' && !readOnly"
-                class="flex flex-col gap-3 p-4 text-sm border rounded-lg sm:flex-row sm:items-center sm:justify-between bg-brand-50 border-brand-200 text-brand-900 dark:bg-brand-700/20 dark:border-brand-500/40 dark:text-brand-100">
-                <div class="flex items-start gap-3">
-                  <CircleStop class="w-5 h-5 mt-0.5 shrink-0" />
-                  <p>
-                    <span class="font-semibold">La inspección aún no ha comenzado.</span>
-                    Iníciala cuando el técnico tome el vehículo para poder registrar y guardar el diagnóstico.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  :disabled="transicionEstado"
-                  class="inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-white rounded-lg shrink-0 bg-brand-900 hover:bg-brand-700 focus:ring-4 focus:ring-brand-300 disabled:opacity-60 dark:bg-brand-300 dark:text-brand-900 dark:hover:bg-brand-200"
-                  @click="solicitarIniciar">
-                  <Play class="w-4 h-4" />
-                  Iniciar inspección
-                </button>
-              </div>
-
               <!-- 1. Diagnóstico -->
               <div v-show="activeTab === 'informacion'" class="space-y-4">
                 <section :class="SECCION">
