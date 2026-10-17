@@ -25,7 +25,7 @@ const emit = defineEmits(['edit', 'delete']);
     :aria-label="`Editar ${props.entity}`"
     class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-100 hover:text-brand-900 hover:ring-1 hover:ring-inset hover:ring-brand-200 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white dark:hover:ring-gray-500"
     @click="emit('edit')">
-    <Pen class="w-4 h-4" />
+    <Pen class="w-4.5 h-4.5" />
   </button>
   <button
     v-if="props.showDelete"
@@ -35,6 +35,6 @@ const emit = defineEmits(['edit', 'delete']);
     :disabled="props.deleteDisabled"
     class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-red-500/10 dark:hover:text-red-400"
     @click="emit('delete')">
-    <Trash2 class="w-4 h-4" />
+    <Trash2 class="w-4.5 h-4.5" />
   </button>
 </template>
