@@ -4,7 +4,7 @@
       mode="list"
       entity="Rentabilidad"
       :breadcrumb="breadcrumb"
-      :icon="ChartColumn"
+      :icon="ChartNoAxesCombined"
     />
 
     <div v-if="alert.message" class="px-4 pt-3">
@@ -232,7 +232,7 @@ import EvolucionMensualChart from './EvolucionMensualChart.vue';
 import CadaCienDolares from './CadaCienDolares.vue';
 import ResultadoNegocio from './ResultadoNegocio.vue';
 import {
-  ChartColumn,
+  ChartNoAxesCombined,
   CalendarDays,
   Filter,
   Loader2,
