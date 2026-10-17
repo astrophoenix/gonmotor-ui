@@ -117,8 +117,8 @@ onUnmounted(() => clearTimeout(searchTimer));
     :wrapper-class="'w-full'"
   >
     <template #row="{ item }">
-      <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
-        <td class="p-4 whitespace-nowrap">
+      <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
+        <td class="px-4 py-3 whitespace-nowrap">
           <div class="flex items-center gap-2">
             <Clock class="w-4 h-4 text-gray-400 dark:text-gray-500" />
             <div>
@@ -127,7 +127,7 @@ onUnmounted(() => clearTimeout(searchTimer));
             </div>
           </div>
         </td>
-        <td class="p-4 whitespace-nowrap">
+        <td class="px-4 py-3 whitespace-nowrap">
           <div class="flex items-center gap-2">
             <User class="w-4 h-4 text-gray-400 dark:text-gray-500" />
             <div>
@@ -136,7 +136,7 @@ onUnmounted(() => clearTimeout(searchTimer));
             </div>
           </div>
         </td>
-        <td class="p-4 whitespace-nowrap">
+        <td class="px-4 py-3 whitespace-nowrap">
           <div class="flex items-center gap-2">
             <Car class="w-4 h-4 text-gray-400 dark:text-gray-500" />
             <div>
@@ -147,11 +147,11 @@ onUnmounted(() => clearTimeout(searchTimer));
             </div>
           </div>
         </td>
-        <td class="p-4 whitespace-nowrap">
+        <td class="px-4 py-3 whitespace-nowrap">
           <p class="text-sm font-medium text-gray-900 dark:text-white">{{ item.motivo_display }}</p>
           <p v-if="item.motivo_descripcion" class="text-xs text-gray-500 truncate max-w-[220px] dark:text-gray-400">{{ item.motivo_descripcion }}</p>
         </td>
-        <td class="p-4 whitespace-nowrap">
+        <td class="px-4 py-3 whitespace-nowrap">
           <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" :class="ESTADO_BADGES[item.estado] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'">
             {{ item.estado_display }}
           </span>
@@ -163,7 +163,7 @@ onUnmounted(() => clearTimeout(searchTimer));
             Recepción: {{ item.recepcion_generada_numero || referenciaCorta(item.recepcion_generada) }}
           </p>
         </td>
-        <td class="p-4 whitespace-nowrap">
+        <td class="px-4 py-3 whitespace-nowrap">
           <div class="flex items-center gap-2">
             <button
               type="button"

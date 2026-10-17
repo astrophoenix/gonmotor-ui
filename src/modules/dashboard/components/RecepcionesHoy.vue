@@ -51,11 +51,11 @@ const mensajeFallback = computed(() => (props.sinRecepcionesHoy
         :wrapper-class="'overflow-hidden'"
       >
         <template #row="{ item }">
-          <tr class="bg-neutral-primary-soft border-b border-default hover:bg-neutral-secondary-medium">
-            <td class="p-4 text-sm whitespace-nowrap text-body">
+          <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
+            <td class="px-4 py-3 text-sm whitespace-nowrap text-body">
               {{ item.hora || '—' }}
             </td>
-            <td class="p-4 text-sm font-medium whitespace-nowrap text-heading">
+            <td class="px-4 py-3 text-sm font-medium whitespace-nowrap text-heading">
               <a
                 :href="`/crud/recepciones/ver/?id=${encodeURIComponent(item.id)}`"
                 class="hover:text-primary-600 dark:hover:text-primary-400"
@@ -64,24 +64,24 @@ const mensajeFallback = computed(() => (props.sinRecepcionesHoy
                 {{ item.numero_recepcion }}
               </a>
             </td>
-            <td class="p-4 text-sm whitespace-nowrap text-body" :title="item.cliente">
+            <td class="px-4 py-3 text-sm whitespace-nowrap text-body" :title="item.cliente">
               {{ item.cliente }}
             </td>
-            <td class="p-4 text-sm whitespace-nowrap text-body">
+            <td class="px-4 py-3 text-sm whitespace-nowrap text-body">
               <span class="font-semibold text-heading">{{ item.placa }}</span>
               <span class="block text-xs">{{ item.vehiculo }}</span>
             </td>
-            <td class="p-4 text-sm whitespace-nowrap text-body">
+            <td class="px-4 py-3 text-sm whitespace-nowrap text-body">
               {{ item.tipo_recepcion_display || item.tipo_recepcion || '—' }}
             </td>
-            <td class="p-4 whitespace-nowrap">
+            <td class="px-4 py-3 whitespace-nowrap">
               <EstadoRecepcionBadge
                 :estado="item.estado"
                 :estado-display="item.estado_display"
                 size="sm"
               />
             </td>
-            <td class="p-4 whitespace-nowrap">
+            <td class="px-4 py-3 whitespace-nowrap">
               <a
                 :href="`/crud/recepciones/ver/?id=${encodeURIComponent(item.id)}`"
                 class="inline-flex items-center p-1.5 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700"
