@@ -1,6 +1,6 @@
 <script setup>
 import { computed, nextTick, reactive, ref, watch } from 'vue';
-import { Car, X, Save, FileText } from 'lucide-vue-next';
+import { Car, X, Save, UserRound, IdCard, Gauge, BellRing, Camera, NotebookPen, Wand2, Loader2, CarFront } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
 import {
   formatPlaca,
@@ -16,6 +16,7 @@ import {
 import Alert from '../../../shared/components/Alert.vue';
 import VehicleImageField from '../../../shared/components/VehicleImageField.vue';
 import ClienteSearchSelect from '../../../shared/components/ClienteSearchSelect.vue';
+import TextImprover from '../../../shared/components/TextImprover.vue';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -83,6 +84,15 @@ const paises = ref([]);
 const isLoadingChoices = ref(false);
 const imagenFile = ref(null);
 const clienteSearch = ref('');
+
+const BASE_INPUT = 'block w-full p-2.5 text-sm rounded shadow-xs focus:outline-none focus:ring-2 dark:bg-gray-700 dark:placeholder-gray-400';
+const INPUT_OK = 'bg-gray-50 border border-gray-300 text-gray-900 focus:ring-brand-200 focus:border-brand-500 dark:border-gray-600 dark:text-white dark:focus:ring-brand-500/40 dark:focus:border-brand-300';
+const INPUT_ERROR = 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 focus:ring-red-200 focus:border-red-500 dark:text-red-400 dark:border-red-500 dark:placeholder-red-400';
+
+// Clases de un input/select según tenga o no error de validación.
+function inputClass(campo, extra = '') {
+  return [BASE_INPUT, vehicleErrors.value[campo] ? INPUT_ERROR : INPUT_OK, extra];
+}
 
 function showError(error) {
   errorMessage.value = error.message || 'No fue posible completar la operación.';
@@ -394,15 +404,23 @@ watch(() => form.observaciones, (val) => {
 </script>
 
 <template>
-  <div v-if="modelValue" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4">
-    <div class="relative block w-full max-w-5xl rounded-lg bg-white shadow-xl dark:bg-gray-800 my-auto">
-      <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-          <span class="inline-flex items-center gap-2">
-            <Car class="w-5 h-5 text-gray-800 dark:text-white" />
-            {{ isEditMode ? 'Editar vehículo' : 'Nuevo vehículo' }}
+  <div v-if="modelValue" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-brand-950/70 p-2 sm:p-4">
+    <div class="relative flex flex-col w-full max-w-6xl max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)] my-auto rounded-xl bg-white shadow-xl dark:bg-gray-800">
+      <!-- Cabecera -->
+      <div class="flex items-start justify-between gap-4 border-b border-gray-200 px-4 py-4 sm:px-6 dark:border-gray-700">
+        <div class="flex items-center gap-3">
+          <span class="inline-flex items-center justify-center w-10 h-10 shrink-0 rounded-lg bg-brand-50 text-brand-700 dark:bg-brand-500/20 dark:text-brand-200">
+            <Car class="w-5 h-5" />
           </span>
-        </h3>
+          <div>
+            <h3 class="text-lg font-semibold leading-tight text-gray-900 dark:text-white">
+              {{ isEditMode ? 'Editar vehículo' : 'Nuevo vehículo' }}
+            </h3>
+            <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+              {{ isEditMode ? 'Actualiza los datos del vehículo y su próximo mantenimiento.' : 'Registra los datos del vehículo y, si quieres, su próximo mantenimiento.' }}
+            </p>
+          </div>
+        </div>
         <button
           type="button"
           class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200"
@@ -413,7 +431,8 @@ watch(() => form.observaciones, (val) => {
         </button>
       </div>
 
-      <div class="px-6 py-4">
+      <!-- Cuerpo con scroll propio: cabecera y botones siempre visibles -->
+      <div class="flex-1 overflow-y-auto px-4 py-5 sm:px-6 bg-gray-50/60 dark:bg-gray-900/30">
         <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
         <Alert
           v-if="showDiscardWarning"
@@ -425,16 +444,16 @@ watch(() => form.observaciones, (val) => {
         />
 
         <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando vehículo...</div>
-        <template v-else>
-          <h4 class="mb-4 text-base font-semibold dark:text-white">
-            <span class="inline-flex items-center gap-2">
-              <FileText class="w-4 h-4 text-gray-800 dark:text-white" />
-              Información General
-            </span>
-          </h4>
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="col-span-1 md:col-span-4">
-              <label for="modal_veh_cliente" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente Propietario</label>
+        <div v-else class="grid grid-cols-1 gap-5 lg:grid-cols-3">
+          <!-- Columna principal -->
+          <div class="space-y-5 lg:col-span-2">
+            <!-- Propietario -->
+            <section class="p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+              <h4 class="flex items-center gap-2 mb-4 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200">
+                <UserRound class="w-4 h-4" />
+                Propietario
+              </h4>
+              <label for="modal_veh_cliente" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente</label>
               <ClienteSearchSelect
                 id="modal_veh_cliente"
                 v-model="clienteSearch"
@@ -442,129 +461,207 @@ watch(() => form.observaciones, (val) => {
                 @select="selectCliente"
                 @clear="clearCliente"
               />
-            </div>
-            <div class="col-span-1">
-              <label for="modal_veh_placa" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Placa</label>
-              <input id="modal_veh_placa" v-model="form.placa" required maxlength="10" :class="['block w-full p-2.5 text-sm rounded shadow-xs focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.placa ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-              <p v-if="vehicleErrors.placa" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.placa }}</p>
-            </div>
-            <div class="col-span-1">
-              <label for="modal_veh_vin" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">VIN / Chasis</label>
-              <input id="modal_veh_vin" v-model="form.vin" maxlength="17" :class="['block w-full p-2.5 text-sm rounded shadow-xs focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.vin ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-              <p v-if="vehicleErrors.vin" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.vin }}</p>
-            </div>
-            <div class="col-span-1">
-              <label for="modal_veh_motor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Número de Motor</label>
-              <input id="modal_veh_motor" v-model="form.numero_motor" maxlength="50" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white">
-            </div>
-            <div class="col-span-1">
-              <label for="modal_veh_tipo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo</label>
-              <select id="modal_veh_tipo" v-model="form.tipo" :disabled="isLoadingChoices" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white">
-                <option v-for="item in tipos" :key="item.value" :value="item.value">{{ item.label }}</option>
-              </select>
-            </div>
-            <div class="col-span-1">
-              <label for="modal_veh_marca" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Marca</label>
-              <input id="modal_veh_marca" v-model="form.marca" required maxlength="50" @blur="form.marca = recortarEspacios(form.marca)" :class="['block w-full p-2.5 text-sm rounded shadow-xs focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.marca ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-              <p v-if="vehicleErrors.marca" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.marca }}</p>
-            </div>
-            <div class="col-span-1">
-              <label for="modal_veh_modelo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Modelo</label>
-              <input id="modal_veh_modelo" v-model="form.modelo" required maxlength="50" @blur="form.modelo = recortarEspacios(form.modelo)" :class="['block w-full p-2.5 text-sm rounded shadow-xs focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.modelo ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-              <p v-if="vehicleErrors.modelo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.modelo }}</p>
-            </div>
-            <div class="col-span-1">
-              <label for="modal_veh_anio" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Año de Fabricación</label>
-              <input id="modal_veh_anio" v-model="form.anio" type="number" min="1900" :max="new Date().getFullYear() + 1" :class="['block w-full p-2.5 text-sm rounded shadow-xs focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.anio ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-              <p v-if="vehicleErrors.anio" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.anio }}</p>
-            </div>
-            <div class="col-span-1">
-              <label for="modal_veh_color" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Color</label>
-              <input id="modal_veh_color" v-model="form.color" maxlength="30" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white">
-            </div>
-            <div class="col-span-1">
-              <label for="modal_veh_transmision" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Transmisión</label>
-              <select id="modal_veh_transmision" v-model="form.transmision" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white">
-                <option value="M">Manual / Mecánica</option>
-                <option value="A">Automática</option>
-                <option value="C">CVT</option>
-              </select>
-            </div>
-            <div class="col-span-1">
-              <label for="modal_veh_combustible" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Combustible</label>
-              <select id="modal_veh_combustible" v-model="form.combustible" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white">
-                <option value="GAS">Gasolina</option>
-                <option value="DIE">Diésel</option>
-                <option value="HIB">Híbrido</option>
-                <option value="ELE">Eléctrico</option>
-              </select>
-            </div>
-            <div class="col-span-1">
-              <label for="modal_veh_pais" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">País de Origen</label>
-              <select id="modal_veh_pais" v-model="form.pais_origen" :disabled="isLoadingChoices" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white">
-                <option v-for="item in paises" :key="item.code" :value="item.code">{{ item.name }}</option>
-              </select>
-            </div>
-            <div class="col-span-1">
-              <label for="modal_veh_km" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kilometraje Actual</label>
-              <input id="modal_veh_km" v-model="form.kilometraje_actual" type="number" min="0" :class="['block w-full p-2.5 text-sm rounded shadow-xs focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.kilometraje_actual ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
-              <p v-if="vehicleErrors.kilometraje_actual" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.kilometraje_actual }}</p>
-            </div>
-            <div class="col-span-1 md:col-span-4">
-              <h4 class="py-2 text-base font-semibold dark:text-white border-t border-gray-200 dark:border-gray-700">
-                Mantenimiento preventivo (recordatorio WhatsApp)
+              <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Opcional. Puedes asignarlo después desde la ficha del vehículo.</p>
+            </section>
+
+            <!-- Identificación -->
+            <section class="p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+              <h4 class="flex items-center gap-2 mb-4 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200">
+                <IdCard class="w-4 h-4" />
+                Identificación
               </h4>
-              <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
-                Opcional. Si llenas estos datos, el sistema sabrá cuándo recordarle al cliente su próximo mantenimiento.
-              </p>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
-                  <label for="modal_veh_prox_km" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Próximo mantenimiento (km)</label>
-                  <input id="modal_veh_prox_km" v-model="form.proximo_mantenimiento_km" type="number" min="0" placeholder="Ej. 50000" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white">
+                  <label for="modal_veh_placa" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Placa <span class="text-accent-500">*</span></label>
+                  <input id="modal_veh_placa" v-model="form.placa" required maxlength="10" placeholder="ABC-1234" :class="inputClass('placa', 'font-mono text-base font-semibold uppercase tracking-widest')">
+                  <p v-if="vehicleErrors.placa" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.placa }}</p>
                 </div>
                 <div>
-                  <label for="modal_veh_prox_fecha" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Próximo mantenimiento (fecha)</label>
-                  <input id="modal_veh_prox_fecha" v-model="form.proxima_mantenimiento_fecha" type="date" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white">
+                  <label for="modal_veh_vin" class="flex items-center justify-between mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                    <span>VIN / Chasis <span class="text-accent-500">*</span></span>
+                    <span class="text-xs font-normal tabular-nums text-gray-400">{{ (form.vin || '').length }}/17</span>
+                  </label>
+                  <input id="modal_veh_vin" v-model="form.vin" maxlength="17" placeholder="17 caracteres" :class="inputClass('vin', 'font-mono uppercase placeholder:normal-case placeholder:font-sans')">
+                  <p v-if="vehicleErrors.vin" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.vin }}</p>
+                </div>
+                <div>
+                  <label for="modal_veh_motor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Número de motor</label>
+                  <input id="modal_veh_motor" v-model="form.numero_motor" maxlength="50" :class="inputClass('numero_motor', 'font-mono uppercase placeholder:normal-case placeholder:font-sans')">
                 </div>
               </div>
-            </div>
-            <div class="col-span-1">
-              <p class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Imagen</p>
+            </section>
+
+            <!-- Características -->
+            <section class="p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+              <h4 class="flex items-center gap-2 mb-4 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200">
+                <CarFront class="w-4 h-4" />
+                Características
+              </h4>
+              <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+                <div>
+                  <label for="modal_veh_marca" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Marca <span class="text-accent-500">*</span></label>
+                  <input id="modal_veh_marca" v-model="form.marca" required maxlength="50" placeholder="Toyota" :class="inputClass('marca')" @blur="form.marca = recortarEspacios(form.marca)">
+                  <p v-if="vehicleErrors.marca" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.marca }}</p>
+                </div>
+                <div>
+                  <label for="modal_veh_modelo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Modelo <span class="text-accent-500">*</span></label>
+                  <input id="modal_veh_modelo" v-model="form.modelo" required maxlength="50" placeholder="Hilux" :class="inputClass('modelo')" @blur="form.modelo = recortarEspacios(form.modelo)">
+                  <p v-if="vehicleErrors.modelo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.modelo }}</p>
+                </div>
+                <div>
+                  <label for="modal_veh_anio" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Año</label>
+                  <input id="modal_veh_anio" v-model="form.anio" type="number" min="1900" :max="new Date().getFullYear() + 1" placeholder="2024" :class="inputClass('anio')">
+                  <p v-if="vehicleErrors.anio" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.anio }}</p>
+                </div>
+                <div>
+                  <label for="modal_veh_color" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Color</label>
+                  <input id="modal_veh_color" v-model="form.color" maxlength="30" placeholder="Blanco" :class="inputClass('color')">
+                </div>
+                <div>
+                  <label for="modal_veh_tipo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo</label>
+                  <select id="modal_veh_tipo" v-model="form.tipo" :disabled="isLoadingChoices" :class="inputClass('tipo')">
+                    <option v-for="item in tipos" :key="item.value" :value="item.value">{{ item.label }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="modal_veh_transmision" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Transmisión</label>
+                  <select id="modal_veh_transmision" v-model="form.transmision" :class="inputClass('transmision')">
+                    <option value="M">Manual / Mecánica</option>
+                    <option value="A">Automática</option>
+                    <option value="C">CVT</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="modal_veh_combustible" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Combustible</label>
+                  <select id="modal_veh_combustible" v-model="form.combustible" :class="inputClass('combustible')">
+                    <option value="GAS">Gasolina</option>
+                    <option value="DIE">Diésel</option>
+                    <option value="HIB">Híbrido</option>
+                    <option value="ELE">Eléctrico</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="modal_veh_pais" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">País de origen</label>
+                  <select id="modal_veh_pais" v-model="form.pais_origen" :disabled="isLoadingChoices" :class="inputClass('pais_origen')">
+                    <option v-for="item in paises" :key="item.code" :value="item.code">{{ item.name }}</option>
+                  </select>
+                </div>
+              </div>
+            </section>
+
+            <!-- Observaciones -->
+            <section class="p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+              <TextImprover
+                v-model="form.observaciones"
+                contexto="observaciones de un vehículo en un taller mecánico"
+                v-slot="{ mejorar, restaurar, mejorando, error: errorMejora, mejorado, tieneOriginal }">
+                <div class="flex items-center justify-between gap-2 mb-3">
+                  <h4 class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200">
+                    <NotebookPen class="w-4 h-4" />
+                    <label for="modal_veh_obs">Observaciones</label>
+                  </h4>
+                  <button
+                    type="button"
+                    title="Mejorar el texto con IA"
+                    :disabled="mejorando || !form.observaciones"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-brand-700 text-brand-700 hover:bg-brand-50 dark:border-brand-300 dark:text-brand-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    @click="mejorar">
+                    <Loader2 v-if="mejorando" class="w-4 h-4 animate-spin" />
+                    <Wand2 v-else class="w-4 h-4" />
+                    {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
+                  </button>
+                </div>
+                <textarea id="modal_veh_obs" v-model="form.observaciones" rows="3" placeholder="Golpes, accesorios, detalles a tener en cuenta..." :class="inputClass('observaciones')"></textarea>
+                <p v-if="errorMejora" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ errorMejora }}</p>
+                <div v-if="mejorado && !errorMejora" class="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-emerald-700 dark:text-emerald-400">
+                  <p>Texto mejorado. Revisa antes de guardar.</p>
+                  <button v-if="tieneOriginal" type="button" class="font-medium underline hover:no-underline" @click="restaurar">Restaurar original</button>
+                </div>
+              </TextImprover>
+            </section>
+          </div>
+
+          <!-- Columna lateral -->
+          <div class="space-y-5">
+            <!-- Foto -->
+            <section class="p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+              <h4 class="flex items-center gap-2 mb-4 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200">
+                <Camera class="w-4 h-4" />
+                Foto del vehículo
+              </h4>
               <VehicleImageField
                 :image-url="form.imagen"
                 :disabled="isLoadingChoices"
                 @upload="(file) => { imagenFile = file; }"
                 @remove="() => { imagenFile = null; form.imagen = ''; }"
               />
-            </div>
-            <div class="col-span-1 md:col-span-3">
-              <label for="modal_veh_obs" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Observaciones</label>
-              <textarea id="modal_veh_obs" v-model="form.observaciones" rows="6" class="block w-full p-2.5 text-sm bg-gray-50 rounded shadow-xs border border-gray-300 dark:bg-gray-700 dark:text-white"></textarea>
-            </div>
+            </section>
+
+            <!-- Kilometraje y mantenimiento -->
+            <section class="p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+              <h4 class="flex items-center gap-2 mb-4 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200">
+                <Gauge class="w-4 h-4" />
+                Kilometraje
+              </h4>
+              <label for="modal_veh_km" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kilometraje actual <span class="text-accent-500">*</span></label>
+              <div class="relative">
+                <input id="modal_veh_km" v-model="form.kilometraje_actual" type="number" min="0" :class="inputClass('kilometraje_actual', 'pe-12 tabular-nums')">
+                <span class="absolute inset-y-0 end-0 flex items-center pe-3 text-sm text-gray-500 pointer-events-none dark:text-gray-400">km</span>
+              </div>
+              <p v-if="vehicleErrors.kilometraje_actual" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.kilometraje_actual }}</p>
+
+              <div class="mt-5 p-4 rounded-lg border border-brand-100 bg-brand-50/70 dark:border-gray-600 dark:bg-gray-700/40">
+                <p class="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+                  <BellRing class="w-4 h-4 text-brand-700 dark:text-brand-200" />
+                  Próximo mantenimiento
+                  <span class="ms-auto px-2 py-0.5 text-xs font-medium rounded-sm bg-white text-gray-600 border border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600">Opcional</span>
+                </p>
+                <p class="mt-1 mb-4 text-xs text-gray-500 dark:text-gray-400">
+                  Con uno de estos datos le recordaremos al cliente por WhatsApp.
+                </p>
+                <div class="space-y-3">
+                  <div>
+                    <label for="modal_veh_prox_km" class="block mb-1.5 text-sm font-medium text-gray-900 dark:text-white">Al llegar a</label>
+                    <div class="relative">
+                      <input id="modal_veh_prox_km" v-model="form.proximo_mantenimiento_km" type="number" min="0" placeholder="50000" :class="inputClass('proximo_mantenimiento_km', 'pe-12 tabular-nums bg-white dark:bg-gray-700')">
+                      <span class="absolute inset-y-0 end-0 flex items-center pe-3 text-sm text-gray-500 pointer-events-none dark:text-gray-400">km</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label for="modal_veh_prox_fecha" class="block mb-1.5 text-sm font-medium text-gray-900 dark:text-white">O en la fecha</label>
+                    <input id="modal_veh_prox_fecha" v-model="form.proxima_mantenimiento_fecha" type="date" :class="inputClass('proxima_mantenimiento_fecha', 'bg-white dark:bg-gray-700')">
+                  </div>
+                </div>
+              </div>
+            </section>
           </div>
-        </template>
+        </div>
       </div>
 
-      <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
-        <button
-          type="button"
-          class="px-5 py-2.5 text-sm font-medium text-gray-900 rounded bg-white border border-gray-300 dark:bg-gray-700 dark:text-gray-300"
-          @click="close">
-          Cancelar
-        </button>
-        <button
-          type="button"
-          :disabled="isSaving || isLoading"
-          class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="submit"
-        >
-          <Save v-if="!isSaving" class="w-5 h-5 mr-1.5 -ml-1 text-white" />
-          <svg v-else class="w-5 h-5 mr-1.5 animate-spin" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          {{ isSaving ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Crear') }}
-        </button>
+      <!-- Pie fijo -->
+      <div class="flex flex-col-reverse gap-3 border-t border-gray-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:border-gray-700">
+        <p class="hidden text-xs text-gray-500 sm:block dark:text-gray-400"><span class="text-accent-500">*</span> Campos obligatorios</p>
+        <div class="flex items-center justify-end gap-3">
+          <button
+            type="button"
+            class="px-5 py-2.5 text-sm font-medium text-gray-900 rounded bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700"
+            @click="close">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            :disabled="isSaving || isLoading"
+            class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded bg-brand-900 hover:bg-brand-700 focus:ring-4 focus:ring-brand-300 dark:bg-brand-600 dark:hover:bg-brand-500 dark:focus:ring-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="submit"
+          >
+            <Save v-if="!isSaving" class="w-5 h-5 mr-1.5 -ml-1 text-white" />
+            <svg v-else class="w-5 h-5 mr-1.5 animate-spin" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            {{ isSaving ? 'Guardando...' : (isEditMode ? 'Guardar cambios' : 'Crear vehículo') }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
