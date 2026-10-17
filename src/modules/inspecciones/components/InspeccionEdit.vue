@@ -471,6 +471,12 @@ function solicitarFinalizacion() {
 }
 
 async function confirmarFinalizar() {
+  // Guarda primero lo editado: finalizar solo cambia el estado y saldría de la página.
+  const guardado = await submit();
+  if (!guardado) {
+    showFinalizarModal.value = false;
+    return;
+  }
   await cambiarEstado('FINALIZADA');
   showFinalizarModal.value = false;
 }
@@ -953,8 +959,10 @@ function desvincularRelacion({ tipo, id }) {
   return relacionRecepcion({ tipo, id, accion: 'desvincular' });
 }
 
+/** Devuelve `true` si la inspección (ya existente) quedó guardada. */
 async function submit() {
-  if (readOnly.value) return;
+  if (readOnly.value) return false;
+  let guardado = false;
   errorMessage.value = '';
   successMessage.value = '';
   formErrors.value = {};
@@ -1009,6 +1017,7 @@ async function submit() {
       await photosGrid.value.guardarFotos();
       successMessage.value = 'Inspección actualizada correctamente.';
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      guardado = true;
     } else {
       const response = await inspeccionesService.create(payload);
       const nuevoId = response && response.id;
@@ -1042,6 +1051,7 @@ async function submit() {
   } finally {
     isSaving.value = false;
   }
+  return guardado;
 }
 
 // ---- Avance y hallazgos (alimentan el stepper y el panel lateral) ----
@@ -1131,6 +1141,9 @@ const kmDiferenciaTexto = computed(() => {
   return `+${diff.toLocaleString('es-EC')} km en la prueba`;
 });
 
+// Finalizar solo se ofrece con la inspección en proceso y todos los requisitos completos.
+const puedeFinalizar = computed(() => estadoInspeccion.value === 'EN_PROCESO' && avancePorcentaje.value === 100);
+
 const puedeGuardar = computed(() => !readOnly.value && estadoInspeccion.value !== 'PENDIENTE');
 
 const PRIORIDAD_CLASE = {
@@ -1173,9 +1186,9 @@ onMounted(() => {
     </template>
     <template #actions>
       <button
-        v-if="estadoInspeccion === 'EN_PROCESO'"
+        v-if="puedeFinalizar"
         type="button"
-        :disabled="transicionEstado"
+        :disabled="transicionEstado || isSaving"
         title="Cerrar el diagnóstico de la inspección"
         class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg shadow-xs hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 disabled:opacity-60 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700"
         @click="solicitarFinalizacion">
@@ -1811,6 +1824,12 @@ onMounted(() => {
                 </button>
               </li>
             </ul>
+            <p v-if="puedeFinalizar" class="mt-3 text-xs font-medium text-green-700 dark:text-green-400">
+              Todo listo. Ya puedes finalizar la inspección.
+            </p>
+            <p v-else-if="estadoInspeccion === 'EN_PROCESO'" class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+              Completa los requisitos para poder finalizar la inspección.
+            </p>
           </template>
           <dl v-else class="space-y-1.5 text-sm">
             <div class="flex justify-between gap-2">
@@ -1923,7 +1942,7 @@ onMounted(() => {
   <ConfirmModal
     v-model="showFinalizarModal"
     title="Finalizar inspección"
-    :message="'Al finalizar la inspección el diagnóstico queda cerrado. Podrás reabrirla desde el detalle si necesitas hacer cambios. ¿Deseas continuar?'"
+    :message="'Se guardarán los cambios y el diagnóstico quedará cerrado. Podrás reabrirla desde el detalle si necesitas hacer cambios. ¿Deseas continuar?'"
     :icon="IconClockCheck"
     icon-class="text-green-600 dark:text-green-400"
     confirm-text="Sí, finalizar"
