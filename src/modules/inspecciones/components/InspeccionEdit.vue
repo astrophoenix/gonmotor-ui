@@ -1,6 +1,6 @@
 <script setup>
 import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
-import { Car, Toolbox, TriangleAlert, CheckCircle2, Loader2, Plus, Trash2, Wand2, IdCardIcon, TagIcon, Shapes, PaintBucket, Phone, Mail, Camera, ShieldCheck, Workflow, Package, Check, CircleAlert, ArrowLeft, ArrowRight, ListChecks, Stethoscope, CalendarClock, ScanSearch, NotebookPen, ClipboardList, Play, CircleStop } from 'lucide-vue-next';
+import { Car, Toolbox, TriangleAlert, CheckCircle2, Loader2, Plus, Trash2, Wand2, IdCardIcon, TagIcon, Shapes, PaintBucket, Phone, Mail, Camera, ShieldCheck, Workflow, Package, Check, CircleAlert, ArrowLeft, ArrowRight, ListChecks, Stethoscope, CalendarClock, ScanSearch, ClipboardList, CircleStop } from 'lucide-vue-next';
 import { IconClockCheck, IconClockPlay, IconEngine, IconManualGearbox, IconAutomaticGearbox, IconGasStation } from '@tabler/icons-vue';
 import { request } from '../../../shared/services/httpClient';
 import { API_BASE_URL } from '../../../shared/config/env';
@@ -167,6 +167,7 @@ const BASE_INPUT = 'block w-full p-2.5 text-sm rounded shadow-xs focus:outline-n
 const INPUT_OK = 'bg-gray-50 border border-gray-300 text-gray-900 focus:ring-brand-200 focus:border-brand-500 dark:border-gray-600 dark:text-white dark:focus:ring-brand-500/40 dark:focus:border-brand-300';
 const INPUT_ERROR = 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 focus:ring-red-200 focus:border-red-500 dark:text-red-400 dark:border-red-500 dark:placeholder-red-400';
 const BOTON_MEJORAR = 'inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-brand-700 text-brand-700 hover:bg-brand-50 dark:border-brand-300 dark:text-brand-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed';
+const BOTON_ESTADO = 'inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg shadow-xs shrink-0 hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 disabled:opacity-60 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700';
 const BOTON_AGREGAR = 'inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-brand-900 bg-white border border-brand-900 rounded-lg hover:bg-brand-50 focus:ring-4 focus:ring-brand-200 dark:bg-gray-800 dark:text-brand-200 dark:border-brand-300 dark:hover:bg-gray-700 dark:focus:ring-brand-700';
 
 function inputClass(campo, extra = '') {
@@ -1185,16 +1186,6 @@ onMounted(() => {
       </span>
     </template>
     <template #actions>
-      <button
-        v-if="puedeFinalizar"
-        type="button"
-        :disabled="transicionEstado || isSaving"
-        title="Cerrar el diagnóstico de la inspección"
-        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg shadow-xs hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 disabled:opacity-60 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700"
-        @click="solicitarFinalizacion">
-        <IconClockCheck class="w-5 h-5 text-green-600 dark:text-green-400" />
-        Finalizar
-      </button>
       <FormSaveActions
         v-if="puedeGuardar"
         :is-loading="isSaving"
@@ -1212,23 +1203,39 @@ onMounted(() => {
   -->
 
   <div class="px-4 pt-4">
-    <!-- Aviso: sin iniciar no se puede guardar. Único punto para iniciar la inspección. -->
+    <!-- Avisos de cambio de estado: único lugar para iniciar y para finalizar la inspección. -->
     <div
-      v-if="estadoInspeccion === 'PENDIENTE' && !readOnly"
+      v-if="(estadoInspeccion === 'PENDIENTE' && !readOnly) || puedeFinalizar"
       class="flex flex-col gap-3 p-4 mb-4 text-sm border rounded-lg sm:flex-row sm:items-center sm:justify-between bg-brand-50 border-brand-200 text-brand-900 dark:bg-brand-700/20 dark:border-brand-500/40 dark:text-brand-100">
       <div class="flex items-start gap-3">
-        <CircleStop class="w-5 h-5 mt-0.5 shrink-0" />
-        <p>
+        <component :is="puedeFinalizar ? CheckCircle2 : CircleStop" class="w-5 h-5 mt-0.5 shrink-0" />
+        <p v-if="puedeFinalizar">
+          <span class="font-semibold">El diagnóstico está completo.</span>
+          Finaliza la inspección para cerrarla y continuar con la cotización.
+        </p>
+        <p v-else>
           <span class="font-semibold">La inspección aún no ha comenzado.</span>
           Iníciala cuando el técnico tome el vehículo para poder registrar y guardar el diagnóstico.
         </p>
       </div>
       <button
+        v-if="puedeFinalizar"
+        type="button"
+        :disabled="transicionEstado || isSaving"
+        title="Guardar y cerrar el diagnóstico de la inspección"
+        :class="BOTON_ESTADO"
+        @click="solicitarFinalizacion">
+        <IconClockCheck class="w-5 h-5 text-green-600 dark:text-green-400" />
+        Finalizar inspección
+      </button>
+      <button
+        v-else
         type="button"
         :disabled="transicionEstado"
-        class="inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-white rounded-lg shrink-0 bg-brand-900 hover:bg-brand-700 focus:ring-4 focus:ring-brand-300 disabled:opacity-60 dark:bg-brand-300 dark:text-brand-900 dark:hover:bg-brand-200"
+        title="Marcar la inspección como en proceso"
+        :class="BOTON_ESTADO"
         @click="solicitarIniciar">
-        <Play class="w-4 h-4" />
+        <IconClockPlay class="w-5 h-5 text-blue-600 dark:text-blue-400" />
         Iniciar inspección
       </button>
     </div>
@@ -1824,10 +1831,7 @@ onMounted(() => {
                 </button>
               </li>
             </ul>
-            <p v-if="puedeFinalizar" class="mt-3 text-xs font-medium text-green-700 dark:text-green-400">
-              Todo listo. Ya puedes finalizar la inspección.
-            </p>
-            <p v-else-if="estadoInspeccion === 'EN_PROCESO'" class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+            <p v-if="estadoInspeccion === 'EN_PROCESO'" class="mt-3 text-xs text-gray-500 dark:text-gray-400">
               Completa los requisitos para poder finalizar la inspección.
             </p>
           </template>
