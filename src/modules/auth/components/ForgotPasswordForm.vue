@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/authStore';
 import { authService } from '../services/authService';
 import Alert from '../../../shared/components/Alert.vue';
 import { sanitizeEmail, validateEmail } from '../../../shared/utils/sanitize';
+import { assetUrl } from '../../../shared/utils/assetUrl';
 
 const authStore = useAuthStore();
 const email = ref('');
@@ -110,7 +111,7 @@ watch(email, () => {
       <div class="flex justify-center mb-6">
         <a href="/" class="inline-flex items-center gap-1">
           <span class="flex h-13 w-auto shrink-0 items-center justify-center">
-            <img src="/images/logo.svg" alt="gonmotor Logo" class="h-full w-full" />
+            <img :src="assetUrl('/images/logo.svg')" alt="gonmotor Logo" class="h-full w-full" />
           </span>
           <!--span class="text-3xl font-extrabold leading-none tracking-tight">
             <span class="text-white">gon</span><span class="text-brand-coral">motor</span>

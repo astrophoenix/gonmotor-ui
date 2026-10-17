@@ -32,3 +32,10 @@ publishDir:             "_gh_pages"
 security:
   allowContent:
     - '.*'
+# Solo para `hugo server` (desarrollo): sin caché en el navegador, para no
+# necesitar Ctrl+Shift+R tras cada cambio. No afecta al build de producción.
+server:
+  headers:
+    - for: "/**"
+      values:
+        Cache-Control: "no-store"

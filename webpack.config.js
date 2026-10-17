@@ -1,8 +1,27 @@
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
-const { SourceMapDevToolPlugin } = require("webpack");
+const { SourceMapDevToolPlugin, DefinePlugin } = require("webpack");
 const { VueLoaderPlugin } = require('vue-loader');
 const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
+
+// Hash del contenido de cada imagen de static/images para versionar sus URLs
+// desde Vue (assetUrl): solo cambian cuando cambia el archivo.
+function versionesDeImagenes() {
+  const dir = path.resolve(__dirname, 'static/images');
+  const versiones = {};
+  const recorrer = (actual) => {
+    fs.readdirSync(actual, { withFileTypes: true }).forEach((entrada) => {
+      const ruta = path.join(actual, entrada.name);
+      if (entrada.isDirectory()) return recorrer(ruta);
+      const url = '/' + path.relative(path.resolve(__dirname, 'static'), ruta).split(path.sep).join('/');
+      versiones[url] = crypto.createHash('md5').update(fs.readFileSync(ruta)).digest('hex').slice(0, 10);
+    });
+  };
+  if (fs.existsSync(dir)) recorrer(dir);
+  return versiones;
+}
 
 module.exports = {
   entry: {
@@ -52,6 +71,9 @@ module.exports = {
   plugins: [
     new VueLoaderPlugin(),
     new MiniCssExtractPlugin(),
+    new DefinePlugin({
+      __ASSET_VERSIONS__: JSON.stringify(versionesDeImagenes()),
+    }),
     new SourceMapDevToolPlugin({
       filename: "[file].map"
     })

@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue';
 import { User, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, CheckCircle2, Loader2, Building2, ChevronRight } from 'lucide-vue-next';
 import { useAuthStore } from '../stores/authStore';
 import Alert from '../../../shared/components/Alert.vue';
+import { assetUrl } from '../../../shared/utils/assetUrl';
 import TallerSelect from '../../../shared/components/TallerSelect.vue';
 import EmpresaSearchSelect from '../../../shared/components/EmpresaSearchSelect.vue';
 
@@ -181,7 +182,7 @@ async function confirmCompany() {
       <div class="relative z-10">
         <a href="/" class="inline-flex items-center gap-1">
           <span class="flex h-13 w-auto shrink-0 items-center justify-center">
-            <img src="/images/isotipo-blanco.svg" alt="gonmotor Logo login" class="h-full w-full"/>
+            <img :src="assetUrl('/images/isotipo-blanco.svg')" alt="gonmotor Logo login" class="h-full w-full"/>
           </span>
           <span class="text-3xl font-extrabold leading-none tracking-tight">
             <span class="text-white">gon</span><span class="text-brand-coral">motor</span>

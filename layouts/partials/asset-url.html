@@ -1,0 +1,12 @@
+{{/*
+  Devuelve la URL de un archivo de static/ con ?v=<hash de su contenido>.
+  La URL solo cambia cuando cambia el archivo: ningún navegador ni proxy puede
+  servir una versión vieja tras un despliegue. Uso: {{ partial "asset-url" "/app.css" }}
+*/}}
+{{- $ruta := . -}}
+{{- $archivo := printf "static%s" $ruta -}}
+{{- $url := $ruta -}}
+{{- if os.FileExists $archivo -}}
+  {{- $url = printf "%s?v=%s" $ruta (substr (os.ReadFile $archivo | md5) 0 10) -}}
+{{- end -}}
+{{- return $url -}}
