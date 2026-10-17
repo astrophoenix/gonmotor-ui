@@ -126,10 +126,10 @@ const claseDisparador = computed(() => {
   }
   if (props.movilCompacto) {
     // < sm: botón de icono como el de GlobalSearch; desde sm, el chip de siempre.
-    return 'shadow-xs inline-flex min-w-0 max-w-[15rem] items-center gap-2 rounded-lg p-2 text-ink-soft transition-colors hover:bg-surface hover:text-brand-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-60 dark:text-brand-300 dark:hover:bg-brand-800 dark:hover:text-white sm:rounded sm:border sm:border-brand-100 sm:bg-brand-50 sm:px-2.5 sm:py-2 sm:text-sm sm:text-ink sm:hover:bg-brand-100 sm:dark:border-brand-700 sm:dark:bg-brand-800 sm:dark:text-white sm:dark:hover:bg-brand-700';
+    return 'inline-flex min-w-0 max-w-[15rem] items-center gap-2 rounded-lg p-2 text-ink-soft transition-colors hover:bg-surface hover:text-brand-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-60 dark:text-brand-300 dark:hover:bg-brand-800 dark:hover:text-white sm:rounded sm:border sm:border-brand-100 sm:bg-brand-50 sm:px-2.5 sm:py-2 sm:text-sm sm:text-ink sm:hover:bg-brand-100 sm:dark:border-brand-700 sm:dark:bg-brand-800 sm:dark:text-white sm:dark:hover:bg-brand-700';
   }
   const base =
-    'shadow-xs inline-flex min-w-0 max-w-[15rem] items-center gap-2 rounded border bg-brand-50 px-2.5 py-2 text-sm text-ink transition-colors hover:bg-brand-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-brand-800 dark:text-white dark:hover:bg-brand-700';
+    'inline-flex min-w-0 max-w-[15rem] items-center gap-2 rounded border bg-brand-50 px-2.5 py-2 text-sm text-ink transition-colors hover:bg-brand-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-brand-800 dark:text-white dark:hover:bg-brand-700';
   return props.invalid
     ? `${base} border-brand-red dark:border-brand-red`
     : `${base} border-brand-100 dark:border-brand-700`;
