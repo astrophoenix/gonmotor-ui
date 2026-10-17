@@ -119,17 +119,17 @@ const esVarianteCampo = computed(() => props.variante === 'campo');
 const claseDisparador = computed(() => {
   if (esVarianteCampo.value) {
     const base =
-      'flex h-10 w-full items-center justify-between gap-3 rounded-xl border-[1.5px] bg-white px-3.5 text-base text-brand-ink outline-none transition-colors focus:ring-4 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-800 dark:text-white';
+      'flex h-10 w-full items-center justify-between gap-3 rounded-xl border-[1.5px] bg-white px-3.5 shadow-xstext-base text-brand-ink outline-none transition-colors focus:ring-4 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-800 dark:text-white';
     return props.invalid
       ? `${base} border-brand-red focus:border-brand-red focus:ring-brand-red/15 dark:border-brand-red`
       : `${base} border-brand-line focus:border-brand-ink focus:ring-brand-focus-ring dark:border-slate-600`;
   }
   if (props.movilCompacto) {
     // < sm: botón de icono como el de GlobalSearch; desde sm, el chip de siempre.
-    return 'inline-flex min-w-0 max-w-[15rem] items-center gap-2 rounded-lg p-2 text-ink-soft transition-colors hover:bg-surface hover:text-brand-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-60 dark:text-brand-300 dark:hover:bg-brand-800 dark:hover:text-white sm:rounded sm:border sm:border-brand-100 sm:bg-brand-50 sm:px-2.5 sm:py-2 sm:text-sm sm:text-ink sm:hover:bg-brand-100 sm:dark:border-brand-700 sm:dark:bg-brand-800 sm:dark:text-white sm:dark:hover:bg-brand-700';
+    return 'shadow-xs inline-flex min-w-0 max-w-[15rem] items-center gap-2 rounded-lg p-2 text-ink-soft transition-colors hover:bg-surface hover:text-brand-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-60 dark:text-brand-300 dark:hover:bg-brand-800 dark:hover:text-white sm:rounded sm:border sm:border-brand-100 sm:bg-brand-50 sm:px-2.5 sm:py-2 sm:text-sm sm:text-ink sm:hover:bg-brand-100 sm:dark:border-brand-700 sm:dark:bg-brand-800 sm:dark:text-white sm:dark:hover:bg-brand-700';
   }
   const base =
-    'inline-flex min-w-0 max-w-[15rem] items-center gap-2 rounded border bg-brand-50 px-2.5 py-2 text-sm text-ink transition-colors hover:bg-brand-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-brand-800 dark:text-white dark:hover:bg-brand-700';
+    'shadow-xs inline-flex min-w-0 max-w-[15rem] items-center gap-2 rounded border bg-brand-50 px-2.5 py-2 text-sm text-ink transition-colors hover:bg-brand-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-brand-800 dark:text-white dark:hover:bg-brand-700';
   return props.invalid
     ? `${base} border-brand-red dark:border-brand-red`
     : `${base} border-brand-100 dark:border-brand-700`;
