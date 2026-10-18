@@ -129,26 +129,20 @@
 
 /* ===== Sidebar (drawer en móvil / colapsable en desktop) ===== */
 
-/* Superficies propias del sidebar: un azul pizarra más cálido que el navy de
-   marca, para que el menú no se lea como un bloque negro. El coral solo marca
+/* Superficies del sidebar: mismo navy de marca que el panel del login
+   (--color-brand-navy), igual en claro y oscuro. Hover y activo suben un paso
+   de la escala navy para distinguirse sobre el fondo. El coral solo marca
    dónde estás (barra lateral e icono activo). */
 #sidebar {
-  --sb-bg: #26364A;
-  --sb-hover: #2E405A;
-  --sb-active: #34485F;
+  --sb-bg: var(--color-brand-navy);
+  --sb-hover: var(--color-brand-700);
+  --sb-active: #24364F;
   --sb-line: rgb(255 255 255 / 0.08);
   --sb-text: #D3DCE8;
   --sb-icon: #9FB0C6;
   --sb-muted: #8A9AB0;
   --sb-sub-text: #B9C6D6;
-  --sb-flyout: #2E405A;
-}
-.dark #sidebar {
-  --sb-bg: #18222F;
-  --sb-hover: #212E3E;
-  --sb-active: #283A50;
-  --sb-line: rgb(255 255 255 / 0.07);
-  --sb-flyout: #212E3E;
+  --sb-flyout: var(--color-brand-700);
 }
 .sidebar-panel {
   background-color: var(--sb-bg);
