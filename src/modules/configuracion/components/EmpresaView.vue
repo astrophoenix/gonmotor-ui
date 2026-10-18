@@ -10,7 +10,10 @@ import {
   sanitizeEmail,
   sanitizeTelefono,
   sanitizeIdentificacion,
+  sanitizeObservaciones,
 } from '../../../shared/utils/sanitize';
+
+const CONDICIONES_MAX = 1000;
 
 const isLoading = ref(true);
 const isSaving = ref(false);
@@ -32,7 +35,12 @@ const form = reactive({
   email_contacto: '',
   telefono: '',
   logo: '',
+  condiciones: '',
 });
+
+function onCondicionesInput() {
+  form.condiciones = sanitizeObservaciones(form.condiciones).slice(0, CONDICIONES_MAX);
+}
 
 const currentLogoUrl = computed(() => (logoRemoved.value ? '' : form.logo));
 
@@ -69,6 +77,10 @@ function validateForm() {
     errors.telefono = 'El teléfono es obligatorio.';
   }
 
+  if ((form.condiciones || '').length > CONDICIONES_MAX) {
+    errors.condiciones = `Las condiciones admiten máximo ${CONDICIONES_MAX} caracteres.`;
+  }
+
   if (logoError.value) {
     errors.logo = logoError.value;
   }
@@ -102,6 +114,7 @@ async function loadEmpresa() {
       email_contacto: data.email_contacto || '',
       telefono: data.telefono || '',
       logo: data.logo || '',
+      condiciones: data.condiciones || '',
     });
   } catch (error) {
     showError(error);
@@ -135,6 +148,7 @@ async function submit() {
     formData.append('ruc', form.ruc || '');
     formData.append('email_contacto', form.email_contacto || '');
     formData.append('telefono', form.telefono || '');
+    formData.append('condiciones', sanitizeObservaciones(form.condiciones || '').trim());
 
     if (logoFile.value) {
       formData.append('logo', logoFile.value);
@@ -272,6 +286,28 @@ onMounted(loadEmpresa);
                 @upload="onLogoUpload"
                 @remove="onLogoRemove"
               />
+            </div>
+
+            <div class="col-span-6">
+              <label for="condiciones" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                Condiciones de la cotización
+              </label>
+              <textarea
+                id="condiciones"
+                v-model="form.condiciones"
+                rows="5"
+                :maxlength="CONDICIONES_MAX"
+                placeholder="Una condición por línea. Ej.: Si el total supera los $500, se requiere un anticipo del 60%."
+                @input="onCondicionesInput"
+                :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.condiciones ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+              ></textarea>
+              <div class="flex justify-between gap-4 mt-2">
+                <p v-if="formErrors.condiciones" class="text-sm text-red-600 dark:text-red-500">{{ formErrors.condiciones }}</p>
+                <p v-else class="text-xs text-gray-500 dark:text-gray-400">
+                  Se imprimen en el PDF de cada cotización, después de la validez.
+                </p>
+                <span class="shrink-0 text-xs text-gray-500 dark:text-gray-400">{{ form.condiciones.length }}/{{ CONDICIONES_MAX }}</span>
+              </div>
             </div>
 
             <div class="col-span-6">
