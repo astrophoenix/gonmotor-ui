@@ -200,6 +200,8 @@ const form = ref({
   prioridad: 'MEDIA',
   tipo_trabajo: 'MANTENIMIENTO',
   mecanico_principal: '',
+  // Ingreso editable: al crear se propone la fecha y hora actuales.
+  fecha_ingreso: toDateTimeLocal(new Date().toISOString()),
   fecha_entrega: '',
   observaciones: '',
   motivo_espera: '',
@@ -339,11 +341,6 @@ function formatDate(dateString) {
   if (Number.isNaN(date.getTime())) return '—';
   return date.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
-
-const fechaIngresoDisplay = computed(() => {
-  if (!isEditMode.value) return '';
-  return formatDate(orden.value?.fecha_ingreso || orden.value?.created_at);
-});
 
 function formatNumber(value) {
   if (value == null || value === '') return '—';
@@ -495,6 +492,7 @@ function aplicarOrden(data) {
     prioridad: data.prioridad || 'MEDIA',
     tipo_trabajo: normalizarTipoTrabajo(data.tipo_trabajo) || 'MANTENIMIENTO',
     mecanico_principal: data.mecanico_principal || '',
+    fecha_ingreso: toDateTimeLocal(data.fecha_ingreso || data.created_at),
     fecha_entrega: toDateTimeLocal(data.fecha_entrega),
     observaciones: data.observaciones || '',
     motivo_espera: data.motivo_espera || '',
@@ -636,11 +634,20 @@ async function handleSubmit(mensajeExito = 'Orden de trabajo guardada correctame
   error.value = '';
   successMessage.value = '';
 
-  formErrors.value = { cliente: '', vehiculo: '' };
+  formErrors.value = { cliente: '', vehiculo: '', fecha_ingreso: '' };
   if (!clienteSeleccionado.value) formErrors.value.cliente = 'Selecciona el cliente de la orden.';
   if (!vehiculoSeleccionado.value) formErrors.value.vehiculo = 'Selecciona el vehículo a atender.';
   if (formErrors.value.cliente || formErrors.value.vehiculo) {
     error.value = 'Completa el cliente y el vehículo de la orden.';
+    saving.value = false;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return false;
+  }
+
+  const fechaIngreso = form.value.fecha_ingreso ? new Date(form.value.fecha_ingreso) : null;
+  if (!fechaIngreso || Number.isNaN(fechaIngreso.getTime())) {
+    formErrors.value.fecha_ingreso = 'La fecha de ingreso es obligatoria.';
+    error.value = 'Registra la fecha y hora de ingreso del vehículo.';
     saving.value = false;
     window.scrollTo({ top: 0, behavior: 'smooth' });
     return false;
@@ -668,6 +675,7 @@ async function handleSubmit(mensajeExito = 'Orden de trabajo guardada correctame
     prioridad: form.value.prioridad,
     tipo_trabajo: form.value.tipo_trabajo,
     mecanico_principal: form.value.mecanico_principal || null,
+    fecha_ingreso: fechaIngreso.toISOString(),
     fecha_entrega: form.value.fecha_entrega ? new Date(form.value.fecha_entrega).toISOString() : null,
     observaciones: form.value.observaciones || '',
     motivo_espera: form.value.motivo_espera || null,
@@ -685,6 +693,7 @@ async function handleSubmit(mensajeExito = 'Orden de trabajo guardada correctame
       window.location.assign(`/crud/ordenes/editar/?id=${ordenPersistidaId.value}`);
     } catch (err) {
       error.value = err.message || 'No se pudo crear la orden de trabajo.';
+      if (err.data?.fecha_ingreso) formErrors.value.fecha_ingreso = [].concat(err.data.fecha_ingreso)[0];
     } finally {
       saving.value = false;
     }
@@ -711,6 +720,7 @@ async function handleSubmit(mensajeExito = 'Orden de trabajo guardada correctame
     guardado = true;
   } catch (err) {
     error.value = err.message || 'No se pudo guardar la orden de trabajo.';
+    if (err.data?.fecha_ingreso) formErrors.value.fecha_ingreso = [].concat(err.data.fecha_ingreso)[0];
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } finally {
     saving.value = false;
@@ -1264,14 +1274,9 @@ const grupos = computed(() => [
               </select>
             </div>
             <div>
-              <label for="fecha_ingreso" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Ingreso</label>
-              <input
-                id="fecha_ingreso"
-                :value="fechaIngresoDisplay || 'Se registra al crear'"
-                type="text"
-                readonly
-                disabled
-                class="block w-full p-2.5 text-sm text-gray-500 bg-gray-100 border border-gray-200 rounded shadow-xs cursor-not-allowed dark:bg-gray-700/60 dark:text-gray-400 dark:border-gray-600">
+              <label for="fecha_ingreso" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Ingreso <span class="text-accent-500">*</span></label>
+              <input id="fecha_ingreso" v-model="form.fecha_ingreso" type="datetime-local" required :class="inputClass('fecha_ingreso')" @input="formErrors.fecha_ingreso = ''">
+              <p v-if="formErrors.fecha_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.fecha_ingreso }}</p>
             </div>
             <div>
               <label for="fecha_entrega" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Entrega comprometida</label>
