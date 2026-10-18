@@ -41,6 +41,17 @@ export const vehiclesService = {
     });
   },
 
+  /** Visitas y eventos del vehículo en todos los talleres de la empresa. */
+  historial(id, { page = 1, q = '', tipoTrabajo = '', taller = '', desde = '', hasta = '', signal } = {}) {
+    const params = new URLSearchParams({ page: String(page) });
+    if (q) params.set('q', q);
+    if (tipoTrabajo) params.set('tipo_trabajo', tipoTrabajo);
+    if (taller) params.set('taller', String(taller));
+    if (desde) params.set('desde', desde);
+    if (hasta) params.set('hasta', hasta);
+    return request(`${buildUrl(id)}historial/?${params.toString()}`, { signal });
+  },
+
   delete(id, label) {
     return request(buildUrl(id), {
       method: 'DELETE',
