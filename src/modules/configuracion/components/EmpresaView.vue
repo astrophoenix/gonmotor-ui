@@ -304,7 +304,7 @@ onMounted(loadEmpresa);
               <div class="flex justify-between gap-4 mt-2">
                 <p v-if="formErrors.condiciones" class="text-sm text-red-600 dark:text-red-500">{{ formErrors.condiciones }}</p>
                 <p v-else class="text-xs text-gray-500 dark:text-gray-400">
-                  Se imprimen en el PDF de cada cotización, después de la validez. Si lo dejas vacío se usan las condiciones por defecto.
+                  Se imprimen en el PDF de cada cotización, después de la validez.
                 </p>
                 <span class="shrink-0 text-xs text-gray-500 dark:text-gray-400">{{ form.condiciones.length }}/{{ CONDICIONES_MAX }}</span>
               </div>
