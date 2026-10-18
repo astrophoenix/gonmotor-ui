@@ -1,4 +1,7 @@
-import { Clock, CircleCheck, CircleSlash, Hourglass, CheckCheck, LoaderCircle } from 'lucide-vue-next';
+import {
+  Clock, CircleCheck, CircleSlash, Hourglass, CheckCheck, LoaderCircle,
+  ChevronsDown, Equal, ChevronsUp, Siren, Minus,
+} from 'lucide-vue-next';
 import { estadoADisplay } from '../../../shared/utils/estadoFlujo';
 
 /**
@@ -36,6 +39,19 @@ export const PRIORIDADES_ORDEN = [
   { value: 'ALTA', label: 'Alta' },
   { value: 'URGENTE', label: 'Urgente / Emergencia' },
 ];
+
+/** Badge de prioridad (icono + color), compartido por la edición y el detalle. */
+const PRIORIDAD_BADGES = {
+  BAJA: { label: 'Baja', icon: ChevronsDown, color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
+  MEDIA: { label: 'Media', icon: Equal, color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
+  ALTA: { label: 'Alta', icon: ChevronsUp, color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' },
+  URGENTE: { label: 'Urgente', icon: Siren, color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' },
+};
+
+export function getPrioridadOrden(prioridad) {
+  return PRIORIDAD_BADGES[prioridad]
+    || { label: prioridad || '—', icon: Minus, color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' };
+}
 
 /** Prioridades ofrecidas en los filtros. */
 export const PRIORIDADES_ORDEN_FILTRABLE = PRIORIDADES_ORDEN.map((item) => item.value);

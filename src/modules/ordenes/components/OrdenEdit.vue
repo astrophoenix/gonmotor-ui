@@ -1,7 +1,7 @@
 <script setup>
 import { computed, nextTick, onMounted, ref } from 'vue';
 import {
-  Wand2, Loader2, Plus, Trash2, Camera, Car, ChevronsDown, Equal, ChevronsUp, Siren, Minus,
+  Wand2, Loader2, Plus, Trash2, Camera, Car,
   HardHat, Wrench, Package, Check, CircleAlert, ArrowLeft, ArrowRight, ListChecks, CheckCircle2,
   CircleStop, IdCardIcon, TagIcon, Shapes, PaintBucket, Phone, Mail, UserRound, Building2,
   CalendarClock, ReceiptText, FileText, Stethoscope, Hourglass, CheckCheck, RotateCcw, Ban, X,
@@ -11,7 +11,7 @@ import { IconClockPlay, IconClockCheck, IconPlayerPause, IconPlayerPlay } from '
 import { request } from '../../../shared/services/httpClient';
 import { API_BASE_URL } from '../../../shared/config/env';
 import { ordenesService } from '../services/ordenesService';
-import { PRIORIDADES_ORDEN, getEstadoOrden } from '../constants/estadosOrden';
+import { PRIORIDADES_ORDEN, getEstadoOrden, getPrioridadOrden } from '../constants/estadosOrden';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
@@ -213,17 +213,7 @@ const form = ref({
   motivo_espera: '',
 });
 
-const PRIORIDAD_BADGES = {
-  BAJA: { label: 'Baja', icon: ChevronsDown, color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
-  MEDIA: { label: 'Media', icon: Equal, color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
-  ALTA: { label: 'Alta', icon: ChevronsUp, color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' },
-  URGENTE: { label: 'Urgente', icon: Siren, color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' },
-};
-
-const prioridadConfig = (prioridad) =>
-  PRIORIDAD_BADGES[prioridad] || { label: prioridad || '—', icon: Minus, color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' };
-
-const prioridadBadge = computed(() => prioridadConfig(form.value.prioridad));
+const prioridadBadge = computed(() => getPrioridadOrden(form.value.prioridad));
 
 const TIPOS = TIPOS_TRABAJO_OPCIONES;
 

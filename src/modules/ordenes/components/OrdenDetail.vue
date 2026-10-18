@@ -1,29 +1,39 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 import {
   Car,
   Camera,
+  Check,
+  ArrowLeft,
+  ArrowRight,
+  CalendarClock,
+  CalendarCheck,
   ClipboardList,
-  CircleDollarSign,
-  Package,
   FilePen,
-  X,
   FileText,
+  Gauge,
+  HardHat,
   IdCardIcon,
-  Phone,
+  ListChecks,
+  Loader2,
   Mail,
-  ShieldCheck,
-  TagIcon,
-  Shapes,
+  NotebookPen,
+  Package,
   PaintBucket,
-  Image as ImageIcon,
-  Toolbox,
-  Wrench,
+  Phone,
+  ReceiptText,
+  Shapes,
+  Building2,
+  Stethoscope,
+  TagIcon,
+  UserRound,
   Workflow,
+  Wrench,
+  X,
 } from 'lucide-vue-next';
 import { API_BASE_URL } from '../../../shared/config/env';
 import { ordenesService } from '../services/ordenesService';
-import { PRIORIDADES_ORDEN } from '../constants/estadosOrden';
+import { getEstadoOrden, getPrioridadOrden } from '../constants/estadosOrden';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
@@ -38,53 +48,67 @@ const error = ref('');
 const previewImg = ref('');
 const showImageModal = ref(false);
 
-const activeTab = ref('resumen');
-const TAB_ORDER = ['resumen', 'trabajo', 'evidencia'];
-const activeTabIndex = computed(() => TAB_ORDER.indexOf(activeTab.value));
+// Mismos estilos de tarjeta que la edición de la orden, la recepción y la inspección.
+const SECCION = 'p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700';
+const TITULO_SECCION = 'flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200';
+const ETIQUETA = 'text-xs font-medium text-gray-500 dark:text-gray-400';
+const VALOR = 'mt-0.5 text-sm font-semibold text-gray-900 dark:text-white';
+const ENLACE = 'hover:text-brand-coral';
+const CONTADOR = 'px-1.5 text-xs font-medium normal-case tracking-normal rounded bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 tabular-nums';
 
-function goToTab(direction) {
-  const next = activeTabIndex.value + direction;
-  if (next >= 0 && next < TAB_ORDER.length) {
-    activeTab.value = TAB_ORDER[next];
-  }
-}
+const ordenId = computed(() => new URLSearchParams(window.location.search).get('id'));
 
-const ordenId = computed(() => {
-  const params = new URLSearchParams(window.location.search);
-  return params.get('id');
-});
-
-const numeroOrden = computed(() => orden.value?.numero_orden || '—');
 const cliente = computed(() => orden.value?.cliente || null);
 const vehiculo = computed(() => orden.value?.vehiculo || null);
-
 const servicios = computed(() => orden.value?.servicios || []);
 const repuestos = computed(() => orden.value?.repuestos || []);
-
 const fotosOrden = computed(() => orden.value?.fotos || []);
 const inspeccion = computed(() => orden.value?.inspeccion || null);
 const fotosInspeccion = computed(() => inspeccion.value?.fotos || []);
-const recepcionesConFotos = computed(() =>
-  (orden.value?.recepciones || []).filter((r) => r.fotos && r.fotos.length)
-);
-
+const recepcionesConFotos = computed(() => (orden.value?.recepciones || []).filter((r) => r.fotos?.length));
 const relacionesOrden = computed(() => relacionesDeOrden(orden.value));
 
-const PRIORIDAD_BADGES = {
-  BAJA: { color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' },
-  MEDIA: { color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
-  ALTA: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' },
-  URGENTE: { color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' },
-};
+const estado = computed(() => orden.value?.estado || 'PENDIENTE');
+const estadoConfig = computed(() => getEstadoOrden(estado.value, orden.value?.estado_display));
+const prioridadBadge = computed(() => getPrioridadOrden(orden.value?.prioridad));
 
-const prioridadLabel = computed(() => {
-  const encontrada = PRIORIDADES_ORDEN.find((p) => p.value === orden.value?.prioridad);
-  return encontrada?.label || orden.value?.prioridad_display || orden.value?.prioridad || '—';
+const clienteUrl = computed(() => (cliente.value?.id ? `/crud/clientes/ver/?id=${encodeURIComponent(cliente.value.id)}` : null));
+const vehiculoUrl = computed(() => (vehiculo.value?.id ? `/crud/vehiculos/ver/?id=${encodeURIComponent(vehiculo.value.id)}` : null));
+const inspeccionHref = computed(() => (inspeccion.value?.id ? `/crud/inspecciones/ver/?id=${encodeURIComponent(inspeccion.value.id)}` : ''));
+
+/** Documento del que viene la orden: cotización aprobada, o la inspección o la recepción. */
+const origen = computed(() => {
+  const ord = orden.value;
+  if (!ord) return null;
+  if (ord.cotizacion_origen) {
+    return {
+      etiqueta: 'Viene de la cotización',
+      numero: ord.cotizacion_origen_numero,
+      href: `/crud/cotizaciones/ver/?id=${encodeURIComponent(ord.cotizacion_origen)}`,
+      icon: ReceiptText,
+    };
+  }
+  if (inspeccion.value?.id) {
+    return { etiqueta: 'Viene de la inspección', numero: inspeccion.value.numero_inspeccion, href: inspeccionHref.value, icon: Stethoscope };
+  }
+  const rec = ord.recepciones?.[0];
+  if (rec?.id) {
+    return {
+      etiqueta: 'Viene de la recepción',
+      numero: rec.numero_recepcion,
+      href: `/crud/recepciones/ver/?id=${encodeURIComponent(rec.id)}`,
+      icon: FileText,
+    };
+  }
+  return null;
 });
 
-const prioridadBadge = computed(() =>
-  PRIORIDAD_BADGES[orden.value?.prioridad] || PRIORIDAD_BADGES.MEDIA
-);
+const dtcLista = computed(() => (inspeccion.value?.codigos_dtc || '')
+  .split(/[\s,;]+/)
+  .map((codigo) => codigo.trim().toUpperCase())
+  .filter(Boolean));
+
+const mostrarDiagnostico = ref(true);
 
 function formatPlaca(placa) {
   if (!placa) return '';
@@ -115,14 +139,18 @@ function formatNumber(value) {
   return Number(value).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function formatoHoras(value) {
+function formatCantidad(value) {
   if (value == null || value === '') return '—';
-  return `${Number(value).toLocaleString('es-EC', { maximumFractionDigits: 2 })} h`;
+  return Number(value).toLocaleString('es-EC', { maximumFractionDigits: 2 });
 }
 
 function ivaLabel(value) {
   if (value == null || value === '') return '—';
   return `${Number(value).toLocaleString('es-EC', { maximumFractionDigits: 2 })}%`;
+}
+
+function plural(n, singular, pluralTexto) {
+  return `${n} ${n === 1 ? singular : pluralTexto}`;
 }
 
 function abrirFoto(url) {
@@ -135,6 +163,135 @@ function cerrarFoto() {
   showImageModal.value = false;
   previewImg.value = '';
 }
+
+// ---- Datos de la planificación (una sola vez; estado y prioridad van en la cabecera) ----
+const kilometrajeLabel = computed(() => (
+  orden.value?.kilometraje != null ? `${Number(orden.value.kilometraje).toLocaleString('es-EC')} km` : '—'
+));
+const entregada = computed(() => estado.value === 'ENTREGADO');
+
+// ---- Aviso de estado (solo lectura: las transiciones se hacen desde la edición) ----
+const serviciosHechos = computed(() => servicios.value.filter((s) => s.completado).length);
+
+const aviso = computed(() => {
+  const ord = orden.value;
+  if (!ord) return null;
+  switch (estado.value) {
+    case 'PENDIENTE':
+      return { titulo: 'El trabajo aún no ha comenzado.', detalle: 'Se inicia desde la edición cuando el mecánico toma el vehículo.' };
+    case 'EN_ESPERA':
+      return { titulo: 'Orden en espera:', detalle: `${ord.motivo_espera || 'sin motivo indicado'}.` };
+    case 'EN_PROCESO':
+      return {
+        titulo: 'Trabajo en proceso.',
+        detalle: servicios.value.length
+          ? `${serviciosHechos.value} de ${plural(servicios.value.length, 'servicio hecho', 'servicios hechos')}.`
+          : 'Aún no hay servicios registrados.',
+      };
+    case 'COMPLETADO':
+      return { titulo: 'Trabajo completado.', detalle: 'El vehículo está listo para entregar al cliente.' };
+    case 'ENTREGADO':
+      return { titulo: 'Vehículo entregado al cliente:', detalle: formatDate(ord.fecha_entrega) };
+    case 'CANCELADO':
+      return { titulo: 'Orden anulada.', detalle: 'No admite más trabajo ni evidencia.', peligro: true };
+    default:
+      return null;
+  }
+});
+
+// ---- Pasos: Trabajo y Evidencia (los mismos de la edición) ----
+const PASOS = [
+  { key: 'trabajo', label: 'Trabajo' },
+  { key: 'evidencia', label: 'Evidencia' },
+];
+const activeTab = ref('trabajo');
+const activeTabIndex = computed(() => PASOS.findIndex((p) => p.key === activeTab.value));
+const pasosRef = ref(null);
+
+function irAPaso(key) {
+  activeTab.value = key;
+  nextTick(() => {
+    const el = pasosRef.value;
+    if (el && el.getBoundingClientRect().top < 0) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
+const totalItems = computed(() => servicios.value.length + repuestos.value.length);
+const horasManoObra = computed(() => servicios.value.reduce((acc, s) => acc + (Number(s.horas_aplicadas) || 0), 0));
+const tieneNotas = computed(() => Boolean((orden.value?.observaciones || '').trim()));
+
+const estadoPasos = computed(() => ({
+  trabajo: totalItems.value && serviciosHechos.value === servicios.value.length ? 'completo' : 'pendiente',
+  evidencia: fotosOrden.value.length || tieneNotas.value ? 'completo' : 'pendiente',
+}));
+
+const resumenPaso = computed(() => ({
+  trabajo: servicios.value.length
+    ? `${serviciosHechos.value} de ${plural(servicios.value.length, 'servicio hecho', 'servicios hechos')} · ${plural(repuestos.value.length, 'repuesto', 'repuestos')}`
+    : 'Mano de obra y repuestos',
+  evidencia: `${plural(fotosOrden.value.length, 'foto', 'fotos')}${tieneNotas.value ? ' · con notas' : ''}`,
+}));
+
+function pasoCirculoClass(key) {
+  if (estadoPasos.value[key] === 'completo') return 'bg-brand-900 text-white dark:bg-brand-300 dark:text-brand-900';
+  if (activeTab.value === key) return 'bg-white border-2 border-brand-900 text-brand-900 dark:bg-gray-800 dark:border-brand-300 dark:text-brand-200';
+  return 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400';
+}
+
+const grupos = computed(() => [
+  {
+    key: 'svc',
+    titulo: 'Mano de obra',
+    singular: 'Servicio',
+    icon: Wrench,
+    filas: servicios.value,
+    columna: 'Horas',
+    cantidad: (fila) => `${formatCantidad(fila.horas_aplicadas)} h`,
+    vacio: 'No hay servicios de mano de obra registrados.',
+    subtotal: orden.value?.subtotal_servicios,
+  },
+  {
+    key: 'rpt',
+    titulo: 'Repuestos y materiales',
+    singular: 'Repuesto',
+    icon: Package,
+    filas: repuestos.value,
+    columna: 'Cant.',
+    cantidad: (fila) => formatCantidad(fila.cantidad),
+    vacio: 'No hay repuestos o materiales registrados.',
+    subtotal: orden.value?.subtotal_repuestos,
+  },
+]);
+
+// ---- Avance de la ejecución (panel lateral, solo lectura) ----
+const requisitos = computed(() => [
+  { key: 'partes', label: 'Cliente y vehículo', ok: Boolean(cliente.value && vehiculo.value), paso: null },
+  { key: 'mecanico', label: 'Mecánico asignado', ok: Boolean(orden.value?.mecanico_nombre), paso: null },
+  { key: 'trabajo', label: 'Trabajo registrado', ok: totalItems.value > 0, paso: 'trabajo' },
+  {
+    key: 'hechos',
+    label: servicios.value.length ? `Servicios terminados (${serviciosHechos.value}/${servicios.value.length})` : 'Servicios terminados',
+    ok: servicios.value.length > 0 ? serviciosHechos.value === servicios.value.length : totalItems.value > 0,
+    paso: 'trabajo',
+  },
+]);
+
+const requisitosCumplidos = computed(() => requisitos.value.filter((r) => r.ok).length);
+const avancePorcentaje = computed(() => Math.round((requisitosCumplidos.value / requisitos.value.length) * 100));
+
+const registrado = computed(() => [
+  { key: 'svc', label: 'Servicios', valor: servicios.value.length, paso: 'trabajo' },
+  { key: 'rpt', label: 'Repuestos', valor: repuestos.value.length, paso: 'trabajo' },
+  { key: 'horas', label: 'Horas de M.O.', valor: formatCantidad(horasManoObra.value), paso: 'trabajo' },
+  { key: 'fotos', label: 'Fotos', valor: fotosOrden.value.length, paso: 'evidencia' },
+]);
+
+function irARequisito(req) {
+  if (req.paso) irAPaso(req.paso);
+  else window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+const descuento = computed(() => Number(orden.value?.descuento) || 0);
 
 onMounted(async () => {
   if (!ordenId.value) {
@@ -156,8 +313,7 @@ onMounted(async () => {
   <EntityHeader
     mode="detail"
     entity="Orden de trabajo"
-    :title="orden?.cliente?.nombre"
-    :record-number="orden ? numeroOrden : ''"
+    :record-number="orden?.numero_orden || ''"
     :breadcrumb="[
       { label: 'Inicio', href: '/' },
       { label: 'Órdenes', href: '/crud/ordenes/' },
@@ -166,16 +322,20 @@ onMounted(async () => {
   >
     <template #badges>
       <template v-if="orden">
-        <EstadoOrdenBadge
-          :estado="orden.estado"
-          :estado-display="orden.estado_display"
-          size="md"
-        />
+        <EstadoOrdenBadge :estado="orden.estado" :estado-display="orden.estado_display" size="md" />
         <span
-          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap"
           :class="prioridadBadge.color"
-        >
-          Prioridad {{ prioridadLabel }}
+          :title="`Prioridad: ${prioridadBadge.label}`">
+          <component :is="prioridadBadge.icon" class="w-4 h-4 shrink-0" aria-hidden="true" />
+          {{ prioridadBadge.label }}
+        </span>
+        <!-- Marca de etapa: la misma de la edición. -->
+        <span
+          class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium whitespace-nowrap rounded-md bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200 dark:bg-brand-700/30 dark:text-brand-200 dark:ring-brand-500/50"
+          title="La orden de trabajo es la etapa de ejecución: el trabajo aprobado se realiza en el taller">
+          <HardHat class="w-3.5 h-3.5" />
+          Etapa de ejecución
         </span>
       </template>
     </template>
@@ -183,547 +343,514 @@ onMounted(async () => {
     <template #actions>
       <a
         v-if="orden"
-        :href="`/crud/ordenes/editar/?id=${orden.id}`"
+        :href="`/crud/ordenes/editar/?id=${encodeURIComponent(orden.id)}`"
         class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800">
-        <FilePen class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
+        <FilePen class="w-5 h-5 -ms-1 text-brand-700 dark:text-brand-200" aria-hidden="true" />
         Editar
       </a>
     </template>
   </EntityHeader>
 
-  <div class="p-4">
-    <div class="relative mx-auto max-w-8xl">
-      <Alert v-if="error" type="error" :message="error" dismissible @dismiss="error = ''"/>
+  <div class="px-4 pt-4 pb-6">
+    <Alert v-if="error" type="error" :message="error" dismissible @dismiss="error = ''" />
 
-      <div v-if="loading" class="p-6 text-center text-sm text-gray-500 bg-white rounded-lg shadow dark:bg-gray-800 dark:text-gray-400">
-        Cargando orden de trabajo...
+    <div v-if="loading" :class="[SECCION, 'flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400']">
+      <Loader2 class="w-4 h-4 animate-spin" />
+      Cargando orden de trabajo...
+    </div>
+
+    <div v-else-if="!orden" :class="[SECCION, 'text-center text-sm text-gray-500 dark:text-gray-400']">
+      Orden de trabajo no encontrada.
+    </div>
+
+    <template v-else>
+      <!-- Aviso del estado: dice en qué punto está el trabajo -->
+      <div
+        v-if="aviso"
+        class="flex items-start gap-3 p-4 mb-4 text-sm border rounded-lg"
+        :class="aviso.peligro
+          ? 'bg-red-50 border-red-200 text-red-900 dark:bg-red-900/20 dark:border-red-800/60 dark:text-red-100'
+          : 'bg-brand-50 border-brand-200 text-brand-900 dark:bg-brand-700/20 dark:border-brand-500/40 dark:text-brand-100'">
+        <component :is="estadoConfig.icon" class="w-5 h-5 mt-0.5 shrink-0" />
+        <p>
+          <span class="font-semibold">{{ aviso.titulo }}</span>
+          {{ aviso.detalle }}
+        </p>
       </div>
 
-      <div v-else-if="!orden" class="p-6 text-center text-sm text-gray-500 bg-white rounded-lg shadow dark:bg-gray-800 dark:text-gray-400">
-        Orden de trabajo no encontrada.
-      </div>
-
-      <div v-else class="grid grid-cols-1 gap-4 lg:grid-cols-4">
-        <div class="lg:col-span-3 p-6 bg-white rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
-          <div class="mb-4 p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600">
-            <div class="flex items-center gap-2 mb-4">
-              <FileText class="w-5 h-5 text-gray-900 dark:text-gray-900" />
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Información General</h3>
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-4">
+        <div class="space-y-4 lg:col-span-3">
+          <!-- Vehículo en taller: cliente, vehículo y responsables, una sola vez -->
+          <section :class="SECCION">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <h4 :class="TITULO_SECCION">
+                <Wrench class="w-4 h-4" />
+                Vehículo en taller
+              </h4>
+              <a
+                v-if="origen"
+                :href="origen.href"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-full hover:bg-gray-100 hover:text-brand-900 dark:bg-gray-700/50 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-white"
+                title="Abrir el documento del que viene esta orden">
+                <component :is="origen.icon" class="w-3.5 h-3.5" />
+                {{ origen.etiqueta }}
+                <span class="font-mono font-semibold">{{ origen.numero }}</span>
+              </a>
             </div>
 
-            <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_0.7fr_1fr]">
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+              <!-- Cliente -->
               <div class="min-w-0">
-                <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                  Cliente
-                </p>
-                <p class="truncate text-sm font-bold text-gray-900 dark:text-white">
-                  {{ cliente?.nombre || '—' }}
-                </p>
-                <div class="mt-3 space-y-1.5">
-                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                    <IdCardIcon class="w-3.5 h-3.5 shrink-0" /> Identificación:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cliente?.identificacion || '—' }}</span>
+                <p :class="ETIQUETA">Cliente</p>
+                <a v-if="clienteUrl" :href="clienteUrl" :class="[VALOR, ENLACE, 'block truncate text-base']" :title="cliente?.nombre">{{ cliente?.nombre }}</a>
+                <p v-else :class="[VALOR, 'truncate text-base']">{{ cliente?.nombre || '—' }}</p>
+                <dl class="mt-3 space-y-1.5 text-xs">
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <IdCardIcon class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Identificación:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ cliente?.identificacion || '—' }}</dd>
                   </div>
-                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                    <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cliente?.telefono || '—' }}</span>
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <Phone class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Teléfono:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ cliente?.telefono || '—' }}</dd>
                   </div>
-                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                    <Mail class="w-3.5 h-3.5 shrink-0" /> Correo:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ cliente?.email || '—' }}</span>
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <Mail class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Correo:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ cliente?.email || '—' }}</dd>
                   </div>
-                </div>
+                </dl>
               </div>
 
-              <div class="relative min-w-0">
-                <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                  Vehículo
-                </p>
-                <p class="truncate text-sm font-bold text-gray-900 dark:text-white">
-                  {{ placaDisplay || '—' }}
-                </p>
-                <div class="mt-3 space-y-1.5">
-                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                    <TagIcon class="w-3.5 h-3.5 shrink-0" /> Marca:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ vehiculo?.marca || '—' }}</span>
-                  </div>
-                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                    <Shapes class="w-3.5 h-3.5 shrink-0" /> Modelo:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ vehiculo?.modelo || '—' }}</span>
-                  </div>
-                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                    <PaintBucket class="w-3.5 h-3.5 shrink-0" /> Color:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ vehiculo?.color || '—' }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="min-w-0">
-                <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                  Asignación
-                </p>
-                <p class="truncate text-sm font-bold text-gray-900 dark:text-white">
-                  {{ orden.mecanico_nombre || 'Sin mecánico asignado' }}
-                </p>
-                <div class="mt-3 space-y-1.5">
-                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                    <Wrench class="w-3.5 h-3.5 shrink-0" /> Mecánico:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ orden.mecanico_nombre || '—' }}</span>
-                  </div>
-                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                    <ShieldCheck class="w-3.5 h-3.5 shrink-0" /> Asesor:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ orden.asesor_nombre || '—' }}</span>
-                  </div>
-                  <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                    <ClipboardList class="w-3.5 h-3.5 shrink-0" /> Taller:
-                    <span class="truncate font-bold text-gray-900 dark:text-white">{{ orden.sucursal_nombre || '—' }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700">
-            <div class="border-b border-gray-200 dark:border-gray-700">
-              <nav class="flex flex-wrap -mb-px">
+              <!-- Vehículo, con su foto en miniatura (no desplaza los datos) -->
+              <div class="relative min-w-0 md:border-s md:border-gray-200 md:ps-5 md:dark:border-gray-700">
+                <p :class="ETIQUETA">Vehículo</p>
+                <a v-if="vehiculoUrl" :href="vehiculoUrl" :class="[VALOR, ENLACE, 'block pe-20 font-mono text-base tracking-widest']">{{ placaDisplay }}</a>
+                <p v-else :class="[VALOR, 'pe-20 font-mono text-base tracking-widest']">{{ placaDisplay || '—' }}</p>
                 <button
+                  v-if="vehiculoImagenSrc"
                   type="button"
-                  class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
-                  :class="activeTab === 'resumen' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-                  @click="activeTab = 'resumen'">
-                  <FileText class="w-4 h-4" />
-                  1. Resumen
+                  title="Ampliar foto del vehículo"
+                  class="absolute top-0 end-0 w-[72px] h-12 overflow-hidden rounded-md bg-gray-100 ring-1 ring-gray-200 cursor-zoom-in dark:bg-gray-700 dark:ring-gray-600"
+                  @click="abrirFoto(vehiculoImagenSrc)">
+                  <img :src="vehiculoImagenSrc" alt="Foto del vehículo" class="w-full h-full object-cover" />
                 </button>
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
-                  :class="activeTab === 'trabajo' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-                  @click="activeTab = 'trabajo'">
-                  <Toolbox class="w-4 h-4" />
-                  2. Trabajo
-                </button>
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
-                  :class="activeTab === 'evidencia' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-                  @click="activeTab = 'evidencia'">
-                  <ImageIcon class="w-4 h-4" />
-                  3. Evidencia
-                </button>
-              </nav>
-            </div>
-
-            <!-- Resumen -->
-            <div v-show="activeTab === 'resumen'" class="p-4 space-y-6">
-              <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Tipo de trabajo</dt>
-                  <dd class="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">
-                    <TipoTrabajoBadge :tipo="orden.tipo_trabajo" size="md" />
-                  </dd>
+                <div v-else class="absolute top-0 end-0 flex items-center justify-center w-[72px] h-12 text-gray-400 bg-gray-50 border border-dashed border-gray-300 rounded-md dark:bg-gray-700/40 dark:border-gray-600" title="Sin foto del vehículo">
+                  <Car class="w-5 h-5" />
                 </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Prioridad</dt>
-                  <dd class="mt-0.5">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" :class="prioridadBadge.color">
-                      {{ prioridadLabel }}
-                    </span>
-                  </dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Estado</dt>
-                  <dd class="mt-0.5">
-                    <EstadoOrdenBadge :estado="orden.estado" :estado-display="orden.estado_display" size="sm" />
-                  </dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">N° Orden</dt>
-                  <dd class="mt-0.5 font-mono text-sm font-semibold text-gray-900 dark:text-white">{{ orden.numero_orden || '—' }}</dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Taller</dt>
-                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ orden.sucursal_nombre || '—' }}</dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Asesor</dt>
-                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ orden.asesor_nombre || '—' }}</dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Mecánico principal</dt>
-                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ orden.mecanico_nombre || '—' }}</dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de ingreso</dt>
-                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ formatDate(orden.fecha_ingreso || orden.created_at) }}</dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de entrega</dt>
-                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ formatDate(orden.fecha_entrega) }}</dd>
-                </div>
-                <div v-if="orden.estado === 'EN_ESPERA'" class="sm:col-span-2">
-                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Motivo de espera</dt>
-                  <dd class="mt-0.5 text-sm text-gray-900 dark:text-white">{{ orden.motivo_espera || '—' }}</dd>
-                </div>
-              </dl>
-            </div>
-
-            <!-- Trabajo -->
-            <div v-show="activeTab === 'trabajo'" class="p-4 space-y-8">
-              <div>
-                <h4 class="mb-4 text-md font-semibold dark:text-white">
-                  <span class="inline-flex items-center gap-2">
-                    <Toolbox class="w-5 h-5 text-gray-800 dark:text-white" />
-                    Servicios
-                  </span>
-                </h4>
-                <div v-if="!servicios.length" class="p-4 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
-                  No hay servicios de mano de obra registrados.
-                </div>
-                <div v-else class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
-                  <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-                    <thead class="bg-gray-100 dark:bg-gray-900">
-                      <tr>
-                        <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Servicio</th>
-                        <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Horas</th>
-                        <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">P. unitario</th>
-                        <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Descuento</th>
-                        <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">IVA</th>
-                        <th class="p-3 text-xs font-medium text-right text-gray-700 uppercase dark:text-gray-300">Neto</th>
-                      </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-                      <tr v-for="servicio in servicios" :key="servicio.id">
-                        <td class="p-3 text-sm text-gray-900 dark:text-white">{{ servicio.descripcion || '—' }}</td>
-                        <td class="p-3 text-sm text-gray-900 dark:text-white">{{ formatoHoras(servicio.horas_aplicadas) }}</td>
-                        <td class="p-3 text-sm text-gray-900 dark:text-white">{{ formatNumber(servicio.precio_unitario) }}</td>
-                        <td class="p-3 text-sm text-gray-900 dark:text-white">{{ formatNumber(servicio.descuento) }}</td>
-                        <td class="p-3 text-sm text-gray-900 dark:text-white">{{ ivaLabel(servicio.iva_porcentaje) }}</td>
-                        <td class="p-3 text-sm font-semibold text-right text-gray-900 dark:text-white">{{ formatNumber(servicio.subtotal) }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div>
-                <h4 class="mb-4 text-md font-semibold dark:text-white">
-                  <span class="inline-flex items-center gap-2">
-                    <Package class="w-5 h-5 text-gray-800 dark:text-white" />
-                    Repuestos
-                  </span>
-                </h4>
-                <div v-if="!repuestos.length" class="p-4 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
-                  No hay repuestos o materiales registrados.
-                </div>
-                <div v-else class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
-                  <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-                    <thead class="bg-gray-100 dark:bg-gray-900">
-                      <tr>
-                        <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Código</th>
-                        <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Repuesto</th>
-                        <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Cant.</th>
-                        <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">P. unitario</th>
-                        <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">Descuento</th>
-                        <th class="p-3 text-xs font-medium text-left text-gray-700 uppercase dark:text-gray-300">IVA</th>
-                        <th class="p-3 text-xs font-medium text-right text-gray-700 uppercase dark:text-gray-300">Neto</th>
-                      </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-                      <tr v-for="repuesto in repuestos" :key="repuesto.id">
-                        <td class="p-3 font-mono text-xs text-gray-500 dark:text-gray-400">{{ repuesto.codigo_repuesto || '—' }}</td>
-                        <td class="p-3 text-sm text-gray-900 dark:text-white">{{ repuesto.descripcion || '—' }}</td>
-                        <td class="p-3 text-sm text-gray-900 dark:text-white">{{ repuesto.cantidad ?? '—' }}</td>
-                        <td class="p-3 text-sm text-gray-900 dark:text-white">{{ formatNumber(repuesto.precio_unitario) }}</td>
-                        <td class="p-3 text-sm text-gray-900 dark:text-white">{{ formatNumber(repuesto.descuento) }}</td>
-                        <td class="p-3 text-sm text-gray-900 dark:text-white">{{ ivaLabel(repuesto.iva_porcentaje) }}</td>
-                        <td class="p-3 text-sm font-semibold text-right text-gray-900 dark:text-white">{{ formatNumber(repuesto.subtotal) }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <!-- Evidencia -->
-            <div v-show="activeTab === 'evidencia'" class="p-4 space-y-8">
-              <div>
-                <h5 class="mb-3 text-base font-semibold text-gray-800 dark:text-gray-200">Evidencia de la Orden</h5>
-                <div v-if="!fotosOrden.length" class="p-4 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
-                  No se registraron fotos de la orden.
-                </div>
-                <div v-else class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                  <figure
-                    v-for="foto in fotosOrden"
-                    :key="foto.id"
-                    class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-600"
-                  >
-                    <button type="button" class="block w-full cursor-zoom-in" @click="abrirFoto(resolveMediaUrl(foto.imagen))">
-                      <img :src="resolveMediaUrl(foto.miniatura || foto.imagen)" loading="lazy" :alt="foto.descripcion || `Foto ${foto.id}`" class="w-full h-40 object-cover hover:opacity-90" />
-                    </button>
-                    <figcaption v-if="foto.descripcion" class="px-3 py-2 text-xs text-gray-600 dark:text-gray-300">{{ foto.descripcion }}</figcaption>
-                  </figure>
-                </div>
-              </div>
-
-              <div v-if="recepcionesConFotos.length">
-                <h4 class="mb-4 text-md font-semibold dark:text-white">
-                  <span class="inline-flex items-center gap-2">
-                    <Camera class="w-5 h-5 text-gray-800 dark:text-white" />
-                    Recepción del Vehículo
-                  </span>
-                </h4>
-                <div v-for="recepcion in recepcionesConFotos" :key="recepcion.id" class="mb-5 last:mb-0">
-                  <h5 class="mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                    {{ recepcion.numero_recepcion || `Recepción ${referenciaCorta(recepcion.id)}` }}
-                  </h5>
-                  <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                    <figure
-                      v-for="foto in recepcion.fotos"
-                      :key="foto.id"
-                      class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden"
-                    >
-                      <button type="button" class="block w-full cursor-zoom-in" @click="abrirFoto(resolveMediaUrl(foto.imagen))">
-                        <img :src="resolveMediaUrl(foto.miniatura || foto.imagen)" loading="lazy" :alt="foto.tipo_vista_display || `Foto ${foto.id}`" class="w-full h-40 object-cover hover:opacity-90" />
-                      </button>
-                      <figcaption v-if="foto.tipo_vista_display || foto.descripcion" class="px-3 py-2 text-xs text-gray-600 dark:text-gray-300">
-                        {{ foto.tipo_vista_display || foto.descripcion }}
-                      </figcaption>
-                    </figure>
+                <dl class="mt-3 space-y-1.5 text-xs">
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <TagIcon class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Marca:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ vehiculo?.marca || '—' }}</dd>
                   </div>
-                </div>
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <Shapes class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Modelo:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ vehiculo?.modelo || '—' }}<template v-if="vehiculo?.anio"> · {{ vehiculo.anio }}</template></dd>
+                  </div>
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <PaintBucket class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Color:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ vehiculo?.color || '—' }}</dd>
+                  </div>
+                </dl>
               </div>
 
-              <div v-if="inspeccion">
-                <h4 class="mb-4 text-md font-semibold dark:text-white">
-                  <span class="inline-flex items-center gap-2">
-                    <ImageIcon class="w-5 h-5 text-gray-800 dark:text-white" />
-                    Inspección de Origen
-                    <a
-                      :href="`/crud/inspecciones/ver/?id=${inspeccion.id}`"
-                      class="text-xs font-medium text-primary-600 hover:underline dark:text-primary-400"
-                    >
-                      {{ inspeccion.numero_inspeccion || referenciaCorta(inspeccion.id) }}
-                    </a>
-                  </span>
-                </h4>
-                <div v-if="!fotosInspeccion.length" class="p-4 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
-                  No se registraron fotos de la inspección.
-                </div>
-                <div v-else class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                  <figure
-                    v-for="foto in fotosInspeccion"
-                    :key="foto.id"
-                    class="rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden"
-                  >
-                    <button type="button" class="block w-full cursor-zoom-in" @click="abrirFoto(resolveMediaUrl(foto.imagen))">
-                      <img :src="resolveMediaUrl(foto.miniatura || foto.imagen)" loading="lazy" :alt="foto.descripcion || `Foto ${foto.id}`" class="w-full h-40 object-cover hover:opacity-90" />
-                    </button>
-                    <figcaption v-if="foto.descripcion" class="px-3 py-2 text-xs text-gray-600 dark:text-gray-300">{{ foto.descripcion }}</figcaption>
-                  </figure>
-                </div>
+              <!-- Responsables -->
+              <div class="min-w-0 md:border-s md:border-gray-200 md:ps-5 md:dark:border-gray-700">
+                <p :class="ETIQUETA">Mecánico responsable</p>
+                <p :class="[VALOR, 'truncate text-base']">{{ orden.mecanico_nombre || 'Sin asignar' }}</p>
+                <dl class="mt-3 space-y-1.5 text-xs">
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <UserRound class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Asesor:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ orden.asesor_nombre || '—' }}</dd>
+                  </div>
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <Building2 class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Taller:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ orden.sucursal_nombre || '—' }}</dd>
+                  </div>
+                </dl>
               </div>
             </div>
-          </div>
 
-          <!-- Observaciones y Montos (siempre visibles, fuera de pestañas) -->
-          <div class="mt-4">
-            <div class="p-4 grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <!-- Columna izquierda: Observaciones -->
-              <div class="p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600">
-                <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Observaciones</p>
-                <div class="p-2.5 text-sm whitespace-pre-line rounded-lg bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-400">
-                  {{ orden.observaciones || '—' }}
-                </div>
-              </div>
-
-              <!-- Columna derecha: Montos -->
-              <div class="p-5 space-y-2 text-sm rounded-lg border border-gray-200 dark:bg-gray-700/40 dark:border-gray-600/60">
-                <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                  <span>Subtotal servicios</span>
-                  <span class="font-medium tabular-nums">$ {{ formatNumber(orden.subtotal_servicios) }}</span>
-                </div>
-                <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                  <span>Subtotal repuestos</span>
-                  <span class="font-medium tabular-nums">$ {{ formatNumber(orden.subtotal_repuestos) }}</span>
-                </div>
-                <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                  <span>Subtotal neto</span>
-                  <span class="font-medium tabular-nums">$ {{ formatNumber(orden.subtotal_neto) }}</span>
-                </div>
-                <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                  <span>Descuento total</span>
-                  <span class="font-medium tabular-nums text-accent-600 dark:text-accent-400">$ {{ formatNumber(orden.descuento) }}</span>
-                </div>
-                <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                  <span>Subtotal base 0%</span>
-                  <span class="font-medium tabular-nums">$ {{ formatNumber(orden.subtotal_base_0) }}</span>
-                </div>
-                <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                  <span>Subtotal base gravada</span>
-                  <span class="font-medium tabular-nums">$ {{ formatNumber(orden.subtotal_base_gravada) }}</span>
-                </div>
-                <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                  <span>IVA total</span>
-                  <span class="font-medium tabular-nums">$ {{ formatNumber(orden.monto_iva) }}</span>
-                </div>
-                <div class="flex items-center justify-between pt-3 mt-3 text-base font-bold border-t border-gray-200 text-gray-900 dark:border-gray-600 dark:text-white">
-                  <span>Total</span>
-                  <span class="tabular-nums">$ {{ formatNumber(orden.total) }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex items-center justify-end gap-3 mt-4">
-            <button
-              type="button"
-              class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="activeTabIndex <= 0"
-              @click="goToTab(-1)"
-            >
-              <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12l4-4m-4 4 4 4"/>
-              </svg>
-              Anterior
-            </button>
-            <button
-              type="button"
-              class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="activeTabIndex >= TAB_ORDER.length - 1"
-              @click="goToTab(1)"
-            >
-              Siguiente
-              <svg class="w-6 h-6 text-gray-800 dark:text-white ml-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 12H5m14 0-4 4m4-4-4-4"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- Columna derecha -->
-        <div class="lg:col-span-1 space-y-4">
-          <!-- Resumen de la orden -->
-          <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
-            <div class="flex items-center gap-2 mb-3">
-              <ClipboardList class="w-5 h-5 text-gray-900 dark:text-gray-900" />
-              <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Resumen de la orden</h2>
-            </div>
-            <dl class="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+            <!-- Planificación de la orden -->
+            <dl class="grid grid-cols-2 gap-4 pt-4 mt-5 border-t border-gray-100 xl:grid-cols-4 dark:border-gray-700">
               <div>
-                <dt class="font-medium text-gray-700 dark:text-gray-300">N° Orden</dt>
-                <dd class="font-mono font-medium text-sm text-black dark:text-white">{{ numeroOrden }}</dd>
+                <dt :class="[ETIQUETA, 'inline-flex items-center gap-1.5']"><ClipboardList class="w-3.5 h-3.5" /> Tipo de trabajo</dt>
+                <dd class="mt-0.5"><TipoTrabajoBadge :tipo="orden.tipo_trabajo" size="sm" /></dd>
               </div>
               <div>
-                <dt class="font-medium text-gray-700 dark:text-gray-300">Cliente</dt>
-                <dd class="font-medium text-sm text-black dark:text-white">{{ cliente?.nombre || '—' }}</dd>
+                <dt :class="[ETIQUETA, 'inline-flex items-center gap-1.5']"><Gauge class="w-3.5 h-3.5" /> Kilometraje</dt>
+                <dd :class="[VALOR, 'tabular-nums']">{{ kilometrajeLabel }}</dd>
               </div>
               <div>
-                <dt class="font-medium text-gray-700 dark:text-gray-300">Vehículo</dt>
-                <dd class="font-medium text-sm text-black dark:text-white">{{ placaDisplay || '—' }}</dd>
+                <dt :class="[ETIQUETA, 'inline-flex items-center gap-1.5']"><CalendarClock class="w-3.5 h-3.5" /> Ingreso</dt>
+                <dd :class="[VALOR, 'tabular-nums']">{{ formatDate(orden.fecha_ingreso || orden.created_at) }}</dd>
               </div>
               <div>
-                <dt class="font-medium text-gray-700 dark:text-gray-300">Mecánico</dt>
-                <dd class="font-medium text-sm text-black dark:text-white">{{ orden.mecanico_nombre || '—' }}</dd>
-              </div>
-              <div>
-                <dt class="font-medium text-gray-700 dark:text-gray-300">Tipo</dt>
-                <dd class="font-medium text-sm text-black dark:text-white"><TipoTrabajoBadge :tipo="orden.tipo_trabajo" size="sm" /></dd>
-              </div>
-              <div>
-                <dt class="font-medium text-gray-700 dark:text-gray-300">Prioridad</dt>
-                <dd class="font-medium text-sm text-black dark:text-white">{{ prioridadLabel }}</dd>
-              </div>
-              <div>
-                <dt class="font-medium text-gray-700 dark:text-gray-300">Estado</dt>
-                <dd>
-                  <EstadoOrdenBadge :estado="orden.estado" :estado-display="orden.estado_display" size="sm" />
-                </dd>
-              </div>
-              <div>
-                <dt class="font-medium text-gray-700 dark:text-gray-300">Total</dt>
-                <dd class="font-semibold text-sm text-black dark:text-white">{{ formatNumber(orden.total) }} USD</dd>
+                <dt :class="[ETIQUETA, 'inline-flex items-center gap-1.5']">
+                  <CalendarCheck class="w-3.5 h-3.5" />
+                  {{ entregada ? 'Entregada' : 'Entrega comprometida' }}
+                </dt>
+                <dd :class="[VALOR, 'tabular-nums']">{{ formatDate(orden.fecha_entrega) }}</dd>
               </div>
             </dl>
-          </div>
+          </section>
 
-          <!-- Vehículo -->
-          <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
-            <div class="flex items-center gap-2 mb-3">
-              <Car class="w-5 h-5 text-gray-900 dark:text-gray-900" />
-              <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Vehículo</h2>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <button
-                v-if="vehiculoImagenSrc"
-                type="button"
-                title="Ver foto del vehículo"
-                class="h-full min-h-40 overflow-hidden rounded-lg bg-gray-100 cursor-zoom-in dark:bg-gray-700"
-                @click="abrirFoto(vehiculoImagenSrc)"
-              >
-                <img :src="vehiculoImagenSrc" alt="Foto del vehículo" class="h-full w-full object-contain" />
-              </button>
-              <div v-else class="h-full min-h-40 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-xs text-gray-400 dark:bg-gray-700 dark:border-gray-600">
-                <div class="flex flex-col items-center gap-1.5 text-center">
-                  <Camera class="w-6 h-6" />
-                  <span>Foto del vehículo</span>
-                </div>
+          <div class="bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+            <!-- Pasos: Trabajo y Evidencia -->
+            <nav ref="pasosRef" aria-label="Secciones de la orden de trabajo" class="scroll-mt-20 border-b border-gray-200 dark:border-gray-700">
+              <ol class="grid grid-cols-2" role="tablist">
+                <li v-for="(paso, index) in PASOS" :key="paso.key">
+                  <button
+                    type="button"
+                    role="tab"
+                    :aria-selected="activeTab === paso.key"
+                    class="flex w-full h-full flex-col items-center gap-1.5 px-2 py-3 -mb-px text-center border-b-2 transition-colors sm:flex-row sm:gap-3 sm:px-4 sm:text-left"
+                    :class="activeTab === paso.key
+                      ? 'border-brand-900 bg-brand-50/50 dark:border-brand-300 dark:bg-gray-700/40'
+                      : 'border-transparent hover:bg-gray-50 dark:hover:bg-gray-700/30'"
+                    @click="irAPaso(paso.key)">
+                    <span class="inline-flex items-center justify-center w-8 h-8 shrink-0 rounded-full text-sm font-semibold" :class="pasoCirculoClass(paso.key)">
+                      <Check v-if="estadoPasos[paso.key] === 'completo'" class="w-4 h-4" />
+                      <template v-else>{{ index + 1 }}</template>
+                    </span>
+                    <span class="min-w-0">
+                      <span class="block text-xs font-semibold sm:text-sm" :class="activeTab === paso.key ? 'text-brand-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'">
+                        {{ paso.label }}
+                      </span>
+                      <span class="hidden text-xs truncate sm:block text-gray-500 dark:text-gray-400">{{ resumenPaso[paso.key] }}</span>
+                    </span>
+                  </button>
+                </li>
+              </ol>
+            </nav>
+
+            <div class="p-4 sm:p-5 space-y-4 bg-gray-50/60 dark:bg-gray-900/30">
+              <!-- 1. Trabajo -->
+              <div v-show="activeTab === 'trabajo'" class="space-y-4">
+                <!-- Lo que diagnosticó la inspección -->
+                <section v-if="inspeccion?.diagnostico_tecnico || inspeccion?.recomendaciones" class="border border-gray-200 rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700">
+                  <button
+                    type="button"
+                    class="flex items-center justify-between w-full gap-2 px-4 py-3 text-left sm:px-5"
+                    :aria-expanded="mostrarDiagnostico"
+                    @click="mostrarDiagnostico = !mostrarDiagnostico">
+                    <span :class="TITULO_SECCION">
+                      <Stethoscope class="w-4 h-4" />
+                      Diagnóstico a resolver
+                    </span>
+                    <span class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ mostrarDiagnostico ? 'Ocultar' : 'Ver' }}</span>
+                  </button>
+                  <div v-show="mostrarDiagnostico" class="grid grid-cols-1 gap-4 px-4 pb-4 text-sm sm:px-5 md:grid-cols-2">
+                    <div>
+                      <p class="mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">Diagnóstico</p>
+                      <p class="text-gray-900 whitespace-pre-line dark:text-white">{{ inspeccion.diagnostico_tecnico || '—' }}</p>
+                      <div v-if="dtcLista.length" class="flex flex-wrap gap-1.5 mt-2">
+                        <span
+                          v-for="codigo in dtcLista"
+                          :key="codigo"
+                          class="px-2 py-0.5 font-mono text-xs font-semibold rounded bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:ring-amber-700/60">
+                          {{ codigo }}
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <p class="mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">Recomendaciones</p>
+                      <p class="text-gray-900 whitespace-pre-line dark:text-white">{{ inspeccion.recomendaciones || '—' }}</p>
+                      <a v-if="inspeccionHref" :href="inspeccionHref" class="inline-flex items-center gap-1 mt-2 text-xs font-medium text-brand-700 hover:underline dark:text-brand-200">
+                        Ver inspección <span class="font-mono">{{ inspeccion.numero_inspeccion }}</span>
+                      </a>
+                    </div>
+                  </div>
+                </section>
+
+                <section v-for="grupo in grupos" :key="grupo.key" :class="SECCION">
+                  <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <h4 :class="TITULO_SECCION">
+                      <component :is="grupo.icon" class="w-4 h-4" />
+                      {{ grupo.titulo }}
+                      <span :class="CONTADOR">{{ grupo.filas.length }}</span>
+                    </h4>
+                    <span v-if="grupo.key === 'svc' && grupo.filas.length" class="text-xs text-gray-500 dark:text-gray-400">
+                      <span class="font-semibold text-gray-900 dark:text-white tabular-nums">{{ serviciosHechos }}/{{ grupo.filas.length }}</span> hechos
+                    </span>
+                  </div>
+                  <div v-if="!grupo.filas.length" class="px-3 py-6 text-sm text-center text-gray-500 border border-dashed border-gray-300 rounded-lg dark:text-gray-400 dark:border-gray-600">
+                    {{ grupo.vacio }}
+                  </div>
+                  <div v-else class="overflow-hidden border border-gray-200 rounded-lg dark:border-gray-700">
+                    <table class="w-full text-sm">
+                      <thead class="text-xs text-gray-500 uppercase bg-gray-50 dark:bg-gray-700/50 dark:text-gray-400">
+                        <tr>
+                          <th v-if="grupo.key === 'svc'" class="w-12 px-2 py-2 font-medium text-center">Hecho</th>
+                          <th class="px-3 py-2 font-medium text-left">{{ grupo.singular }}</th>
+                          <th class="hidden w-20 px-2 py-2 font-medium text-right sm:table-cell">{{ grupo.columna }}</th>
+                          <th class="hidden w-28 px-2 py-2 font-medium text-right sm:table-cell">P. unitario</th>
+                          <th class="hidden w-24 px-2 py-2 font-medium text-right md:table-cell">Desc.</th>
+                          <th class="hidden w-16 px-2 py-2 font-medium text-right md:table-cell">IVA</th>
+                          <th class="w-24 px-3 py-2 font-medium text-right">Neto</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                        <tr
+                          v-for="fila in grupo.filas"
+                          :key="fila.id"
+                          :class="fila.completado ? 'bg-green-50/60 dark:bg-green-900/10' : ''">
+                          <td v-if="grupo.key === 'svc'" class="px-2 py-2.5 text-center">
+                            <span
+                              class="inline-flex items-center justify-center w-5 h-5 rounded-full"
+                              :class="fila.completado ? 'bg-green-600 text-white dark:bg-green-500' : 'border-2 border-dashed border-gray-300 dark:border-gray-500'"
+                              :title="fila.completado ? 'Hecho' : 'Pendiente'">
+                              <Check v-if="fila.completado" class="w-3 h-3" />
+                              <span class="sr-only">{{ fila.completado ? 'Hecho' : 'Pendiente' }}</span>
+                            </span>
+                          </td>
+                          <td class="px-3 py-2.5 min-w-0">
+                            <p class="text-gray-900 dark:text-white">{{ fila.descripcion || '—' }}</p>
+                            <!-- En pantallas angostas, cantidad y precio van bajo la descripción -->
+                            <p class="mt-0.5 text-xs text-gray-500 tabular-nums sm:hidden dark:text-gray-400">
+                              {{ grupo.cantidad(fila) }} × $ {{ formatNumber(fila.precio_unitario) }} · IVA {{ ivaLabel(fila.iva_porcentaje) }}
+                            </p>
+                          </td>
+                          <td class="hidden px-2 py-2.5 text-right text-gray-700 tabular-nums sm:table-cell dark:text-gray-300">{{ grupo.cantidad(fila) }}</td>
+                          <td class="hidden px-2 py-2.5 text-right text-gray-700 tabular-nums sm:table-cell dark:text-gray-300">$ {{ formatNumber(fila.precio_unitario) }}</td>
+                          <td class="hidden px-2 py-2.5 text-right text-gray-700 tabular-nums md:table-cell dark:text-gray-300">{{ Number(fila.descuento) ? `$ ${formatNumber(fila.descuento)}` : '—' }}</td>
+                          <td class="hidden px-2 py-2.5 text-right text-gray-700 tabular-nums md:table-cell dark:text-gray-300">{{ ivaLabel(fila.iva_porcentaje) }}</td>
+                          <td class="px-3 py-2.5 font-medium text-right text-gray-900 tabular-nums whitespace-nowrap dark:text-white">$ {{ formatNumber(fila.subtotal) }}</td>
+                        </tr>
+                      </tbody>
+                      <tfoot class="border-t border-gray-200 dark:border-gray-700">
+                        <tr>
+                          <td colspan="7" class="px-3 py-2 text-xs text-right text-gray-500 dark:text-gray-400">
+                            Subtotal {{ grupo.titulo.toLowerCase() }}:
+                            <span class="ms-1 text-sm font-semibold text-gray-900 tabular-nums dark:text-white">$ {{ formatNumber(grupo.subtotal) }}</span>
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </section>
               </div>
-              <dl class="space-y-2 text-xs text-gray-600 dark:text-gray-400">
-                <div>
-                  <dt class="font-medium text-gray-700 dark:text-gray-300">Marca</dt>
-                  <dd class="font-medium text-sm text-black dark:text-white">{{ vehiculo?.marca || '—' }}</dd>
-                </div>
-                <div>
-                  <dt class="font-medium text-gray-700 dark:text-gray-300">Modelo</dt>
-                  <dd class="font-medium text-sm text-black dark:text-white">{{ vehiculo?.modelo || '—' }}</dd>
-                </div>
-                <div>
-                  <dt class="font-medium text-gray-700 dark:text-gray-300">Año</dt>
-                  <dd class="font-medium text-sm text-black dark:text-white">{{ vehiculo?.anio || '—' }}</dd>
-                </div>
-                <div>
-                  <dt class="font-medium text-gray-700 dark:text-gray-300">Color</dt>
-                  <dd class="font-medium text-sm text-black dark:text-white">{{ vehiculo?.color || '—' }}</dd>
-                </div>
-                <div>
-                  <dt class="font-medium text-gray-700 dark:text-gray-300">Kilometraje</dt>
-                  <dd class="font-medium text-sm text-black dark:text-white">{{ orden?.kilometraje != null ? `${Number(orden.kilometraje).toLocaleString('es-EC')} km` : '—' }}</dd>
-                </div>
-              </dl>
-            </div>
-          </div>
 
-          <!-- Relaciones del flujo -->
-          <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
-            <div class="flex items-center gap-2 mb-1">
-              <Workflow class="w-5 h-5 text-gray-900 dark:text-gray-900" />
-              <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Relaciones del flujo</h2>
+              <!-- 2. Evidencia -->
+              <div v-show="activeTab === 'evidencia'" class="space-y-4">
+                <section :class="SECCION">
+                  <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                    <h4 :class="TITULO_SECCION">
+                      <Camera class="w-4 h-4" />
+                      Evidencia del trabajo
+                    </h4>
+                    <span class="text-xs tabular-nums text-gray-500 dark:text-gray-400">{{ plural(fotosOrden.length, 'foto', 'fotos') }}</span>
+                  </div>
+                  <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+                    Piezas cambiadas, piezas retiradas y mediciones finales.
+                  </p>
+                  <div v-if="!fotosOrden.length" class="flex flex-col items-center justify-center gap-1.5 py-8 text-sm text-gray-500 border border-dashed border-gray-300 rounded-lg dark:text-gray-400 dark:border-gray-600">
+                    <Camera class="w-5 h-5 text-gray-400" />
+                    No se registraron fotos del trabajo.
+                  </div>
+                  <div v-else class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+                    <figure v-for="foto in fotosOrden" :key="foto.id" class="overflow-hidden bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700">
+                      <button type="button" class="block w-full cursor-zoom-in" title="Ampliar foto" @click="abrirFoto(resolveMediaUrl(foto.imagen))">
+                        <img :src="resolveMediaUrl(foto.miniatura || foto.imagen)" loading="lazy" :alt="foto.descripcion || 'Foto del trabajo'" class="w-full h-36 object-cover hover:opacity-90" />
+                      </button>
+                      <figcaption v-if="foto.descripcion" class="px-3 py-2 text-xs text-gray-600 dark:text-gray-300">{{ foto.descripcion }}</figcaption>
+                    </figure>
+                  </div>
+                </section>
+
+                <section :class="SECCION">
+                  <h4 :class="[TITULO_SECCION, 'mb-1']">
+                    <NotebookPen class="w-4 h-4" />
+                    Notas para el cliente
+                  </h4>
+                  <p class="mb-3 text-sm text-gray-500 dark:text-gray-400">Qué se hizo, hallazgos adicionales y recomendaciones para la próxima visita.</p>
+                  <p v-if="tieneNotas" class="p-3 text-sm text-gray-900 whitespace-pre-line rounded-lg bg-gray-50 dark:bg-gray-700/50 dark:text-white">{{ orden.observaciones }}</p>
+                  <p v-else class="text-sm italic text-gray-400 dark:text-gray-500">Sin notas registradas.</p>
+                </section>
+
+                <!-- Fotos de los documentos de origen, como referencia -->
+                <section v-if="recepcionesConFotos.length || fotosInspeccion.length" :class="SECCION">
+                  <h4 :class="[TITULO_SECCION, 'mb-1']">
+                    <Workflow class="w-4 h-4" />
+                    Evidencia de origen
+                  </h4>
+                  <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">Cómo llegó el vehículo y qué encontró la inspección.</p>
+                  <div class="space-y-5">
+                    <div v-for="recepcion in recepcionesConFotos" :key="recepcion.id">
+                      <p class="flex items-center gap-2 mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">
+                        Recepción
+                        <a :href="`/crud/recepciones/ver/?id=${encodeURIComponent(recepcion.id)}`" class="font-mono font-semibold text-brand-700 hover:underline dark:text-brand-200">
+                          {{ recepcion.numero_recepcion || referenciaCorta(recepcion.id) }}
+                        </a>
+                      </p>
+                      <div class="grid grid-cols-3 gap-2 sm:grid-cols-4 xl:grid-cols-6">
+                        <figure v-for="foto in recepcion.fotos" :key="foto.id" class="overflow-hidden border border-gray-200 rounded-lg dark:border-gray-700">
+                          <button type="button" class="block w-full cursor-zoom-in" title="Ampliar foto" @click="abrirFoto(resolveMediaUrl(foto.imagen))">
+                            <img :src="resolveMediaUrl(foto.miniatura || foto.imagen)" loading="lazy" :alt="foto.tipo_vista_display || 'Foto de la recepción'" class="w-full h-20 object-cover hover:opacity-90" />
+                          </button>
+                          <figcaption v-if="foto.tipo_vista_display || foto.descripcion" class="px-2 py-1 text-[11px] truncate text-gray-600 dark:text-gray-300">
+                            {{ foto.tipo_vista_display || foto.descripcion }}
+                          </figcaption>
+                        </figure>
+                      </div>
+                    </div>
+                    <div v-if="fotosInspeccion.length">
+                      <p class="flex items-center gap-2 mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">
+                        Inspección
+                        <a :href="inspeccionHref" class="font-mono font-semibold text-brand-700 hover:underline dark:text-brand-200">
+                          {{ inspeccion.numero_inspeccion || referenciaCorta(inspeccion.id) }}
+                        </a>
+                      </p>
+                      <div class="grid grid-cols-3 gap-2 sm:grid-cols-4 xl:grid-cols-6">
+                        <figure v-for="foto in fotosInspeccion" :key="foto.id" class="overflow-hidden border border-gray-200 rounded-lg dark:border-gray-700">
+                          <button type="button" class="block w-full cursor-zoom-in" title="Ampliar foto" @click="abrirFoto(resolveMediaUrl(foto.imagen))">
+                            <img :src="resolveMediaUrl(foto.miniatura || foto.imagen)" loading="lazy" :alt="foto.descripcion || 'Foto de la inspección'" class="w-full h-20 object-cover hover:opacity-90" />
+                          </button>
+                          <figcaption v-if="foto.descripcion" class="px-2 py-1 text-[11px] truncate text-gray-600 dark:text-gray-300" :title="foto.descripcion">{{ foto.descripcion }}</figcaption>
+                        </figure>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              </div>
             </div>
-            <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
-              Recepción, inspección y cotización que originaron esta orden.
-            </p>
-            <RelacionesFlujo :pasos="relacionesOrden" />
+
+            <!-- Navegación entre pasos -->
+            <div class="flex items-center justify-between gap-3 px-4 py-3 border-t border-gray-200 sm:px-5 dark:border-gray-700">
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700"
+                :class="activeTabIndex <= 0 ? 'invisible' : ''"
+                @click="irAPaso(PASOS[activeTabIndex - 1].key)">
+                <ArrowLeft class="w-4 h-4" />
+                {{ PASOS[activeTabIndex - 1]?.label || 'Anterior' }}
+              </button>
+              <span class="hidden text-xs text-gray-500 sm:block dark:text-gray-400">Sección {{ activeTabIndex + 1 }} de {{ PASOS.length }}</span>
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-brand-900 bg-white border border-brand-900 rounded-lg hover:bg-brand-50 focus:ring-4 focus:ring-brand-200 dark:bg-gray-800 dark:text-brand-200 dark:border-brand-300 dark:hover:bg-gray-700 dark:focus:ring-brand-700"
+                :class="activeTabIndex >= PASOS.length - 1 ? 'invisible' : ''"
+                @click="irAPaso(PASOS[activeTabIndex + 1].key)">
+                {{ PASOS[activeTabIndex + 1]?.label || 'Siguiente' }}
+                <ArrowRight class="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
+
+        <aside class="space-y-4 lg:col-span-1">
+          <!-- Avance de la ejecución -->
+          <section :class="SECCION">
+            <h4 :class="[TITULO_SECCION, 'mb-3']">
+              <ListChecks class="w-4 h-4" />
+              Avance
+            </h4>
+            <div class="flex items-center justify-between mb-1.5 text-xs text-gray-500 dark:text-gray-400">
+              <span>{{ requisitosCumplidos }} de {{ requisitos.length }} requisitos</span>
+              <span class="font-semibold text-gray-900 dark:text-white tabular-nums">{{ avancePorcentaje }}%</span>
+            </div>
+            <div class="w-full h-2 bg-gray-200 rounded-full dark:bg-gray-700">
+              <div
+                class="h-2 rounded-full"
+                :class="avancePorcentaje === 100 ? 'bg-green-600 dark:bg-green-500' : 'bg-brand-900 dark:bg-brand-300'"
+                :style="{ width: `${avancePorcentaje}%` }"></div>
+            </div>
+            <ul class="mt-3 -mx-2 space-y-0.5">
+              <li v-for="req in requisitos" :key="req.key">
+                <button type="button" class="flex w-full items-center gap-2.5 px-2 py-1.5 text-sm text-left rounded-md hover:bg-gray-50 dark:hover:bg-gray-700" @click="irARequisito(req)">
+                  <span
+                    class="inline-flex items-center justify-center w-5 h-5 shrink-0 rounded-full"
+                    :class="req.ok ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' : 'border-2 border-dashed border-gray-300 dark:border-gray-500'">
+                    <Check v-if="req.ok" class="w-3 h-3" />
+                  </span>
+                  <span class="flex-1 min-w-0 truncate" :class="req.ok ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-white'">{{ req.label }}</span>
+                </button>
+              </li>
+            </ul>
+
+            <p class="mt-4 mb-2 text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">Registrado</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                v-for="h in registrado"
+                :key="h.key"
+                type="button"
+                class="flex flex-col items-start px-3 py-2 text-left border border-gray-200 rounded-lg hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
+                @click="irAPaso(h.paso)">
+                <span class="text-lg font-semibold leading-tight tabular-nums" :class="Number(h.valor) ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'">{{ h.valor }}</span>
+                <span class="text-xs text-gray-500 truncate max-w-full dark:text-gray-400">{{ h.label }}</span>
+              </button>
+            </div>
+          </section>
+
+          <!-- Valor de la orden -->
+          <section :class="SECCION">
+            <h4 :class="[TITULO_SECCION, 'mb-3']">
+              <ReceiptText class="w-4 h-4" />
+              Valor de la orden
+            </h4>
+            <dl class="space-y-1.5 text-sm">
+              <div class="flex justify-between gap-2 text-gray-600 dark:text-gray-300">
+                <dt>Mano de obra</dt>
+                <dd class="font-medium tabular-nums">$ {{ formatNumber(orden.subtotal_servicios) }}</dd>
+              </div>
+              <div class="flex justify-between gap-2 text-gray-600 dark:text-gray-300">
+                <dt>Repuestos</dt>
+                <dd class="font-medium tabular-nums">$ {{ formatNumber(orden.subtotal_repuestos) }}</dd>
+              </div>
+              <div v-if="descuento" class="flex justify-between gap-2 text-gray-600 dark:text-gray-300">
+                <dt>Descuento</dt>
+                <dd class="font-medium tabular-nums">− $ {{ formatNumber(descuento) }}</dd>
+              </div>
+              <div class="flex justify-between gap-2 pt-1.5 border-t border-gray-100 text-gray-600 dark:border-gray-700 dark:text-gray-300">
+                <dt>Base 0%</dt>
+                <dd class="font-medium tabular-nums">$ {{ formatNumber(orden.subtotal_base_0) }}</dd>
+              </div>
+              <div class="flex justify-between gap-2 text-gray-600 dark:text-gray-300">
+                <dt>Base gravada</dt>
+                <dd class="font-medium tabular-nums">$ {{ formatNumber(orden.subtotal_base_gravada) }}</dd>
+              </div>
+              <div class="flex justify-between gap-2 text-gray-600 dark:text-gray-300">
+                <dt>IVA</dt>
+                <dd class="font-medium tabular-nums">$ {{ formatNumber(orden.monto_iva) }}</dd>
+              </div>
+            </dl>
+            <div class="flex items-baseline justify-between gap-2 pt-3 mt-3 border-t border-gray-200 dark:border-gray-700">
+              <span class="text-sm font-semibold text-gray-900 dark:text-white">Total</span>
+              <span class="text-xl font-bold text-gray-900 tabular-nums dark:text-white">$ {{ formatNumber(orden.total) }}</span>
+            </div>
+          </section>
+
+          <!-- Relaciones del flujo -->
+          <section :class="SECCION">
+            <h4 :class="[TITULO_SECCION, 'mb-1']">
+              <Workflow class="w-4 h-4" />
+              Relaciones del flujo
+            </h4>
+            <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">Recepción, inspección y cotización que originaron esta orden.</p>
+            <RelacionesFlujo :pasos="relacionesOrden" />
+          </section>
+        </aside>
       </div>
-    </div>
+    </template>
   </div>
 
-  <div
-    v-if="showImageModal"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-    @click="cerrarFoto"
-  >
-    <div class="relative max-h-[90vh] max-w-[90vw] overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl" @click.stop>
+  <!-- Foto ampliada -->
+  <div v-if="showImageModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70" @click="cerrarFoto">
+    <div class="relative max-h-[90vh] max-w-[90vw] overflow-hidden rounded-lg bg-white shadow-xl dark:bg-gray-800" @click.stop>
       <button
         type="button"
-        class="absolute top-2 right-2 z-10 inline-flex items-center justify-center w-8 h-8 rounded-full bg-black/50 text-white hover:bg-black/70"
         aria-label="Cerrar"
-        @click="cerrarFoto"
-      >
+        class="absolute top-2 right-2 z-10 inline-flex items-center justify-center w-8 h-8 rounded-full bg-black/50 text-white hover:bg-black/70"
+        @click="cerrarFoto">
         <X class="w-5 h-5" />
       </button>
-      <img :src="previewImg" class="max-h-[90vh] max-w-[90vw] object-contain" alt="Imagen ampliada" />
+      <img :src="previewImg" class="max-h-[90vh] max-w-[90vw] object-contain" alt="Foto ampliada" />
     </div>
   </div>
 </template>

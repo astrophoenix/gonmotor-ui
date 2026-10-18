@@ -116,9 +116,10 @@ export function relacionesDeOrden(item) {
       numero: item?.inspeccion?.numero_inspeccion,
       estado: item?.inspeccion_estado_display,
     }),
+    // El listado expone `cotizacion_*`; el detalle, `cotizacion_origen*`.
     paso('cotizacion', {
-      id: item?.cotizacion_id,
-      numero: item?.cotizacion_numero,
+      id: item?.cotizacion_id || item?.cotizacion_origen,
+      numero: item?.cotizacion_numero || item?.cotizacion_origen_numero,
       estado: item?.cotizacion_estado_display,
     }),
   ];
