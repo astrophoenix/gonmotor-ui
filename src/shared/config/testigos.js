@@ -77,7 +77,7 @@ export const TESTIGOS = [
   },
   {
     key: 'testigo_limpiaparabrisas',
-    label: 'Limpiaparabrisas',
+    label: 'Limpia parabrisas',
     color: 'green',
     path: mdiWiperWash,
   },
@@ -107,7 +107,7 @@ export const TESTIGOS = [
   },
   {
     key: 'testigo_bujias_precalentamiento',
-    label: 'Precalentamiento',
+    label: 'Pre calentamiento (Diésel)',
     color: 'yellow',
     path: iconPrecalentamiento,
   },

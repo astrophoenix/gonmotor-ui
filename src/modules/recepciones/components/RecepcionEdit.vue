@@ -531,7 +531,7 @@ const requisitos = computed(() => {
   const lista = [
     {
       key: "partes",
-      label: "Cliente, vehículo y asesor",
+      label: "Cliente, vehículo y responsable",
       ok: !!form.cliente && !!form.vehiculo && !!form.recibido_por,
       paso: null,
     },
@@ -1924,7 +1924,7 @@ onMounted(() => {
             </div>
 
             <div class="relative">
-              <label for="asesor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Asesor <span class="text-accent-500">*</span></label>
+              <label for="asesor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Responsable <span class="text-accent-500">*</span></label>
               <EmpleadoSearchSelect
                 id="asesor"
                 v-model="recibidoPorSearch"

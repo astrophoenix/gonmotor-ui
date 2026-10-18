@@ -1354,12 +1354,12 @@ onMounted(() => {
 
             <!-- Inspector -->
             <div class="min-w-0">
-              <label for="inspector" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Inspector</label>
+              <label for="inspector" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Responsable</label>
               <EmpleadoSearchSelect
                 id="inspector"
                 v-model="responsableSearch"
                 :disabled="readOnly"
-                placeholder="Asignar inspector..."
+                placeholder="Asignar responsable..."
                 @select="selectResponsable"
                 @clear="clearResponsable"
               />

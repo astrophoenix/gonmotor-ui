@@ -220,7 +220,7 @@ const historial = computed(() => {
   if (recepcion.value) {
     eventos.push({ key: 'recepcion', titulo: 'Recepción del vehículo', fecha: recepcion.value.fecha_ingreso || recepcion.value.created_at, detalle: recepcion.value.numero_recepcion || '' });
   }
-  eventos.push({ key: 'inicio', titulo: 'Inicio del diagnóstico', fecha: i.fecha_inspeccion || i.created_at, detalle: i.responsable_nombre ? `Inspector: ${i.responsable_nombre}` : '' });
+  eventos.push({ key: 'inicio', titulo: 'Inicio del diagnóstico', fecha: i.fecha_inspeccion || i.created_at, detalle: i.responsable_nombre ? `Responsable: ${i.responsable_nombre}` : '' });
   if (i.fecha_finalizacion) {
     eventos.push({ key: 'fin', titulo: 'Diagnóstico finalizado', fecha: i.fecha_finalizacion, detalle: duracionInspeccionDisplay.value ? `Duración: ${duracionInspeccionDisplay.value}` : '' });
   } else {
@@ -557,7 +557,7 @@ onMounted(async () => {
             </div>
 
             <div class="min-w-0 md:border-s md:border-gray-200 md:ps-4 md:dark:border-gray-700">
-              <p :class="ETIQUETA">Inspector</p>
+              <p :class="ETIQUETA">Responsable</p>
               <p :class="[VALOR, 'truncate text-base']">{{ responsableNombre }}</p>
               <dl class="mt-3 space-y-1.5 text-xs">
                 <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">

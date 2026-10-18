@@ -1246,11 +1246,11 @@ const grupos = computed(() => [
 
             <!-- Mecánico -->
             <div class="min-w-0">
-              <label for="mecanico" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Mecánico responsable</label>
+              <label for="mecanico" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Responsable</label>
               <EmpleadoSearchSelect
                 id="mecanico"
                 v-model="mecanicoSearch"
-                placeholder="Asignar mecánico..."
+                placeholder="Asignar responsable..."
                 @select="seleccionarMecanico"
                 @clear="limpiarMecanico"/>
               <dl class="mt-3 space-y-1.5 text-xs">

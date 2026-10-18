@@ -320,7 +320,7 @@ onMounted(cargar);
               </div>
 
               <div class="min-w-0 md:border-s md:border-gray-200 md:ps-4 md:dark:border-gray-700">
-                <p :class="ETIQUETA">Asesor</p>
+                <p :class="ETIQUETA">Responsable</p>
                 <p :class="[VALOR, 'truncate text-base']">{{ cotizacion.asesor_nombre || '—' }}</p>
                 <dl class="mt-3 space-y-1.5 text-xs">
                   <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">

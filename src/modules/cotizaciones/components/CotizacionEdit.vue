@@ -1335,13 +1335,13 @@ onMounted(() => {
 
               <div class="min-w-0">
                 <label for="asesor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                  Asesor <span v-if="esEditable" class="text-accent-500">*</span>
+                  Responsable <span v-if="esEditable" class="text-accent-500">*</span>
                 </label>
                 <EmpleadoSearchSelect
                   v-if="esEditable"
                   id="asesor"
                   v-model="asesorSearch"
-                  placeholder="Buscar asesor..."
+                  placeholder="Buscar responsable..."
                   @select="selectAsesor"
                   @clear="clearAsesor"
                 />

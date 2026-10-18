@@ -23,6 +23,7 @@ import {
   Phone,
   ReceiptText,
   Shapes,
+  ShieldCheck,
   Building2,
   Stethoscope,
   TagIcon,
@@ -30,11 +31,19 @@ import {
   Workflow,
   Wrench,
   X,
+  CheckCheck,
+  CheckCircle2,
+  CircleStop,
+  Hourglass,
+  LoaderCircle,
+  RotateCcw,
 } from 'lucide-vue-next';
+import { IconClockPlay, IconClockCheck, IconPlayerPause, IconPlayerPlay } from '@tabler/icons-vue';
 import { API_BASE_URL } from '../../../shared/config/env';
 import { ordenesService } from '../services/ordenesService';
 import { getEstadoOrden, getPrioridadOrden } from '../constants/estadosOrden';
 import Alert from '../../../shared/components/Alert.vue';
+import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
 import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
@@ -55,6 +64,13 @@ const ETIQUETA = 'text-xs font-medium text-gray-500 dark:text-gray-400';
 const VALOR = 'mt-0.5 text-sm font-semibold text-gray-900 dark:text-white';
 const ENLACE = 'hover:text-brand-coral';
 const CONTADOR = 'px-1.5 text-xs font-medium normal-case tracking-normal rounded bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 tabular-nums';
+const BASE_INPUT = 'block w-full p-2.5 text-sm rounded shadow-xs focus:outline-none focus:ring-2 dark:bg-gray-700 dark:placeholder-gray-400 disabled:cursor-not-allowed disabled:opacity-70';
+const INPUT_OK = 'bg-gray-50 border border-gray-300 text-gray-900 focus:ring-brand-200 focus:border-brand-500 dark:border-gray-600 dark:text-white dark:focus:ring-brand-500/40 dark:focus:border-brand-300';
+const INPUT_ERROR = 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 focus:ring-red-200 focus:border-red-500 dark:text-red-400 dark:border-red-500 dark:placeholder-red-400';
+const BOTON_ESTADO = 'inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg shadow-xs shrink-0 hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 disabled:opacity-60 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700';
+
+const saving = ref(false);
+const successMessage = ref('');
 
 const ordenId = computed(() => new URLSearchParams(window.location.search).get('id'));
 
@@ -170,7 +186,7 @@ const kilometrajeLabel = computed(() => (
 ));
 const entregada = computed(() => estado.value === 'ENTREGADO');
 
-// ---- Aviso de estado (solo lectura: las transiciones se hacen desde la edición) ----
+// ---- Aviso de estado con sus transiciones (las mismas de la edición) ----
 const serviciosHechos = computed(() => servicios.value.filter((s) => s.completado).length);
 
 const aviso = computed(() => {
@@ -178,26 +194,154 @@ const aviso = computed(() => {
   if (!ord) return null;
   switch (estado.value) {
     case 'PENDIENTE':
-      return { titulo: 'El trabajo aún no ha comenzado.', detalle: 'Se inicia desde la edición cuando el mecánico toma el vehículo.' };
+      return { icon: CircleStop, titulo: 'El trabajo aún no ha comenzado.', detalle: 'Inícialo cuando el mecánico tome el vehículo.' };
     case 'EN_ESPERA':
-      return { titulo: 'Orden en espera:', detalle: `${ord.motivo_espera || 'sin motivo indicado'}.` };
+      return { icon: Hourglass, titulo: 'Orden en espera:', detalle: `${ord.motivo_espera || 'sin motivo indicado'}. Reanúdala cuando se resuelva.` };
     case 'EN_PROCESO':
-      return {
-        titulo: 'Trabajo en proceso.',
-        detalle: servicios.value.length
-          ? `${serviciosHechos.value} de ${plural(servicios.value.length, 'servicio hecho', 'servicios hechos')}.`
-          : 'Aún no hay servicios registrados.',
-      };
+      return puedeCompletar.value
+        ? { icon: CheckCircle2, titulo: 'Todo el trabajo está hecho.', detalle: 'Completa la orden para dejar el vehículo listo para entregar.' }
+        : {
+          icon: LoaderCircle,
+          titulo: 'Trabajo en proceso.',
+          detalle: 'Marca cada servicio como hecho al terminarlo; al completar todos podrás cerrar la orden.',
+        };
     case 'COMPLETADO':
-      return { titulo: 'Trabajo completado.', detalle: 'El vehículo está listo para entregar al cliente.' };
+      return { icon: CheckCircle2, titulo: 'Trabajo completado.', detalle: 'Registra la entrega cuando el cliente retire el vehículo.' };
     case 'ENTREGADO':
-      return { titulo: 'Vehículo entregado al cliente:', detalle: formatDate(ord.fecha_entrega) };
+      return { icon: estadoConfig.value.icon, titulo: 'Vehículo entregado al cliente:', detalle: formatDate(ord.fecha_entrega) };
     case 'CANCELADO':
-      return { titulo: 'Orden anulada.', detalle: 'No admite más trabajo ni evidencia.', peligro: true };
+      return { icon: estadoConfig.value.icon, titulo: 'Orden anulada.', detalle: 'No admite más trabajo ni evidencia.', peligro: true };
     default:
       return null;
   }
 });
+
+const puedeCompletar = computed(() => estado.value === 'EN_PROCESO' && avancePorcentaje.value === 100);
+
+const MOTIVOS_ESPERA = ['Esperando repuestos', 'Aprobación del cliente', 'Trabajo adicional'];
+const pidiendoEspera = ref(false);
+const motivoEsperaBorrador = ref('');
+const errorEspera = ref('');
+
+const transicion = ref(null);
+const TRANSICIONES = {
+  iniciar: {
+    estado: 'EN_PROCESO',
+    title: 'Iniciar trabajo',
+    message: 'La orden pasará a «En proceso». ¿Deseas continuar?',
+    icon: IconClockPlay,
+    iconClass: 'text-blue-600 dark:text-blue-400',
+    confirmText: 'Sí, iniciar',
+    confirmingText: 'Iniciando...',
+    variant: 'primary',
+    exito: 'Trabajo iniciado. La orden está en proceso.',
+  },
+  reanudar: {
+    estado: 'EN_PROCESO',
+    title: 'Reanudar trabajo',
+    message: 'La orden volverá a «En proceso». ¿Deseas continuar?',
+    icon: IconPlayerPlay,
+    iconClass: 'text-blue-600 dark:text-blue-400',
+    confirmText: 'Sí, reanudar',
+    confirmingText: 'Reanudando...',
+    variant: 'primary',
+    exito: 'Trabajo reanudado. La orden está en proceso.',
+  },
+  completar: {
+    estado: 'COMPLETADO',
+    title: 'Completar orden',
+    message: 'La orden quedará lista para entregar al cliente. ¿Deseas continuar?',
+    icon: IconClockCheck,
+    iconClass: 'text-green-600 dark:text-green-400',
+    confirmText: 'Sí, completar',
+    confirmingText: 'Completando...',
+    variant: 'success',
+    exito: 'Orden completada. El vehículo está listo para entregar.',
+  },
+  reabrir: {
+    estado: 'EN_PROCESO',
+    title: 'Reabrir trabajo',
+    message: 'La orden volverá a «En proceso» para registrar más trabajo. ¿Deseas continuar?',
+    icon: RotateCcw,
+    iconClass: 'text-blue-600 dark:text-blue-400',
+    confirmText: 'Sí, reabrir',
+    confirmingText: 'Reabriendo...',
+    variant: 'primary',
+    exito: 'Orden reabierta. Está en proceso otra vez.',
+  },
+  entregar: {
+    estado: 'ENTREGADO',
+    title: 'Registrar entrega',
+    message: 'La orden quedará como entregada al cliente. ¿Deseas continuar?',
+    icon: CheckCheck,
+    iconClass: 'text-green-600 dark:text-green-400',
+    confirmText: 'Sí, entregar',
+    confirmingText: 'Registrando...',
+    variant: 'success',
+    exito: 'Entrega registrada. La orden está cerrada.',
+  },
+};
+
+const mostrarTransicion = computed({
+  get: () => Boolean(transicion.value),
+  set: (valor) => { if (!valor) transicion.value = null; },
+});
+
+function solicitarTransicion(clave) {
+  if (saving.value) return;
+  transicion.value = { clave, ...TRANSICIONES[clave] };
+}
+
+/** Cambia solo el estado (PATCH) y recarga la orden para reflejar lo que guardó el backend. */
+async function cambiarEstado(nuevoEstado, mensajeExito, motivo = null) {
+  if (!orden.value || saving.value) return false;
+  const payload = { estado: nuevoEstado };
+  if (motivo !== null) payload.motivo_espera = motivo;
+  // Igual que la edición: conserva la fecha comprometida; si no hay, la entrega es ahora.
+  if (nuevoEstado === 'ENTREGADO') payload.fecha_entrega = orden.value.fecha_entrega || new Date().toISOString();
+
+  saving.value = true;
+  error.value = '';
+  successMessage.value = '';
+  let guardado = false;
+  try {
+    await ordenesService.update(orden.value.id, payload);
+    orden.value = await ordenesService.getById(orden.value.id);
+    successMessage.value = mensajeExito;
+    guardado = true;
+  } catch (err) {
+    error.value = err.data?.motivo_espera
+      ? [].concat(err.data.motivo_espera)[0]
+      : err.message || 'No se pudo cambiar el estado de la orden de trabajo.';
+  } finally {
+    saving.value = false;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  return guardado;
+}
+
+async function confirmarTransicion() {
+  const t = transicion.value;
+  if (!t) return;
+  await cambiarEstado(t.estado, t.exito);
+  transicion.value = null;
+}
+
+function abrirEspera() {
+  motivoEsperaBorrador.value = orden.value?.motivo_espera || '';
+  errorEspera.value = '';
+  pidiendoEspera.value = true;
+}
+
+async function confirmarEspera() {
+  const motivo = motivoEsperaBorrador.value.trim();
+  if (!motivo) {
+    errorEspera.value = 'Indica el motivo de la espera.';
+    return;
+  }
+  const guardado = await cambiarEstado('EN_ESPERA', 'Orden en espera. Reanúdala cuando se resuelva el motivo.', motivo.slice(0, 80));
+  if (guardado) pidiendoEspera.value = false;
+}
 
 // ---- Pasos: Trabajo y Evidencia (los mismos de la edición) ----
 const PASOS = [
@@ -266,7 +410,7 @@ const grupos = computed(() => [
 // ---- Avance de la ejecución (panel lateral, solo lectura) ----
 const requisitos = computed(() => [
   { key: 'partes', label: 'Cliente y vehículo', ok: Boolean(cliente.value && vehiculo.value), paso: null },
-  { key: 'mecanico', label: 'Mecánico asignado', ok: Boolean(orden.value?.mecanico_nombre), paso: null },
+  { key: 'mecanico', label: 'Responsable asignado', ok: Boolean(orden.value?.mecanico_nombre), paso: null },
   { key: 'trabajo', label: 'Trabajo registrado', ok: totalItems.value > 0, paso: 'trabajo' },
   {
     key: 'hechos',
@@ -352,6 +496,7 @@ onMounted(async () => {
   </EntityHeader>
 
   <div class="px-4 pt-4 pb-6">
+    <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
     <Alert v-if="error" type="error" :message="error" dismissible @dismiss="error = ''" />
 
     <div v-if="loading" :class="[SECCION, 'flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400']">
@@ -364,18 +509,92 @@ onMounted(async () => {
     </div>
 
     <template v-else>
-      <!-- Aviso del estado: dice en qué punto está el trabajo -->
+      <!-- Aviso del estado: dice en qué punto está el trabajo y permite moverla por su ciclo -->
       <div
         v-if="aviso"
-        class="flex items-start gap-3 p-4 mb-4 text-sm border rounded-lg"
+        class="p-4 mb-4 text-sm border rounded-lg"
         :class="aviso.peligro
           ? 'bg-red-50 border-red-200 text-red-900 dark:bg-red-900/20 dark:border-red-800/60 dark:text-red-100'
           : 'bg-brand-50 border-brand-200 text-brand-900 dark:bg-brand-700/20 dark:border-brand-500/40 dark:text-brand-100'">
-        <component :is="estadoConfig.icon" class="w-5 h-5 mt-0.5 shrink-0" />
-        <p>
-          <span class="font-semibold">{{ aviso.titulo }}</span>
-          {{ aviso.detalle }}
-        </p>
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-start gap-3">
+            <component :is="aviso.icon" class="w-5 h-5 mt-0.5 shrink-0" />
+            <p>
+              <span class="font-semibold">{{ aviso.titulo }}</span>
+              {{ aviso.detalle }}
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-2 sm:justify-end">
+            <template v-if="estado === 'PENDIENTE'">
+              <button type="button" :disabled="saving" :class="BOTON_ESTADO" @click="solicitarTransicion('iniciar')">
+                <IconClockPlay class="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                Iniciar trabajo
+              </button>
+            </template>
+            <template v-else-if="estado === 'EN_PROCESO'">
+              <button v-if="!pidiendoEspera" type="button" :disabled="saving" :class="BOTON_ESTADO" @click="abrirEspera">
+                <IconPlayerPause class="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                Poner en espera
+              </button>
+              <button v-if="puedeCompletar" type="button" :disabled="saving" :class="BOTON_ESTADO" @click="solicitarTransicion('completar')">
+                <IconClockCheck class="w-5 h-5 text-green-600 dark:text-green-400" />
+                Completar orden
+              </button>
+            </template>
+            <template v-else-if="estado === 'EN_ESPERA'">
+              <button type="button" :disabled="saving" :class="BOTON_ESTADO" @click="solicitarTransicion('reanudar')">
+                <IconPlayerPlay class="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                Reanudar trabajo
+              </button>
+            </template>
+            <template v-else-if="estado === 'COMPLETADO'">
+              <button type="button" :disabled="saving" :class="BOTON_ESTADO" @click="solicitarTransicion('reabrir')">
+                <RotateCcw class="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                Reabrir
+              </button>
+              <button type="button" :disabled="saving" :class="BOTON_ESTADO" @click="solicitarTransicion('entregar')">
+                <CheckCheck class="w-5 h-5 text-green-600 dark:text-green-400" />
+                Registrar entrega
+              </button>
+            </template>
+          </div>
+        </div>
+
+        <!-- Motivo de la espera, en el mismo aviso para no perder el contexto -->
+        <div v-if="pidiendoEspera && estado === 'EN_PROCESO'" class="pt-3 mt-3 border-t border-brand-200 dark:border-brand-500/40">
+          <label for="motivo_espera" class="block mb-2 text-sm font-medium">Motivo de la espera <span class="text-accent-500">*</span></label>
+          <div class="flex flex-col gap-2 sm:flex-row">
+            <input
+              id="motivo_espera"
+              v-model="motivoEsperaBorrador"
+              type="text"
+              maxlength="80"
+              placeholder="Ej.: esperando repuestos, aprobación del cliente..."
+              :class="[BASE_INPUT, errorEspera ? INPUT_ERROR : INPUT_OK, 'bg-white sm:flex-1']"
+              @keydown.enter.prevent="confirmarEspera">
+            <div class="flex gap-2">
+              <button type="button" :disabled="saving" :class="BOTON_ESTADO" @click="confirmarEspera">
+                <Loader2 v-if="saving" class="w-5 h-5 animate-spin" />
+                <IconPlayerPause v-else class="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                Poner en espera
+              </button>
+              <button type="button" :class="BOTON_ESTADO" title="Cancelar" aria-label="Cancelar" @click="pidiendoEspera = false">
+                <X class="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+          <p v-if="errorEspera" class="mt-2 text-sm text-red-600 dark:text-red-400">{{ errorEspera }}</p>
+          <div class="flex flex-wrap gap-1.5 mt-2">
+            <button
+              v-for="motivo in MOTIVOS_ESPERA"
+              :key="motivo"
+              type="button"
+              class="px-2.5 py-1 text-xs font-medium bg-white border border-brand-200 rounded-full hover:bg-brand-100 dark:bg-gray-800 dark:border-brand-500/50 dark:hover:bg-gray-700"
+              @click="motivoEsperaBorrador = motivo; errorEspera = ''">
+              {{ motivo }}
+            </button>
+          </div>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 gap-4 lg:grid-cols-4">
@@ -460,10 +679,16 @@ onMounted(async () => {
 
               <!-- Responsables -->
               <div class="min-w-0 md:border-s md:border-gray-200 md:ps-5 md:dark:border-gray-700">
-                <p :class="ETIQUETA">Mecánico responsable</p>
+                <p :class="ETIQUETA">Responsable</p>
                 <p :class="[VALOR, 'truncate text-base']">{{ orden.mecanico_nombre || 'Sin asignar' }}</p>
                 <dl class="mt-3 space-y-1.5 text-xs">
                   <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <ShieldCheck class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Rol:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ orden.mecanico_rol_display || orden.mecanico_rol || '—' }}</dd>
+                  </div>
+                  <!-- El asesor solo aplica cuando la orden viene de una cotización aprobada. -->
+                  <div v-if="orden.cotizacion_origen" class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
                     <UserRound class="w-3.5 h-3.5 shrink-0" />
                     <dt>Asesor:</dt>
                     <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ orden.asesor_nombre || '—' }}</dd>
@@ -853,4 +1078,18 @@ onMounted(async () => {
       <img :src="previewImg" class="max-h-[90vh] max-w-[90vw] object-contain" alt="Foto ampliada" />
     </div>
   </div>
+
+  <ConfirmModal
+    v-model="mostrarTransicion"
+    :title="transicion?.title || ''"
+    :message="transicion?.message || ''"
+    :icon="transicion?.icon"
+    :icon-class="transicion?.iconClass || ''"
+    :confirm-text="transicion?.confirmText || 'Confirmar'"
+    :confirming-text="transicion?.confirmingText || 'Guardando...'"
+    :variant="transicion?.variant || 'primary'"
+    :is-deleting="saving"
+    @confirm="confirmarTransicion"
+    @cancel="transicion = null"
+  />
 </template>
