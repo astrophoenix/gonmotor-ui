@@ -686,8 +686,8 @@ onMounted(async () => {
                   <dd class="font-medium text-sm text-black dark:text-white">{{ vehiculo?.color || '—' }}</dd>
                 </div>
                 <div>
-                  <dt class="font-medium text-gray-700 dark:text-gray-300">Kilometraje actual</dt>
-                  <dd class="font-medium text-sm text-black dark:text-white">{{ vehiculo?.kilometraje_actual != null ? `${vehiculo.kilometraje_actual} km` : '—' }}</dd>
+                  <dt class="font-medium text-gray-700 dark:text-gray-300">Kilometraje</dt>
+                  <dd class="font-medium text-sm text-black dark:text-white">{{ orden?.kilometraje != null ? `${Number(orden.kilometraje).toLocaleString('es-EC')} km` : '—' }}</dd>
                 </div>
               </dl>
             </div>

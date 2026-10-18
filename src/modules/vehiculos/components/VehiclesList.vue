@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { Car, MessageCircle, Search, Filter } from 'lucide-vue-next';
+import { Car, MessageCircle, History, Search, Filter } from 'lucide-vue-next';
 import { useVehicles } from '../composables/useVehicles';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
@@ -348,6 +348,9 @@ onMounted(() => loadVehicles());
         </td>
         <td class="px-4 py-3 whitespace-nowrap">
           <div class="flex items-center gap-2">
+            <a :href="`/crud/vehiculos/ver/?id=${encodeURIComponent(item.id)}&tab=historial`" title="Ver historial del vehículo" aria-label="Ver historial del vehículo" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-100 hover:text-brand-900 hover:ring-1 hover:ring-inset hover:ring-brand-200 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white dark:hover:ring-gray-500">
+              <History class="w-4.5 h-4.5" />
+            </a>
             <button type="button" title="Enviar recordatorio de mantenimiento por WhatsApp" aria-label="Enviar recordatorio por WhatsApp" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 dark:text-gray-400 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400" @click="openEnviarRecordatorio(item)">
               <MessageCircle class="w-4 h-4" />
             </button>

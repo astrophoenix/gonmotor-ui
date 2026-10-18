@@ -7,6 +7,7 @@ import { formatPlate } from '../../../shared/utils/formatPlate';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import VehicleModal from './VehicleModal.vue';
+import VehicleHistory from './VehicleHistory.vue';
 import {
   TRANSMISION_LABELS,
   COMBUSTIBLE_LABELS,
@@ -29,6 +30,22 @@ const vehicleModalId = ref(null);
 
 const params = new URLSearchParams(window.location.search);
 const vehicleId = params.get('id');
+
+// Pestañas de la ficha. Sin router: la pestaña vive en `?tab=` para poder
+// enlazar directo al historial (búsqueda global, listado, documentos).
+const PESTANAS = [
+  { value: 'resumen', label: 'Resumen' },
+  { value: 'historial', label: 'Historial' },
+];
+const pestana = ref(params.get('tab') === 'historial' ? 'historial' : 'resumen');
+
+function cambiarPestana(valor) {
+  pestana.value = valor;
+  const url = new URL(window.location.href);
+  if (valor === 'resumen') url.searchParams.delete('tab');
+  else url.searchParams.set('tab', valor);
+  window.history.replaceState(null, '', url);
+}
 
 function labelFor(list, value, key) {
   if (value == null || value === '') return '—';
@@ -126,7 +143,7 @@ onMounted(async () => {
     :breadcrumb="[
       { label: 'Inicio', href: '/' },
       { label: 'Vehículos', href: '/crud/vehiculos/' },
-      { label: 'Ver' },
+      { label: pestana === 'historial' ? 'Historial' : 'Ver' },
     ]"
   >
     <template #actions>
@@ -162,6 +179,25 @@ onMounted(async () => {
     </div>
 
     <template v-else-if="vehicle">
+      <nav class="flex gap-6 border-b border-gray-200 dark:border-gray-700" aria-label="Secciones del vehículo">
+        <button
+          v-for="tab in PESTANAS"
+          :key="tab.value"
+          type="button"
+          class="-mb-px border-b-2 px-1 pb-3 text-sm font-medium transition-colors"
+          :class="pestana === tab.value
+            ? 'border-brand-700 text-gray-900 dark:border-brand-200 dark:text-white'
+            : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+          :aria-current="pestana === tab.value ? 'page' : undefined"
+          @click="cambiarPestana(tab.value)"
+        >
+          {{ tab.label }}
+        </button>
+      </nav>
+
+      <VehicleHistory v-if="pestana === 'historial'" :vehicle-id="vehicleId" @foto="abrirFoto" />
+
+      <template v-else>
       <!-- Resumen: foto, identidad y kilometraje -->
       <section class="overflow-hidden shadow-sm rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
         <div class="grid md:grid-cols-[minmax(0,20rem)_1fr]">
@@ -339,6 +375,7 @@ onMounted(async () => {
           </section>
         </div>
       </div>
+      </template>
     </template>
   </div>
 
@@ -356,7 +393,7 @@ onMounted(async () => {
       >
         <X class="w-5 h-5" />
       </button>
-      <img :src="previewImg" class="max-h-[90vh] max-w-[90vw] object-contain" alt="Imagen ampliada del vehículo" />
+      <img :src="previewImg" class="max-h-[90vh] max-w-[90vw] object-contain" alt="Imagen ampliada" />
     </div>
   </div>
 

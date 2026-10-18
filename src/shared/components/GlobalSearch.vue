@@ -39,7 +39,8 @@ const ICONOS = {
 /** Grupo → constructor de la URL de destino (mismas rutas que usa el resto de la app). */
 const RUTAS = {
   clientes: (id) => `/crud/clientes/ver/?id=${encodeURIComponent(id)}`,
-  vehiculos: (id) => `/crud/vehiculos/ver/?id=${encodeURIComponent(id)}`,
+  // Buscar por placa es buscar el historial: el vehículo abre en esa pestaña.
+  vehiculos: (id) => `/crud/vehiculos/ver/?id=${encodeURIComponent(id)}&tab=historial`,
   recepciones: (id) => `/crud/recepciones/ver/?id=${encodeURIComponent(id)}`,
   ordenes: (id) => `/crud/ordenes/ver/?id=${encodeURIComponent(id)}`,
   cotizaciones: (id) => `/crud/cotizaciones/ver/?id=${encodeURIComponent(id)}`,

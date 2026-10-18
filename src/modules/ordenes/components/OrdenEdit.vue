@@ -88,7 +88,7 @@ const clienteSearch = ref('');
 const vehiculoSearch = ref('');
 const mecanicoSearch = ref('');
 const showClientCreateModal = ref(false);
-const formErrors = ref({ cliente: '', vehiculo: '' });
+const formErrors = ref({ cliente: '', vehiculo: '', kilometraje: '' });
 
 const {
   tallerId: tallerSucursalId,
@@ -132,6 +132,11 @@ function limpiarCliente() {
 function seleccionarVehiculo(vehiculoObj) {
   vehiculoSeleccionado.value = vehiculoObj || null;
   formErrors.value.vehiculo = '';
+  // Se propone el odómetro vigente; el asesor lo corrige con la lectura real.
+  if (!isEditMode.value && vehiculoObj && vehiculoObj.kilometraje_actual != null) {
+    form.value.kilometraje = vehiculoObj.kilometraje_actual;
+    formErrors.value.kilometraje = '';
+  }
 }
 
 function onClientCreated(clienteObj) {
@@ -203,6 +208,7 @@ const form = ref({
   // Ingreso editable: al crear se propone la fecha y hora actuales.
   fecha_ingreso: toDateTimeLocal(new Date().toISOString()),
   fecha_entrega: '',
+  kilometraje: '',
   observaciones: '',
   motivo_espera: '',
 });
@@ -494,6 +500,7 @@ function aplicarOrden(data) {
     mecanico_principal: data.mecanico_principal || '',
     fecha_ingreso: toDateTimeLocal(data.fecha_ingreso || data.created_at),
     fecha_entrega: toDateTimeLocal(data.fecha_entrega),
+    kilometraje: data.kilometraje ?? '',
     observaciones: data.observaciones || '',
     motivo_espera: data.motivo_espera || '',
   };
@@ -634,7 +641,7 @@ async function handleSubmit(mensajeExito = 'Orden de trabajo guardada correctame
   error.value = '';
   successMessage.value = '';
 
-  formErrors.value = { cliente: '', vehiculo: '', fecha_ingreso: '' };
+  formErrors.value = { cliente: '', vehiculo: '', fecha_ingreso: '', kilometraje: '' };
   if (!clienteSeleccionado.value) formErrors.value.cliente = 'Selecciona el cliente de la orden.';
   if (!vehiculoSeleccionado.value) formErrors.value.vehiculo = 'Selecciona el vehículo a atender.';
   if (formErrors.value.cliente || formErrors.value.vehiculo) {
@@ -648,6 +655,15 @@ async function handleSubmit(mensajeExito = 'Orden de trabajo guardada correctame
   if (!fechaIngreso || Number.isNaN(fechaIngreso.getTime())) {
     formErrors.value.fecha_ingreso = 'La fecha de ingreso es obligatoria.';
     error.value = 'Registra la fecha y hora de ingreso del vehículo.';
+    saving.value = false;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return false;
+  }
+
+  const kilometraje = String(form.value.kilometraje ?? '').trim() === '' ? null : Number(form.value.kilometraje);
+  if (kilometraje == null || !Number.isInteger(kilometraje) || kilometraje < 0) {
+    formErrors.value.kilometraje = 'El kilometraje es obligatorio.';
+    error.value = 'Registra el kilometraje del vehículo en esta orden.';
     saving.value = false;
     window.scrollTo({ top: 0, behavior: 'smooth' });
     return false;
@@ -677,6 +693,7 @@ async function handleSubmit(mensajeExito = 'Orden de trabajo guardada correctame
     mecanico_principal: form.value.mecanico_principal || null,
     fecha_ingreso: fechaIngreso.toISOString(),
     fecha_entrega: form.value.fecha_entrega ? new Date(form.value.fecha_entrega).toISOString() : null,
+    kilometraje,
     observaciones: form.value.observaciones || '',
     motivo_espera: form.value.motivo_espera || null,
   };
@@ -694,6 +711,7 @@ async function handleSubmit(mensajeExito = 'Orden de trabajo guardada correctame
     } catch (err) {
       error.value = err.message || 'No se pudo crear la orden de trabajo.';
       if (err.data?.fecha_ingreso) formErrors.value.fecha_ingreso = [].concat(err.data.fecha_ingreso)[0];
+      if (err.data?.kilometraje) formErrors.value.kilometraje = [].concat(err.data.kilometraje)[0];
     } finally {
       saving.value = false;
     }
@@ -721,6 +739,7 @@ async function handleSubmit(mensajeExito = 'Orden de trabajo guardada correctame
   } catch (err) {
     error.value = err.message || 'No se pudo guardar la orden de trabajo.';
     if (err.data?.fecha_ingreso) formErrors.value.fecha_ingreso = [].concat(err.data.fecha_ingreso)[0];
+    if (err.data?.kilometraje) formErrors.value.kilometraje = [].concat(err.data.kilometraje)[0];
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } finally {
     saving.value = false;
@@ -1260,7 +1279,7 @@ const grupos = computed(() => [
           </div>
 
           <!-- Planificación de la orden -->
-          <div class="grid grid-cols-1 gap-4 pt-4 mt-5 border-t border-gray-100 sm:grid-cols-2 xl:grid-cols-4 dark:border-gray-700">
+          <div class="grid grid-cols-1 gap-4 pt-4 mt-5 border-t border-gray-100 sm:grid-cols-2 xl:grid-cols-5 dark:border-gray-700">
             <div>
               <label for="tipo_trabajo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de trabajo</label>
               <select id="tipo_trabajo" v-model="form.tipo_trabajo" :class="inputClass('tipo_trabajo')">
@@ -1277,6 +1296,15 @@ const grupos = computed(() => [
               <label for="fecha_ingreso" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Ingreso <span class="text-accent-500">*</span></label>
               <input id="fecha_ingreso" v-model="form.fecha_ingreso" type="datetime-local" required :class="inputClass('fecha_ingreso')" @input="formErrors.fecha_ingreso = ''">
               <p v-if="formErrors.fecha_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.fecha_ingreso }}</p>
+            </div>
+            <div>
+              <label for="kilometraje" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kilometraje <span class="text-accent-500">*</span></label>
+              <div class="relative">
+                <input id="kilometraje" v-model="form.kilometraje" type="number" min="0" step="1" inputmode="numeric" required :class="inputClass('kilometraje', 'pe-10 tabular-nums')" @input="formErrors.kilometraje = ''">
+                <span class="pointer-events-none absolute inset-y-0 end-3 flex items-center text-sm text-gray-400">km</span>
+              </div>
+              <p v-if="formErrors.kilometraje" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.kilometraje }}</p>
+              <p v-else-if="vehiculo?.kilometraje_actual != null" class="mt-1 text-xs text-gray-500 dark:text-gray-400">Último registrado: {{ Number(vehiculo.kilometraje_actual).toLocaleString('es-EC') }} km</p>
             </div>
             <div>
               <label for="fecha_entrega" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Entrega comprometida</label>
