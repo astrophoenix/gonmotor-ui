@@ -2,14 +2,12 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import {
   CheckCircle2,
-  FileText,
   Loader2,
   Send,
   Wand2,
   X,
   Plus,
   Package,
-  CircleDollarSign,
   IdCardIcon,
   Phone,
   Mail,
@@ -25,8 +23,10 @@ import {
   RotateCcw,
   XCircle,
   Wrench,
+  Users,
+  MessageSquareText,
 } from 'lucide-vue-next';
-import { IconBrandWhatsapp, IconFileTypePdf } from '@tabler/icons-vue';
+import { IconBrandWhatsapp } from '@tabler/icons-vue';
 import { request } from '../../../shared/services/httpClient';
 import { formatDateTime } from '../../../shared/utils/datetime';
 import { cotizacionesService } from '../services/cotizacionesService';
@@ -47,8 +47,7 @@ import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import TextImprover from '../../../shared/components/TextImprover.vue';
 // FlowSteps temporalmente desactivado; conservar para reactivarlo más adelante.
 // import FlowSteps from '../../../shared/components/FlowSteps.vue';
-import EntityActionsMenu from '../../../shared/components/EntityActionsMenu.vue';
-import { usePdfExport } from '../../../shared/composables/usePdfExport';
+import PdfExportButton from '../../../shared/components/PdfExportButton.vue';
 // import { buildPasosFlujo } from '../../../shared/utils/estadoFlujo';
 import ClientModal from '../../clientes/components/ClientModal.vue';
 import { useAuthStore } from '../../auth/stores/authStore';
@@ -59,6 +58,9 @@ import VehiculoSearchSelect from '../../../shared/components/VehiculoSearchSelec
 import EmpleadoSearchSelect from '../../../shared/components/EmpleadoSearchSelect.vue';
 import CatalogoSelect from '../../../shared/components/CatalogoSelect.vue';
 import EstadoCotizacionBadge from './EstadoCotizacionBadge.vue';
+import CotizacionCiclo from './CotizacionCiclo.vue';
+import CotizacionTotales from './CotizacionTotales.vue';
+import CotizacionVigencia from './CotizacionVigencia.vue';
 import { referenciaCorta } from '../../../shared/utils/format';
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -167,16 +169,22 @@ const modal = reactive({
 
 const esEditable = computed(() => ['PENDIENTE', 'ENVIADA'].includes(estado.value));
 
-const hayAccionesEstado = computed(() =>
-  ['PENDIENTE', 'RECHAZADA', 'ENVIADA'].includes(estado.value)
-);
-
 const tieneOrdenRelacionada = computed(() =>
   Boolean(ordenGeneradaNumero.value || ordenTrabajoNumero.value)
 );
 
 const puedeGenerarOrden = computed(
   () => estado.value === 'ACEPTADA' && !tieneOrdenRelacionada.value
+);
+
+const ordenHref = computed(() => (
+  cotizacion.value?.orden_generada_id
+    ? `/crud/ordenes/ver/?id=${encodeURIComponent(cotizacion.value.orden_generada_id)}`
+    : ''
+));
+
+const opcionales = computed(
+  () => [...servicios.value, ...repuestos.value].filter((item) => item.es_opcional).length
 );
 
 const authStore = useAuthStore();
@@ -860,19 +868,12 @@ function descargarPdf() {
   return cotizacionesService.exportarPdf(cotizacionId.value);
 }
 
-const { isExportingPdf, exportarPdf } = usePdfExport({
-  onError: (message) => { errorMessage.value = message; },
-});
-
-function ejecutarAccion(cerrar, accion) {
-  cerrar();
-  if (accion === 'ENVIAR') abrirModal('ENVIAR');
-  else if (accion === 'REENVIAR') abrirModal('REENVIAR');
-  else if (accion === 'ACEPTAR') abrirModal('ACEPTAR');
-  else if (accion === 'RECHAZAR') abrirModal('RECHAZAR');
-  else if (accion === 'GENERAR_ORDEN') mostrarModalGenerarOrden = true;
-  else if (accion === 'EXPORTAR_PDF') exportarPdf(descargarPdf);
-}
+const TITULOS_MODAL = {
+  ENVIAR: 'Enviar cotización al cliente',
+  ACEPTAR: 'Registrar aprobación del cliente',
+  RECHAZAR: 'Registrar rechazo del cliente',
+  REENVIAR: 'Reenviar cotización',
+};
 
 async function confirmarModal() {
   if (!cotizacionId.value || modal.procesando) return;
@@ -880,8 +881,15 @@ async function confirmarModal() {
   modal.error = '';
   try {
     if (modal.tipo === 'ENVIAR') {
+      // Se envía lo que está en pantalla: primero se guardan los cambios. Si el
+      // guardado falla, el modal se cierra y los errores quedan en la página.
+      const guardado = await submit({ silencioso: true });
+      if (!guardado) {
+        modal.visible = false;
+        return;
+      }
       await cotizacionesService.update(cotizacionId.value, { estado: 'ENVIADA' });
-      successMessage.value = 'Cotización enviada al cliente.';
+      successMessage.value = 'Cotización guardada y enviada al cliente.';
     } else if (modal.tipo === 'ACEPTAR') {
       await cotizacionesService.update(cotizacionId.value, {
         estado: 'ACEPTADA',
@@ -990,8 +998,10 @@ async function crearCotizacionIndependiente() {
 }
 
 // ---------- Guardar ----------
-async function submit() {
-  if (!esEditable.value || !cotizacionId.value) return;
+// Devuelve true si guardó. Con `silencioso` no muestra el aviso de éxito: lo usa
+// el envío al cliente, que guarda antes de cambiar el estado.
+async function submit({ silencioso = false } = {}) {
+  if (!esEditable.value || !cotizacionId.value) return false;
   errorMessage.value = '';
   successMessage.value = '';
   formErrors.value = {};
@@ -999,7 +1009,7 @@ async function submit() {
   if (!validarSucursal()) {
     errorMessage.value = tallerSucursalError.value;
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    return;
+    return false;
   }
 
   const payload = {
@@ -1013,7 +1023,7 @@ async function submit() {
     if (!validateForm()) {
       errorMessage.value = 'Completa correctamente los campos de: Información General';
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
+      return false;
     }
     payload.cliente = form.cliente.id;
     payload.vehiculo = form.vehiculo.id;
@@ -1024,7 +1034,7 @@ async function submit() {
       'La cotización debe tener al menos un servicio o un repuesto. Agrega los ítems en las pestañas Servicios o Repuestos.';
     activeTab.value = !servicios.value.length && repuestos.value.length ? 'repuestos' : 'servicios';
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    return;
+    return false;
   }
 
   isSaving.value = true;
@@ -1032,8 +1042,11 @@ async function submit() {
     await cotizacionesService.update(cotizacionId.value, payload);
     await guardarDetalles(cotizacionId.value);
     await cargarCotizacion(cotizacionId.value);
-    successMessage.value = 'Cotización actualizada correctamente.';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (!silencioso) {
+      successMessage.value = 'Cotización actualizada correctamente.';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    return true;
   } catch (error) {
     if (error.data && typeof error.data === 'object') {
       const serverErrors = {};
@@ -1045,10 +1058,59 @@ async function submit() {
     }
     showError(error);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    return false;
   } finally {
     isSaving.value = false;
   }
 }
+
+// ---------- Presentación ----------
+// Mismos estilos de tarjeta que recepción e inspección (línea gráfica del flujo).
+const SECCION = 'p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700';
+const TITULO_SECCION = 'flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200';
+const INPUT = 'block w-full px-2.5 py-2 text-sm bg-gray-50 border border-gray-300 text-gray-900 rounded shadow-xs focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-brand-500/40 dark:focus:border-brand-300 disabled:cursor-not-allowed disabled:opacity-70';
+const BOTON_PRIMARIO = 'inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded shadow-xs bg-brand-900 hover:bg-brand-700 focus:ring-4 focus:ring-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed';
+const BOTON_SECUNDARIO = 'inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800';
+
+const ICONOS_METODO = { PRESENCIAL: UserCheck, EMAIL: Mail, WHATSAPP: IconBrandWhatsapp, TELEFONO: Phone };
+
+// Las dos pestañas de ítems comparten la misma tabla; cada una indica sus campos.
+const TABS_ITEMS = computed(() => [
+  {
+    key: 'servicios',
+    label: 'Servicios',
+    singular: 'Servicio',
+    icon: Toolbox,
+    filas: servicios.value,
+    catalogo: catalogoServicios.value,
+    columna: 'Horas',
+    campoCantidad: 'horas_estimadas',
+    campoPrecio: 'precio_unitario',
+    subtotal: subtotalServicios.value,
+    neto: netoServicio,
+    seleccionar: seleccionarServicio,
+    agregar: agregarServicioVacio,
+    quitar: quitarServicio,
+    vacio: 'Aún no hay servicios de mano de obra.',
+  },
+  {
+    key: 'repuestos',
+    label: 'Repuestos',
+    singular: 'Repuesto',
+    icon: Package,
+    filas: repuestos.value,
+    catalogo: catalogoRepuestos.value,
+    columna: 'Cant.',
+    campoCantidad: 'cantidad',
+    campoPrecio: 'precio_unitario_referencial',
+    subtotal: subtotalRepuestos.value,
+    neto: netoRepuesto,
+    seleccionar: seleccionarRepuesto,
+    agregar: agregarRepuestoVacio,
+    quitar: quitarRepuesto,
+    vacio: 'Aún no hay repuestos o materiales.',
+  },
+]);
 
 // ---------- Vigilancia ----------
 watch([
@@ -1106,611 +1168,569 @@ onMounted(() => {
     </template>
     <template #actions>
       <template v-if="isEditMode && cotizacionId">
+        <PdfExportButton :descargador="descargarPdf" label="PDF" :disabled="isSaving" @error="errorMessage = $event" />
         <FormSaveActions
           v-if="esEditable"
           :is-loading="isSaving"
           :is-edit-mode="isEditMode"
           cancel-href="/crud/cotizaciones/"
+          color="brand"
           :on-submit="submit"/>
-        <EntityActionsMenu :disabled="isSaving || isExportingPdf">
-          <template #default="{ cerrar }">
-            <button
-              v-if="estado === 'PENDIENTE'"
-              type="button"
-              role="menuitem"
-              class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700"
-              @click="ejecutarAccion(cerrar, 'ENVIAR')">
-              <Send class="w-5 h-5 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
-              Enviar
-            </button>
-            <button
-              v-if="estado === 'RECHAZADA'"
-              type="button"
-              role="menuitem"
-              class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700"
-              @click="ejecutarAccion(cerrar, 'REENVIAR')">
-              <RotateCcw class="w-5 h-5 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
-              Reenviar
-            </button>
-            <button
-              v-if="estado === 'ENVIADA'"
-              type="button"
-              role="menuitem"
-              class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700"
-              @click="ejecutarAccion(cerrar, 'ACEPTAR')">
-              <CheckCircle2 class="w-5 h-5 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
-              Aprobar
-            </button>
-            <button
-              v-if="estado === 'ENVIADA'"
-              type="button"
-              role="menuitem"
-              class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700"
-              @click="ejecutarAccion(cerrar, 'RECHAZAR')">
-              <XCircle class="w-5 h-5 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
-              Rechazar
-            </button>
-            <div v-if="hayAccionesEstado" class="my-1 border-t border-gray-200 dark:border-gray-700" role="separator" />
-            <button
-              v-if="puedeGenerarOrden"
-              type="button"
-              role="menuitem"
-              class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700"
-              @click="ejecutarAccion(cerrar, 'GENERAR_ORDEN')">
-              <Wrench class="w-5 h-5 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
-              Crear Orden Trabajo
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700"
-              @click="ejecutarAccion(cerrar, 'EXPORTAR_PDF')">
-              <IconFileTypePdf class="w-5 h-5 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
-              Descargar PDF
-            </button>
-          </template>
-        </EntityActionsMenu>
       </template>
       <FormSaveActions
         v-if="!isEditMode && !inspeccionOrigen"
         :is-loading="isCreando"
         cancel-href="/crud/cotizaciones/"
+        color="brand"
         :on-submit="crearCotizacionIndependiente"
       />
     </template>
   </EntityHeader>
 
-  <div class="p-4">
-    <!-- FlowSteps temporalmente desactivado.
-    <div v-if="cotizacion" class="relative mx-auto max-w-6xl mb-5">
-      <FlowSteps :steps="pasosFlujo" />
+  <div class="px-4 pt-4 pb-6">
+    <div class="space-y-4">
+      <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
+      <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
+      <Alert
+        v-if="!isLoading && isEditMode && cotizacionId && !esEditable"
+        type="info"
+        title="Solo lectura"
+        message="La cotización ya tiene respuesta del cliente; sus ítems no se pueden modificar."
+      />
     </div>
-    -->
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
-      <div class="lg:col-span-3 space-y-4">
-        <div class="relative mx-auto max-w-8xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
-          <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
-          <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
 
-          <div v-if="isLoading" class="flex items-center justify-center py-16">
-            <div class="flex items-center gap-3 text-gray-500 dark:text-gray-400">
-              <Loader2 class="w-6 h-6 animate-spin" />
-              <span>{{ isCreando ? 'Creando la cotización...' : 'Cargando cotización...' }}</span>
-            </div>
-          </div>
+    <div v-if="isLoading" :class="[SECCION, 'mt-4 flex items-center justify-center gap-2 py-12 text-sm text-gray-500 dark:text-gray-400']">
+      <Loader2 class="w-5 h-5 animate-spin" />
+      {{ isCreando ? 'Creando la cotización...' : 'Cargando cotización...' }}
+    </div>
 
-          <template v-else>
-            <!-- Información General: cliente / vehículo / asesor -->
-            <div class="mb-6">
-              <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">
-                <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-                  <div class="flex items-center gap-2">
-                    <FileText class="w-5 h-5 text-gray-900 dark:text-white" />
-                    <h2 class="text-md font-semibold text-gray-900 dark:text-white">Información General</h2>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <label for="validez_dias" class="text-sm font-medium text-gray-900 dark:text-white">Validez</label>
-                    <select id="validez_dias" v-model="form.validez_dias" :disabled="!esEditable" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand-700 focus:border-brand px-6 py-2 shadow-xs">
-                      <option v-for="dias in VALIDEZ_OPCIONES" :key="dias" :value="dias">{{ dias }} días</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_0.7fr_1fr]">
-                  <!-- Cliente -->
-                  <div class="min-w-0">
-                    <label for="cliente" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                      Cliente <span v-if="!bloqueadoClienteVehiculo" class="text-accent-500">*</span>
-                    </label>
-                    <ClienteSearchSelect
-                      id="cliente"
-                      v-model="form.clienteSearch"
-                      placeholder="Buscar por nombre, cédula o teléfono"
-                      :error="Boolean(formErrors.cliente)"
-                      :error-message="formErrors.cliente"
-                      :show-create="!bloqueadoClienteVehiculo"
-                      :disabled="bloqueadoClienteVehiculo"
-                      @select="selectCliente"
-                      @clear="clearCliente"
-                      @create="showClientCreateModal = true"
-                    />
-                    <div class="mt-3 space-y-1.5">
-                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                        <IdCardIcon class="w-3.5 h-3.5 shrink-0" /> Identificación:
-                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ form.cliente_identificacion || '—' }}</span>
-                      </div>
-                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                        <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono:
-                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ form.cliente_telefono || '—' }}</span>
-                      </div>
-                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                        <Mail class="w-3.5 h-3.5 shrink-0" /> Correo:
-                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ form.cliente_email || '—' }}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Vehículo -->
-                  <div class="relative min-w-0">
-                    <label for="vehiculo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                      Vehículo <span v-if="!bloqueadoClienteVehiculo" class="text-accent-500">*</span>
-                    </label>
-                    <VehiculoSearchSelect
-                      id="vehiculo"
-                      v-model="form.vehiculoSearch"
-                      :cliente-id="form.cliente?.id || null"
-                      :disabled="bloqueadoClienteVehiculo || !form.cliente"
-                      :placeholder="form.cliente ? 'Buscar placa...' : 'Selecciona un cliente primero'"
-                      :error="Boolean(formErrors.vehiculo)"
-                      :error-message="formErrors.vehiculo"
-                      class="relative"
-                      @select="selectVehiculo"
-                      @clear="clearVehiculo"
-                    />
-                    <div class="mt-3 space-y-1.5">
-                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                        <TagIcon class="w-3.5 h-3.5 shrink-0" /> Marca:
-                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ form.vehiculo?.marca || '—' }}</span>
-                      </div>
-                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                        <Shapes class="w-3.5 h-3.5 shrink-0" /> Modelo:
-                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ form.vehiculo?.modelo || '—' }}</span>
-                      </div>
-                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                        <PaintBucket class="w-3.5 h-3.5 shrink-0" /> Color:
-                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ form.vehiculo_color || '—' }}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Asesor (reemplaza Inspector) -->
-                  <div class="min-w-0">
-                    <label for="asesor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                      Asesor <span class="text-accent-500">*</span>
-                    </label>
-                    <EmpleadoSearchSelect
-                      v-if="esEditable"
-                      id="asesor"
-                      v-model="asesorSearch"
-                      placeholder="Buscar asesor..."
-                      @select="selectAsesor"
-                      @clear="clearAsesor"
-                    />
-                    <div v-else class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                      {{ asesorSearch || cotizacion?.asesor_nombre || '—' }}
-                    </div>
-                    <div class="mt-3 space-y-1.5">
-                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                        <IdCardIcon class="w-3.5 h-3.5 shrink-0" /> Identificación:
-                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ asesorDetalles?.identificacion || '—' }}</span>
-                      </div>
-                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                        <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono:
-                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ asesorDetalles?.telefono || '—' }}</span>
-                      </div>
-                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                        <Mail class="w-3.5 h-3.5 shrink-0" /> Correo:
-                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ asesorDetalles?.email || '—' }}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div v-if="mostrarSucursal" class="mt-4 max-w-sm">
-                  <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                    Taller emisor <span class="text-accent-500">*</span>
-                  </label>
-                  <TallerSelect
-                    v-model="tallerSucursalId"
-                    :nombre="sucursalNombre"
-                    variante="campo"
-                    :disabled="Boolean(inspeccionOrigen)"
-                    :invalid="Boolean(tallerSucursalError)"
-                    placeholder="Selecciona el taller"
-                    @change="limpiarErrorSucursal"
-                  />
-                  <p v-if="tallerSucursalError" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ tallerSucursalError }}</p>
-                </div>
-                <!-- Los metadatos solo se muestran al crear una cotización. -->
-                <div v-if="!isEditMode" class="flex flex-wrap items-center gap-x-6 gap-y-2 pt-4 mt-4 text-sm text-gray-600 border-t border-gray-200 dark:border-gray-600 dark:text-gray-300">
-                  <span class="inline-flex items-center gap-1.5" title="Fecha y hora de emisión">
-                    <CalendarDays class="w-4 h-4 shrink-0 text-brand-700 dark:text-brand-300" />
-                    <span class="font-medium text-gray-900 dark:text-white">Emisión:</span>
-                    {{ fechaEmision }}
-                  </span>
-                  <span class="inline-flex items-center gap-1.5 md:border-l md:border-gray-200 md:pl-6 md:dark:border-gray-600" title="Taller donde se creó la cotización">
-                    <Store class="w-4 h-4 shrink-0 text-brand-700 dark:text-brand-300" />
-                    <span class="font-medium text-gray-900 dark:text-white">Taller:</span>
-                    {{ sucursalNombre || tallerSesion || '—' }}
-                  </span>
-                  <!--span class="inline-flex items-center gap-1.5 md:border-l md:border-gray-200 md:pl-6 md:dark:border-gray-600" title="Origen de la cotización">
-                    <ClipboardList class="w-4 h-4 shrink-0 text-brand-700 dark:text-brand-300" />
-                    <span class="font-medium text-gray-900 dark:text-white">Origen:</span>
-                    <template v-if="inspeccionOrigen">
-                      <a
-                        :href="`/crud/inspecciones/editar/?id=${encodeURIComponent(inspeccionOrigen)}`"
-                        class="font-medium text-primary-blue-700 hover:underline dark:text-primary-blue-400">Cod Inspección {{ inspeccionNumero || referenciaCorta(inspeccionOrigen) }}</a>
-                      <span v-if="recepcionOrigen" class="font-medium text-primary-blue-700 dark:text-primary-blue-400">
-                        / Recepción {{ recepcionNumero || `#${recepcionOrigen}` }}
-                      </span>
-                    </template>
-                    <span v-else-if="recepcionOrigen" class="font-medium text-primary-blue-700 hover:underline dark:text-primary-blue-400">
-                      Recepción {{ recepcionNumero || `#${recepcionOrigen}` }}
-                    </span>
-                    <span v-else>Independiente</span>
-                  </span-->
-                  <span
-                    v-if="fechaAceptacion"
-                    class="inline-flex basis-full items-center gap-1.5 pt-1"
-                    title="Aceptación de la cotización por parte del cliente">
-                    <CheckCircle2 class="w-4 h-4 shrink-0 text-green-600 dark:text-green-400" />
-                    <span class="font-medium text-gray-900 dark:text-white">Aceptada:</span>
-                    {{ formatFechaHora12(fechaAceptacion) }} -
-                    <component :is="iconoMetodoAceptacion" class="w-4 h-4 shrink-0 text-green-600 dark:text-green-400" />
-                    {{ metodoAceptacionLabel || '—' }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <fieldset :disabled="!esEditable" class="grid grid-cols-1 gap-8">
-              <div class="bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700">
-                <div class="border-b border-gray-200 dark:border-gray-700">
-                  <nav class="flex flex-wrap -mb-px">
-                    <button
-                      type="button"
-                      class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
-                      :class="activeTab === 'servicios' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-                      @click="activeTab = 'servicios'">
-                      <Toolbox class="w-4 h-4" />
-                      Servicios
-                    </button>
-                    <button
-                      type="button"
-                      class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
-                      :class="activeTab === 'repuestos' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-                      @click="activeTab = 'repuestos'">
-                      <Package class="w-4 h-4" />
-                      Repuestos
-                    </button>
-                  </nav>
-                </div>
-
-                <div class="p-4 space-y-1">
-                  <!-- Servicios -->
-                  <div v-show="activeTab === 'servicios'" class="col-span-1">
-                    <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
-                      <table class="w-full text-sm text-left text-gray-900 dark:text-white">
-                        <thead class="text-xs uppercase bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                          <tr>
-                            <th class="px-4 py-3">Servicio</th>
-                            <th class="px-4 py-3 w-24 text-center">Opcional</th>
-                            <th class="px-4 py-3 w-24 text-center">Horas</th>
-                            <th class="px-4 py-3 w-36 text-center">Precio unitario</th>
-                            <th class="px-4 py-3 w-28 text-center">Descuento</th>
-                            <th class="px-4 py-3 w-28 text-center">IVA</th>
-                            <th class="px-4 py-3 w-32 text-center">Neto</th>
-                            <th v-if="esEditable" class="px-4 py-3 w-14 text-center"></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr v-if="!servicios.length">
-                            <td colspan="8" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No hay servicios de mano de obra.</td>
-                          </tr>
-                          <tr v-for="(servicio, index) in servicios" :key="servicio.sufijo || servicio.id" class="border-t border-gray-200 dark:border-gray-600">
-                            <td class="px-4 py-2.5">
-                              <div class="relative">
-                                <CatalogoSelect
-                                  :input-id="`svc-desc-${servicio.sufijo}`"
-                                  v-model="servicio.descripcion"
-                                  :catalogo="catalogoServicios"
-                                  placeholder="Busca y selecciona..."
-                                  :disabled="!esEditable"
-                                  mensaje-sin-resultados="Sin coincidencias. Puedes escribir un servicio libre."
-                                  @select="(item) => seleccionarServicio(item, servicio)"/>
-                              </div>
-                            </td>
-                            <td class="px-4 py-2.5 text-center">
-                              <input v-model="servicio.es_opcional" type="checkbox" class="w-4 h-4 text-primary-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-blue-500 focus:ring-2" :disabled="!esEditable" />
-                            </td>
-                            <td class="px-4 py-2.5">
-                              <input :id="`svc-horas-${servicio.sufijo}`" v-model="servicio.horas_estimadas" type="number" min="0" step="0.5" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand-700 focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
-                            </td>
-                            <td class="px-4 py-2.5 text-center">
-                              <input v-model="servicio.precio_unitario" type="number" min="0" step="0.01" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand-700 focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
-                            </td>
-                            <td class="px-4 py-2.5 text-center">
-                              <input v-model="servicio.descuento" type="number" min="0" step="0.01" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand-700 focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
-                            </td>
-                            <td class="px-4 py-2.5 text-center">
-                              <select v-model="servicio.iva_porcentaje" 
-                                class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand-700 focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable">
-                                <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
-                              </select>
-                            </td>
-                            <td class="px-4 py-2.5 font-medium text-center">$ {{ formatMoney(netoServicio(servicio)) }}</td>
-                            <td v-if="esEditable" class="px-4 py-2.5 text-center">
-                              <button type="button" title="Quitar servicio" aria-label="Quitar servicio" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarServicio(index)">
-                                <Trash2 class="w-5 h-5" />
-                              </button>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                    <div class="flex justify-end mt-3">
-                      <button
-                        v-if="esEditable"
-                        type="button"
-                        title="Añadir servicio o mano de obra"
-                        aria-label="Añadir servicio"
-                        class="add-row-btn inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-primary-blue-700 text-white hover:bg-primary-blue-800 dark:bg-primary-blue-600 dark:hover:bg-primary-blue-700"
-                        @click="agregarServicioVacio">
-                        <Plus class="w-4 h-4" />
-                        Añadir
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- Repuestos -->
-                  <div v-show="activeTab === 'repuestos'" class="col-span-1">
-                    <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
-                      <table class="w-full text-sm text-left text-gray-900 dark:text-white">
-                        <thead class="text-xs uppercase bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                          <tr>
-                            <th class="px-4 py-3">Repuesto</th>
-                            <th class="px-4 py-3 w-28 text-center">Opcional</th>
-                            <th class="px-4 py-3 w-24 text-center">Cant.</th>
-                            <th class="px-4 py-3 w-36 text-center">Precio unit.</th>
-                            <th class="px-4 py-3 w-28 text-center">Descuento</th>
-                            <th class="px-4 py-3 w-28 text-center">IVA</th>
-                            <th class="px-4 py-3 w-32 text-center">Neto</th>
-                            <th v-if="esEditable" class="px-4 py-3 w-14 text-center"></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr v-if="!repuestos.length">
-                            <td colspan="8" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No hay repuestos o materiales.</td>
-                          </tr>
-                          <tr v-for="(repuesto, index) in repuestos" :key="repuesto.sufijo || repuesto.id" class="border-t border-gray-200 dark:border-gray-600">
-                            <td class="px-4 py-2.5">
-                              <div class="relative">
-                                <CatalogoSelect
-                                  :input-id="`rpt-desc-${repuesto.sufijo}`"
-                                  v-model="repuesto.descripcion"
-                                  :catalogo="catalogoRepuestos"
-                                  placeholder="Busca y selecciona..."
-                                  :disabled="!esEditable"
-                                  mostrar-stock
-                                  mensaje-sin-resultados="Sin coincidencias. Puedes escribir un repuesto libre."
-                                  @select="(item) => seleccionarRepuesto(item, repuesto)"/>
-                              </div>
-                            </td>
-                            <td class="px-4 py-2.5 text-center">
-                              <input v-model="repuesto.es_opcional" type="checkbox" class="w-4 h-4 text-primary-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-blue-500 focus:ring-2" :disabled="!esEditable" />
-                            </td>
-                            <td class="px-4 py-2.5 text-center">
-                              <input :id="`rpt-cant-${repuesto.sufijo}`" v-model="repuesto.cantidad" type="number" min="1" step="1" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand-700 focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
-                            </td>
-                            <td class="px-4 py-2.5 text-center">
-                              <input v-model="repuesto.precio_unitario_referencial" type="number" min="0" step="0.01" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand-700 focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
-                            </td>
-                            <td class="px-4 py-2.5 text-center">
-                              <input v-model="repuesto.descuento" type="number" min="0" step="0.01" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand-700 focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable" />
-                            </td>
-                            <td class="px-4 py-2.5 text-center">
-                              <select v-model="repuesto.iva_porcentaje" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand-700 focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body" :disabled="!esEditable">
-                                <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
-                              </select>
-                            </td>
-                            <td class="px-4 py-2.5 font-medium text-center">$ {{ formatMoney(netoRepuesto(repuesto)) }}</td>
-                            <td v-if="esEditable" class="px-4 py-2.5 text-center">
-                              <button type="button" title="Quitar repuesto" aria-label="Quitar repuesto" class="inline-flex items-center p-1.5 text-red-600 rounded-lg hover:bg-red-100 dark:text-red-400 dark:hover:bg-gray-700" @click="quitarRepuesto(index)">
-                                <Trash2 class="w-5 h-5" />
-                              </button>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                    <div class="flex justify-end mt-3">
-                      <button
-                        v-if="esEditable"
-                        type="button"
-                        title="Añadir repuesto o material"
-                        aria-label="Añadir repuesto"
-                        class="add-row-btn inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg bg-primary-blue-700 text-white hover:bg-primary-blue-800 dark:bg-primary-blue-600 dark:hover:bg-primary-blue-700"
-                        @click="agregarRepuestoVacio">
-                        <Plus class="w-4 h-4" />
-                        Añadir
-                      </button>
-                    </div>
-                  </div>
-              </div>
-            </div>
-            </fieldset>
-
-            <!-- ===== OBSERVACIONES + RESUMEN (estilo CotizacionDetail) ===== -->
-            <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <!-- Columna izquierda: Observaciones -->
-              <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
-                <TextImprover
-                  v-model="form.observaciones"
-                  contexto="observaciones generales de una cotización de un taller"
-                  v-slot="{ mejorar, restaurar, mejorando, error, mejorado, tieneOriginal }"
-                >
-                  <div class="flex items-center justify-between gap-2 mb-2">
-                    <label for="observaciones" class="block text-sm font-medium text-gray-900 dark:text-white">Observaciones</label>
-                    <button
-                      v-if="esEditable"
-                      type="button"
-                      title="Mejorar el texto con IA"
-                      :disabled="mejorando"
-                      class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-primary-blue-700 text-primary-blue-700 hover:bg-primary-blue-50 dark:border-primary-blue-400 dark:text-primary-blue-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      @click="mejorar"
-                    >
-                      <Wand2 v-if="!mejorando" class="w-4 h-4" />
-                      <Loader2 v-else class="w-4 h-4 animate-spin" />
-                      {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
-                    </button>
-                  </div>
-                  <textarea id="observaciones" v-model="form.observaciones" rows="6" maxlength="2000" placeholder="Condiciones, garantías, notas para el cliente..." class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand-700 focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body"></textarea>
-                  <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error }}</p>
-                  <div v-if="mejorado && !error" class="mt-2 flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
-                    <CheckCircle2 class="w-5 h-5 shrink-0" />
-                    <div class="flex flex-wrap items-center gap-x-2">
-                      <p>Texto mejorado. Revisa antes de guardar.</p>
-                      <button v-if="tieneOriginal" type="button" class="text-sm font-medium underline hover:no-underline" @click="restaurar">Restaurar original</button>
-                    </div>
-                  </div>
-                </TextImprover>
-              </div>
-
-              <!-- Columna derecha: Resumen -->
-              <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
-                <div class="flex items-center gap-2 mb-4">
-                  <CircleDollarSign class="w-5 h-5 text-gray-900 dark:text-white" />
-                  <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Resumen</h3>
-                </div>
-                <div class="p-5 space-y-2 text-sm rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-700/40 dark:border-gray-600/60">
-                  <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                    <span>Subtotal servicios</span>
-                    <span class="font-medium tabular-nums">$ {{ formatMoney(subtotalServicios) }}</span>
-                  </div>
-                  <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                    <span>Subtotal repuestos / materiales</span>
-                    <span class="font-medium tabular-nums">$ {{ formatMoney(subtotalRepuestos) }}</span>
-                  </div>
-                  <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                    <span>Subtotal neto</span>
-                    <span class="font-medium tabular-nums">$ {{ formatMoney(subtotal) }}</span>
-                  </div>
-                  <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                    <span>Descuento total</span>
-                    <span class="font-medium tabular-nums text-accent-600 dark:text-accent-400">$ {{ formatMoney(descuentoTotal) }}</span>
-                  </div>
-                  <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                    <span>Subtotal base 0%</span>
-                    <span class="font-medium tabular-nums">$ {{ formatMoney(subtotalBase0) }}</span>
-                  </div>
-                  <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                    <span>Subtotal base gravada</span>
-                    <span class="font-medium tabular-nums">$ {{ formatMoney(subtotalBaseGravada) }}</span>
-                  </div>
-                  <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                    <span>IVA total</span>
-                    <span class="font-medium tabular-nums">$ {{ formatMoney(totalIva) }}</span>
-                  </div>
-                  <div class="flex items-center justify-between pt-3 mt-3 text-base font-bold border-t border-gray-200 text-gray-900 dark:border-gray-600 dark:text-white">
-                    <span>Total</span>
-                    <span class="tabular-nums">$ {{ formatMoney(total) }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+    <template v-else>
+      <!-- Ciclo de vida + siguiente paso (solo con la cotización guardada) -->
+      <CotizacionCiclo
+        v-if="isEditMode && cotizacionId"
+        class="mt-4"
+        :estado="estado"
+        :creada="createdAt"
+        :enviada="cotizacion?.fecha_envio || ''"
+        :aceptada="fechaAceptacion || ''"
+        :orden-numero="ordenGeneradaNumero || ''"
+        :orden-href="ordenHref"
+      >
+        <template #accion>
+          <template v-if="estado === 'PENDIENTE'">
+            <button type="button" :disabled="isSaving" :class="BOTON_PRIMARIO" @click="abrirModal('ENVIAR')">
+              <Send class="w-4 h-4 -ms-0.5" />
+              Enviar al cliente
+            </button>
           </template>
+          <template v-else-if="estado === 'ENVIADA'">
+            <button type="button" :disabled="isSaving" :class="BOTON_SECUNDARIO" @click="abrirModal('RECHAZAR')">
+              <XCircle class="w-4 h-4 -ms-0.5 text-red-600 dark:text-red-400" />
+              Rechazó
+            </button>
+            <button type="button" :disabled="isSaving" :class="BOTON_PRIMARIO" @click="abrirModal('ACEPTAR')">
+              <CheckCircle2 class="w-4 h-4 -ms-0.5" />
+              Aprobó
+            </button>
+          </template>
+          <button v-else-if="estado === 'RECHAZADA'" type="button" :class="BOTON_PRIMARIO" @click="abrirModal('REENVIAR')">
+            <RotateCcw class="w-4 h-4 -ms-0.5" />
+            Reenviar
+          </button>
+          <button v-else-if="puedeGenerarOrden" type="button" :class="BOTON_PRIMARIO" @click="mostrarModalGenerarOrden = true">
+            <Wrench class="w-4 h-4 -ms-0.5" />
+            Generar orden de trabajo
+          </button>
+        </template>
+      </CotizacionCiclo>
+
+      <div class="grid grid-cols-1 gap-4 mt-4 lg:grid-cols-4">
+        <div class="space-y-4 lg:col-span-3">
+          <!-- Cliente, vehículo y asesor -->
+          <section :class="SECCION">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <h4 :class="TITULO_SECCION">
+                <Users class="w-4 h-4" />
+                Cliente y vehículo
+              </h4>
+              <span
+                v-if="inspeccionOrigen"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-full dark:bg-gray-700/50 dark:text-gray-300 dark:border-gray-600"
+                title="Cliente y vehículo vienen de la inspección y no se pueden cambiar">
+                Desde la inspección
+                <span class="font-mono font-semibold">{{ inspeccionNumero || referenciaCorta(inspeccionOrigen) }}</span>
+              </span>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div class="min-w-0">
+                <label for="cliente" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                  Cliente <span v-if="!bloqueadoClienteVehiculo" class="text-accent-500">*</span>
+                </label>
+                <ClienteSearchSelect
+                  id="cliente"
+                  v-model="form.clienteSearch"
+                  placeholder="Buscar por nombre, cédula o teléfono"
+                  :error="Boolean(formErrors.cliente)"
+                  :error-message="formErrors.cliente"
+                  :show-create="!bloqueadoClienteVehiculo"
+                  :disabled="bloqueadoClienteVehiculo"
+                  @select="selectCliente"
+                  @clear="clearCliente"
+                  @create="showClientCreateModal = true"
+                />
+                <dl class="mt-3 space-y-1.5 text-xs">
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <IdCardIcon class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Identificación:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ form.cliente_identificacion || '—' }}</dd>
+                  </div>
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <Phone class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Teléfono:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ form.cliente_telefono || '—' }}</dd>
+                  </div>
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <Mail class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Correo:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ form.cliente_email || '—' }}</dd>
+                  </div>
+                </dl>
+              </div>
+
+              <div class="relative min-w-0">
+                <label for="vehiculo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                  Vehículo <span v-if="!bloqueadoClienteVehiculo" class="text-accent-500">*</span>
+                </label>
+                <VehiculoSearchSelect
+                  id="vehiculo"
+                  v-model="form.vehiculoSearch"
+                  :cliente-id="form.cliente?.id || null"
+                  :disabled="bloqueadoClienteVehiculo || !form.cliente"
+                  :placeholder="form.cliente ? 'Buscar placa...' : 'Selecciona un cliente primero'"
+                  :error="Boolean(formErrors.vehiculo)"
+                  :error-message="formErrors.vehiculo"
+                  class="relative"
+                  @select="selectVehiculo"
+                  @clear="clearVehiculo"
+                />
+                <dl class="mt-3 space-y-1.5 text-xs">
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <TagIcon class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Marca:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ form.vehiculo?.marca || '—' }}</dd>
+                  </div>
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <Shapes class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Modelo:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ form.vehiculo?.modelo || '—' }}</dd>
+                  </div>
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <PaintBucket class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Color:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ form.vehiculo_color || '—' }}</dd>
+                  </div>
+                </dl>
+              </div>
+
+              <div class="min-w-0">
+                <label for="asesor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                  Asesor <span v-if="esEditable" class="text-accent-500">*</span>
+                </label>
+                <EmpleadoSearchSelect
+                  v-if="esEditable"
+                  id="asesor"
+                  v-model="asesorSearch"
+                  placeholder="Buscar asesor..."
+                  @select="selectAsesor"
+                  @clear="clearAsesor"
+                />
+                <p v-else class="py-2 text-base font-semibold truncate text-gray-900 dark:text-white">{{ asesorSearch || cotizacion?.asesor_nombre || '—' }}</p>
+                <dl class="mt-3 space-y-1.5 text-xs">
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <IdCardIcon class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Identificación:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ asesorDetalles?.identificacion || '—' }}</dd>
+                  </div>
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <Phone class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Teléfono:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ asesorDetalles?.telefono || '—' }}</dd>
+                  </div>
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <Mail class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Correo:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ asesorDetalles?.email || '—' }}</dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+
+            <div v-if="mostrarSucursal" class="mt-4 max-w-sm">
+              <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                Taller emisor <span class="text-accent-500">*</span>
+              </label>
+              <TallerSelect
+                v-model="tallerSucursalId"
+                :nombre="sucursalNombre"
+                variante="campo"
+                :disabled="Boolean(inspeccionOrigen)"
+                :invalid="Boolean(tallerSucursalError)"
+                placeholder="Selecciona el taller"
+                @change="limpiarErrorSucursal"
+              />
+              <p v-if="tallerSucursalError" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ tallerSucursalError }}</p>
+            </div>
+
+            <!-- Metadatos visibles al crear (al editar los muestra el ciclo de vida). -->
+            <div v-if="!isEditMode" class="flex flex-wrap items-center gap-x-6 gap-y-2 pt-4 mt-4 text-sm text-gray-600 border-t border-gray-200 dark:border-gray-700 dark:text-gray-300">
+              <span class="inline-flex items-center gap-1.5">
+                <CalendarDays class="w-4 h-4 shrink-0 text-brand-700 dark:text-brand-300" />
+                <span class="font-medium text-gray-900 dark:text-white">Emisión:</span>
+                {{ fechaEmision }}
+              </span>
+              <span class="inline-flex items-center gap-1.5">
+                <Store class="w-4 h-4 shrink-0 text-brand-700 dark:text-brand-300" />
+                <span class="font-medium text-gray-900 dark:text-white">Taller:</span>
+                {{ sucursalNombre || tallerSesion || '—' }}
+              </span>
+            </div>
+          </section>
+
+          <!-- Detalle: servicios y repuestos -->
+          <fieldset :disabled="!esEditable" class="min-w-0">
+            <div class="bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+              <nav aria-label="Ítems de la cotización" class="border-b border-gray-200 dark:border-gray-700">
+                <ol class="grid grid-cols-2" role="tablist">
+                  <li v-for="tab in TABS_ITEMS" :key="tab.key">
+                    <button
+                      type="button"
+                      role="tab"
+                      :aria-selected="activeTab === tab.key"
+                      class="flex items-center w-full h-full gap-3 px-4 py-3 -mb-px text-left border-b-2 transition-colors"
+                      :class="activeTab === tab.key
+                        ? 'border-brand-900 bg-brand-50/50 dark:border-brand-300 dark:bg-gray-700/40'
+                        : 'border-transparent hover:bg-gray-50 dark:hover:bg-gray-700/30'"
+                      @click="activeTab = tab.key"
+                    >
+                      <span
+                        class="inline-flex items-center justify-center w-8 h-8 shrink-0 rounded-full"
+                        :class="activeTab === tab.key ? 'bg-brand-900 text-white dark:bg-brand-300 dark:text-brand-900' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'"
+                      >
+                        <component :is="tab.icon" class="w-4 h-4" />
+                      </span>
+                      <span class="min-w-0">
+                        <span class="block text-sm font-semibold" :class="activeTab === tab.key ? 'text-brand-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'">
+                          {{ tab.label }}
+                          <span class="ms-1 px-1.5 text-xs font-medium rounded bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 tabular-nums">{{ tab.filas.length }}</span>
+                        </span>
+                        <span class="block text-xs tabular-nums text-gray-500 dark:text-gray-400">$ {{ formatMoney(tab.subtotal) }}</span>
+                      </span>
+                    </button>
+                  </li>
+                </ol>
+              </nav>
+
+              <div class="p-4 sm:p-5 bg-gray-50/60 dark:bg-gray-900/30">
+                <div v-for="tab in TABS_ITEMS" v-show="activeTab === tab.key" :key="tab.key">
+                  <div class="relative overflow-x-auto bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700">
+                    <table class="w-full text-sm text-left">
+                      <thead class="text-xs text-gray-500 uppercase bg-gray-50 dark:bg-gray-700/50 dark:text-gray-400">
+                        <tr>
+                          <th scope="col" class="px-3 py-2.5 font-medium min-w-64">{{ tab.singular }}</th>
+                          <th scope="col" class="w-24 px-2 py-2.5 font-medium text-center">{{ tab.columna }}</th>
+                          <th scope="col" class="w-32 px-2 py-2.5 font-medium text-center">P. unitario</th>
+                          <th scope="col" class="w-28 px-2 py-2.5 font-medium text-center">Descuento</th>
+                          <th scope="col" class="w-24 px-2 py-2.5 font-medium text-center">IVA</th>
+                          <th scope="col" class="w-24 px-2 py-2.5 font-medium text-center">Opcional</th>
+                          <th scope="col" class="w-28 px-3 py-2.5 font-medium text-right">Neto</th>
+                          <th v-if="esEditable" scope="col" class="w-12 px-2 py-2.5"><span class="sr-only">Quitar</span></th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                        <tr v-if="!tab.filas.length">
+                          <td :colspan="esEditable ? 8 : 7" class="px-4 py-8 text-center">
+                            <component :is="tab.icon" class="w-7 h-7 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ tab.vacio }}</p>
+                          </td>
+                        </tr>
+                        <tr v-for="(fila, index) in tab.filas" :key="fila.sufijo || fila.id" class="align-top">
+                          <td class="px-3 py-2">
+                            <CatalogoSelect
+                              :input-id="`${tab.key === 'servicios' ? 'svc' : 'rpt'}-desc-${fila.sufijo}`"
+                              v-model="fila.descripcion"
+                              :catalogo="tab.catalogo"
+                              placeholder="Busca y selecciona..."
+                              :disabled="!esEditable"
+                              :mostrar-stock="tab.key === 'repuestos'"
+                              :mensaje-sin-resultados="`Sin coincidencias. Puedes escribir un ${tab.singular.toLowerCase()} libre.`"
+                              @select="(item) => tab.seleccionar(item, fila)"/>
+                          </td>
+                          <td class="px-2 py-2">
+                            <input
+                              :id="tab.key === 'servicios' ? `svc-horas-${fila.sufijo}` : `rpt-cant-${fila.sufijo}`"
+                              v-model="fila[tab.campoCantidad]"
+                              type="number"
+                              :min="tab.key === 'servicios' ? 0 : 1"
+                              :step="tab.key === 'servicios' ? 0.5 : 1"
+                              :aria-label="tab.columna"
+                              :class="[INPUT, 'text-center']"
+                              :disabled="!esEditable" />
+                          </td>
+                          <td class="px-2 py-2">
+                            <div class="relative">
+                              <span class="absolute inset-y-0 flex items-center text-gray-400 pointer-events-none start-0 ps-2.5">$</span>
+                              <input v-model="fila[tab.campoPrecio]" type="number" min="0" step="0.01" aria-label="Precio unitario" :class="[INPUT, 'ps-6 text-right']" :disabled="!esEditable" />
+                            </div>
+                          </td>
+                          <td class="px-2 py-2">
+                            <div class="relative">
+                              <span class="absolute inset-y-0 flex items-center text-gray-400 pointer-events-none start-0 ps-2.5">$</span>
+                              <input v-model="fila.descuento" type="number" min="0" step="0.01" aria-label="Descuento" :class="[INPUT, 'ps-6 text-right']" :disabled="!esEditable" />
+                            </div>
+                          </td>
+                          <td class="px-2 py-2">
+                            <select v-model="fila.iva_porcentaje" aria-label="IVA" :class="INPUT" :disabled="!esEditable">
+                              <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
+                            </select>
+                          </td>
+                          <td class="px-2 py-2 text-center">
+                            <label class="inline-flex items-center mt-1.5" :class="esEditable ? 'cursor-pointer' : 'cursor-default'" :title="fila.es_opcional ? 'El cliente puede postergarlo' : 'Necesario'">
+                              <input v-model="fila.es_opcional" type="checkbox" class="sr-only peer" :disabled="!esEditable" :aria-label="`${tab.singular} opcional`" />
+                              <span class="relative w-9 h-5 bg-gray-200 rounded-full peer-focus:ring-4 peer-focus:ring-brand-200 dark:peer-focus:ring-brand-700 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-900 dark:peer-checked:bg-brand-500"></span>
+                            </label>
+                          </td>
+                          <td class="px-3 py-2 pt-4 font-semibold text-right tabular-nums text-gray-900 dark:text-white">$ {{ formatMoney(tab.neto(fila)) }}</td>
+                          <td v-if="esEditable" class="px-2 py-2 text-center">
+                            <button
+                              type="button"
+                              :title="`Quitar ${tab.singular.toLowerCase()}`"
+                              :aria-label="`Quitar ${tab.singular.toLowerCase()}`"
+                              class="inline-flex items-center p-2 text-gray-400 rounded-lg hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+                              @click="tab.quitar(index)">
+                              <Trash2 class="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      </tbody>
+                      <tfoot v-if="tab.filas.length" class="bg-gray-50 dark:bg-gray-700/50">
+                        <tr>
+                          <th scope="row" colspan="6" class="px-3 py-2.5 text-xs font-medium text-right uppercase text-gray-500 dark:text-gray-400">Subtotal {{ tab.label.toLowerCase() }}</th>
+                          <td class="px-3 py-2.5 font-bold text-right tabular-nums text-gray-900 dark:text-white">$ {{ formatMoney(tab.subtotal) }}</td>
+                          <td v-if="esEditable"></td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                  <button
+                    v-if="esEditable"
+                    type="button"
+                    :title="`Añadir ${tab.singular.toLowerCase()}`"
+                    class="add-row-btn flex items-center justify-center w-full gap-2 px-4 py-2.5 mt-3 text-sm font-medium border-2 border-dashed rounded-lg text-brand-700 border-brand-200 hover:bg-brand-50 hover:border-brand-500 focus:ring-4 focus:ring-brand-200 dark:text-brand-200 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-brand-700"
+                    @click="tab.agregar">
+                    <Plus class="w-4 h-4" />
+                    Añadir {{ tab.singular.toLowerCase() }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- Observaciones -->
+          <section :class="SECCION">
+            <TextImprover
+              v-model="form.observaciones"
+              contexto="observaciones generales de una cotización de un taller"
+              v-slot="{ mejorar, restaurar, mejorando, error, mejorado, tieneOriginal }"
+            >
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <h4 :class="TITULO_SECCION">
+                  <MessageSquareText class="w-4 h-4" />
+                  <label for="observaciones">Observaciones para el cliente</label>
+                </h4>
+                <button
+                  v-if="esEditable"
+                  type="button"
+                  title="Mejorar el texto con IA"
+                  :disabled="mejorando || !form.observaciones"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-brand-700 text-brand-700 hover:bg-brand-50 dark:border-brand-300 dark:text-brand-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  @click="mejorar"
+                >
+                  <Loader2 v-if="mejorando" class="w-4 h-4 animate-spin" />
+                  <Wand2 v-else class="w-4 h-4" />
+                  {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
+                </button>
+              </div>
+              <textarea
+                id="observaciones"
+                v-model="form.observaciones"
+                rows="4"
+                maxlength="2000"
+                :disabled="!esEditable"
+                placeholder="Condiciones, garantías, notas para el cliente..."
+                :class="[INPUT, '!p-2.5']"></textarea>
+              <div class="flex items-start justify-between gap-3 mt-1.5">
+                <div class="min-w-0">
+                  <p v-if="error" class="text-sm text-red-600 dark:text-red-500">{{ error }}</p>
+                  <div v-if="mejorado && !error" class="flex flex-wrap items-center gap-x-2 text-sm text-emerald-700 dark:text-emerald-400">
+                    <CheckCircle2 class="w-4 h-4" />
+                    <p>Texto mejorado. Revisa antes de guardar.</p>
+                    <button v-if="tieneOriginal" type="button" class="font-medium underline hover:no-underline" @click="restaurar">Restaurar original</button>
+                  </div>
+                </div>
+                <span class="shrink-0 text-xs tabular-nums text-gray-500 dark:text-gray-400">{{ (form.observaciones || '').length }}/2000</span>
+              </div>
+            </TextImprover>
+          </section>
         </div>
+
+        <aside class="lg:col-span-1">
+          <div class="space-y-4 lg:sticky lg:top-4">
+            <CotizacionTotales
+              :subtotal-servicios="subtotalServicios"
+              :subtotal-repuestos="subtotalRepuestos"
+              :subtotal-neto="subtotal"
+              :descuento="descuentoTotal"
+              :base0="subtotalBase0"
+              :base-gravada="subtotalBaseGravada"
+              :iva="totalIva"
+              :total="total"
+              :n-servicios="servicios.length"
+              :n-repuestos="repuestos.length"
+            />
+            <p v-if="opcionales" class="px-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ opcionales }} ítem{{ opcionales === 1 ? '' : 's' }} opcional{{ opcionales === 1 ? '' : 'es' }} incluido{{ opcionales === 1 ? '' : 's' }} en el total.
+            </p>
+
+            <CotizacionVigencia
+              v-model="form.validez_dias"
+              :desde="cotizacion?.fecha_envio || ''"
+              :editable="esEditable"
+              :opciones="VALIDEZ_OPCIONES"
+              :mostrar-restante="estado === 'ENVIADA'"
+            />
+
+            <section v-if="fechaAceptacion" :class="SECCION">
+              <h4 :class="[TITULO_SECCION, 'mb-3']">
+                <UserCheck class="w-4 h-4" />
+                Aceptación
+              </h4>
+              <div class="flex items-center gap-3">
+                <span class="inline-flex items-center justify-center w-10 h-10 shrink-0 rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                  <component :is="iconoMetodoAceptacion" class="w-5 h-5" />
+                </span>
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ metodoAceptacionLabel || 'Aceptada' }}</p>
+                  <p class="text-xs tabular-nums text-gray-500 dark:text-gray-400">{{ formatFechaHora12(fechaAceptacion) }}</p>
+                </div>
+              </div>
+            </section>
+
+            <RelacionesFlujoEdit
+              v-if="isEditMode && cotizacionId && relacionesCargadas"
+              tipo-entidad="cotizacion"
+              :entidad-id="cotizacionId"
+              :relaciones="relacionesCotizacion"
+              :puede-agregar="puedeAgregarRelacion"
+              :al-vincular="vincularRelacion"
+              :al-desvincular="desvincularRelacion"
+            />
+          </div>
+        </aside>
       </div>
-      <div class="lg:col-span-1 space-y-4">
-        <RelacionesFlujoEdit
-            v-if="isEditMode && cotizacionId && relacionesCargadas"
-            class="relative mx-auto max-w-6xl mb-5"
-            tipo-entidad="cotizacion"
-            :entidad-id="cotizacionId"
-            :relaciones="relacionesCotizacion"
-            :puede-agregar="puedeAgregarRelacion"
-            :al-vincular="vincularRelacion"
-            :al-desvincular="desvincularRelacion"
-          />
-      </div>
-    </div>
-    
+    </template>
   </div>
 
-  <!-- Modal de transición de estado -->
-  <div v-if="modal.visible" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50" @click.self="cerrarModal">
-    <div class="w-full max-w-md p-6 bg-white rounded-lg shadow-xl dark:bg-gray-800">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-          {{ modal.tipo === 'ENVIAR' ? 'Enviar cotización al cliente' : modal.tipo === 'ACEPTAR' ? 'Aceptar cotización' : modal.tipo === 'RECHAZAR' ? 'Rechazar cotización' : 'Reenviar cotización' }}
+  <!-- Modal de transición de estado (no se cierra al hacer clic fuera) -->
+  <div v-if="modal.visible" class="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="modal-estado-title">
+    <div class="fixed inset-0 bg-black/70" aria-hidden="true"></div>
+    <div class="relative w-full max-w-md bg-white rounded-lg shadow-xl dark:bg-gray-800">
+      <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <h3 id="modal-estado-title" class="flex items-center gap-2 text-base font-semibold text-gray-900 dark:text-white">
+          <component
+            :is="{ ENVIAR: Send, ACEPTAR: CheckCircle2, RECHAZAR: XCircle, REENVIAR: RotateCcw }[modal.tipo] || Send"
+            class="w-5 h-5"
+            :class="modal.tipo === 'RECHAZAR' ? 'text-red-600 dark:text-red-400' : 'text-brand-700 dark:text-brand-200'"
+          />
+          {{ TITULOS_MODAL[modal.tipo] }}
         </h3>
-        <button type="button" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" @click="cerrarModal">
+        <button
+          type="button"
+          aria-label="Cerrar"
+          :disabled="modal.procesando"
+          class="inline-flex items-center justify-center w-8 h-8 text-gray-400 rounded-lg hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-700 dark:hover:text-white"
+          @click="cerrarModal">
           <X class="w-5 h-5" />
         </button>
       </div>
 
-      <p v-if="modal.tipo === 'ENVIAR'" class="text-sm text-gray-600 dark:text-gray-300">
-        La cotización quedará marcada como <strong>Enviada al cliente</strong>. Podrá ajustarse o reenviarse hasta que el cliente responda.
-      </p>
-      <p v-else-if="modal.tipo === 'ACEPTAR'" class="text-sm text-gray-600 dark:text-gray-300">
-        Indica cómo aceptó el cliente la cotización. Con la aceptación podrás convertirla en una orden de trabajo.
-      </p>
-      <p v-else-if="modal.tipo === 'RECHAZAR'" class="text-sm text-gray-600 dark:text-gray-300">
-        La cotización quedará marcada como <strong>Rechazada</strong>. Podrás reenviarla más adelante si el cliente cambia de opinión.
-      </p>
-      <p v-else-if="modal.tipo === 'REENVIAR'" class="text-sm text-gray-600 dark:text-gray-300">
-        La cotización volverá al estado <strong>Enviada al cliente</strong>.
-      </p>
+      <div class="p-4 space-y-4">
+        <p v-if="modal.tipo === 'ENVIAR'" class="text-sm text-gray-600 dark:text-gray-300">
+          Se guardarán los cambios en pantalla y la cotización quedará marcada como <strong>Enviada al cliente</strong>.
+          Su vigencia de {{ form.validez_dias }} días empieza a contar desde hoy. Podrá ajustarse o reenviarse hasta que el cliente responda.
+        </p>
+        <p v-else-if="modal.tipo === 'ACEPTAR'" class="text-sm text-gray-600 dark:text-gray-300">
+          Indica cómo aceptó el cliente la cotización. Con la aceptación podrás convertirla en una orden de trabajo.
+        </p>
+        <p v-else-if="modal.tipo === 'RECHAZAR'" class="text-sm text-gray-600 dark:text-gray-300">
+          La cotización quedará marcada como <strong>Rechazada</strong>. Podrás reenviarla más adelante si el cliente cambia de opinión.
+        </p>
+        <p v-else-if="modal.tipo === 'REENVIAR'" class="text-sm text-gray-600 dark:text-gray-300">
+          La cotización volverá al estado <strong>Enviada al cliente</strong>.
+        </p>
 
-      <div v-if="modal.tipo === 'ACEPTAR'" class="mt-4">
-        <label class="block text-sm font-medium text-gray-900 mb-2 dark:text-white">Método de aceptación *</label>
-        <div class="space-y-2">
-          <label v-for="metodo in METODOS_ACEPTACION" :key="metodo.value" class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-            <input v-model="modal.metodo" type="radio" :value="metodo.value" class="w-4 h-4 text-primary-blue-600" />
-            {{ metodo.label }}
-          </label>
+        <div v-if="modal.tipo === 'ACEPTAR'">
+          <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Método de aceptación <span class="text-accent-500">*</span></p>
+          <div class="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Método de aceptación">
+            <label
+              v-for="metodo in METODOS_ACEPTACION"
+              :key="metodo.value"
+              class="flex items-center gap-2 p-3 text-sm border-2 rounded-lg cursor-pointer transition-colors"
+              :class="modal.metodo === metodo.value
+                ? 'border-brand-900 bg-brand-50 text-brand-900 dark:border-brand-300 dark:bg-brand-700/30 dark:text-white'
+                : 'border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700'"
+            >
+              <input v-model="modal.metodo" type="radio" :value="metodo.value" class="sr-only" />
+              <component :is="ICONOS_METODO[metodo.value]" class="w-4 h-4 shrink-0" />
+              {{ metodo.label }}
+            </label>
+          </div>
         </div>
+
+        <Alert v-if="modal.error" type="error" :message="modal.error" dismissible @dismiss="modal.error = ''" />
       </div>
 
-      <Alert v-if="modal.error" type="error" :message="modal.error" dismissible @dismiss="modal.error = ''" />
-
-      <div class="flex items-center justify-end gap-3 mt-6">
-        <button type="button" class="px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-300" :disabled="modal.procesando" @click="cerrarModal">
+      <div class="flex items-center justify-end gap-2 p-4 border-t border-gray-200 dark:border-gray-700">
+        <button
+          type="button"
+          :disabled="modal.procesando"
+          class="px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700"
+          @click="cerrarModal">
           Cancelar
         </button>
         <button
           type="button"
           :disabled="modal.procesando"
-          class="inline-flex items-center px-4 py-2 text-sm font-semibold text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 dark:bg-primary-blue-600 dark:hover:bg-primary-blue-700 disabled:opacity-50"
+          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg focus:ring-4 disabled:opacity-50 disabled:cursor-not-allowed"
+          :class="modal.tipo === 'RECHAZAR' ? 'bg-red-600 hover:bg-red-700 focus:ring-red-300 dark:focus:ring-red-800' : 'bg-brand-900 hover:bg-brand-700 focus:ring-brand-500/30'"
           @click="confirmarModal"
         >
-          <Loader2 v-if="modal.procesando" class="w-4 h-4 mr-2 animate-spin" />
-          <CheckCircle2 v-else class="w-4 h-4 mr-2" />
+          <Loader2 v-if="modal.procesando" class="w-4 h-4 animate-spin" />
+          <CheckCircle2 v-else class="w-4 h-4" />
           {{ modal.procesando ? 'Procesando...' : 'Confirmar' }}
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Confirmación para generar orden de trabajo -->
   <ConfirmModal
     v-model="mostrarModalGenerarOrden"
     title="Generar orden de trabajo"
     message="Se generará una orden de trabajo a partir de esta cotización aceptada."
     :icon="ArrowLeftRight"
-    icon-class="text-green-600 dark:text-green-400"
+    icon-class="text-brand-700 dark:text-brand-200"
     confirm-text="Generar orden"
     confirming-text="Generando..."
-    confirm-class="bg-green-600 hover:bg-green-700 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
     variant="primary"
     :is-deleting="procesandoGeneracionOrden"
     @confirm="confirmarGenerarOrden"

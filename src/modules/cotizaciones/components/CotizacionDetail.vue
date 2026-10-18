@@ -2,11 +2,6 @@
 import { computed, onMounted, ref } from 'vue';
 import {
   ArrowLeftRight,
-  CalendarDays,
-  CheckCircle2,
-  CircleDollarSign,
-  ClipboardList,
-  FileText,
   IdCardIcon,
   Loader2,
   Mail,
@@ -19,8 +14,11 @@ import {
   Store,
   TagIcon,
   UserCheck,
+  Users,
   Workflow,
   Toolbox,
+  Wrench,
+  ListChecks,
 } from 'lucide-vue-next';
 import { IconBrandWhatsapp, IconLockOpen2 } from '@tabler/icons-vue';
 import { cotizacionesService } from '../services/cotizacionesService';
@@ -33,7 +31,9 @@ import PdfExportButton from '../../../shared/components/PdfExportButton.vue';
 import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
 import { relacionesDeCotizacion } from '../../../shared/utils/relacionesFlujo';
 import EstadoCotizacionBadge from './EstadoCotizacionBadge.vue';
-import { referenciaCorta } from '../../../shared/utils/format';
+import CotizacionCiclo from './CotizacionCiclo.vue';
+import CotizacionTotales from './CotizacionTotales.vue';
+import CotizacionVigencia from './CotizacionVigencia.vue';
 
 const METODOS_ACEPTACION = [
   { value: 'PRESENCIAL', label: 'Presencial en taller' },
@@ -42,10 +42,16 @@ const METODOS_ACEPTACION = [
   { value: 'TELEFONO', label: 'Teléfono' },
 ];
 
-const cotizacionId = computed(() => {
-  const params = new URLSearchParams(window.location.search);
-  return params.get('id');
-});
+// --- Estilos compartidos con el resto del flujo (recepción / inspección) ---
+const SECCION = 'p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700';
+const TITULO_SECCION = 'flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200';
+const ETIQUETA = 'text-xs font-medium text-gray-500 dark:text-gray-400';
+const VALOR = 'mt-0.5 text-sm font-semibold text-gray-900 dark:text-white';
+const ENLACE = 'hover:text-brand-coral';
+const BOTON_PRIMARIO = 'inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded shadow-xs bg-brand-900 hover:bg-brand-700 focus:ring-4 focus:ring-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed';
+const BOTON_SECUNDARIO = 'inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800';
+
+const cotizacionId = computed(() => new URLSearchParams(window.location.search).get('id'));
 
 const cotizacion = ref(null);
 const loading = ref(true);
@@ -58,18 +64,13 @@ const procesandoReapertura = ref(false);
 const procesandoGeneracionOrden = ref(false);
 
 const ordenGenerada = computed(() => cotizacion.value?.orden_generada_numero || '');
-
-const puedeGenerarOrden = computed(
-  () => cotizacion.value?.estado === 'ACEPTADA' && !ordenGenerada.value
-);
-
-const puedeReabrir = computed(
-  () => cotizacion.value?.estado === 'ACEPTADA' && !ordenGenerada.value
-);
-
-const puedeEditar = computed(
-  () => Boolean(cotizacion.value) && cotizacion.value.estado !== 'ACEPTADA'
-);
+const ordenHref = computed(() => (
+  cotizacion.value?.orden_generada_id ? `/crud/ordenes/ver/?id=${encodeURIComponent(cotizacion.value.orden_generada_id)}` : ''
+));
+const puedeGenerarOrden = computed(() => cotizacion.value?.estado === 'ACEPTADA' && !ordenGenerada.value);
+const puedeReabrir = puedeGenerarOrden;
+const puedeEditar = computed(() => Boolean(cotizacion.value) && cotizacion.value.estado !== 'ACEPTADA');
+const esperandoRespuesta = computed(() => ['PENDIENTE', 'ENVIADA'].includes(cotizacion.value?.estado));
 
 const metodoAceptacionLabel = computed(() => {
   const metodo = cotizacion.value?.metodo_aceptacion;
@@ -82,53 +83,57 @@ const iconoMetodoAceptacion = computed(() => {
   return iconos[cotizacion.value?.metodo_aceptacion] || UserCheck;
 });
 
-// Mismo criterio que CotizacionEdit: '02/10/2026, 09:56 p. m.'
-function formatFechaHora12(value) {
-  const date = value ? new Date(value) : null;
-  if (!date || Number.isNaN(date.getTime())) return '—';
-  return date.toLocaleString('es-EC', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  });
-}
+const clienteUrl = computed(() => (cotizacion.value?.cliente ? `/crud/clientes/ver/?id=${encodeURIComponent(cotizacion.value.cliente)}` : null));
+const vehiculoUrl = computed(() => (cotizacion.value?.vehiculo ? `/crud/vehiculos/ver/?id=${encodeURIComponent(cotizacion.value.vehiculo)}` : null));
 
-// Chips de recepción, inspección y orden vinculadas a esta cotización.
 const relacionesCotizacion = computed(() => relacionesDeCotizacion(cotizacion.value));
+
+const servicios = computed(() => cotizacion.value?.servicios || []);
+const repuestos = computed(() => cotizacion.value?.repuestos || []);
 
 // Los subtotales por categoría se derivan únicamente del campo `subtotal` que
 // ya calcula el backend en cada servicio/repuesto (sin recalcular precios*horas).
-const subtotalServicios = computed(() =>
-  (cotizacion.value?.servicios || []).reduce((acc, s) => acc + (Number(s.subtotal) || 0), 0)
-);
-const subtotalRepuestos = computed(() =>
-  (cotizacion.value?.repuestos || []).reduce((acc, r) => acc + (Number(r.subtotal) || 0), 0)
-);
+const subtotalServicios = computed(() => servicios.value.reduce((acc, s) => acc + (Number(s.subtotal) || 0), 0));
+const subtotalRepuestos = computed(() => repuestos.value.reduce((acc, r) => acc + (Number(r.subtotal) || 0), 0));
+const opcionales = computed(() => [...servicios.value, ...repuestos.value].filter((i) => i.es_opcional).length);
+
+const GRUPOS = computed(() => [
+  {
+    key: 'svc',
+    titulo: 'Servicios',
+    singular: 'Servicio',
+    icon: Toolbox,
+    filas: servicios.value,
+    columna: 'Horas',
+    cantidad: (f) => f.horas_estimadas ?? '—',
+    precio: (f) => f.precio_unitario,
+    subtotal: subtotalServicios.value,
+    vacio: 'Sin servicios en esta cotización.',
+  },
+  {
+    key: 'rpt',
+    titulo: 'Repuestos y materiales',
+    singular: 'Repuesto',
+    icon: Package,
+    filas: repuestos.value,
+    columna: 'Cant.',
+    cantidad: (f) => f.cantidad ?? '—',
+    precio: (f) => f.precio_unitario_referencial,
+    subtotal: subtotalRepuestos.value,
+    vacio: 'Sin repuestos ni materiales en esta cotización.',
+  },
+]);
 
 function formatMoney(value) {
   return Number(value || 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function ivaLabel(valor) {
-  const tasa = Number(valor) || 0;
-  return `${(tasa * 100).toFixed(0)}%`;
+  return `${((Number(valor) || 0) * 100).toFixed(0)}%`;
 }
-
-const fechaEmision = computed(() => formatDateTime(cotizacion.value?.created_at));
 
 function goTo(path) {
   window.location.assign(path);
-}
-
-function abrirModalReabrir() {
-  mostrarModalReabrir.value = true;
-}
-
-function abrirModalGenerarOrden() {
-  mostrarModalGenerarOrden.value = true;
 }
 
 function irAEditar() {
@@ -192,7 +197,7 @@ onMounted(cargar);
 </script>
 
 <template>
-    <EntityHeader
+  <EntityHeader
     mode="detail"
     entity="Cotización"
     :record-number="cotizacion ? cotizacion.numero_cotizacion : ''"
@@ -203,378 +208,287 @@ onMounted(cargar);
     ]"
   >
     <template #badges>
-      <EstadoCotizacionBadge v-if="cotizacion" :estado="cotizacion.estado" size="md" />
+      <EstadoCotizacionBadge v-if="cotizacion" :estado="cotizacion.estado" :estado-display="cotizacion.estado_display" size="md" />
     </template>
 
     <template #actions>
-      <button
-        v-if="puedeGenerarOrden"
-        type="button"
-        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white rounded-base bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
-        @click="abrirModalGenerarOrden">
-        <ArrowLeftRight class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
-        Generar orden de trabajo
-      </button>
-      <button
-        v-if="puedeReabrir"
-        type="button"
-        :disabled="procesandoReapertura"
-        class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-red-700 rounded-base border border-red-600 hover:bg-red-50 focus:outline-none focus:ring-4 focus:ring-red-200 dark:text-red-400 dark:border-red-400 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        @click="abrirModalReabrir">
-        <IconLockOpen2 class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
+      <button v-if="puedeReabrir" type="button" :disabled="procesandoReapertura" :class="BOTON_SECUNDARIO" @click="mostrarModalReabrir = true">
+        <IconLockOpen2 class="w-5 h-5 -ms-1 text-brand-700 dark:text-brand-200" aria-hidden="true" />
         Reabrir
       </button>
-      <button
-        v-if="puedeEditar"
-        type="button"
-        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
-        @click="irAEditar">
-        <Pencil class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
+      <button v-if="puedeEditar" type="button" :class="BOTON_SECUNDARIO" @click="irAEditar">
+        <Pencil class="w-5 h-5 -ms-1 text-brand-700 dark:text-brand-200" aria-hidden="true" />
         Editar
       </button>
-      <PdfExportButton
-        v-if="cotizacion"
-        :descargador="descargarPdf"
-        @error="errorMessage = $event"
-      />
+      <PdfExportButton v-if="cotizacion" :descargador="descargarPdf" label="PDF" @error="errorMessage = $event" />
     </template>
   </EntityHeader>
 
-  <div class="p-4">
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
-      <div class="lg:col-span-3 space-y-4">
-        <div class="relative mx-auto max-w-8xl p-6 bg-white rounded-lg shadow dark:bg-gray-800">
-          <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
-          <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
-
-          <div v-if="loading" class="flex items-center justify-center py-16">
-            <div class="flex items-center gap-3 text-gray-500 dark:text-gray-400">
-              <Loader2 class="w-6 h-6 animate-spin" />
-              <span>Cargando cotización...</span>
-            </div>
-          </div>
-
-          <template v-else-if="cotizacion">
-            <!-- ===== 1. INFORMACIÓN GENERAL: cliente / vehículo / asesor ===== -->
-            <div class="mb-6">
-              <div class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600 p-4">
-                <div class="flex items-center gap-2 mb-4">
-                  <FileText class="w-5 h-5 text-gray-900 dark:text-white" />
-                  <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Información General</h2>
-                  <span
-                    v-if="cotizacion.validez_dias"
-                    class="ml-auto text-sm text-gray-600 dark:text-gray-300"
-                  >
-                    <span class="font-medium text-gray-900 dark:text-white">Validez:</span>
-                    {{ cotizacion.validez_dias }} días
-                  </span>
-                </div>
-
-                <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_0.7fr_1fr]">
-                  <!-- Cliente -->
-                  <div class="min-w-0">
-                    <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente</p>
-                    <p class="truncate text-sm font-bold text-gray-900 dark:text-white">{{ cotizacion.cliente_nombre || '—' }}</p>
-                    <div class="mt-3 space-y-1.5">
-                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                        <IdCardIcon class="w-3.5 h-3.5 shrink-0" /> Identificación:
-                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.cliente_identificacion || '—' }}</span>
-                      </div>
-                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                        <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono:
-                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.cliente_telefono || '—' }}</span>
-                      </div>
-                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                        <Mail class="w-3.5 h-3.5 shrink-0" /> Correo:
-                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.cliente_email || '—' }}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Vehículo -->
-                  <div class="min-w-0">
-                    <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo</p>
-                    <p class="truncate text-sm font-bold text-gray-900 dark:text-white">{{ formatPlate(cotizacion.vehiculo_placa) || '—' }}</p>
-                    <div class="mt-3 space-y-1.5">
-                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                        <TagIcon class="w-3.5 h-3.5 shrink-0" /> Marca:
-                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_marca || '—' }}</span>
-                      </div>
-                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                        <Shapes class="w-3.5 h-3.5 shrink-0" /> Modelo:
-                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_modelo || '—' }}</span>
-                      </div>
-                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                        <PaintBucket class="w-3.5 h-3.5 shrink-0" /> Color:
-                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_color || '—' }}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Asesor -->
-                  <div class="min-w-0">
-                    <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Asesor</p>
-                    <p class="truncate text-sm font-bold text-gray-900 dark:text-white">{{ cotizacion.asesor_nombre || '—' }}</p>
-                    <div class="mt-3 space-y-1.5">
-                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                        <IdCardIcon class="w-3.5 h-3.5 shrink-0" /> Identificación:
-                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.asesor_identificacion || '—' }}</span>
-                      </div>
-                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                        <Phone class="w-3.5 h-3.5 shrink-0" /> Teléfono:
-                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.asesor_telefono || '—' }}</span>
-                      </div>
-                      <div class="flex items-center gap-2 text-xs text-gray-900 dark:text-gray-400">
-                        <Mail class="w-3.5 h-3.5 shrink-0" /> Correo:
-                        <span class="truncate font-bold text-gray-900 dark:text-white">{{ cotizacion.asesor_email || '—' }}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Metadatos de la cotización (siempre visibles) -->
-                <div class="flex flex-wrap items-center gap-x-6 gap-y-2 pt-4 mt-4 text-sm text-gray-600 border-t border-gray-200 dark:border-gray-600 dark:text-gray-300">
-                  <span class="inline-flex items-center gap-1.5" title="Fecha y hora de emisión">
-                    <CalendarDays class="w-4 h-4 shrink-0 text-brand-700 dark:text-brand-300" />
-                    <span class="font-medium text-gray-900 dark:text-white">Emisión:</span>
-                    {{ fechaEmision }}
-                  </span>
-                  <span class="inline-flex items-center gap-1.5 md:border-l md:border-gray-200 md:pl-6 md:dark:border-gray-600" title="Taller donde se creó la cotización">
-                    <Store class="w-4 h-4 shrink-0 text-brand-700 dark:text-brand-300" />
-                    <span class="font-medium text-gray-900 dark:text-white">Taller:</span>
-                    {{ cotizacion.sucursal_nombre || '—' }}
-                  </span>
-                  <!--span class="inline-flex items-center gap-1.5 md:border-l md:border-gray-200 md:pl-6 md:dark:border-gray-600" title="Origen de la cotización">
-                    <ClipboardList class="w-4 h-4 shrink-0 text-brand-700 dark:text-brand-300" />
-                    <span class="font-medium text-gray-900 dark:text-white">Origen:</span>
-                    <template v-if="cotizacion.inspeccion_origen">
-                      <a
-                        :href="`/crud/inspecciones/ver/?id=${encodeURIComponent(cotizacion.inspeccion_origen)}`"
-                        class="font-medium text-primary-blue-700 hover:underline dark:text-primary-blue-400">Cod Inspección {{ cotizacion.inspeccion_numero || referenciaCorta(cotizacion.inspeccion_origen) }}</a>
-                      <a
-                        v-if="cotizacion.recepcion_origen"
-                        :href="`/crud/recepciones/ver/?id=${encodeURIComponent(cotizacion.recepcion_origen)}`"
-                        class="font-medium text-primary-blue-700 hover:underline dark:text-primary-blue-400">
-                        / Recepción {{ cotizacion.recepcion_numero || referenciaCorta(cotizacion.recepcion_origen) }}
-                      </a>
-                    </template>
-                    <a
-                      v-else-if="cotizacion.recepcion_origen"
-                      :href="`/crud/recepciones/ver/?id=${encodeURIComponent(cotizacion.recepcion_origen)}`"
-                      class="font-medium text-primary-blue-700 hover:underline dark:text-primary-blue-400">
-                      Recepción {{ cotizacion.recepcion_numero || referenciaCorta(cotizacion.recepcion_origen) }}
-                    </a>
-                    <span v-else>Independiente</span>
-                  </span-->
-                  <span
-                    v-if="cotizacion.fecha_aceptacion"
-                    class="inline-flex basis-full items-center gap-1.5 pt-1"
-                    title="Aceptación de la cotización por parte del cliente">
-                    <CheckCircle2 class="w-4 h-4 shrink-0 text-green-600 dark:text-green-400" />
-                    <span class="font-medium text-gray-900 dark:text-white">Aceptada:</span>
-                    {{ formatFechaHora12(cotizacion.fecha_aceptacion) }} -
-                    <component :is="iconoMetodoAceptacion" class="w-4 h-4 shrink-0 text-green-600 dark:text-green-400" />
-                    {{ metodoAceptacionLabel || '—' }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- ===== 2. SERVICIOS ===== -->
-            <section class="mt-6">
-              <h3 class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-                <Toolbox class="w-5 h-5 text-gray-800 dark:text-white" />
-                Servicios
-              </h3>
-              <div v-if="cotizacion.servicios?.length" class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
-                <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                  <thead class="text-xs uppercase bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                    <tr>
-                      <th class="px-4 py-3">Descripción</th>
-                      <th class="px-4 py-3 w-24 text-right">Horas</th>
-                      <th class="px-4 py-3 w-32 text-right">P. Unitario</th>
-                      <th class="px-4 py-3 w-28 text-right">Descuento</th>
-                      <th class="px-4 py-3 w-16 text-right">IVA</th>
-                      <th class="px-4 py-3 w-32 text-right">Neto</th>
-                    </tr>
-                  </thead>
-                  <tbody class="bg-white divide-y divide-gray-200 dark:divide-gray-600 dark:bg-gray-800">
-                    <tr v-for="(servicio, index) in cotizacion.servicios" :key="servicio.id || index">
-                      <td class="px-4 py-3 text-gray-900 dark:text-white">
-                        {{ servicio.descripcion || '—' }}
-                        <span
-                          v-if="servicio.es_opcional"
-                          class="ml-1.5 inline-block px-1.5 py-0.5 text-[10px] font-medium text-gray-500 bg-gray-100 rounded dark:text-gray-400 dark:bg-gray-700"
-                        >opcional</span>
-                      </td>
-                      <td class="px-4 py-3 text-right tabular-nums">{{ servicio.horas_estimadas ?? '—' }}</td>
-                      <td class="px-4 py-3 text-right tabular-nums">{{ formatMoney(servicio.precio_unitario) }}</td>
-                      <td class="px-4 py-3 text-right tabular-nums">{{ formatMoney(servicio.descuento) }}</td>
-                      <td class="px-4 py-3 text-right tabular-nums">{{ ivaLabel(servicio.iva_porcentaje) }}</td>
-                      <td class="px-4 py-3 text-right font-medium tabular-nums text-gray-900 dark:text-white">{{ formatMoney(servicio.subtotal) }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div v-else class="p-5 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
-                Sin servicios registrados en esta cotización.
-              </div>
-            </section>
-
-            <!-- ===== 3. REPUESTOS / MATERIALES ===== -->
-            <section class="mt-8">
-              <h3 class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-                <Package class="w-5 h-5 text-gray-800 dark:text-white" />
-                Repuestos
-              </h3>
-              <div v-if="cotizacion.repuestos?.length" class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-600">
-                <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                  <thead class="text-xs uppercase bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                    <tr>
-                      <th class="px-4 py-3">Descripción</th>
-                      <th class="px-4 py-3 w-24 text-right">Cant.</th>
-                      <th class="px-4 py-3 w-32 text-right">P. Unitario</th>
-                      <th class="px-4 py-3 w-28 text-right">Descuento</th>
-                      <th class="px-4 py-3 w-16 text-right">IVA</th>
-                      <th class="px-4 py-3 w-32 text-right">Neto</th>
-                    </tr>
-                  </thead>
-                  <tbody class="bg-white divide-y divide-gray-200 dark:divide-gray-600 dark:bg-gray-800">
-                    <tr v-for="(repuesto, index) in cotizacion.repuestos" :key="repuesto.id || index">
-                      <td class="px-4 py-3 text-gray-900 dark:text-white">
-                        {{ repuesto.descripcion || '—' }}
-                        <span
-                          v-if="repuesto.es_opcional"
-                          class="ml-1.5 inline-block px-1.5 py-0.5 text-[10px] font-medium text-gray-500 bg-gray-100 rounded dark:text-gray-400 dark:bg-gray-700"
-                        >opcional</span>
-                      </td>
-                      <td class="px-4 py-3 text-right tabular-nums">{{ repuesto.cantidad ?? '—' }}</td>
-                      <td class="px-4 py-3 text-right tabular-nums">{{ formatMoney(repuesto.precio_unitario_referencial) }}</td>
-                      <td class="px-4 py-3 text-right tabular-nums">{{ formatMoney(repuesto.descuento) }}</td>
-                      <td class="px-4 py-3 text-right tabular-nums">{{ ivaLabel(repuesto.iva_porcentaje) }}</td>
-                      <td class="px-4 py-3 text-right font-medium tabular-nums text-gray-900 dark:text-white">{{ formatMoney(repuesto.subtotal) }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div v-else class="p-5 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600">
-                Sin repuestos o materiales registrados en esta cotización.
-              </div>
-            </section>
-
-            <!-- ===== 4. OBSERVACIONES + RESUMEN ===== -->
-            <section class="grid grid-cols-1 gap-6 mt-8 lg:grid-cols-2">
-              <div>
-                <h3 class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-                  <MessageSquareText class="w-5 h-5 text-gray-800 dark:text-white" />
-                  Observaciones
-                </h3>
-                <div
-                  v-if="cotizacion.observaciones"
-                  class="p-4 text-sm whitespace-pre-line rounded-lg bg-gray-50 border border-gray-200 text-gray-800 dark:bg-gray-700/40 dark:border-gray-600/60 dark:text-gray-200"
-                >
-                  {{ cotizacion.observaciones }}
-                </div>
-                <div
-                  v-else
-                  class="p-5 text-sm text-gray-500 rounded-lg border border-dashed border-gray-300 dark:text-gray-400 dark:border-gray-600"
-                >
-                  Sin observaciones.
-                </div>
-              </div>
-
-              <div>
-                <h3 class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-                  <CircleDollarSign class="w-5 h-5 text-gray-800 dark:text-white" />
-                  Resumen
-                </h3>
-                <div class="p-5 space-y-2 text-sm rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-700/40 dark:border-gray-600/60">
-                  <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                    <span>Subtotal servicios</span>
-                    <span class="font-medium tabular-nums">$ {{ formatMoney(subtotalServicios) }}</span>
-                  </div>
-                  <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                    <span>Subtotal repuestos / materiales</span>
-                    <span class="font-medium tabular-nums">$ {{ formatMoney(subtotalRepuestos) }}</span>
-                  </div>
-                  <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                    <span>Subtotal neto</span>
-                    <span class="font-medium tabular-nums">$ {{ formatMoney(cotizacion.subtotal_neto) }}</span>
-                  </div>
-                  <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                    <span>Descuento total</span>
-                    <span class="font-medium tabular-nums text-accent-600 dark:text-accent-400">$ {{ formatMoney(cotizacion.descuento) }}</span>
-                  </div>
-                  <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                    <span>Subtotal base 0%</span>
-                    <span class="font-medium tabular-nums">$ {{ formatMoney(cotizacion.subtotal_base_0) }}</span>
-                  </div>
-                  <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                    <span>Subtotal base gravada</span>
-                    <span class="font-medium tabular-nums">$ {{ formatMoney(cotizacion.subtotal_base_gravada) }}</span>
-                  </div>
-                  <div class="flex items-center justify-between text-gray-700 dark:text-gray-300">
-                    <span>IVA total</span>
-                    <span class="font-medium tabular-nums">$ {{ formatMoney(cotizacion.total_iva) }}</span>
-                  </div>
-                  <div class="flex items-center justify-between pt-3 mt-3 text-base font-bold border-t border-gray-200 text-gray-900 dark:border-gray-600 dark:text-white">
-                    <span>Total</span>
-                    <span class="tabular-nums">$ {{ formatMoney(cotizacion.total) }}</span>
-                  </div>
-                </div>
-              </div>
-            </section>
-          </template>
-
-          <div v-else-if="!loading" class="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
-            Cotización no encontrada.
-          </div>
-        </div>
-      </div>
-
-      <div class="lg:col-span-1 space-y-4">
-        <!-- ===== 0. RELACIONES DEL FLUJO ===== -->
-        <div class="mb-6 p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-600">
-          <div class="flex items-center gap-2 mb-1">
-            <Workflow class="w-5 h-5 text-gray-900 dark:text-white" />
-            <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Relaciones del flujo</h2>
-          </div>
-          <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
-            Recepción, inspección y orden de trabajo relacionadas.
-          </p>
-          <RelacionesFlujo :pasos="relacionesCotizacion" />
-        </div>
-      </div>
+  <div class="px-4 pt-4 pb-6">
+    <div class="space-y-4">
+      <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
+      <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
     </div>
 
-    
+    <div v-if="loading" :class="[SECCION, 'mt-4 flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400']">
+      <Loader2 class="w-4 h-4 animate-spin" />
+      Cargando cotización...
+    </div>
+
+    <div v-else-if="!cotizacion" :class="[SECCION, 'mt-4 text-center text-sm text-gray-500 dark:text-gray-400']">
+      Cotización no encontrada.
+    </div>
+
+    <template v-else>
+      <!-- Ciclo de vida + siguiente paso -->
+      <CotizacionCiclo
+        class="mt-4"
+        :estado="cotizacion.estado"
+        :creada="cotizacion.created_at"
+        :enviada="cotizacion.fecha_envio"
+        :aceptada="cotizacion.fecha_aceptacion"
+        :orden-numero="cotizacion.orden_generada_numero || ''"
+        :orden-href="ordenHref"
+      >
+        <template v-if="puedeGenerarOrden" #accion>
+          <button type="button" :class="BOTON_PRIMARIO" @click="mostrarModalGenerarOrden = true">
+            <Wrench class="w-5 h-5 -ms-1" aria-hidden="true" />
+            Generar orden de trabajo
+          </button>
+        </template>
+        <template v-else-if="puedeEditar && esperandoRespuesta" #accion>
+          <button type="button" :class="BOTON_PRIMARIO" @click="irAEditar">
+            <Pencil class="w-4 h-4 -ms-0.5" aria-hidden="true" />
+            {{ cotizacion.estado === 'PENDIENTE' ? 'Revisar y enviar' : 'Registrar respuesta' }}
+          </button>
+        </template>
+      </CotizacionCiclo>
+
+      <div class="grid grid-cols-1 gap-4 mt-4 lg:grid-cols-4">
+        <div class="space-y-4 lg:col-span-3">
+          <!-- Cliente, vehículo y asesor -->
+          <section :class="SECCION">
+            <h4 :class="[TITULO_SECCION, 'mb-4']">
+              <Users class="w-4 h-4" />
+              Cliente y vehículo
+            </h4>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div class="min-w-0">
+                <p :class="ETIQUETA">Cliente</p>
+                <a v-if="clienteUrl" :href="clienteUrl" :class="[VALOR, ENLACE, 'block truncate text-base']" :title="cotizacion.cliente_nombre">{{ cotizacion.cliente_nombre || '—' }}</a>
+                <p v-else :class="[VALOR, 'truncate text-base']">{{ cotizacion.cliente_nombre || '—' }}</p>
+                <dl class="mt-3 space-y-1.5 text-xs">
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <IdCardIcon class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Identificación:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ cotizacion.cliente_identificacion || '—' }}</dd>
+                  </div>
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <Phone class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Teléfono:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ cotizacion.cliente_telefono || '—' }}</dd>
+                  </div>
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <Mail class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Correo:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ cotizacion.cliente_email || '—' }}</dd>
+                  </div>
+                </dl>
+              </div>
+
+              <div class="min-w-0 md:border-s md:border-gray-200 md:ps-4 md:dark:border-gray-700">
+                <p :class="ETIQUETA">Vehículo</p>
+                <a v-if="vehiculoUrl" :href="vehiculoUrl" :class="[VALOR, ENLACE, 'block font-mono text-base tracking-widest']">{{ formatPlate(cotizacion.vehiculo_placa) || '—' }}</a>
+                <p v-else :class="[VALOR, 'font-mono text-base tracking-widest']">{{ formatPlate(cotizacion.vehiculo_placa) || '—' }}</p>
+                <dl class="mt-3 space-y-1.5 text-xs">
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <TagIcon class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Marca:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_marca || '—' }}</dd>
+                  </div>
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <Shapes class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Modelo:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_modelo || '—' }}</dd>
+                  </div>
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <PaintBucket class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Color:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ cotizacion.vehiculo_color || '—' }}</dd>
+                  </div>
+                </dl>
+              </div>
+
+              <div class="min-w-0 md:border-s md:border-gray-200 md:ps-4 md:dark:border-gray-700">
+                <p :class="ETIQUETA">Asesor</p>
+                <p :class="[VALOR, 'truncate text-base']">{{ cotizacion.asesor_nombre || '—' }}</p>
+                <dl class="mt-3 space-y-1.5 text-xs">
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <Phone class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Teléfono:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ cotizacion.asesor_telefono || '—' }}</dd>
+                  </div>
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <Mail class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Correo:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ cotizacion.asesor_email || '—' }}</dd>
+                  </div>
+                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <Store class="w-3.5 h-3.5 shrink-0" />
+                    <dt>Taller:</dt>
+                    <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ cotizacion.sucursal_nombre || '—' }}</dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          </section>
+
+          <!-- Detalle: servicios y repuestos -->
+          <section v-for="grupo in GRUPOS" :key="grupo.key" :class="SECCION">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <h4 :class="TITULO_SECCION">
+                <component :is="grupo.icon" class="w-4 h-4" />
+                {{ grupo.titulo }}
+                <span class="px-1.5 text-xs font-medium normal-case tracking-normal rounded bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 tabular-nums">{{ grupo.filas.length }}</span>
+              </h4>
+            </div>
+            <div class="relative overflow-x-auto border border-gray-200 rounded-lg dark:border-gray-700">
+              <table class="w-full text-sm text-left">
+                <thead class="text-xs text-gray-500 uppercase bg-gray-50 dark:bg-gray-700/50 dark:text-gray-400">
+                  <tr>
+                    <th scope="col" class="px-4 py-2.5 font-medium">{{ grupo.singular }}</th>
+                    <th scope="col" class="w-20 px-4 py-2.5 font-medium text-right">{{ grupo.columna }}</th>
+                    <th scope="col" class="w-28 px-4 py-2.5 font-medium text-right">P. unitario</th>
+                    <th scope="col" class="w-28 px-4 py-2.5 font-medium text-right">Descuento</th>
+                    <th scope="col" class="w-16 px-4 py-2.5 font-medium text-right">IVA</th>
+                    <th scope="col" class="w-28 px-4 py-2.5 font-medium text-right">Neto</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                  <tr v-if="!grupo.filas.length">
+                    <td colspan="6" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">{{ grupo.vacio }}</td>
+                  </tr>
+                  <tr v-for="(fila, index) in grupo.filas" :key="fila.id || index" class="bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700/40">
+                    <td class="px-4 py-3">
+                      <span class="font-medium text-gray-900 dark:text-white">{{ fila.descripcion || '—' }}</span>
+                      <span
+                        v-if="fila.es_opcional"
+                        class="ms-2 px-1.5 py-0.5 text-[11px] font-medium rounded-sm bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200 dark:bg-brand-700/30 dark:text-brand-200 dark:ring-brand-500/50"
+                        title="El cliente puede postergarlo"
+                      >Opcional</span>
+                    </td>
+                    <td class="px-4 py-3 text-right tabular-nums text-gray-700 dark:text-gray-300">{{ grupo.cantidad(fila) }}</td>
+                    <td class="px-4 py-3 text-right tabular-nums text-gray-700 dark:text-gray-300">$ {{ formatMoney(grupo.precio(fila)) }}</td>
+                    <td class="px-4 py-3 text-right tabular-nums" :class="Number(fila.descuento) ? 'text-accent-600 dark:text-accent-400' : 'text-gray-400'">
+                      {{ Number(fila.descuento) ? `− $ ${formatMoney(fila.descuento)}` : '—' }}
+                    </td>
+                    <td class="px-4 py-3 text-right tabular-nums text-gray-700 dark:text-gray-300">{{ ivaLabel(fila.iva_porcentaje) }}</td>
+                    <td class="px-4 py-3 text-right font-semibold tabular-nums text-gray-900 dark:text-white">$ {{ formatMoney(fila.subtotal) }}</td>
+                  </tr>
+                </tbody>
+                <tfoot v-if="grupo.filas.length" class="bg-gray-50 dark:bg-gray-700/50">
+                  <tr>
+                    <th scope="row" colspan="5" class="px-4 py-2.5 text-xs font-medium text-right uppercase text-gray-500 dark:text-gray-400">Subtotal {{ grupo.titulo.toLowerCase() }}</th>
+                    <td class="px-4 py-2.5 text-right font-bold tabular-nums text-gray-900 dark:text-white">$ {{ formatMoney(grupo.subtotal) }}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </section>
+
+          <!-- Observaciones -->
+          <section :class="SECCION">
+            <h4 :class="[TITULO_SECCION, 'mb-3']">
+              <MessageSquareText class="w-4 h-4" />
+              Observaciones para el cliente
+            </h4>
+            <p
+              v-if="cotizacion.observaciones"
+              class="p-3 text-sm leading-relaxed whitespace-pre-line text-gray-900 border-s-4 border-brand-500 bg-brand-50/60 rounded-e-lg dark:bg-gray-700/50 dark:border-brand-300 dark:text-white"
+            >{{ cotizacion.observaciones }}</p>
+            <p v-else class="text-sm text-gray-400 dark:text-gray-500">Sin observaciones.</p>
+          </section>
+        </div>
+
+        <aside class="lg:col-span-1">
+          <div class="space-y-4 lg:sticky lg:top-4">
+            <CotizacionTotales
+              :subtotal-servicios="subtotalServicios"
+              :subtotal-repuestos="subtotalRepuestos"
+              :subtotal-neto="Number(cotizacion.subtotal_neto) || 0"
+              :descuento="Number(cotizacion.descuento) || 0"
+              :base0="Number(cotizacion.subtotal_base_0) || 0"
+              :base-gravada="Number(cotizacion.subtotal_base_gravada) || 0"
+              :iva="Number(cotizacion.total_iva) || 0"
+              :total="Number(cotizacion.total) || 0"
+              :n-servicios="servicios.length"
+              :n-repuestos="repuestos.length"
+            />
+
+            <p v-if="opcionales" class="flex items-start gap-2 px-1 text-xs text-gray-500 dark:text-gray-400">
+              <ListChecks class="w-4 h-4 shrink-0" />
+              {{ opcionales }} ítem{{ opcionales === 1 ? '' : 's' }} opcional{{ opcionales === 1 ? '' : 'es' }} incluido{{ opcionales === 1 ? '' : 's' }} en el total.
+            </p>
+
+            <CotizacionVigencia
+              :model-value="Number(cotizacion.validez_dias) || 15"
+              :desde="cotizacion.fecha_envio || ''"
+              :mostrar-restante="cotizacion.estado === 'ENVIADA'"
+            />
+
+            <!-- Aceptación -->
+            <section v-if="cotizacion.fecha_aceptacion" :class="SECCION">
+              <h4 :class="[TITULO_SECCION, 'mb-3']">
+                <UserCheck class="w-4 h-4" />
+                Aceptación
+              </h4>
+              <div class="flex items-center gap-3">
+                <span class="inline-flex items-center justify-center w-10 h-10 shrink-0 rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                  <component :is="iconoMetodoAceptacion" class="w-5 h-5" />
+                </span>
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ metodoAceptacionLabel || 'Aceptada' }}</p>
+                  <p class="text-xs tabular-nums text-gray-500 dark:text-gray-400">{{ formatDateTime(cotizacion.fecha_aceptacion) }}</p>
+                </div>
+              </div>
+            </section>
+
+            <!-- Relaciones del flujo -->
+            <section :class="SECCION">
+              <h4 :class="[TITULO_SECCION, 'mb-1']">
+                <Workflow class="w-4 h-4" />
+                Relaciones del flujo
+              </h4>
+              <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">Recepción, inspección y orden de trabajo relacionadas.</p>
+              <RelacionesFlujo :pasos="relacionesCotizacion" />
+            </section>
+          </div>
+        </aside>
+      </div>
+    </template>
   </div>
 
-  <!-- Confirmación para reabrir -->
   <ConfirmModal
     v-model="mostrarModalReabrir"
     title="Reabrir cotización"
-    message='Al reabrir la cotización, volverá al estado "Enviada al cliente" y el cliente deberá aceptarla nuevamente. Serás trasladado a la pantalla de edición para ajustar la cotización.'
+    message='Al reabrir la cotización, volverá al estado "Enviada al cliente" y el cliente deberá aceptarla nuevamente. Serás trasladado a la pantalla de edición para ajustarla.'
     :icon="IconLockOpen2"
-    icon-class="text-primary-600 dark:text-primary-400"
+    icon-class="text-brand-700 dark:text-brand-200"
     confirm-text="Sí, reabrir"
     confirming-text="Reabriendo..."
-    confirm-class="bg-primary-600 hover:bg-primary-700 focus:ring-primary-300 dark:bg-primary-700 dark:hover:bg-primary-800"
     variant="primary"
     :is-deleting="procesandoReapertura"
     @confirm="confirmarReabrir"
   />
 
-  <!-- Confirmación para generar orden de trabajo -->
   <ConfirmModal
     v-model="mostrarModalGenerarOrden"
     title="Generar orden de trabajo"
     message="Se generará una orden de trabajo a partir de esta cotización aceptada."
     :icon="ArrowLeftRight"
-    icon-class="text-green-600 dark:text-green-400"
+    icon-class="text-brand-700 dark:text-brand-200"
     confirm-text="Generar orden"
     confirming-text="Generando..."
-    confirm-class="bg-green-600 hover:bg-green-700 focus:ring-green-300 dark:bg-green-700 dark:hover:bg-green-800"
     variant="primary"
     :is-deleting="procesandoGeneracionOrden"
     @confirm="confirmarGenerarOrden"
