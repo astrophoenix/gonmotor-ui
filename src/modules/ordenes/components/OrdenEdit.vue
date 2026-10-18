@@ -1531,14 +1531,7 @@ const grupos = computed(() => [
               Siguiente: {{ PASOS[activeTabIndex + 1].label }}
               <ArrowRight class="w-4 h-4" />
             </button>
-            <FormSaveActions
-              v-else
-              :is-loading="saving"
-              :is-edit-mode="isEditMode"
-              :cancel-href="isEditMode ? `/crud/ordenes/ver/?id=${ordenId}` : '/crud/ordenes/'"
-              text="Guardar orden"
-              color="brand"
-              :on-submit="() => handleSubmit()"/>
+            <span v-else></span>
           </div>
         </div>
       </div>
