@@ -5,7 +5,7 @@ import {
   HardHat, Wrench, Package, Check, CircleAlert, ArrowLeft, ArrowRight, ListChecks, CheckCircle2,
   CircleStop, IdCardIcon, TagIcon, Shapes, PaintBucket, Phone, Mail, UserRound, Building2,
   CalendarClock, ReceiptText, FileText, Stethoscope, Hourglass, CheckCheck, RotateCcw, Ban, X,
-  NotebookPen, Gauge,
+  NotebookPen, Gauge, LoaderCircle, ShieldCheck,
 } from 'lucide-vue-next';
 import { IconClockPlay, IconClockCheck, IconPlayerPause, IconPlayerPlay } from '@tabler/icons-vue';
 import { request } from '../../../shared/services/httpClient';
@@ -162,12 +162,35 @@ function nombreEmpleado(empleado) {
     || '';
 }
 
+// Empleados de la empresa: dan el rol del mecánico asignado.
+const empleados = ref([]);
+const mecanicoSeleccionado = ref(null);
+
+async function loadEmpleados() {
+  try {
+    const data = await request('/api/auth/empleados/?page=1&page_size=100');
+    empleados.value = Array.isArray(data?.results) ? data.results : [];
+  } catch (err) {
+    empleados.value = [];
+  }
+}
+
+const mecanicoInfo = computed(() => {
+  if (mecanicoSeleccionado.value) return mecanicoSeleccionado.value;
+  if (!form.value.mecanico_principal) return null;
+  return empleados.value.find(
+    (empleado) => String(empleado.user?.id ?? '') === String(form.value.mecanico_principal)
+  ) || null;
+});
+
 function seleccionarMecanico(empleado) {
+  mecanicoSeleccionado.value = empleado || null;
   form.value.mecanico_principal = empleado?.user?.id ? String(empleado.user.id) : '';
   mecanicoSearch.value = nombreEmpleado(empleado);
 }
 
 function limpiarMecanico() {
+  mecanicoSeleccionado.value = null;
   form.value.mecanico_principal = '';
   mecanicoSearch.value = '';
 }
@@ -557,6 +580,7 @@ async function guardarDetalles(idOrden) {
 
 onMounted(async () => {
   loadCatalogo();
+  loadEmpleados();
   if (!isEditMode.value) {
     loading.value = false;
     return;
@@ -988,7 +1012,7 @@ const grupos = computed(() => [
           <component
             :is="estadoActual === 'PENDIENTE' ? CircleStop
               : estadoActual === 'EN_ESPERA' ? Hourglass
-                : estadoActual === 'COMPLETADO' || puedeCompletar ? CheckCircle2 : Wrench"
+                : estadoActual === 'COMPLETADO' || puedeCompletar ? CheckCircle2 : LoaderCircle"
             class="w-5 h-5 mt-0.5 shrink-0" />
           <p v-if="estadoActual === 'PENDIENTE'">
             <span class="font-semibold">El trabajo aún no ha comenzado.</span>
@@ -1150,6 +1174,11 @@ const grupos = computed(() => [
                   <dt>Correo:</dt>
                   <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ cliente?.email || '—' }}</dd>
                 </div>
+                <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                  <UserRound class="w-3.5 h-3.5 shrink-0" />
+                  <dt>Asesor:</dt>
+                  <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ orden?.asesor_nombre || '—' }}</dd>
+                </div>
               </dl>
             </div>
 
@@ -1188,6 +1217,11 @@ const grupos = computed(() => [
                   <dt>Color:</dt>
                   <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ vehiculo?.color || '—' }}</dd>
                 </div>
+                <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                  <Gauge class="w-3.5 h-3.5 shrink-0" />
+                  <dt>Kilometraje:</dt>
+                  <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ vehiculo?.kilometraje_actual != null ? `${Number(vehiculo.kilometraje_actual).toLocaleString('es-EC')} km` : '—' }}</dd>
+                </div>
               </dl>
             </div>
 
@@ -1202,19 +1236,14 @@ const grupos = computed(() => [
                 @clear="limpiarMecanico"/>
               <dl class="mt-3 space-y-1.5 text-xs">
                 <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-                  <UserRound class="w-3.5 h-3.5 shrink-0" />
-                  <dt>Asesor:</dt>
-                  <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ orden?.asesor_nombre || '—' }}</dd>
+                  <ShieldCheck class="w-3.5 h-3.5 shrink-0" />
+                  <dt>Rol:</dt>
+                  <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ mecanicoInfo?.rol_display || mecanicoInfo?.rol || '—' }}</dd>
                 </div>
                 <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
                   <Building2 class="w-3.5 h-3.5 shrink-0" />
                   <dt>Taller:</dt>
                   <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ orden?.sucursal_nombre || '—' }}</dd>
-                </div>
-                <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-                  <Gauge class="w-3.5 h-3.5 shrink-0" />
-                  <dt>Kilometraje:</dt>
-                  <dd class="truncate font-semibold text-gray-900 dark:text-white">{{ vehiculo?.kilometraje_actual != null ? `${Number(vehiculo.kilometraje_actual).toLocaleString('es-EC')} km` : '—' }}</dd>
                 </div>
               </dl>
             </div>
