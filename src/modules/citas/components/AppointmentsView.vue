@@ -1,8 +1,8 @@
 <script setup>
-import { computed, onMounted, onUnmounted, watch } from 'vue';
-import { Car, Clock, Pen, Trash2, User } from 'lucide-vue-next';
+import { onMounted, onUnmounted, watch } from 'vue';
 import { useCitas } from '../composables/useCitas';
 import EntityTable from '../../../shared/components/EntityTable.vue';
+import EntityRowActions from '../../../shared/components/EntityRowActions.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
 import { SEARCH_DEBOUNCE_MS, isSearchable } from '../../../shared/utils/search';
 import CitaAccionesMenu from './CitaAccionesMenu.vue';
@@ -17,7 +17,7 @@ const props = defineProps({
   recargarToken: { type: Number, default: 0 },
 });
 
-const emit = defineEmits(['accion', 'alert', 'cargando', 'resumen']);
+const emit = defineEmits(['accion', 'alert', 'cargando']);
 
 const search = defineModel('search', { type: String, default: '' });
 const estadoFiltro = defineModel('estadoFiltro', { type: String, default: '' });
@@ -44,10 +44,6 @@ const ESTADO_BADGES = {
   NO_ASISTIO: 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
 };
 
-const activeCount = computed(() =>
-  citas.value.filter((cita) => ['PROGRAMADA', 'CONFIRMADA', 'EN_PROGRESO'].includes(cita.estado)).length
-);
-
 let searchTimer;
 
 async function loadCitas(page = 1) {
@@ -72,12 +68,8 @@ watch(() => props.recargarToken, (valor) => {
   if (valor > 0) loadCitas(currentPage.value);
 });
 
-// El panel de CitasView necesita el estado de carga (para deshabilitar
-// Limpiar/Buscar) y el resumen de la página para la cabecera del listado.
+// El panel de CitasView necesita el estado de carga (para deshabilitar Limpiar).
 watch(isLoading, (valor) => emit('cargando', valor), { immediate: true });
-watch([activeCount, total], ([activas, totalCitas]) => {
-  emit('resumen', { activas, total: totalCitas });
-}, { immediate: true });
 
 function onAccion(cita, tipo) {
   emit('accion', { cita, tipo });
@@ -119,37 +111,30 @@ onUnmounted(() => clearTimeout(searchTimer));
     <template #row="{ item }">
       <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
         <td class="px-4 py-3 whitespace-nowrap">
-          <div class="flex items-center gap-2">
-            <Clock class="w-4 h-4 text-gray-400 dark:text-gray-500" />
-            <div>
-              <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ formatDate(item.fecha_cita) }}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">{{ formatHour(item.hora_cita) }}</p>
-            </div>
-          </div>
+          <!-- Las citas no tienen ficha propia: la fecha abre la cita para editarla. -->
+          <button
+            type="button"
+            title="Editar cita"
+            class="text-left cursor-pointer group"
+            @click="onAccion(item, 'editar')"
+          >
+            <span class="block font-medium text-gray-800 group-hover:text-brand-coral dark:text-white">{{ formatDate(item.fecha_cita) }}</span>
+            <span class="block text-xs text-gray-500 dark:text-gray-400">{{ formatHour(item.hora_cita) }}</span>
+          </button>
         </td>
         <td class="px-4 py-3 whitespace-nowrap">
-          <div class="flex items-center gap-2">
-            <User class="w-4 h-4 text-gray-400 dark:text-gray-500" />
-            <div>
-              <p class="text-sm text-gray-800 dark:text-white">{{ item.cliente?.nombre || '—' }}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.cliente?.telefono || 'Sin teléfono' }}</p>
-            </div>
-          </div>
+          <p class="text-gray-800 dark:text-white">{{ item.cliente?.nombre || '—' }}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.cliente?.telefono || 'Sin teléfono' }}</p>
         </td>
         <td class="px-4 py-3 whitespace-nowrap">
-          <div class="flex items-center gap-2">
-            <Car class="w-4 h-4 text-gray-400 dark:text-gray-500" />
-            <div>
-              <p class="text-sm font-medium text-gray-900 dark:text-white">{{ item.vehiculo?.placa || '—' }}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">
-                {{ item.vehiculo?.marca }} {{ item.vehiculo?.modelo }} {{ item.vehiculo?.color || '' }}
-              </p>
-            </div>
-          </div>
+          <p class="font-medium text-gray-800 dark:text-white">{{ item.vehiculo?.placa || '—' }}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            {{ [item.vehiculo?.marca, item.vehiculo?.modelo, item.vehiculo?.color].filter(Boolean).join(' · ') || '—' }}
+          </p>
         </td>
         <td class="px-4 py-3 whitespace-nowrap">
-          <p class="text-sm font-medium text-gray-900 dark:text-white">{{ item.motivo_display }}</p>
-          <p v-if="item.motivo_descripcion" class="text-xs text-gray-500 truncate max-w-[220px] dark:text-gray-400">{{ item.motivo_descripcion }}</p>
+          <p class="text-gray-800 dark:text-white">{{ item.motivo_display }}</p>
+          <p v-if="item.motivo_descripcion" class="text-xs text-gray-500 truncate max-w-[220px] dark:text-gray-400" :title="item.motivo_descripcion">{{ item.motivo_descripcion }}</p>
         </td>
         <td class="px-4 py-3 whitespace-nowrap">
           <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" :class="ESTADO_BADGES[item.estado] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'">
@@ -165,25 +150,12 @@ onUnmounted(() => clearTimeout(searchTimer));
         </td>
         <td class="px-4 py-3 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <button
-              type="button"
-              title="Editar cita"
-              aria-label="Editar cita"
-              class="inline-flex items-center p-2 text-primary-600 rounded border border-primary-200 hover:bg-primary-100 dark:text-primary-400 dark:border-primary-500 dark:hover:bg-gray-700"
-              @click="onAccion(item, 'editar')"
-            >
-              <Pen class="w-5 h-5" />
-            </button>
-            <button
-              type="button"
-              title="Eliminar cita"
-              aria-label="Eliminar cita"
-              :disabled="isDeleting || isConverting"
-              class="inline-flex items-center p-2 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:border-red-500 dark:hover:bg-gray-700"
-              @click="onAccion(item, 'eliminar')"
-            >
-              <Trash2 class="w-5 h-5" />
-            </button>
+            <EntityRowActions
+              entity="cita"
+              :delete-disabled="isDeleting || isConverting"
+              @edit="onAccion(item, 'editar')"
+              @delete="onAccion(item, 'eliminar')"
+            />
             <CitaAccionesMenu
               :cita="item"
               :disabled="isDeleting || isConverting"

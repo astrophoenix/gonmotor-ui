@@ -2,13 +2,14 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import {
   CalendarDays,
-  Download,
   Filter,
   LoaderCircle,
+  Plus,
   Search,
 } from 'lucide-vue-next';
 import { IconFileTypePdf, IconFileTypeXls } from '@tabler/icons-vue';
 import Alert from '../../../shared/components/Alert.vue';
+import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import FilterActions from '../../../shared/components/FilterActions.vue';
 import { useFiltrosReactivos } from '../../../shared/composables/useFiltrosReactivos';
@@ -61,28 +62,20 @@ const estadoPanel = computed({
   },
 });
 
-// La tabla y el calendario notifican su carga, el resumen de la página y las
+// La tabla y el calendario notifican su carga y las
 // citas del rango visible que resaltan la búsqueda.
 const listaCargando = ref(false);
 const aplicando = ref(false);
-const resumenLista = ref({ activas: 0, total: 0 });
 const coincidencias = ref(0);
 
 const ES_CALENDARIO = computed(() => modo.value === 'calendario');
 const AYUDA_BUSQUEDA = 'Resalta las citas del rango visible; el estado filtra los eventos de la agenda.';
-const AYUDA_LISTADO = 'Filtra el listado de citas por texto, estado y fecha.';
 
 const tituloPanel = computed(() =>
   ES_CALENDARIO.value ? 'Calendario de Citas' : 'Listado de Citas'
 );
 
-const ayudaPanel = computed(() => (ES_CALENDARIO.value ? AYUDA_BUSQUEDA : AYUDA_LISTADO));
-
-const resumenLabel = computed(() => {
-  const { activas, total } = resumenLista.value;
-  if (!total) return '';
-  return `${activas} activa${activas === 1 ? '' : 's'} en esta página · ${total} cita${total === 1 ? '' : 's'} encontrada${total === 1 ? '' : 's'}`;
-});
+const ayudaPanel = computed(() => (ES_CALENDARIO.value ? AYUDA_BUSQUEDA : ''));
 
 const alert = ref({ type: 'default', title: '', message: '' });
 
@@ -337,12 +330,9 @@ function rangoCita(cita) {
 /* ------------------------------------------------------ desplegables (click fuera) */
 
 const buscadorRef = ref(null);
-const exportarRef = ref(null);
-const exportarAbierto = ref(false);
 
 function onClickFuera(event) {
   if (buscadorRef.value && !buscadorRef.value.contains(event.target)) mostrarResultados.value = false;
-  if (exportarRef.value && !exportarRef.value.contains(event.target)) exportarAbierto.value = false;
 }
 
 /* ------------------------------------------------------------------ misc */
@@ -408,33 +398,24 @@ onUnmounted(() => {
 
 <template>
   <div>
-    <div class="p-4 py-3 bg-white block sm:flex items-center justify-between border-b border-gray-200 lg:mt-1.0 dark:bg-gray-800 dark:border-gray-700">
-      <div class="w-full">
-        <div>
-          <nav class="flex mb-1.5" aria-label="Breadcrumb">
-            <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
-              <li class="inline-flex items-center">
-                <a href="/" class="inline-flex items-center text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">Inicio</a>
-              </li>
-              <li class="text-gray-400" aria-current="page">/ Citas</li>
-            </ol>
-          </nav>
-          <h1 class="inline-flex items-center gap-2 text-lg font-semibold text-gray-900 sm:text-xl dark:text-white">
-            <CalendarDays class="w-5 h-5 text-primary-blue-500 dark:text-primary-blue-100" />
-            Citas
-          </h1>
-        </div>
+    <EntityHeader
+      mode="list"
+      :icon="CalendarDays"
+      entity="Citas"
+      :breadcrumb="[
+        { label: 'Inicio', href: '/' },
+        { label: 'Citas' },
+      ]"
+    />
 
-        <div id="citas-alertas">
-          <Alert
-            :type="alert.type"
-            :title="alert.title"
-            :message="alert.message"
-            dismissible
-            @dismiss="ocultarAlerta"
-          />
-        </div>
-      </div>
+    <div v-if="alert.message" id="citas-alertas" class="px-4 pt-3">
+      <Alert
+        :type="alert.type"
+        :title="alert.title"
+        :message="alert.message"
+        dismissible
+        @dismiss="ocultarAlerta"
+      />
     </div>
 
     <div class="px-4 pb-4 sm:px-6 lg:px-8 mt-4">
@@ -442,11 +423,11 @@ onUnmounted(() => {
       <div class="bg-neutral-primary-soft shadow-xs rounded border border-default mb-4">
         <div class="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between border-b border-default-medium">
           <div>
-            <h2 class="flex items-center gap-2 text-md font-semibold text-heading">
+            <h2 class="flex items-center gap-2 text-lg font-semibold text-heading">
               <Filter class="w-5 h-5" />
               Búsqueda
             </h2>
-            <p class="text-sm text-body">{{ ayudaPanel }}</p>
+            <p v-if="ayudaPanel" class="text-sm text-body">{{ ayudaPanel }}</p>
           </div>
 
           <div v-if="!ES_CALENDARIO" class="flex flex-wrap items-center gap-2">
@@ -551,77 +532,54 @@ onUnmounted(() => {
       <!-- PANEL DE LISTADO -->
       <div class="relative bg-neutral-primary-soft shadow-xs rounded border border-default">
         <div class="flex flex-col gap-3 px-4 py-3 border-b border-default-medium md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 class="text-lg font-semibold text-heading">{{ tituloPanel }}</h2>
-            <p v-if="modo === 'lista' && resumenLabel" class="text-sm text-body">{{ resumenLabel }}</p>
-          </div>
+          <h2 class="text-base font-semibold text-slate-900 dark:text-white">{{ tituloPanel }}</h2>
 
           <div class="flex flex-wrap items-center gap-2">
-            <div class="inline-flex overflow-hidden rounded-lg border border-default-medium text-sm">
+            <!-- Vista: calendario / lista -->
+            <div class="inline-flex overflow-hidden bg-white border rounded-lg shadow-xs border-slate-200 divide-x divide-slate-200 dark:bg-gray-800 dark:border-gray-600 dark:divide-gray-600" role="group" aria-label="Vista de citas">
               <button
+                v-for="vista in [{ key: 'calendario', label: 'Calendario' }, { key: 'lista', label: 'Lista' }]"
+                :key="vista.key"
                 type="button"
-                :aria-pressed="modo === 'calendario'"
-                class="px-3 py-2 font-medium transition"
-                :class="modo === 'calendario'
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'"
-                @click="modo = 'calendario'"
+                :aria-pressed="modo === vista.key"
+                class="px-3 py-2 text-sm font-medium transition-colors"
+                :class="modo === vista.key
+                  ? 'bg-brand-900 text-white dark:bg-brand-600'
+                  : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-gray-200 dark:hover:bg-gray-700'"
+                @click="modo = vista.key"
               >
-                Calendario
-              </button>
-              <button
-                type="button"
-                :aria-pressed="modo === 'lista'"
-                class="px-3 py-2 font-medium transition"
-                :class="modo === 'lista'
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'"
-                @click="modo = 'lista'"
-              >
-                Lista
+                {{ vista.label }}
               </button>
             </div>
 
-            <div ref="exportarRef" class="relative">
+            <!-- Exportar (referencial: aún sin endpoint) -->
+            <div class="inline-flex overflow-hidden bg-white border rounded-lg shadow-xs border-slate-200 divide-x divide-slate-200 dark:bg-gray-800 dark:border-gray-600 dark:divide-gray-600" role="group" aria-label="Exportar citas">
               <button
                 type="button"
-                class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-default-medium rounded shadow-xs hover:bg-neutral-secondary-medium dark:bg-gray-800 dark:text-gray-300 dark:border-default-medium dark:hover:bg-gray-700"
-                :aria-expanded="exportarAbierto"
-                @click.stop="exportarAbierto = !exportarAbierto"
+                title="Exportar citas en PDF"
+                class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-gray-200 dark:hover:bg-gray-700"
+                @click="avisar('info', 'Exportar a PDF', MENSAJE_REFERENCIAL)"
               >
-                <Download class="w-4 h-4 mr-1.5" />
-                Exportar
+                <IconFileTypePdf class="w-5 h-5 text-red-600 dark:text-red-400" />
+                PDF
               </button>
-
-              <div
-                v-if="exportarAbierto"
-                class="absolute right-0 z-40 mt-1 w-52 overflow-hidden rounded-lg border border-default bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+              <button
+                type="button"
+                title="Exportar citas en Excel"
+                class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-gray-200 dark:hover:bg-gray-700"
+                @click="avisar('info', 'Exportar a Excel', MENSAJE_REFERENCIAL)"
               >
-                <button
-                  type="button"
-                  class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                  @click="exportarAbierto = false; avisar('info', 'Exportar a Excel', MENSAJE_REFERENCIAL)"
-                >
-                  <IconFileTypeXls class="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  Exportar a Excel
-                </button>
-                <button
-                  type="button"
-                  class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                  @click="exportarAbierto = false; avisar('info', 'Exportar a PDF', MENSAJE_REFERENCIAL)"
-                >
-                  <IconFileTypePdf class="w-4 h-4 text-red-600 dark:text-red-400" />
-                  Exportar a PDF
-                </button>
-              </div>
+                <IconFileTypeXls class="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                Excel
+              </button>
             </div>
 
             <button
               type="button"
-              class="inline-flex items-center px-3 py-2 text-sm font-medium text-white rounded bg-primary-500 shadow-xs hover:bg-primary-600 focus:ring-4 focus:ring-primary-300"
+              class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-white rounded-lg shadow-xs bg-brand-900 hover:bg-brand-700 focus:ring-4 focus:ring-brand-200 dark:bg-brand-600 dark:hover:bg-brand-500 dark:focus:ring-brand-800"
               @click="abrirCreacion"
             >
-              <CalendarDays class="w-5 h-5 mr-1.5 -ml-1 text-white" />
+              <Plus class="w-4 h-4 -ml-0.5" />
               Nueva cita
             </button>
           </div>
@@ -648,7 +606,6 @@ onUnmounted(() => {
           :recargar-token="recargarToken"
           @accion="onAccion"
           @cargando="listaCargando = $event"
-          @resumen="resumenLista = $event"
           @alert="({ type, title, message }) => avisar(type, title, message)"
         />
       </div>

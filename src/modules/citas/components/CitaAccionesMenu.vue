@@ -5,7 +5,7 @@ import {
   CalendarPlus,
   Mail,
   MessageCircle,
-  MoreHorizontal,
+  MoreVertical,
 } from 'lucide-vue-next';
 
 /**
@@ -108,10 +108,10 @@ onBeforeUnmount(() => {
     aria-label="Más acciones de la cita"
     :aria-expanded="abierto"
     :disabled="disabled"
-    class="inline-flex items-center p-2 text-gray-600 rounded border border-gray-200 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+    class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-100 hover:text-brand-900 hover:ring-1 hover:ring-inset hover:ring-brand-200 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white dark:hover:ring-gray-500 aria-expanded:bg-brand-100 aria-expanded:text-brand-900 aria-expanded:ring-1 aria-expanded:ring-inset aria-expanded:ring-brand-200 dark:aria-expanded:bg-gray-600 dark:aria-expanded:text-white dark:aria-expanded:ring-gray-500"
     @click.stop="alternar"
   >
-    <MoreHorizontal class="w-5 h-5" />
+    <MoreVertical class="w-4 h-4" />
   </button>
 
   <Teleport to="body">
