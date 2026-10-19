@@ -35,6 +35,11 @@ export const inspeccionesService = {
     });
   },
 
+  // Informe PDF para el cliente (cualquier estado). Devuelve { blob, contentDisposition }.
+  exportarPdf(id) {
+    return request(`${buildUrl(id)}exportar-pdf/`, { responseType: 'blob' });
+  },
+
   listarRelaciones(id) {
     return request(`${buildUrl(id)}relaciones/`);
   },

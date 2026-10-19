@@ -31,6 +31,7 @@ import Pagination from '../../../shared/components/Pagination.vue';
 import { ESTADOS_INSPECCION_FILTRABLE } from '../constants/estadosInspeccion';
 import { TIPOS_TRABAJO_OPCIONES } from '../../../shared/config/tiposTrabajo';
 import { referenciaCorta } from '../../../shared/utils/format';
+import { usePdfExport } from '../../../shared/composables/usePdfExport';
 
 // Mismo icono que el enlace de Inspecciones del sidebar.
 const CarSearchIcon = { render: () => h(MdiIcon, { path: mdiCarSearchOutline }) };
@@ -177,6 +178,15 @@ function ejecutarAccion(accion, item) {
   cerrarAcciones();
   if (accion === 'reabrir') solicitarReabrir(item);
   else if (accion === 'cotizacion') handleCrearCotizacion(item.id);
+  else if (accion === 'pdf') descargarPdf(item);
+}
+
+const { isExportingPdf, exportarPdf } = usePdfExport({
+  onError: (message) => showAlert('error', '', message),
+});
+
+function descargarPdf(inspeccion) {
+  exportarPdf(() => inspeccionesService.exportarPdf(inspeccion.id));
 }
 
 function solicitarReabrir(inspeccion) {
@@ -627,7 +637,7 @@ onUnmounted(() => {
                   <Receipt class="w-4 h-4 text-primary-600 dark:text-primary-400" />
                   Crear cotización
                 </button>
-                <button type="button" role="menuitem" title="Descargar PDF" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700" @click="cerrarAcciones">
+                <button type="button" role="menuitem" title="Descargar el informe de la inspección en PDF" :disabled="isExportingPdf" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-700" @click="ejecutarAccion('pdf', item)">
                   <Icon :icon="filePdfIcon" class="w-4 h-4 text-accent-600 dark:text-accent-400" />
                   Descargar PDF
                 </button>
