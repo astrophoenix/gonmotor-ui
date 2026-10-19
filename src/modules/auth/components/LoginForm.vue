@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
-import { User, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, CheckCircle2, Loader2, Building2, ChevronRight, KeyRound } from 'lucide-vue-next';
+import { User, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Loader2, Building2, ChevronRight, KeyRound, ShieldCheck } from 'lucide-vue-next';
 import { useAuthStore } from '../stores/authStore';
 import Alert from '../../../shared/components/Alert.vue';
 import { assetUrl } from '../../../shared/utils/assetUrl';
@@ -67,7 +67,7 @@ const selectedTallerId = ref(null);
 // Token firmado y de vida corta del login; se canjea en select-company.
 const selectionToken = ref(null);
 
-// Admin SaaS: el modal arranca en «opciones» (ir a empresa / registrar empresa);
+// Admin SaaS: el modal arranca en «opciones» (ir a empresa / administrar empresas);
 // el resto de usuarios va directo al paso «empresa».
 const esAdminSaas = ref(false);
 const adminSaasSesion = ref(null);
@@ -381,95 +381,108 @@ async function confirmCompany() {
       </div>
     </section>
 
-    <!-- ===== Modal multi-empresa / admin SaaS ===== -->
-    <div v-if="showCompanyModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/75 backdrop-blur-sm">
-      <div class="w-full max-w-md p-6 bg-white rounded-lg shadow-xl dark:bg-gray-800 border border-gray-200 dark:border-gray-700 space-y-4">
-        <!-- Paso 1 (solo admin SaaS): elegir qué hacer -->
-        <template v-if="pasoModal === 'opciones'">
-          <h3 class="text-xl font-bold text-gray-900 dark:text-white">
-            ¿Qué deseas hacer?
-          </h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400">
-            Ingresaste como administrador del sistema. Elige cómo continuar:
-          </p>
+    <!-- ===== Modal multi-empresa / admin SaaS: misma tarjeta con ranura que el login ===== -->
+    <div
+      v-if="showCompanyModal"
+      class="font-brand fixed inset-0 z-50 flex items-end justify-center bg-brand-950/60 backdrop-blur-sm sm:items-center sm:p-4"
+    >
+      <div
+        class="relative w-full rounded-t-[22px] border border-brand-100 bg-white text-brand-900 shadow-[0_24px_60px_-20px_rgba(11,18,32,0.55)] dark:border-brand-700 dark:bg-brand-900 dark:text-brand-50 sm:max-w-[480px] sm:rounded-[18px]"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-empresa-titulo"
+      >
+        <span
+          class="absolute left-1/2 top-[18px] h-6 w-28 -translate-x-1/2 rounded-xl border border-brand-200 bg-brand-50 shadow-[inset_0_2px_3px_rgba(17,28,46,0.14)] dark:border-brand-600 dark:bg-brand-950"
+          aria-hidden="true"
+        ></span>
 
-          <div class="space-y-3">
-            <button
-              type="button"
-              :disabled="!userCompanies.length"
-              class="flex w-full items-center gap-3 rounded-lg border border-gray-200 p-4 text-left transition-colors hover:border-brand-500 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent dark:border-gray-600 dark:hover:bg-gray-700"
-              @click="irAEmpresa"
-            >
-              <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-900 text-white">
-                <Building2 class="h-6 w-6" aria-hidden="true" />
-              </span>
-              <span class="flex-1">
-                <span class="block text-sm font-semibold text-gray-900 dark:text-white">Ir a empresa</span>
-                <span class="block text-xs text-gray-500 dark:text-gray-400">
-                  {{ userCompanies.length ? 'Selecciona la empresa y el taller con los que trabajarás.' : 'Aún no hay empresas activas registradas.' }}
+        <div class="px-5 pb-1 pt-14.5 sm:px-8 sm:pt-16">
+          <span
+            v-if="esAdminSaas"
+            class="inline-flex h-7 items-center gap-1.5 rounded-full border border-brand-100 bg-brand-50 pe-3 ps-2.5 text-[12.5px] font-bold text-brand-500 dark:border-brand-700 dark:bg-brand-950 dark:text-brand-200"
+          >
+            <ShieldCheck class="h-[15px] w-[15px] text-brand-red dark:text-brand-coral" aria-hidden="true" />
+            Administrador del sistema
+          </span>
+
+          <!-- Paso 1 (solo admin SaaS): elegir qué hacer -->
+          <template v-if="pasoModal === 'opciones'">
+            <h3 id="modal-empresa-titulo" class="mt-3.5 text-2xl font-extrabold tracking-[-0.015em] sm:text-[27px]">
+              ¿Qué deseas hacer?
+            </h3>
+            <p class="mt-1.5 text-[15px] text-brand-400 dark:text-brand-300">Elige por dónde quieres continuar.</p>
+
+            <div class="mt-5.5 grid gap-3">
+              <button
+                type="button"
+                :disabled="!userCompanies.length"
+                class="group flex w-full items-center gap-4 rounded-[14px] border-[1.5px] border-brand-900 bg-[#F7F9FC] p-4 text-left transition-colors hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-focus-ring disabled:cursor-not-allowed disabled:border-brand-100 disabled:opacity-60 dark:border-brand-300 dark:bg-brand-950 dark:hover:bg-brand-800"
+                @click="irAEmpresa"
+              >
+                <span class="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-xl bg-brand-900 text-white dark:bg-brand-50 dark:text-brand-900">
+                  <Building2 class="h-6 w-6" aria-hidden="true" />
                 </span>
-              </span>
-              <ChevronRight class="h-5 w-5 text-gray-400" aria-hidden="true" />
-            </button>
+                <span class="min-w-0 flex-1">
+                  <span class="block text-base font-extrabold">Entrar a una empresa</span>
+                  <span class="mt-0.5 block text-[13.5px] leading-snug text-brand-400 dark:text-brand-300">
+                    {{ userCompanies.length ? 'Elige la empresa y el taller con los que trabajarás hoy.' : 'Aún no hay empresas activas registradas.' }}
+                  </span>
+                  <span
+                    v-if="userCompanies.length"
+                    class="mt-2 inline-flex rounded-md border border-brand-100 bg-white px-2 py-0.5 text-xs font-bold text-brand-500 dark:border-brand-700 dark:bg-brand-900 dark:text-brand-200"
+                  >
+                    {{ userCompanies.length }} {{ userCompanies.length === 1 ? 'empresa activa' : 'empresas activas' }}
+                  </span>
+                </span>
+                <ArrowRight class="h-[22px] w-[22px] shrink-0 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+              </button>
 
-            <button
-              type="button"
-              class="flex w-full items-center gap-3 rounded-lg border border-gray-200 p-4 text-left transition-colors hover:border-brand-500 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:border-gray-600 dark:hover:bg-gray-700"
-              @click="registrarEmpresa">
-              <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-900 text-white">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-building-complex-plus preview-icon">
-                  <path d="M10 12h4"/><path d="M10 21v-3a2 2 0 013.05-1.702"/>
-                  <path d="M10 8h4"/><path d="M16 19h6"/>
-                  <path d="M18 7h2a2 2 0 012 2v4.355"/>
-                  <path d="M19 16v6"/>
-                  <path d="M6 10H4a2 2 0 00-2 2v7a2 2 0 002 2h8.535"/>
-                  <path d="M6 21V5a2 2 0 012-2h8a2 2 0 012 2v7.126"/>
-                </svg>
-              </span>
-              <span class="flex-1">
-                <span class="block text-sm font-semibold text-gray-900 dark:text-white">Registrar nueva empresa</span>
-                <span class="block text-xs text-gray-500 dark:text-gray-400">Gestiona las empresas del sistema: crear, editar y eliminar.</span>
-              </span>
-              <ChevronRight class="h-5 w-5 text-gray-400" aria-hidden="true" />
-            </button>
-          </div>
+              <button
+                type="button"
+                class="group flex w-full items-center gap-4 rounded-[14px] border-[1.5px] border-brand-100 bg-white p-4 text-left transition-colors hover:border-brand-300 hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-focus-ring dark:border-brand-700 dark:bg-brand-900 dark:hover:bg-brand-800"
+                @click="registrarEmpresa"
+              >
+                <span class="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-xl border border-brand-100 bg-brand-50 text-brand-700 dark:border-brand-700 dark:bg-brand-950 dark:text-brand-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M10 12h4"/><path d="M10 21v-3a2 2 0 013.05-1.702"/>
+                    <path d="M10 8h4"/><path d="M16 19h6"/>
+                    <path d="M18 7h2a2 2 0 012 2v4.355"/>
+                    <path d="M19 16v6"/>
+                    <path d="M6 10H4a2 2 0 00-2 2v7a2 2 0 002 2h8.535"/>
+                    <path d="M6 21V5a2 2 0 012-2h8a2 2 0 012 2v7.126"/>
+                  </svg>
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="block text-base font-extrabold">Administrar empresas</span>
+                  <span class="mt-0.5 block text-[13.5px] leading-snug text-brand-400 dark:text-brand-300">
+                    Registra nuevas empresas, edita sus datos o desactívalas.
+                  </span>
+                </span>
+                <ChevronRight class="h-5 w-5 shrink-0 text-brand-300" aria-hidden="true" />
+              </button>
+            </div>
+          </template>
 
-          <div class="flex justify-end pt-2">
-            <button
-              type="button"
-              @click="cerrarModal"
-              class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded shadow-xs hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
-              Cancelar
-            </button>
-          </div>
-        </template>
+          <!-- Paso 2: empresa y taller -->
+          <template v-else>
+            <h3 id="modal-empresa-titulo" class="text-2xl font-extrabold tracking-[-0.015em] sm:text-[27px]" :class="esAdminSaas ? 'mt-3.5' : ''">
+              Elige empresa y taller
+            </h3>
+            <p class="mt-1.5 text-[15px] text-brand-400 dark:text-brand-300">
+              {{ esAdminSaas
+                ? 'Elige la empresa y el taller con los que deseas trabajar.'
+                : 'Tu cuenta está asociada a más de una empresa. Elige con cuál deseas trabajar hoy.' }}
+            </p>
 
-        <!-- Paso 2: empresa y taller -->
-        <template v-else>
-          <h3 class="text-xl font-bold text-gray-900 dark:text-white">
-            Selecciona Empresa
-          </h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400">
-            {{ esAdminSaas
-              ? 'Elige la empresa y el taller con los que deseas trabajar:'
-              : 'Tu cuenta está asociada a más de una empresa. Elige con cuál deseas trabajar hoy:' }}
-          </p>
-
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-              Empresa
-            </label>
+            <label class="mb-2.5 mt-5.5 block text-[14.5px] font-bold">Empresa</label>
             <EmpresaSearchSelect
               v-model="selectedCompanyId"
               :empresas="userCompanies"
               placeholder="Selecciona una empresa"
             />
-          </div>
 
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-              Taller
-            </label>
+            <label class="mb-2.5 mt-5 block text-[14.5px] font-bold">Taller</label>
             <TallerSelect
               v-model="selectedTallerId"
               :talleres="selectedCompanyTalleres"
@@ -477,34 +490,50 @@ async function confirmCompany() {
               variante="campo"
               placeholder="Selecciona un taller"
             />
-          </div>
 
-          <div class="flex justify-end gap-3 pt-2">
-            <button
-              v-if="esAdminSaas"
-              type="button"
-              class="me-auto inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 rounded hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-              @click="pasoModal = 'opciones'">
-              <ArrowLeft class="h-4 w-4 mr-1.5" aria-hidden="true" />
-              Volver
-            </button>
-            <button
-              type="button"
-              @click="cerrarModal"
-              class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded shadow-xs hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
-              Cancelar
-            </button>
             <button
               type="button"
               :disabled="!selectedCompanyId || authStore.isLoading"
+              class="mt-6 inline-flex h-[52px] w-full items-center justify-center gap-2.5 rounded-[10px] bg-brand-900 px-5 text-base font-bold text-white transition-colors hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-focus-ring disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-50 dark:text-brand-900 dark:hover:bg-white"
               @click="confirmCompany"
-              class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded shadow-xs hover:bg-primary-800 disabled:opacity-50 dark:bg-primary-600 dark:hover:bg-primary-700">
-              <Loader2 v-if="authStore.isLoading" class="h-4 w-4 animate-spin mr-2" aria-hidden="true" />
-              <CheckCircle2 v-else class="h-4 w-4 mr-2" aria-hidden="true" />
-              {{ authStore.isLoading ? 'Ingresando...' : 'Ingresar' }}
+            >
+              <Loader2 v-if="authStore.isLoading" class="h-5 w-5 animate-spin" aria-hidden="true" />
+              {{ authStore.isLoading ? 'Ingresando…' : 'Entrar al taller' }}
+              <ArrowRight v-if="!authStore.isLoading" class="h-5 w-5" aria-hidden="true" />
             </button>
-          </div>
-        </template>
+          </template>
+        </div>
+
+        <!-- Pie: avance (solo admin SaaS) y salida -->
+        <div class="mt-6 flex items-center justify-between gap-3 border-t border-brand-100 px-5 pb-6 pt-4 dark:border-brand-700 sm:px-8 sm:pb-4.5">
+          <span v-if="esAdminSaas" class="flex items-center gap-2 text-[12.5px] font-bold text-brand-400 dark:text-brand-300">
+            <span class="flex gap-1" aria-hidden="true">
+              <span class="h-1 w-[18px] rounded-sm bg-brand-900 dark:bg-brand-50"></span>
+              <span class="h-1 w-[18px] rounded-sm" :class="pasoModal === 'opciones' ? 'bg-brand-200 dark:bg-brand-600' : 'bg-brand-900 dark:bg-brand-50'"></span>
+            </span>
+            Paso {{ pasoModal === 'opciones' ? 1 : 2 }} de 2
+          </span>
+          <span v-else></span>
+
+          <button
+            v-if="esAdminSaas && pasoModal !== 'opciones'"
+            type="button"
+            class="inline-flex items-center gap-1.5 text-sm font-bold text-brand-500 underline underline-offset-[3px] transition-colors hover:text-brand-red-hover focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-200 dark:hover:text-brand-coral"
+            @click="pasoModal = 'opciones'"
+          >
+            <ArrowLeft class="h-4 w-4" aria-hidden="true" />
+            Volver
+          </button>
+          <button
+            v-else
+            type="button"
+            class="inline-flex items-center gap-1.5 text-sm font-bold text-brand-500 underline underline-offset-[3px] transition-colors hover:text-brand-red-hover focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-200 dark:hover:text-brand-coral"
+            @click="cerrarModal"
+          >
+            <ArrowLeft class="h-4 w-4" aria-hidden="true" />
+            Volver al inicio de sesión
+          </button>
+        </div>
       </div>
     </div>
   </div>
