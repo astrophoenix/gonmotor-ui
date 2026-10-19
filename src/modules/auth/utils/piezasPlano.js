@@ -18,6 +18,14 @@ export function llave(L = 150, r = 20) {
   // chaflán interior de la boca
   s += `<path class="fino" d="M${f(L + R2 * 0.55)} ${f(-a - 3)}L${f(L - a * 0.1)} ${f(-a - 3)}A${f(a + 3)} ${f(a + 3)} 0 0 0 ${f(L - a * 0.1)} ${f(a + 3)}L${f(L + R2 * 0.55)} ${f(a + 3)}"/>`;
   for (let i = 0; i < 5; i++) s += `<line class="som" x1="${f(jx + 2 + i * 4)}" y1="${f(-w - 2 - i)}" x2="${f(jx + 6 + i * 4)}" y2="${f(-w - 8 - i)}"/>`;
+  // bisel exterior del anillo y cuello hacia el mango
+  s += circ('som', 0, 0, r * 0.92) + `<path class="fino" d="M${f(sx * 0.9)} ${f(-w * 0.78)}Q${f(r * 1.25)} ${f(-w * 0.5)} ${f(r * 1.3)} ${f(-w * 0.5)}M${f(sx * 0.9)} ${f(w * 0.78)}Q${f(r * 1.25)} ${f(w * 0.5)} ${f(r * 1.3)} ${f(w * 0.5)}"/>`;
+  // marcas estampadas de la medida en el canal
+  const xm = (r * 1.3 + jx - 8) / 2;
+  for (let i = -2; i <= 2; i++) s += `<path class="som" d="M${f(xm + i * 3.2 - 1)} ${f(-w * 0.22)}v${f(w * 0.44)}"/>`;
+  s += `<path class="fino" d="M${f(xm - 12)} ${f(-w * 0.32)}h${f(5)}M${f(xm + 7)} ${f(-w * 0.32)}h${f(5)}"/>`;
+  // brillo del mango
+  s += `<path class="som" d="M${f(r * 1.4)} ${f(w * 0.78)}H${f(jx - 6)}"/>`;
   return s + '</g>';
 }
 
@@ -34,6 +42,14 @@ export function perno(L = 120, d = 22) {
   s += `<line class="fino" x1="${f(-d / 2)}" y1="${f(t0)}" x2="${f(d / 2)}" y2="${f(t0)}"/>`;
   for (let y = t0 + 4; y < L / 2 - 5; y += 5) s += `<line class="fino" x1="${f(-d / 2)}" y1="${f(y)}" x2="${f(d / 2)}" y2="${f(y + 3)}"/>`;
   s += `<path class="som" d="M${f(-d / 2 + 3)} ${f(t0)}V${f(L / 2 - 4)}M${f(d / 2 - 3)} ${f(t0)}V${f(L / 2 - 4)}"/>`;
+  // perfil de los hilos en ambos flancos
+  let hl = '', hr = '';
+  for (let y = t0 + 1; y < L / 2 - 6; y += 5) { hl += `M${f(-d / 2)} ${f(y)}l-1.6 2.5l1.6 2.5`; hr += `M${f(d / 2)} ${f(y + 1.5)}l1.6 2.5l-1.6 2.5`; }
+  s += `<path class="fino" d="${hl}${hr}"/>`;
+  s += `<path class="fino" d="M${f(-d / 2 + 4)} ${f(L / 2)}Q0 ${f(L / 2 - 3)} ${f(d / 2 - 4)} ${f(L / 2)}M${f(-d / 2)} ${f(L / 2 - 4)}H${f(d / 2)}"/>`;
+  // chaflanes de las caras laterales de la cabeza y radio de unión
+  s += `<path class="fino" d="M${f(-hw)} ${f(y0 + 4)}Q${f(-hw * 0.74)} ${f(y0 + 7)} ${f(-hw * 0.48)} ${f(y0 + 3)}M${f(hw * 0.48)} ${f(y0 + 3)}Q${f(hw * 0.74)} ${f(y0 + 7)} ${f(hw)} ${f(y0 + 4)}"/>`;
+  s += `<path class="fino" d="M${f(-d / 2)} ${f(ys + 2.5)}Q${f(-d / 2)} ${f(ys)} ${f(-d / 2 - 2)} ${f(ys)}M${f(d / 2)} ${f(ys + 2.5)}Q${f(d / 2)} ${f(ys)} ${f(d / 2 + 2)} ${f(ys)}"/>`;
   for (let y = ys + 4; y < t0 - 2; y += 6) s += `<line class="som" x1="${f(d / 2 - 4)}" y1="${f(y)}" x2="${f(d / 2 - 1)}" y2="${f(y + 3)}"/>`;
   return s;
 }
@@ -115,6 +131,8 @@ export function destornillador(L = 150, w = 22) {
   s += `<path class="fino" d="M${f(-hw * 0.82)} ${f(y0 + 5)}Q0 ${f(y0 + 9)} ${f(hw * 0.82)} ${f(y0 + 5)}"/>`;
   s += `<path class="fino" d="M${f(-hw * 0.5)} ${f(y0 + 2.2)}Q0 ${f(y0 + 4.2)} ${f(hw * 0.5)} ${f(y0 + 2.2)}"/>`;
   for (const t of [0.34, 0.37, 0.8, 0.83]) { const y = y0 + 10 + (hL - 22) * t, k = 0.97 - t * 0.08; s += `<path class="fino" d="M${f(-hw * k)} ${f(y)}Q0 ${f(y + 2.5)} ${f(hw * k)} ${f(y)}"/>`; }
+  s += `<ellipse class="fino" cx="0" cy="${f(y0 + 6.5)}" rx="${f(hw * 0.22)}" ry="${f(hw * 0.14)}"/>`;
+  for (let y = y0 + 14; y < yv - 14; y += 4) s += `<line class="som" x1="${f(hw * 0.62)}" y1="${f(y)}" x2="${f(hw * 0.8)}" y2="${f(y + 2.5)}"/>`;
   // estrías del mango
   for (const x of [-0.56, -0.28, 0, 0.28, 0.56]) s += `<path class="fino" d="M${f(hw * x)} ${f(y0 + 10)}V${f(yv - 12)}"/>`;
   s += `<path class="som" d="M${f(-hw * 0.76)} ${f(y0 + 10)}V${f(yv - 12)}M${f(hw * 0.76)} ${f(y0 + 10)}V${f(yv - 12)}M${f(hw * 0.68)} ${f(y0 + 12)}V${f(yv - 14)}"/>`;
@@ -123,6 +141,8 @@ export function destornillador(L = 150, w = 22) {
   s += `<rect class="pz" x="${f(-hw * 0.44)}" y="${f(yv + 4)}" width="${f(hw * 0.88)}" height="5" rx="1.2"/><path class="fino" d="M${f(-hw * 0.44)} ${f(yv + 6.5)}h${f(hw * 0.88)}"/>`;
   const yt = L / 2 - 14, ys = yv + 9;
   s += `<path class="pz" d="M${f(-sw)} ${f(ys)}V${f(yt)}L${f(-sw * 1.9)} ${f(L / 2 - 2)}V${f(L / 2)}H${f(sw * 1.9)}V${f(L / 2 - 2)}L${f(sw)} ${f(yt)}V${f(ys)}"/>`;
+  // hexágono de apoyo para llave en la base del vástago
+  s += `<path class="pz" d="M${f(-sw * 1.7)} ${f(ys)}H${f(sw * 1.7)}V${f(ys + 5)}H${f(-sw * 1.7)}Z"/><path class="fino" d="M${f(-sw * 0.6)} ${f(ys)}v5M${f(sw * 0.6)} ${f(ys)}v5"/>`;
   // brillo del vástago y chaflán de la paleta
   s += `<path class="som" d="M${f(sw * 0.35)} ${f(ys + 3)}V${f(yt - 2)}M${f(-sw * 0.4)} ${f(ys + 3)}V${f(ys + 9)}"/><path class="fino" d="M${f(-sw)} ${f(yt)}H${f(sw)}M${f(-sw * 1.9)} ${f(L / 2 - 2)}H${f(sw * 1.9)}"/>`;
   s += `<path class="som" d="M${f(-sw * 0.4)} ${f(yt + 2)}L${f(-sw * 0.9)} ${f(L / 2 - 3)}M${f(sw * 0.4)} ${f(yt + 2)}L${f(sw * 0.9)} ${f(L / 2 - 3)}"/>`;
@@ -147,6 +167,9 @@ export function llaveInglesa(L = 150) {
   s += `<path class="pz" d="M${f(xh + 17)} 1H${f(xh + 36)}V7Q${f(xh + 34)} 15 ${f(xh + 22)} 16H${f(xh + 17)}Z"/>`;
   for (let x = xh + 21; x < xh + 36; x += 3) s += `<path class="fino" d="M${f(x)} 1l1.5 2l1.5 -2"/>`;
   s += `<path class="som" d="M${f(xh + 19)} 7H${f(xh + 33)}M${f(xh + 19)} 10H${f(xh + 30)}"/>`;
+  // nervio inferior del mango y escala grabada en la mandíbula móvil
+  s += `<path class="som" d="M${f(x0 + 6)} 0H${f(x0 + 13)}"/>`;
+  for (let i = 0; i < 5; i++) s += `<path class="som" d="M${f(xh + 20 + i * 3)} 13v${i % 2 ? -1.5 : -2.8}"/>`;
   // tornillo sinfín moleteado con su eje
   s += `<path class="fino" d="M${f(xh + 1)} 19.5H${f(xh + 19)}"/><rect class="pz" x="${f(xh + 3)}" y="16" width="14" height="7" rx="2"/>`;
   for (let x = xh + 4.5; x < xh + 16.5; x += 1.6) s += `<line class="fino" x1="${f(x)}" y1="16" x2="${f(x + 0.8)}" y2="23"/>`;
@@ -158,11 +181,11 @@ const ubicar = (x, y, giro, pieza, opacidad) =>
 
 /** Panel de marca (viewBox 720×900): herramientas cayendo hacia el motor y piezas ya caídas a su izquierda. */
 export const escenaMarca = () => [
-  ubicar(560, 108, 28, destornillador(112, 18), 0.45),
-  ubicar(612, 252, 58, llaveInglesa(120), 0.65),
-  ubicar(604, 420, 64, llave(84, 11), 0.9),
+  ubicar(560, 108, 28, destornillador(124, 19), 0.45),
+  ubicar(612, 252, 58, llaveInglesa(132), 0.65),
+  ubicar(604, 420, 64, llave(96, 12), 0.9),
   ubicar(146, 700, 0, engranaje(14, 38, 32), 0.75),
-  ubicar(236, 652, -62, perno(80, 15), 0.6),
+  ubicar(236, 652, -62, perno(88, 16), 0.6),
   ubicar(214, 786, -16, tuerca(22, 13), 0.75),
 ].join('');
 

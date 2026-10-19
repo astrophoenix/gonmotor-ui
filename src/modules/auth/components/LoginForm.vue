@@ -231,9 +231,9 @@ async function confirmCompany() {
       </div>
 
       <!-- Pie -->
-      <div class="relative z-[2] hidden gap-3.5 text-[13px] text-brand-muted lg:flex">
+      <div class="relative z-[2] hidden gap-4 text-[15px] font-medium text-white/90 lg:flex">
         <span>&copy; 2026 Gonmotor</span>
-        <span class="w-px bg-brand-500" aria-hidden="true"></span>
+        <span class="w-px bg-white/40" aria-hidden="true"></span>
         <span>Hecho para talleres de verdad</span>
       </div>
     </aside>
