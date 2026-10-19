@@ -6,6 +6,7 @@ import TallerSelect from './TallerSelect.vue';
 import UserMenu from './UserMenu.vue';
 import { construirMigas } from '../config/breadcrumb';
 import { useAuthStore } from '../../modules/auth/stores/authStore';
+import { usePermisos } from '../composables/usePermisos';
 
 const props = defineProps({
   /** `title` de la página, inyectado por Hugo en el punto de montaje. */
@@ -16,12 +17,16 @@ const authStore = useAuthStore();
 const configuracionAbierta = ref(false);
 const menuConfiguracionRef = ref(null);
 
-const enlacesConfiguracion = [
-  { href: '/configuracion/empresa/', label: 'Empresa', icon: Building2 },
-  { href: '/configuracion/talleres/', label: 'Talleres', icon: Warehouse },
-  { href: '/configuracion/usuarios/', label: 'Usuarios', icon: Users },
-  { href: '/configuracion/roles/', label: 'Roles', icon: ShieldCheck },
+const TODOS_ENLACES_CONFIGURACION = [
+  { href: '/configuracion/empresa/', label: 'Empresa', icon: Building2, recurso: 'empresa' },
+  { href: '/configuracion/talleres/', label: 'Talleres', icon: Warehouse, recurso: 'talleres' },
+  { href: '/configuracion/usuarios/', label: 'Usuarios', icon: Users, recurso: 'usuarios' },
+  { href: '/configuracion/roles/', label: 'Roles', icon: ShieldCheck, recurso: 'usuarios' },
 ];
+
+// Solo las pantallas que el rol puede consultar; sin ninguna, no hay menú.
+const { puede } = usePermisos();
+const enlacesConfiguracion = computed(() => TODOS_ENLACES_CONFIGURACION.filter((e) => puede(e.recurso, 'ver')));
 
 const enConfiguracion = computed(() => window.location.pathname.startsWith('/configuracion/'));
 
@@ -129,7 +134,7 @@ function claseCrumble(indice) {
       </a>
 
       <!-- Configuración -->
-      <div v-if="!enAdminSaas" ref="menuConfiguracionRef" class="relative">
+      <div v-if="!enAdminSaas && enlacesConfiguracion.length" ref="menuConfiguracionRef" class="relative">
         <button
           type="button"
           class="inline-flex items-center justify-center rounded-lg p-2 text-ink-soft transition-colors hover:bg-surface hover:text-brand-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:text-brand-300 dark:hover:bg-brand-800 dark:hover:text-white"

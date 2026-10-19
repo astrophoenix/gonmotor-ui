@@ -15,6 +15,12 @@ import Pagination from '../../../shared/components/Pagination.vue';
 import EmpleadoModal from './EmpleadoModal.vue';
 import { useRolesOtorgables } from '../../../shared/composables/useRolesOtorgables';
 import EstadoActivoBadge from '../../../shared/components/EstadoActivoBadge.vue';
+import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
+import SinAcceso from '../../../shared/components/SinAcceso.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
+
+const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+const puedeModificar = computed(() => puede('empleados'));
 
 const {
   empleados,
@@ -171,12 +177,15 @@ async function confirmDelete() {
 }
 
 
-onMounted(() => {
-  loadEmpleados();
+onMounted(async () => {
+  await cargarPermisos().catch(() => {});
+  if (!sinAcceso('empleados')) loadEmpleados();
 });
 </script>
 
 <template>
+  <SinAcceso v-if="sinAcceso('empleados')" seccion="Empleados" />
+  <template v-else>
   <EntityHeader
     mode="list"
     :icon="IdCardLanyard"
@@ -185,7 +194,11 @@ onMounted(() => {
       { label: 'Inicio', href: '/' },
       { label: 'Empleados' },
     ]"
-  />
+  >
+    <template #title-aside>
+      <ModoConsultaChip v-if="soloConsulta('empleados')" objeto="los empleados" />
+    </template>
+  </EntityHeader>
 
   <div v-if="alert.message" class="px-4 pt-3">
     <Alert
@@ -273,6 +286,7 @@ onMounted(() => {
           <EntityActionButtons
             entity="empleados"
             entity-api-path="auth/empleados"
+            :show-add="puedeModificar"
             :export-params="exportParams"
             @add="openCreateModal"
             @pdfExportError="handlePdfError"
@@ -328,7 +342,7 @@ onMounted(() => {
         </td>
         <td class="px-4 py-3 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <EntityRowActions entity="empleado" :delete-disabled="isDeleting" @edit="editEmpleado(item.id)" @delete="openDeleteModal(item)" />
+            <EntityRowActions entity="empleado" :show-view="!puedeModificar" :view-href="`/crud/empleados/ver/?id=${encodeURIComponent(item.id)}`" :show-edit="puedeModificar" :show-delete="puedeModificar" :delete-disabled="isDeleting" @edit="editEmpleado(item.id)" @delete="openDeleteModal(item)" />
           </div>
         </td>
       </tr>
@@ -364,4 +378,5 @@ onMounted(() => {
     @created="onEmpleadoCreated"
     @updated="onEmpleadoUpdated"
   />
+  </template>
 </template>

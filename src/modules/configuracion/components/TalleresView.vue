@@ -15,6 +15,12 @@ import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import EstadoActivoBadge from '../../../shared/components/EstadoActivoBadge.vue';
 import TallerModal from './TallerModal.vue';
+import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
+import SinAcceso from '../../../shared/components/SinAcceso.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
+
+const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+const puedeModificar = computed(() => puede('talleres'));
 
 const talleres = ref([]);
 const isLoading = ref(true);
@@ -165,13 +171,18 @@ async function confirmDelete() {
 }
 
 
-onMounted(() => loadTalleres());
+onMounted(async () => {
+  await cargarPermisos().catch(() => {});
+  if (!sinAcceso('talleres')) loadTalleres();
+});
 onUnmounted(() => {
   listRequest.cancel();
 });
 </script>
 
 <template>
+  <SinAcceso v-if="sinAcceso('talleres')" seccion="Talleres" />
+  <template v-else>
   <EntityHeader
     mode="list"
     :icon="Warehouse"
@@ -180,7 +191,11 @@ onUnmounted(() => {
       { label: 'Inicio', href: '/' },
       { label: 'Talleres' },
     ]"
-  />
+  >
+    <template #title-aside>
+      <ModoConsultaChip v-if="soloConsulta('talleres')" objeto="los talleres" />
+    </template>
+  </EntityHeader>
 
   <div v-if="alert.message" class="px-4 pt-3">
     <Alert
@@ -255,6 +270,7 @@ onUnmounted(() => {
           <EntityActionButtons
             entity="talleres"
             entity-api-path="configuracion/sucursales"
+            :show-add="puedeModificar"
             :export-params="exportParams"
             @add="openCreateModal"
             @pdfExportError="onTallerExportError"
@@ -273,7 +289,7 @@ onUnmounted(() => {
         <template #row="{ item }">
           <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
             <td class="px-4 py-3 whitespace-nowrap">
-              <button type="button" title="Editar taller" class="font-medium cursor-pointer text-slate-900 hover:text-brand-coral dark:text-white" @click="openEditModal(item)">{{ item.nombre }}</button>
+              <button type="button" :title="puedeModificar ? 'Editar taller' : 'Ver taller'" class="font-medium cursor-pointer text-slate-900 hover:text-brand-coral dark:text-white" @click="openEditModal(item)">{{ item.nombre }}</button>
             </td>
             <td class="px-4 py-3 whitespace-nowrap"><span class="px-1.5 py-0.5 font-mono text-xs border rounded text-slate-700 bg-slate-50 border-slate-200 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200">{{ item.codigo_sucursal }}</span></td>
             <td class="px-4 py-3 text-slate-600 whitespace-nowrap dark:text-gray-300">{{ item.ciudad || '—' }}</td>
@@ -284,7 +300,7 @@ onUnmounted(() => {
             </td>
             <td class="px-4 py-3 whitespace-nowrap">
               <div class="flex items-center justify-end gap-1">
-                <EntityRowActions entity="taller" :delete-disabled="isDeleting" @edit="openEditModal(item)" @delete="openDeleteModal(item)" />
+                <EntityRowActions entity="taller" :show-view="!puedeModificar" :show-edit="puedeModificar" :show-delete="puedeModificar" @view="openEditModal(item)" :delete-disabled="isDeleting" @edit="openEditModal(item)" @delete="openDeleteModal(item)" />
               </div>
             </td>
           </tr>
@@ -318,7 +334,9 @@ onUnmounted(() => {
   <TallerModal
     v-model="showTallerModal"
     :taller-id="tallerModalId"
+    :solo-lectura="!puedeModificar"
     @created="onTallerCreated"
     @updated="onTallerUpdated"
   />
+  </template>
 </template>

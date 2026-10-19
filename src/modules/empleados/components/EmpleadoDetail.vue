@@ -5,6 +5,11 @@ import { empleadosService } from '../services/empleadosService';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import EmpleadoModal from './EmpleadoModal.vue';
+import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
+import SinAcceso from '../../../shared/components/SinAcceso.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
+
+const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
 
 const empleado = ref(null);
 const loading = ref(true);
@@ -63,6 +68,11 @@ async function onEmpleadoUpdated() {
 }
 
 onMounted(async () => {
+  await cargarPermisos().catch(() => {});
+  if (sinAcceso('empleados')) {
+    loading.value = false;
+    return;
+  }
   if (!empleadoId) {
     error.value = 'Falta el identificador del empleado.';
     loading.value = false;
@@ -79,6 +89,8 @@ onMounted(async () => {
 </script>
 
 <template>
+  <SinAcceso v-if="sinAcceso('empleados')" seccion="Empleados" />
+  <template v-else>
   <EntityHeader
     mode="detail"
     entity="Empleado"
@@ -89,9 +101,12 @@ onMounted(async () => {
       { label: 'Ver' },
     ]"
   >
+    <template #title-aside>
+      <ModoConsultaChip v-if="empleado && soloConsulta('empleados')" objeto="los datos de este empleado" acciones="editarlos" />
+    </template>
     <template #actions>
       <button
-        v-if="empleado"
+        v-if="empleado && puede('empleados')"
         type="button"
         title="Editar empleado"
         class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
@@ -291,4 +306,5 @@ onMounted(async () => {
     :empleado-id="empleadoModalId"
     @updated="onEmpleadoUpdated"
   />
+  </template>
 </template>

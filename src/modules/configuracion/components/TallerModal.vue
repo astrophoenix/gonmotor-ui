@@ -10,10 +10,13 @@ import {
   sanitizeTelefono,
 } from '../../../shared/utils/sanitize';
 import Alert from '../../../shared/components/Alert.vue';
+import FichaCampos from '../../../shared/components/FichaCampos.vue';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   tallerId: { type: [Number, String], default: null },
+  // Variante de consulta: ficha de lectura y solo «Cerrar» (rol sin `modificar`).
+  soloLectura: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['update:modelValue', 'created', 'updated']);
@@ -51,6 +54,18 @@ const form = reactive({
   hora_cierre: '17:00',
   ...secuenciaFormDefaults(),
 });
+
+const camposFicha = computed(() => [
+  { etiqueta: 'Nombre', valor: form.nombre },
+  { etiqueta: 'Código del taller', valor: form.codigo_sucursal },
+  { etiqueta: 'Ciudad', valor: form.ciudad },
+  { etiqueta: 'Teléfono', valor: form.telefono },
+  { etiqueta: 'Dirección', valor: form.direccion, ancho: 'completo' },
+  { etiqueta: 'Estado', valor: form.is_active ? 'Activo' : 'Inactivo' },
+  { etiqueta: 'Horario de atención', valor: form.hora_apertura && form.hora_cierre ? `${form.hora_apertura} – ${form.hora_cierre}` : '' },
+  { etiqueta: 'Citas por día', valor: Number(form.capacidad_citas_dia) ? String(form.capacidad_citas_dia) : 'Sin límite' },
+  { etiqueta: 'Atenciones simultáneas', valor: Number(form.capacidad_simultanea) ? String(form.capacidad_simultanea) : 'Sin límite' },
+]);
 
 const isLoading = ref(false);
 const isSaving = ref(false);
@@ -306,7 +321,7 @@ async function submit() {
 }
 
 function close() {
-  if (hasChanges.value && !isSaving.value) {
+  if (!props.soloLectura && hasChanges.value && !isSaving.value) {
     if (!showDiscardWarning.value) {
       showDiscardWarning.value = true;
       return;
@@ -327,7 +342,7 @@ watch(() => props.modelValue, (val) => {
       <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
           <Warehouse class="inline w-5 h-5 mr-2 text-gray-500 dark:text-gray-400" aria-hidden="true" />
-          {{ isEditMode ? 'Editar taller' : 'Nuevo taller' }}
+          {{ soloLectura ? 'Detalle del taller' : (isEditMode ? 'Editar taller' : 'Nuevo taller') }}
         </h3>
         <button
           type="button"
@@ -351,6 +366,7 @@ watch(() => props.modelValue, (val) => {
         />
 
         <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando taller...</div>
+        <FichaCampos v-else-if="soloLectura" :campos="camposFicha" />
         <template v-else>
           <div class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -558,8 +574,9 @@ watch(() => props.modelValue, (val) => {
           type="button"
           class="px-5 py-2.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded dark:bg-gray-700 dark:text-gray-300"
           @click="close">
-          Cancelar
+          {{ soloLectura ? 'Cerrar' : 'Cancelar' }}
         </button>
+        <template v-if="!soloLectura">
         <button
           type="button"
           :disabled="isSaving || isLoading"
@@ -572,6 +589,7 @@ watch(() => props.modelValue, (val) => {
           </svg>
           {{ isSaving ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Crear') }}
         </button>
+        </template>
       </div>
     </div>
   </div>
