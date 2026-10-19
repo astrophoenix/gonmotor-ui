@@ -43,6 +43,7 @@ import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
+import PdfExportButton from '../../../shared/components/PdfExportButton.vue';
 import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
 import { relacionesDeInspeccion } from '../../../shared/utils/relacionesFlujo';
 import { formatDateTime, formatDuration, minutesBetween } from '../../../shared/utils/datetime';
@@ -307,6 +308,11 @@ function irAEditar() {
   window.location.assign(`/crud/inspecciones/editar/?id=${encodeURIComponent(inspeccion.value.id)}`);
 }
 
+// El informe PDF se genera en el backend y está disponible en cualquier estado.
+function descargarPdf() {
+  return inspeccionesService.exportarPdf(inspeccionId);
+}
+
 function solicitarCrearCotizacion() {
   if (isSyncingCotizacion.value || isGeneratingCotizacion.value) return;
   if (!totalItems.value) {
@@ -470,6 +476,12 @@ onMounted(async () => {
         <FilePen class="w-5 h-5 -ms-1 text-brand-700 dark:text-brand-200" aria-hidden="true" />
         Editar
       </button>
+      <PdfExportButton
+        v-if="inspeccion"
+        :descargador="descargarPdf"
+        title="Exportar inspección en PDF"
+        @error="mostrarError"
+      />
     </template>
   </EntityHeader>
 

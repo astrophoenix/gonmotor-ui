@@ -29,6 +29,7 @@ import EntityRowActions from '../../../shared/components/EntityRowActions.vue';
 import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
 import { relacionesDeRecepcion } from '../../../shared/utils/relacionesFlujo';
 import Pagination from '../../../shared/components/Pagination.vue';
+import { usePdfExport } from '../../../shared/composables/usePdfExport';
 
 const { recepciones, loading, error, loadRecepciones, currentPage, total, nextUrl, previousUrl } = useRecepciones();
 
@@ -189,6 +190,21 @@ const { aplicarYa, marcarAplicado } = useFiltrosReactivos({
 
 function showAlert(type, title, message) {
   alert.value = { type, title, message };
+}
+
+// «Descargar PDF» entrega el informe de la inspección de la recepción.
+const { isExportingPdf, exportarPdf } = usePdfExport({
+  onError: (message) => showAlert('error', '', message),
+});
+
+function inspeccionDe(item) {
+  return item.inspecciones?.[0] || null;
+}
+
+function descargarPdf(item) {
+  const inspeccion = inspeccionDe(item);
+  if (!inspeccion?.id) return;
+  exportarPdf(() => inspeccionesService.exportarPdf(inspeccion.id));
 }
 
 function hideAlert() {
@@ -532,7 +548,7 @@ onMounted(async () => {
                   <IconReportSearch v-else class="w-4 h-4 shrink-0 text-primary-600 dark:text-primary-400" />
                   Crear inspección
                 </button>
-                <button type="button" role="menuitem" title="Descargar PDF" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700" @click="cerrar">
+                <button type="button" role="menuitem" :title="inspeccionDe(item) ? 'Descargar el informe de la inspección en PDF' : 'La recepción aún no tiene inspección'" :disabled="!inspeccionDe(item) || isExportingPdf" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-700" @click="cerrar(); descargarPdf(item)">
                   <Icon :icon="filePdfIcon" class="w-4 h-4 shrink-0 text-accent-600 dark:text-accent-400" />
                   Descargar PDF
                 </button>
