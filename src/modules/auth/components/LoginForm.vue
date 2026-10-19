@@ -191,7 +191,7 @@ async function confirmCompany() {
         aria-hidden="true"
       >
         <g class="piezas" v-html="planoMarca"></g>
-        <image :href="assetUrl('/images/login/motor-plano.png')" x="270" y="517" width="392" height="349" />
+        <image :href="assetUrl('/images/login/motor-plano.png')" x="302" y="482" width="392" height="349" />
       </svg>
       <img
         :src="assetUrl('/images/login/motor-plano.png')"
