@@ -45,6 +45,7 @@ import { getEstadoOrden, getPrioridadOrden } from '../constants/estadosOrden';
 import Alert from '../../../shared/components/Alert.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
+import PdfExportButton from '../../../shared/components/PdfExportButton.vue';
 import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
 import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
 import EstadoOrdenBadge from './EstadoOrdenBadge.vue';
@@ -437,6 +438,15 @@ function irARequisito(req) {
 
 const descuento = computed(() => Number(orden.value?.descuento) || 0);
 
+// El PDF se genera en el backend y está disponible en cualquier estado.
+function descargarPdf() {
+  return ordenesService.exportarPdf(ordenId.value);
+}
+
+function mostrarErrorPdf(message) {
+  error.value = message || 'No se pudo generar el PDF.';
+}
+
 onMounted(async () => {
   if (!ordenId.value) {
     error.value = 'Falta el identificador de la orden de trabajo.';
@@ -492,6 +502,12 @@ onMounted(async () => {
         <FilePen class="w-5 h-5 -ms-1 text-brand-700 dark:text-brand-200" aria-hidden="true" />
         Editar
       </a>
+      <PdfExportButton
+        v-if="orden"
+        :descargador="descargarPdf"
+        title="Exportar orden de trabajo en PDF"
+        @error="mostrarErrorPdf"
+      />
     </template>
   </EntityHeader>
 
