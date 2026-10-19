@@ -1,11 +1,18 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { IdCard, Pencil, Truck } from 'lucide-vue-next';
 
 import { proveedoresService } from '../services/proveedoresService';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import ProveedorModal from './ProveedorModal.vue';
+import EstadoActivoBadge from '../../../shared/components/EstadoActivoBadge.vue';
+import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
+import SinAcceso from '../../../shared/components/SinAcceso.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
+
+const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+const puedeModificarProveedores = computed(() => puede('proveedores', 'modificar'));
 
 const TIPOS_IDENTIFICACION = {
   C: 'Cédula',
@@ -53,6 +60,11 @@ async function onProveedorUpdated() {
 }
 
 onMounted(async () => {
+  await cargarPermisos().catch(() => {});
+  if (sinAcceso('proveedores')) {
+    loading.value = false;
+    return;
+  }
   if (!proveedorId) {
     error.value = 'Falta el identificador del proveedor.';
     loading.value = false;
@@ -69,6 +81,8 @@ onMounted(async () => {
 </script>
 
 <template>
+  <SinAcceso v-if="sinAcceso('proveedores')" seccion="Proveedores" />
+  <template v-else>
   <EntityHeader
     mode="detail"
     entity="Proveedor"
@@ -79,26 +93,16 @@ onMounted(async () => {
       { label: 'Ver' },
     ]"
   >
+    <template #title-aside>
+      <ModoConsultaChip v-if="proveedor && soloConsulta('proveedores')" objeto="los datos de este proveedor" acciones="editarlos" />
+    </template>
     <template #badges>
-      <template v-if="proveedor">
-        <span
-          v-if="proveedor.is_active !== false"
-          class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-        >
-          Activo
-        </span>
-        <span
-          v-else
-          class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
-        >
-          Inactivo
-        </span>
-      </template>
+      <EstadoActivoBadge v-if="proveedor" :activo="proveedor.is_active !== false" />
     </template>
 
     <template #actions>
       <button
-        v-if="proveedor"
+        v-if="proveedor && puedeModificarProveedores"
         type="button"
         title="Editar proveedor"
         class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-brand-700 rounded-base border border-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:text-brand-300 dark:border-brand-300 dark:hover:bg-gray-700"
@@ -174,4 +178,5 @@ onMounted(async () => {
     :proveedor-id="proveedorModalId"
     @updated="onProveedorUpdated"
   />
+  </template>
 </template>

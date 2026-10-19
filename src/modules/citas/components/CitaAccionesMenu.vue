@@ -1,5 +1,5 @@
 <script setup>
-import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import {
   ArrowRightLeft,
   CalendarPlus,
@@ -7,6 +7,7 @@ import {
   MessageCircle,
   MoreVertical,
 } from 'lucide-vue-next';
+import { usePermisos } from '../../../shared/composables/usePermisos';
 
 /**
  * Menú desplegable con las acciones secundarias de una cita.
@@ -29,6 +30,22 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['accion']);
+
+const { puede } = usePermisos();
+
+// Convertir crea una recepción y cambia la cita: hace falta poder hacer ambas
+// cosas. Sin ese permiso la opción no se muestra (no es algo que el rol haga).
+const puedeConvertir = computed(() => puede('citas') && puede('recepciones'));
+
+// Si el rol puede convertir pero el estado de la cita no lo permite, la opción
+// se ve deshabilitada con el motivo: es una restricción del momento, no del rol.
+const motivoNoConvertible = computed(() => {
+  if (props.cita.es_convertible) return '';
+  if (props.cita.recepcion_generada) {
+    return `Ya generó la recepción ${props.cita.recepcion_generada_numero || ''}`.trim();
+  }
+  return `La cita está ${String(props.cita.estado_display || '').toLowerCase()}`;
+});
 
 const ANCHO_MENU = 240;
 const MARGEN_VENTANA = 8;
@@ -159,18 +176,23 @@ onBeforeUnmount(() => {
         Enviar por correo
       </button>
 
-      <div class="my-1 border-t border-gray-200 dark:border-gray-700" />
+      <template v-if="puedeConvertir">
+        <div class="my-1 border-t border-gray-200 dark:border-gray-700" />
 
-      <button
-        type="button"
-        role="menuitem"
-        :disabled="!cita.es_convertible || disabled"
-        class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-300 dark:hover:bg-gray-700"
-        @click="elegir('convertir')"
-      >
-        <ArrowRightLeft class="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-        Convertir a recepción
-      </button>
+        <button
+          type="button"
+          role="menuitem"
+          :disabled="!cita.es_convertible || disabled"
+          class="group flex w-full items-start gap-3 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:hover:bg-transparent dark:text-gray-300 dark:hover:bg-gray-700"
+          @click="elegir('convertir')"
+        >
+          <ArrowRightLeft class="w-4 h-4 mt-0.5 text-emerald-600 group-disabled:opacity-40 dark:text-emerald-400" />
+          <span>
+            <span class="block group-disabled:opacity-40">Convertir a recepción</span>
+            <span v-if="motivoNoConvertible" class="block text-xs text-gray-500 dark:text-gray-400">{{ motivoNoConvertible }}</span>
+          </span>
+        </button>
+      </template>
     </div>
   </Teleport>
 </template>

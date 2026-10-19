@@ -18,6 +18,8 @@ import InspeccionSearchSelect from './InspeccionSearchSelect.vue';
 import CotizacionSearchSelect from './CotizacionSearchSelect.vue';
 import OrdenSearchSelect from './OrdenSearchSelect.vue';
 import { etiquetaCita, referenciaCorta } from '../utils/format';
+import { usePermisos } from '../composables/usePermisos';
+import { RECURSO_POR_TIPO } from '../config/flujoPasos';
 
 const props = defineProps({
   tipoEntidad: { type: String, required: true },
@@ -41,6 +43,14 @@ const CONFIGURACION = [
   { tipo: 'cotizacion', label: 'Cotización', icono: Receipt, color: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-800', selector: CotizacionSearchSelect, multiple: true, buscarConItems: true },
   { tipo: 'orden', label: 'Orden', icono: Wrench, color: 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-800', selector: OrdenSearchSelect, multiple: false, buscarConItems: false },
 ];
+
+// Vincular o quitar un vínculo modifica también el documento relacionado: el
+// backend exige `modificar` sobre su recurso. Sin ese permiso el grupo se
+// muestra solo para consulta (sin buscador ni botón de quitar).
+const { puede } = usePermisos();
+function editable(grupo) {
+  return puede(RECURSO_POR_TIPO[grupo.tipo]);
+}
 
 const grupos = ref([]);
 const busquedas = reactive({});
@@ -243,6 +253,7 @@ async function confirmarDesvinculacion() {
                   <span class="text-xs font-medium tabular-nums text-gray-700 dark:text-gray-200">{{ totalCotizacion(item) }}</span>
                 </template-->
                 <button
+                  v-if="editable(grupo)"
                   type="button"
                   class="inline-flex h-7 w-7 items-center justify-center rounded-full text-red-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300"
                   :disabled="disabled || procesando || item.canDelete === false"
@@ -256,15 +267,15 @@ async function confirmarDesvinculacion() {
 
             <component
               :is="grupo.selector"
-              v-if="!disabled && grupo.selector && grupo.puedeAgregar && (grupo.buscarConItems || !grupo.items.length)"
+              v-if="!disabled && editable(grupo) && grupo.selector && grupo.puedeAgregar && (grupo.buscarConItems || !grupo.items.length)"
               :id="`relacion-${entidadId}-${grupo.tipo}`"
               v-model="busquedas[grupo.tipo]"
               :disabled="procesando"
               :exclude-ids="grupo.items.map((item) => item.id)"
               solo-sin-relacion
               @select="vincular(grupo, $event)"/>
-            <p v-if="!grupo.items.length && !grupo.selector" class="text-sm text-gray-500 dark:text-gray-400">
-              No hay una recepción relacionada.
+            <p v-if="!grupo.items.length && (!grupo.selector || !editable(grupo))" class="text-sm text-gray-500 dark:text-gray-400">
+              Sin {{ grupo.label.toLowerCase() }} relacionada.
             </p>
           </div>
         </div>

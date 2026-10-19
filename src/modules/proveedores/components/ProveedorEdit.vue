@@ -5,6 +5,7 @@ import { proveedoresService } from '../services/proveedoresService';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
 import {
   sanitizeIdentificacion,
   sanitizeText,
@@ -17,6 +18,7 @@ import {
 
 const proveedorId = new URLSearchParams(window.location.search).get('id');
 const isEditMode = Boolean(proveedorId);
+const { puede, cargarPermisos } = usePermisos();
 
 const form = reactive({
   tipo_identificacion: 'R',
@@ -214,7 +216,15 @@ watch(() => form.contacto, (val) => {
   if (clean !== val) form.contacto = clean;
 });
 
-onMounted(() => {
+onMounted(async () => {
+  // Sin permiso de modificar se lleva al usuario a la vista de consulta.
+  await cargarPermisos().catch(() => {});
+  if (!puede('proveedores', 'modificar')) {
+    window.location.replace(isEditMode
+      ? `/crud/proveedores/ver/?id=${encodeURIComponent(proveedorId)}`
+      : '/crud/proveedores/');
+    return;
+  }
   loadProveedor();
 });
 </script>

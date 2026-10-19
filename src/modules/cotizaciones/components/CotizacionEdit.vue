@@ -44,6 +44,7 @@ import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import RelacionesFlujoEdit from '../../../shared/components/RelacionesFlujoEdit.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
 import TextImprover from '../../../shared/components/TextImprover.vue';
 // FlowSteps temporalmente desactivado; conservar para reactivarlo más adelante.
 // import FlowSteps from '../../../shared/components/FlowSteps.vue';
@@ -1127,7 +1128,17 @@ watch(() => form.observaciones, (val) => {
 });
 
 // ---------- Ciclo de vida ----------
-onMounted(() => {
+const { puede, cargarPermisos } = usePermisos();
+
+onMounted(async () => {
+  // Sin permiso de modificar se lleva al usuario a la vista de consulta.
+  await cargarPermisos().catch(() => {});
+  if (!puede('cotizaciones', 'modificar')) {
+    window.location.replace(cotizacionParamId
+      ? `/crud/cotizaciones/ver/?id=${encodeURIComponent(cotizacionParamId)}`
+      : '/crud/cotizaciones/');
+    return;
+  }
   const mensajeExito = sessionStorage.getItem('cotizacion_exito');
   if (mensajeExito) {
     successMessage.value = mensajeExito;

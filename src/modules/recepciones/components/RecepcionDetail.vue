@@ -54,6 +54,9 @@ import {
 } from '@tabler/icons-vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
+import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
+import SinAcceso from '../../../shared/components/SinAcceso.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import EstadoRecepcionBadge from './EstadoRecepcionBadge.vue';
 import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
@@ -211,6 +214,8 @@ async function resolveBlueprint(grupo) {
 }
 
 onMounted(async () => {
+  await cargarPermisos().catch(() => {});
+  if (sinAcceso('recepciones')) return;
   const mensajeExito = sessionStorage.getItem('recepcion_aceptada_exito') || sessionStorage.getItem('recepcion_exito');
   if (mensajeExito) {
     successMessage.value = mensajeExito;
@@ -257,9 +262,14 @@ const clienteUrl = computed(() => (cliente.value?.id ? `/crud/clientes/ver/?id=$
 const vehiculoUrl = computed(() => (vehiculo.value?.id ? `/crud/vehiculos/ver/?id=${encodeURIComponent(vehiculo.value.id)}` : null));
 const tieneInspeccion = computed(() => (recepcion.value?.inspecciones?.length ?? 0) > 0);
 
+const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+const puedeModificar = computed(() => puede('recepciones'));
+// Crear la inspección crea otro documento: hacen falta ambos permisos.
+const puedeCrearInspeccion = computed(() => puede('recepciones') && puede('inspecciones'));
+
 const puedeEditar = computed(() => {
   const r = recepcion.value;
-  if (!r || r.estado === 'NO_ACEPTADA') return false;
+  if (!r || !puedeModificar.value || r.estado === 'NO_ACEPTADA') return false;
   return !(r.aceptacion_condiciones && r.fecha_firma_cliente);
 });
 
@@ -523,6 +533,8 @@ async function confirmarFirma() {
 </script>
 
 <template>
+  <SinAcceso v-if="sinAcceso('recepciones')" seccion="Recepciones" />
+  <template v-else>
   <EntityHeader
     mode="detail"
     entity="Recepción"
@@ -533,6 +545,9 @@ async function confirmarFirma() {
       { label: 'Recepción' },
     ]"
   >
+    <template #title-aside>
+      <ModoConsultaChip v-if="recepcion && soloConsulta('recepciones')" objeto="esta recepción" acciones="editarla o registrar la firma" />
+    </template>
     <template #badges>
       <EstadoRecepcionBadge
         v-if="recepcion"
@@ -544,7 +559,7 @@ async function confirmarFirma() {
 
     <template #actions>
       <button
-        v-if="recepcion && noAceptada"
+        v-if="recepcion && noAceptada && puedeModificar"
         type="button"
         class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded shadow-xs bg-brand-900 hover:bg-brand-700 focus:ring-4 focus:ring-brand-500/30"
         @click="abrirModalFirmar">
@@ -552,7 +567,7 @@ async function confirmarFirma() {
         Firmar aceptación
       </button>
       <button
-        v-if="recepcion && !tieneInspeccion && recepcion.estado === 'ACEPTADA'"
+        v-if="recepcion && !tieneInspeccion && recepcion.estado === 'ACEPTADA' && puedeCrearInspeccion"
         type="button"
         :disabled="creandoInspeccion"
         class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded shadow-xs bg-brand-900 hover:bg-brand-700 focus:ring-4 focus:ring-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1102,6 +1117,7 @@ async function confirmarFirma() {
                         {{ recepcion.motivo_no_recepcion || 'No se registró un motivo.' }}
                       </p>
                       <button
+                        v-if="puedeModificar"
                         type="button"
                         class="inline-flex items-center gap-2 mt-3 px-3 py-2 text-sm font-medium text-white rounded-lg bg-brand-900 hover:bg-brand-700 focus:ring-4 focus:ring-brand-500/30"
                         @click="abrirModalFirmar">
@@ -1343,4 +1359,5 @@ async function confirmarFirma() {
       <img :src="previewImg" class="max-h-[90vh] max-w-[90vw] object-contain" alt="Foto ampliada" />
     </div>
   </div>
+  </template>
 </template>

@@ -16,12 +16,16 @@ import TextImprover from '../../../shared/components/TextImprover.vue';
 import ClienteSearchSelect from '../../../shared/components/ClienteSearchSelect.vue';
 import VehiculoSearchSelect from '../../../shared/components/VehiculoSearchSelect.vue';
 import EmpleadoSearchSelect from '../../../shared/components/EmpleadoSearchSelect.vue';
+import FichaCampos from '../../../shared/components/FichaCampos.vue';
+import { formatDateOnly } from '../../../shared/utils/datetime';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   citaId: { type: [Number, String], default: null },
   // Valores iniciales al crear (usado por el calendario al hacer clic en un hueco)
   prefill: { type: Object, default: null },
+  // Variante de consulta: ficha de lectura y solo «Cerrar» (rol sin `modificar`).
+  soloLectura: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['update:modelValue', 'created', 'updated']);
@@ -86,6 +90,8 @@ const formSnapshot = ref(null);
 const showDiscardWarning = ref(false);
 const estadoOriginal = ref('PROGRAMADA');
 const recepcionNumero = ref('');
+// Datos tal como llegan de la API, para la ficha de lectura (nombres ya resueltos).
+const citaData = ref(null);
 
 const esFinal = computed(() => isEditMode.value && ESTADOS_FINALES.includes(estadoOriginal.value));
 const estadosVisibles = computed(() => (
@@ -633,6 +639,7 @@ function tallerInicial() {
 
 async function open() {
   resetForm();
+  citaData.value = null;
   await ensureTalleres();
 
   if (!isEditMode.value) {
@@ -674,6 +681,7 @@ async function open() {
     if (data.taller && !talleres.value.some((t) => String(t.id) === String(data.taller))) {
       talleres.value = [...talleres.value, { id: data.taller, nombre: data.taller_nombre || 'Taller asignado' }];
     }
+    citaData.value = data;
     estadoOriginal.value = form.value.estado;
     recepcionNumero.value = data.recepcion_generada_numero || '';
     asesorSearch.value = data.asesor_nombre || '';
@@ -735,7 +743,7 @@ async function submit() {
 }
 
 function close() {
-  if (hasChanges.value && !isSaving.value) {
+  if (!props.soloLectura && hasChanges.value && !isSaving.value) {
     showDiscardWarning.value = true;
     return;
   }
@@ -746,6 +754,29 @@ function discard() {
   showDiscardWarning.value = false;
   emit('update:modelValue', false);
 }
+
+const camposFicha = computed(() => {
+  const d = citaData.value;
+  if (!d) return [];
+  const vehiculo = d.vehiculo
+    ? [formatPlaca(d.vehiculo.placa), d.vehiculo.marca, d.vehiculo.modelo].filter(Boolean).join(' · ')
+    : '';
+  const estado = ESTADOS.find((e) => e.value === d.estado)?.label || d.estado_display || '';
+  return [
+    { etiqueta: 'Fecha', valor: formatDateOnly(d.fecha_cita) },
+    { etiqueta: 'Hora', valor: d.hora_cita ? String(d.hora_cita).slice(0, 5) : '' },
+    { etiqueta: 'Duración', valor: DURACIONES.find((x) => x.value === Number(d.duracion_minutos))?.label || (d.duracion_minutos ? `${d.duracion_minutos} min` : '') },
+    { etiqueta: 'Taller', valor: d.taller_nombre },
+    { etiqueta: 'Cliente', valor: [d.cliente?.nombre, d.cliente?.telefono].filter(Boolean).join(' · ') },
+    { etiqueta: 'Vehículo', valor: vehiculo },
+    { etiqueta: 'Estado', valor: recepcionNumero.value ? `${estado} · recepción ${recepcionNumero.value}` : estado },
+    { etiqueta: 'Asesor', valor: d.asesor_nombre },
+    { etiqueta: 'Motivo', valor: MOTIVOS.find((m) => m.value === d.motivo)?.label || d.motivo_display },
+    { etiqueta: 'Kilometraje aproximado', valor: d.kilometraje_aproximado != null ? `${Number(d.kilometraje_aproximado).toLocaleString('es-EC')} km` : '' },
+    { etiqueta: 'Descripción del motivo', valor: d.motivo_descripcion, ancho: 'completo' },
+    { etiqueta: 'Notas internas', valor: d.notas_internas, ancho: 'completo' },
+  ];
+});
 
 const BASE_INPUT = 'block w-full p-2.5 text-sm rounded shadow-xs focus:outline-none focus:ring-2 dark:bg-gray-700 dark:placeholder-gray-400 disabled:cursor-not-allowed disabled:opacity-60';
 const INPUT_OK = 'bg-gray-50 border border-gray-300 text-gray-900 focus:ring-brand-200 focus:border-brand-500 dark:border-gray-600 dark:text-white dark:focus:ring-brand-500/40 dark:focus:border-brand-300';
@@ -778,7 +809,7 @@ function inputClass(campo) {
           <div class="min-w-0">
             <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1">
               <h3 class="text-lg font-semibold leading-tight text-gray-900 dark:text-white">
-                {{ isEditMode ? 'Editar cita' : 'Nueva cita' }}
+                {{ soloLectura ? 'Detalle de la cita' : (isEditMode ? 'Editar cita' : 'Nueva cita') }}
               </h3>
               <span
                 v-if="isEditMode && !isLoading"
@@ -810,7 +841,7 @@ function inputClass(campo) {
       <div class="flex-1 overflow-y-auto px-4 py-5 sm:px-6 bg-gray-50/60 dark:bg-gray-900/30">
         <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
 
-        <div v-if="esFinal" class="flex items-start gap-3 p-3 mb-5 text-sm border rounded-lg border-gray-200 bg-white text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+        <div v-if="esFinal && !soloLectura" class="flex items-start gap-3 p-3 mb-5 text-sm border rounded-lg border-gray-200 bg-white text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
           <Lock class="w-4 h-4 mt-0.5 shrink-0 text-gray-500 dark:text-gray-400" />
           <p>
             <span class="font-semibold text-gray-900 dark:text-white">Cita {{ estadoActual.label.toLowerCase() }}.</span>
@@ -822,6 +853,9 @@ function inputClass(campo) {
         <div v-if="isLoading" class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
           <Loader2 class="w-4 h-4 animate-spin" /> Cargando cita...
         </div>
+        <section v-else-if="soloLectura" :class="SECCION">
+          <FichaCampos :campos="camposFicha" />
+        </section>
         <div v-else class="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:items-start">
           <!-- 1. Cliente y vehículo -->
           <section :class="[SECCION, 'lg:col-span-2 lg:col-start-1']">
@@ -1357,6 +1391,7 @@ function inputClass(campo) {
           <TriangleAlert class="w-4 h-4 shrink-0" />
           Tienes cambios sin guardar. ¿Descartarlos?
         </p>
+        <span v-else-if="soloLectura" class="hidden sm:block"></span>
         <p v-else class="hidden text-xs text-gray-500 sm:block dark:text-gray-400"><span class="text-accent-500">*</span> Campos obligatorios</p>
 
         <div v-if="showDiscardWarning" class="flex items-center justify-end gap-3">
@@ -1373,6 +1408,15 @@ function inputClass(campo) {
             @click="discard"
           >
             Descartar cambios
+          </button>
+        </div>
+        <div v-else-if="soloLectura" class="flex items-center justify-end">
+          <button
+            type="button"
+            class="px-5 py-2.5 text-sm font-medium text-gray-900 rounded bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700"
+            @click="close"
+          >
+            Cerrar
           </button>
         </div>
         <div v-else class="flex items-center justify-end gap-3">

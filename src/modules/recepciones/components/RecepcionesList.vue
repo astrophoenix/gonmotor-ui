@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { ClipboardList, Loader2, Trash2, Search, Gauge, Car, IdCard, Phone, Filter, CalendarDays } from 'lucide-vue-next';
 import { IconReportSearch } from '@tabler/icons-vue';
 import { Icon } from '@iconify/vue';
@@ -30,6 +30,18 @@ import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
 import { relacionesDeRecepcion } from '../../../shared/utils/relacionesFlujo';
 import Pagination from '../../../shared/components/Pagination.vue';
 import { usePdfExport } from '../../../shared/composables/usePdfExport';
+import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
+import SinAcceso from '../../../shared/components/SinAcceso.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
+
+const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+const puedeModificar = computed(() => puede('recepciones'));
+const puedeCrearInspeccion = computed(() => puede('recepciones') && puede('inspecciones'));
+
+/** Solo una recepción pendiente se edita o elimina; el resto se consulta. */
+function editable(item) {
+  return puedeModificar.value && item.estado === 'PENDIENTE';
+}
 
 const { recepciones, loading, error, loadRecepciones, currentPage, total, nextUrl, previousUrl } = useRecepciones();
 
@@ -306,12 +318,16 @@ function handleExcelError(message) {
 }
 
 onMounted(async () => {
+  await cargarPermisos().catch(() => {});
+  if (sinAcceso('recepciones')) return;
   loadPrefijosRecepcion();
   await reloadList();
 });
 </script>
 
 <template>
+  <SinAcceso v-if="sinAcceso('recepciones')" seccion="Recepciones" />
+  <template v-else>
   <EntityHeader
     mode="list"
     :icon="ClipboardList"
@@ -320,7 +336,11 @@ onMounted(async () => {
       { label: 'Inicio', href: '/' },
       { label: 'Recepciones' },
     ]"
-  />
+  >
+    <template #title-aside>
+      <ModoConsultaChip v-if="soloConsulta('recepciones')" objeto="las recepciones" />
+    </template>
+  </EntityHeader>
 
   <div v-if="alert.message" class="px-4 pt-3">
     <Alert
@@ -448,6 +468,7 @@ onMounted(async () => {
         <div class="flex flex-wrap items-center gap-2">
           <EntityActionButtons
             entity="recepciones"
+            :show-add="puedeModificar"
             :export-params="buildQuery()"
             @pdfExportError="handlePdfError"
             @excelExportError="handleExcelError"
@@ -540,10 +561,10 @@ onMounted(async () => {
         </td>
         <td class="px-4 py-3 whitespace-nowrap align-top">
           <div class="flex items-center gap-2">
-            <EntityRowActions entity="recepción" :show-edit="item.estado === 'PENDIENTE'" :show-delete="item.estado === 'PENDIENTE'" :delete-disabled="isDeleting" @edit="handleEditar(item.id)" @delete="openDeleteModal(item)" />
+            <EntityRowActions entity="recepción" :show-view="!editable(item)" :view-href="`/crud/recepciones/ver/?id=${encodeURIComponent(item.id)}`" :show-edit="editable(item)" :show-delete="editable(item)" :delete-disabled="isDeleting" @edit="handleEditar(item.id)" @delete="openDeleteModal(item)" />
             <EntityActionsMenu>
               <template #default="{ cerrar }">
-                <button v-if="item.estado === 'ACEPTADA' && !item.inspecciones?.length" type="button" role="menuitem" title="Crear inspección" :disabled="creandoId === item.id" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-700" @click="cerrar(); openCrearInspeccionModal(item)">
+                <button v-if="puedeCrearInspeccion && item.estado === 'ACEPTADA' && !item.inspecciones?.length" type="button" role="menuitem" title="Crear inspección" :disabled="creandoId === item.id" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-700" @click="cerrar(); openCrearInspeccionModal(item)">
                   <Loader2 v-if="creandoId === item.id" class="w-4 h-4 shrink-0 animate-spin" />
                   <IconReportSearch v-else class="w-4 h-4 shrink-0 text-primary-600 dark:text-primary-400" />
                   Crear inspección
@@ -597,4 +618,5 @@ onMounted(async () => {
     @confirm="confirmCrearInspeccion"
     @cancel="recepcionParaInspeccion = null"
   />
+  </template>
 </template>

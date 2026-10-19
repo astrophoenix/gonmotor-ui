@@ -14,6 +14,12 @@ import EntityRowActions from '../../../shared/components/EntityRowActions.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
 import ProveedorModal from './ProveedorModal.vue';
 import EstadoActivoBadge from '../../../shared/components/EstadoActivoBadge.vue';
+import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
+import SinAcceso from '../../../shared/components/SinAcceso.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
+
+const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+const puedeModificarProveedores = computed(() => puede('proveedores', 'modificar'));
 
 const TIPOS_IDENTIFICACION = {
   C: 'Cédula',
@@ -204,12 +210,15 @@ async function confirmReactivate() {
 }
 
 
-onMounted(() => {
-  loadProveedores();
+onMounted(async () => {
+  await cargarPermisos().catch(() => {});
+  if (!sinAcceso('proveedores')) loadProveedores();
 });
 </script>
 
 <template>
+  <SinAcceso v-if="sinAcceso('proveedores')" seccion="Proveedores" />
+  <template v-else>
   <EntityHeader
     mode="list"
     :icon="Truck"
@@ -218,7 +227,11 @@ onMounted(() => {
       { label: 'Inicio', href: '/' },
       { label: 'Proveedores' },
     ]"
-  />
+  >
+    <template #title-aside>
+      <ModoConsultaChip v-if="soloConsulta('proveedores')" objeto="los proveedores" />
+    </template>
+  </EntityHeader>
 
   <div v-if="alert.message" class="px-4 pt-3">
     <Alert
@@ -293,6 +306,7 @@ onMounted(() => {
         <div class="flex flex-wrap items-center gap-2">
           <EntityActionButtons
             entity="proveedores"
+            :show-add="puedeModificarProveedores"
             :export-params="exportParams"
             @add="openCreateModal"
             @pdfExportError="handlePdfError"
@@ -344,10 +358,10 @@ onMounted(() => {
         </td>
         <td class="px-4 py-3 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <button v-if="!item.is_active" type="button" title="Reactivar proveedor" aria-label="Reactivar proveedor" :disabled="isReactivating" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400" @click="onReactivateProveedor(item)">
+            <button v-if="puedeModificarProveedores && !item.is_active" type="button" title="Reactivar proveedor" aria-label="Reactivar proveedor" :disabled="isReactivating" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400" @click="onReactivateProveedor(item)">
               <RotateCcw class="w-4 h-4" />
             </button>
-            <EntityRowActions entity="proveedor" :show-delete="item.is_active" :delete-disabled="isDeleting" @edit="editProveedor(item.id)" @delete="openDeleteModal(item)" />
+            <EntityRowActions entity="proveedor" :show-view="!puedeModificarProveedores" :view-href="`/crud/proveedores/ver/?id=${encodeURIComponent(item.id)}`" :show-edit="puedeModificarProveedores" :show-delete="puedeModificarProveedores && item.is_active" :delete-disabled="isDeleting" @edit="editProveedor(item.id)" @delete="openDeleteModal(item)" />
           </div>
         </td>
       </tr>
@@ -402,4 +416,5 @@ onMounted(() => {
     @updated="onProveedorUpdated"
     @reactivated="onProveedorReactivated"
   />
+  </template>
 </template>

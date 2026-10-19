@@ -3,11 +3,15 @@ import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { X, Save } from 'lucide-vue-next';
 import { serviciosService } from '../services/serviciosService';
 import Alert from '../../../../shared/components/Alert.vue';
+import FichaCampos from '../../../../shared/components/FichaCampos.vue';
 import { IVA_OPCIONES, normalizarIva } from '../../../../shared/utils/impuestos';
+import { formatCurrency } from '../../../../shared/utils/format';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   servicioId: { type: [Number, String], default: null },
+  // Variante de consulta: ficha de lectura y solo «Cerrar» (rol sin `modificar`).
+  soloLectura: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['update:modelValue', 'created', 'updated', 'reactivated']);
@@ -38,6 +42,18 @@ function createEmptyForm() {
 }
 
 const form = reactive(createEmptyForm());
+
+const camposFicha = computed(() => [
+  { etiqueta: 'Código', valor: form.codigo },
+  { etiqueta: 'Nombre del servicio', valor: form.nombre },
+  { etiqueta: 'Categoría', valor: CATEGORIAS.find((c) => c.value === form.categoria)?.label || form.categoria },
+  { etiqueta: 'Tiempo estimado', valor: form.tiempo_estimado_minutos != null ? `${form.tiempo_estimado_minutos} min` : '' },
+  { etiqueta: 'Precio referencial de mano de obra', valor: formatCurrency(form.precio_referencial) },
+  { etiqueta: 'IVA por defecto', valor: IVA_OPCIONES.find((o) => o.value === form.iva_porcentaje_defecto)?.label || '' },
+  { etiqueta: 'ID Producto/Servicio Contífico', valor: form.contifico_producto_id },
+  { etiqueta: 'Tareas estándar incluidas', valor: form.tareas_estandar, ancho: 'completo' },
+  { etiqueta: 'Descripción', valor: form.descripcion, ancho: 'completo' },
+]);
 const isLoading = ref(false);
 const isSaving = ref(false);
 const errorMessage = ref('');
@@ -199,7 +215,7 @@ async function submit() {
 }
 
 function close() {
-  if (hasChanges.value && !isSaving.value) {
+  if (!props.soloLectura && hasChanges.value && !isSaving.value) {
     if (!showDiscardWarning.value) {
       showDiscardWarning.value = true;
       return;
@@ -223,7 +239,7 @@ watch(() => form.codigo, (val) => {
     <div class="relative block w-full max-w-4xl rounded-lg bg-white shadow-xl dark:bg-gray-800 my-auto">
       <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-          {{ isEditMode ? 'Editar servicio' : 'Nuevo servicio' }}
+          {{ soloLectura ? 'Detalle del servicio' : (isEditMode ? 'Editar servicio' : 'Nuevo servicio') }}
         </h3>
         <button
           type="button"
@@ -247,6 +263,7 @@ watch(() => form.codigo, (val) => {
         />
 
         <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando servicio...</div>
+        <FichaCampos v-else-if="soloLectura" :campos="camposFicha" />
         <template v-else>
           <h4 class="mb-4 text-base font-semibold dark:text-white">Mano de Obra / Servicio</h4>
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -300,6 +317,15 @@ watch(() => form.codigo, (val) => {
 
       <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
         <button
+          v-if="soloLectura"
+          type="button"
+          class="px-5 py-2.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+          @click="close"
+        >
+          Cerrar
+        </button>
+        <template v-else>
+        <button
           type="button"
           class="px-5 py-2.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-300"
           @click="close"
@@ -319,6 +345,7 @@ watch(() => form.codigo, (val) => {
           </svg>
           {{ isSaving ? 'Guardando...' : (isEditMode ? 'Guardar cambios' : 'Crear servicio') }}
         </button>
+        </template>
       </div>
     </div>
   </div>

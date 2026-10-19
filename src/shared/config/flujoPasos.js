@@ -38,3 +38,12 @@ export const RUTAS_FLUJO = {
   cotizacion: (id) => `/crud/cotizaciones/ver/?id=${encodeURIComponent(id)}`,
   orden: (id) => `/crud/ordenes/ver/?id=${encodeURIComponent(id)}`,
 };
+
+/** Recurso de permisos (`/api/auth/me/`) de cada tipo de documento del flujo. */
+export const RECURSO_POR_TIPO = {
+  cita: 'citas',
+  recepcion: 'recepciones',
+  inspeccion: 'inspecciones',
+  cotizacion: 'cotizaciones',
+  orden: 'ordenes',
+};

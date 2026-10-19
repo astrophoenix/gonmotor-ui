@@ -45,6 +45,9 @@ import { getEstadoOrden, getPrioridadOrden } from '../constants/estadosOrden';
 import Alert from '../../../shared/components/Alert.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
+import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
+import SinAcceso from '../../../shared/components/SinAcceso.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
 import PdfExportButton from '../../../shared/components/PdfExportButton.vue';
 import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
 import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
@@ -190,7 +193,30 @@ const entregada = computed(() => estado.value === 'ENTREGADO');
 // ---- Aviso de estado con sus transiciones (las mismas de la edición) ----
 const serviciosHechos = computed(() => servicios.value.filter((s) => s.completado).length);
 
+const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+const puedeModificar = computed(() => puede('ordenes'));
+const ordenCerrada = computed(() => ['ENTREGADO', 'CANCELADO'].includes(estado.value));
+
+// Para quien solo consulta, el aviso informa sin instrucciones de lo que no puede hacer.
+const AVISO_CONSULTA = {
+  PENDIENTE: 'Aún no se asigna al mecánico.',
+  EN_PROCESO: 'El taller está trabajando en el vehículo.',
+  COMPLETADO: 'Listo para entregar al cliente.',
+};
+
 const aviso = computed(() => {
+  const base = avisoEstado.value;
+  if (!base || puedeModificar.value) return base;
+  if (estado.value === 'EN_ESPERA') {
+    return { ...base, detalle: `${orden.value.motivo_espera || 'sin motivo indicado'}.` };
+  }
+  if (estado.value in AVISO_CONSULTA) {
+    return { ...base, detalle: AVISO_CONSULTA[estado.value] };
+  }
+  return base;
+});
+
+const avisoEstado = computed(() => {
   const ord = orden.value;
   if (!ord) return null;
   switch (estado.value) {
@@ -448,6 +474,11 @@ function mostrarErrorPdf(message) {
 }
 
 onMounted(async () => {
+  await cargarPermisos().catch(() => {});
+  if (sinAcceso('ordenes')) {
+    loading.value = false;
+    return;
+  }
   if (!ordenId.value) {
     error.value = 'Falta el identificador de la orden de trabajo.';
     loading.value = false;
@@ -464,6 +495,8 @@ onMounted(async () => {
 </script>
 
 <template>
+  <SinAcceso v-if="sinAcceso('ordenes')" seccion="Órdenes de trabajo" />
+  <template v-else>
   <EntityHeader
     mode="detail"
     entity="Orden de trabajo"
@@ -494,9 +527,12 @@ onMounted(async () => {
       </template>
     </template>
 
+    <template #title-aside>
+      <ModoConsultaChip v-if="orden && soloConsulta('ordenes')" objeto="esta orden" acciones="editarla o cambiar su estado" />
+    </template>
     <template #actions>
       <a
-        v-if="orden"
+        v-if="orden && puedeModificar && !ordenCerrada"
         :href="`/crud/ordenes/editar/?id=${encodeURIComponent(orden.id)}`"
         class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800">
         <FilePen class="w-5 h-5 -ms-1 text-brand-700 dark:text-brand-200" aria-hidden="true" />
@@ -540,7 +576,7 @@ onMounted(async () => {
               {{ aviso.detalle }}
             </p>
           </div>
-          <div class="flex flex-wrap gap-2 sm:justify-end">
+          <div v-if="puedeModificar" class="flex flex-wrap gap-2 sm:justify-end">
             <template v-if="estado === 'PENDIENTE'">
               <button type="button" :disabled="saving" :class="BOTON_ESTADO" @click="solicitarTransicion('iniciar')">
                 <IconClockPlay class="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -577,7 +613,7 @@ onMounted(async () => {
         </div>
 
         <!-- Motivo de la espera, en el mismo aviso para no perder el contexto -->
-        <div v-if="pidiendoEspera && estado === 'EN_PROCESO'" class="pt-3 mt-3 border-t border-brand-200 dark:border-brand-500/40">
+        <div v-if="puedeModificar && pidiendoEspera && estado === 'EN_PROCESO'" class="pt-3 mt-3 border-t border-brand-200 dark:border-brand-500/40">
           <label for="motivo_espera" class="block mb-2 text-sm font-medium">Motivo de la espera <span class="text-accent-500">*</span></label>
           <div class="flex flex-col gap-2 sm:flex-row">
             <input
@@ -1108,4 +1144,5 @@ onMounted(async () => {
     @confirm="confirmarTransicion"
     @cancel="transicion = null"
   />
+  </template>
 </template>

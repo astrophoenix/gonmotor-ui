@@ -28,6 +28,10 @@ function ocultarEnlacesSinPermiso(permisos) {
     if (acciones.includes('ver')) return;
     el.closest('li')?.remove();
   });
+  // Un grupo desplegable (Operación, Inventario…) sin enlaces visibles sobra.
+  document.querySelectorAll('ul.sidebar-submenu').forEach((submenu) => {
+    if (!submenu.querySelector('li')) submenu.closest('li')?.remove();
+  });
 }
 
 /** Enlaces del administrador del SaaS: ocultos (`hidden`) salvo para el superusuario. */
@@ -51,12 +55,16 @@ export async function iniciarPermisosGlobal() {
 export function usePermisos() {
   const permisos = ref(payload?.permisos || {});
   const isLoading = ref(false);
+  // `true` cuando los permisos ya llegaron: evita mostrar avisos de consulta o
+  // la pantalla «sin acceso» mientras `puede()` todavía devuelve `false`.
+  const cargado = ref(Boolean(payload));
 
   async function cargarPermisos() {
     isLoading.value = true;
     try {
       const data = await cargar();
       permisos.value = data.permisos || {};
+      cargado.value = true;
       return permisos.value;
     } finally {
       isLoading.value = false;
@@ -68,7 +76,17 @@ export function usePermisos() {
     return acciones.includes(accion);
   }
 
+  /** El rol puede consultar el recurso pero no modificarlo. */
+  function soloConsulta(recurso) {
+    return cargado.value && puede(recurso, 'ver') && !puede(recurso, 'modificar');
+  }
+
+  /** El rol no puede ni consultar el recurso (solo tras cargar los permisos). */
+  function sinAcceso(recurso) {
+    return cargado.value && !puede(recurso, 'ver');
+  }
+
   cargarPermisos().catch(() => {});
 
-  return { permisos, isLoading, cargarPermisos, puede };
+  return { permisos, isLoading, cargado, cargarPermisos, puede, soloConsulta, sinAcceso };
 }

@@ -7,6 +7,7 @@ import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import VehicleImageField from '../../../shared/components/VehicleImageField.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
 import {
   formatPlaca,
   sanitizeVin,
@@ -21,6 +22,7 @@ import {
 
 const vehicleId = new URLSearchParams(window.location.search).get('id');
 const isEditMode = Boolean(vehicleId);
+const { puede, cargarPermisos } = usePermisos();
 const form = reactive({
   placa: '',
   vin: '',
@@ -307,7 +309,15 @@ function goToAdd() {
   window.location.assign('/crud/vehiculos/agregar/');
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // Sin permiso de modificar se lleva al usuario a la vista de consulta.
+  await cargarPermisos().catch(() => {});
+  if (!puede('vehiculos', 'modificar')) {
+    window.location.replace(isEditMode
+      ? `/crud/vehiculos/ver/?id=${encodeURIComponent(vehicleId)}`
+      : '/crud/vehiculos/');
+    return;
+  }
   loadVehicle();
   loadChoices();
 });

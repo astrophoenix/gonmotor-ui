@@ -28,6 +28,9 @@ import { formatPlate } from '../../../shared/utils/formatPlate';
 import { formatDateTime } from '../../../shared/utils/datetime';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
+import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
+import SinAcceso from '../../../shared/components/SinAcceso.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import PdfExportButton from '../../../shared/components/PdfExportButton.vue';
 import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
@@ -77,9 +80,13 @@ const ordenGenerada = computed(() => cotizacion.value?.orden_generada_numero || 
 const ordenHref = computed(() => (
   cotizacion.value?.orden_generada_id ? `/crud/ordenes/ver/?id=${encodeURIComponent(cotizacion.value.orden_generada_id)}` : ''
 ));
-const puedeGenerarOrden = computed(() => cotizacion.value?.estado === 'ACEPTADA' && !ordenGenerada.value);
-const puedeReabrir = puedeGenerarOrden;
-const puedeEditar = computed(() => Boolean(cotizacion.value) && cotizacion.value.estado !== 'ACEPTADA');
+const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+const puedeModificar = computed(() => puede('cotizaciones'));
+const aceptadaSinOrden = computed(() => cotizacion.value?.estado === 'ACEPTADA' && !ordenGenerada.value);
+// Generar la orden crea otro documento: hace falta poder crear órdenes.
+const puedeGenerarOrden = computed(() => aceptadaSinOrden.value && puedeModificar.value && puede('ordenes'));
+const puedeReabrir = computed(() => aceptadaSinOrden.value && puedeModificar.value);
+const puedeEditar = computed(() => Boolean(cotizacion.value) && puedeModificar.value && cotizacion.value.estado !== 'ACEPTADA');
 const esperandoRespuesta = computed(() => ['PENDIENTE', 'ENVIADA'].includes(cotizacion.value?.estado));
 
 const metodoAceptacionLabel = computed(() => {
@@ -222,10 +229,19 @@ async function cargar() {
   }
 }
 
-onMounted(cargar);
+onMounted(async () => {
+  await cargarPermisos().catch(() => {});
+  if (sinAcceso('cotizaciones')) {
+    loading.value = false;
+    return;
+  }
+  cargar();
+});
 </script>
 
 <template>
+  <SinAcceso v-if="sinAcceso('cotizaciones')" seccion="Cotizaciones" />
+  <template v-else>
   <EntityHeader
     mode="detail"
     entity="Cotización"
@@ -236,6 +252,9 @@ onMounted(cargar);
       { label: 'Cotización' },
     ]"
   >
+    <template #title-aside>
+      <ModoConsultaChip v-if="cotizacion && soloConsulta('cotizaciones')" objeto="esta cotización" acciones="editarla o enviarla" />
+    </template>
     <template #badges>
       <EstadoCotizacionBadge v-if="cotizacion" :estado="cotizacion.estado" :estado-display="cotizacion.estado_display" size="md" />
     </template>
@@ -318,7 +337,10 @@ onMounted(cargar);
                   @click="enviarPor(canal)"
                 >
                   <component :is="canal.icon" class="w-4 h-4 shrink-0" :class="canal.iconClass" aria-hidden="true" />
-                  {{ canal.label }}
+                  <span>
+                    {{ canal.label }}
+                    <span v-if="!canal.href" class="block text-xs text-gray-500 dark:text-gray-400">{{ canal.falta }}</span>
+                  </span>
                 </button>
               </div>
             </template>
@@ -561,4 +583,5 @@ onMounted(cargar);
     :is-deleting="procesandoGeneracionOrden"
     @confirm="confirmarGenerarOrden"
   />
+  </template>
 </template>

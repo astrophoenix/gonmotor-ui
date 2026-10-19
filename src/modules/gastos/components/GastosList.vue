@@ -1,9 +1,10 @@
 <script setup>
-import { onMounted, ref } from 'vue';
-import { Wallet, Pen, Trash2, Filter, Calendar, Tag, Wrench } from 'lucide-vue-next';
+import { computed, onMounted, ref } from 'vue';
+import { Wallet, Trash2, Filter, Calendar, Tag, Wrench } from 'lucide-vue-next';
 import { useGastos } from '../composables/useGastos';
 import { categoriaLabel, COLOR_CATEGORIA, CATEGORIAS_GASTO } from '../constants/categoriasGasto';
 import { formatCurrency } from '../../../shared/utils/format';
+import { formatDateOnly } from '../../../shared/utils/datetime';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
@@ -15,8 +16,15 @@ import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import TallerSelect from '../../../shared/components/TallerSelect.vue';
 import GastosModal from './GastosModal.vue';
 import { useAuthStore } from '../../auth/stores/authStore';
+import EntityRowActions from '../../../shared/components/EntityRowActions.vue';
+import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
+import SinAcceso from '../../../shared/components/SinAcceso.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
 
 const authStore = useAuthStore();
+
+const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+const puedeModificarGastos = computed(() => puede('gastos', 'modificar'));
 
 const {
   gastos,
@@ -124,18 +132,15 @@ const { marcarAplicado } = useFiltrosReactivos({
   aplicar: applyFilters,
 });
 
-function formatearFecha(fecha) {
-  if (!fecha) return '—';
-  const d = new Date(fecha);
-  if (Number.isNaN(d.getTime())) return fecha;
-  return d.toLocaleDateString('es-EC', { year: 'numeric', month: 'short', day: '2-digit' });
-}
-
-onMounted(() => loadGastos());
+onMounted(async () => {
+  await cargarPermisos().catch(() => {});
+  if (!sinAcceso('gastos')) loadGastos();
+});
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+  <SinAcceso v-if="sinAcceso('gastos')" seccion="Gastos" />
+  <div v-else class="min-h-screen bg-gray-50 dark:bg-gray-900">
     <EntityHeader
       mode="list"
       entity="Gastos"
@@ -144,7 +149,11 @@ onMounted(() => loadGastos());
         { label: 'Inicio', href: '/' },
         { label: 'Gastos' },
       ]"
-    />
+    >
+      <template #title-aside>
+        <ModoConsultaChip v-if="soloConsulta('gastos')" objeto="los gastos" />
+      </template>
+    </EntityHeader>
 
     <div v-if="alert.message" class="px-4 pt-3">
       <Alert
@@ -234,6 +243,7 @@ onMounted(() => loadGastos());
               entity="gastos"
               :show-export-pdf="false"
               :show-export-excel="false"
+              :show-add="puedeModificarGastos"
               @add="openCreateModal"
             />
           </div>
@@ -254,7 +264,7 @@ onMounted(() => loadGastos());
                 <Wrench v-if="!item.taller_nombre" class="w-4 h-4 inline-block mr-1 text-gray-400" />
                 {{ item.taller_nombre || 'Sin taller' }}
               </td>
-              <td class="px-4 py-3 whitespace-nowrap text-gray-800 dark:text-gray-300">{{ formatearFecha(item.fecha) }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-gray-800 dark:text-gray-300">{{ formatDateOnly(item.fecha) }}</td>
               <td class="px-4 py-3 whitespace-nowrap">
                 <span
                   :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', COLOR_CATEGORIA[item.categoria] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200']"
@@ -267,25 +277,16 @@ onMounted(() => loadGastos());
               <td class="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-xs truncate">{{ item.descripcion || '—' }}</td>
               <td class="px-4 py-3 whitespace-nowrap">
                 <div class="flex items-center gap-2">
-                  <button
-                    type="button"
-                    title="Editar gasto"
-                    aria-label="Editar gasto"
-                    class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-50 hover:text-brand-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
-                    @click="openEditModal(item.id)"
-                  >
-                    <Pen class="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    title="Eliminar gasto"
-                    aria-label="Eliminar gasto"
-                    :disabled="isDeleting"
-                    class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-red-500/10 dark:hover:text-red-400"
-                    @click="openDeleteModal(item)"
-                  >
-                    <Trash2 class="w-4 h-4" />
-                  </button>
+                  <EntityRowActions
+                    entity="gasto"
+                    :show-view="!puedeModificarGastos"
+                    :show-edit="puedeModificarGastos"
+                    :show-delete="puedeModificarGastos"
+                    :delete-disabled="isDeleting"
+                    @view="openEditModal(item.id)"
+                    @edit="openEditModal(item.id)"
+                    @delete="openDeleteModal(item)"
+                  />
                 </div>
               </td>
             </tr>
@@ -319,6 +320,7 @@ onMounted(() => loadGastos());
     <GastosModal
       v-model="showModal"
       :gasto-id="gastoModalId"
+      :solo-lectura="!puedeModificarGastos"
       @created="onGastoCreated"
       @updated="onGastoUpdated"
     />

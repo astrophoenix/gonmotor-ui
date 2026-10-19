@@ -7,6 +7,9 @@ import Pagination from '../../../shared/components/Pagination.vue';
 import { SEARCH_DEBOUNCE_MS, isSearchable } from '../../../shared/utils/search';
 import CitaAccionesMenu from './CitaAccionesMenu.vue';
 import { referenciaCorta } from '../../../shared/utils/format';
+import { usePermisos } from '../../../shared/composables/usePermisos';
+
+const { puede } = usePermisos();
 
 /**
  * Tabla de la pantalla unificada de citas (vista lista).
@@ -111,10 +114,10 @@ onUnmounted(() => clearTimeout(searchTimer));
     <template #row="{ item }">
       <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
         <td class="px-4 py-3 whitespace-nowrap">
-          <!-- Las citas no tienen ficha propia: la fecha abre la cita para editarla. -->
+          <!-- Las citas no tienen ficha propia: la fecha abre la cita (edición o consulta). -->
           <button
             type="button"
-            title="Editar cita"
+            :title="puede('citas') ? 'Editar cita' : 'Ver cita'"
             class="text-left cursor-pointer group"
             @click="onAccion(item, 'editar')"
           >
@@ -152,6 +155,10 @@ onUnmounted(() => clearTimeout(searchTimer));
           <div class="flex items-center gap-2">
             <EntityRowActions
               entity="cita"
+              :show-view="!puede('citas')"
+              :show-edit="puede('citas')"
+              :show-delete="puede('citas')"
+              @view="onAccion(item, 'editar')"
               :delete-disabled="isDeleting || isConverting"
               @edit="onAccion(item, 'editar')"
               @delete="onAccion(item, 'eliminar')"

@@ -69,3 +69,16 @@ export function minutesBetween(inicio, fin) {
   if (!desde || !hasta) return null;
   return Math.max(0, Math.round((hasta - desde) / 60000));
 }
+
+/**
+ * Formatea una fecha sin hora (`YYYY-MM-DD`) como fecha local: «19 oct 2026».
+ * `new Date('2026-10-19')` la interpreta en UTC y en Ecuador (UTC-5) mostraría
+ * el día anterior; por eso se construye con año, mes y día locales.
+ */
+export function formatDateOnly(value) {
+  if (!value) return '—';
+  const partes = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value));
+  const fecha = partes ? new Date(Number(partes[1]), Number(partes[2]) - 1, Number(partes[3])) : new Date(value);
+  if (Number.isNaN(fecha.getTime())) return String(value);
+  return fecha.toLocaleDateString('es-EC', { year: 'numeric', month: 'short', day: '2-digit' });
+}

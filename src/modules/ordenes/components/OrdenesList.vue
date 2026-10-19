@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { Eye, Filter, Search, CalendarDays, Wrench, Car, Gauge, IdCard, Phone, ChevronsDown, Equal, ChevronsUp, Siren, Minus } from 'lucide-vue-next';
 import { Icon } from '@iconify/vue';
 import filePdfIcon from '@iconify-icons/fa6-regular/file-pdf';
@@ -27,6 +27,20 @@ import EstadoOrdenBadge from './EstadoOrdenBadge.vue';
 import { referenciaCorta } from '../../../shared/utils/format';
 import { ordenesService } from '../services/ordenesService';
 import { usePdfExport } from '../../../shared/composables/usePdfExport';
+import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
+import SinAcceso from '../../../shared/components/SinAcceso.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
+
+const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+const puedeModificar = computed(() => puede('ordenes'));
+
+/**
+ * Una orden entregada o anulada ya no se edita: se consulta.
+ * Eliminar, solo la pendiente (sin trabajo iniciado); el resto queda como historial.
+ */
+function editable(item) {
+  return puedeModificar.value && !['ENTREGADO', 'CANCELADO'].includes(item.estado);
+}
 
 const {
   ordenes,
@@ -264,13 +278,17 @@ function prioridadConfig(prioridad) {
 }
 
 
-onMounted(() => {
+onMounted(async () => {
+  await cargarPermisos().catch(() => {});
+  if (sinAcceso('ordenes')) return;
   loadTalleres();
   reloadList();
 });
 </script>
 
 <template>
+  <SinAcceso v-if="sinAcceso('ordenes')" seccion="Órdenes de trabajo" />
+  <template v-else>
   <EntityHeader
     mode="list"
     :icon="Wrench"
@@ -279,7 +297,11 @@ onMounted(() => {
       { label: 'Inicio', href: '/' },
       { label: 'Órdenes de Trabajo' },
     ]"
-  />
+  >
+    <template #title-aside>
+      <ModoConsultaChip v-if="soloConsulta('ordenes')" objeto="las órdenes de trabajo" />
+    </template>
+  </EntityHeader>
 
   <div v-if="alert.message" class="px-4 pt-3">
     <Alert
@@ -414,6 +436,7 @@ onMounted(() => {
           <EntityActionButtons
             entity="ordenes"
             entity-api-path="ordenes/ordenes-trabajo"
+            :show-add="puedeModificar"
             :export-params="buildQuery()"
             @pdfExportError="handlePdfError"
             @excelExportError="handleExcelError"
@@ -499,7 +522,7 @@ onMounted(() => {
         </td>
         <td class="px-4 py-3 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <EntityRowActions entity="orden" :delete-disabled="isDeleting" @edit="handleEditar(item.id)" @delete="openDeleteModal(item)" />
+            <EntityRowActions entity="orden" :show-view="!editable(item)" :view-href="`/crud/ordenes/ver/?id=${encodeURIComponent(item.id)}`" :show-edit="editable(item)" :show-delete="puedeModificar && item.estado === 'PENDIENTE'" :delete-disabled="isDeleting" @edit="handleEditar(item.id)" @delete="openDeleteModal(item)" />
             <EntityActionsMenu>
               <template #default="{ cerrar }">
                 <button type="button" role="menuitem" title="Descargar la orden de trabajo en PDF" :disabled="isExportingPdf" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-700" @click="cerrar(); descargarPdf(item)">
@@ -537,4 +560,5 @@ onMounted(() => {
     @confirm="confirmDelete"
     @cancel="ordenToDelete = null"
   />
+  </template>
 </template>

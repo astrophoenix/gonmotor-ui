@@ -7,6 +7,7 @@ import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import VehicleImageField from '../../../shared/components/VehicleImageField.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
 import {
   sanitizeIdentificacion,
   sanitizeNombreUpper,
@@ -27,6 +28,7 @@ import {
 
 const clientId = new URLSearchParams(window.location.search).get('id');
 const isEditMode = Boolean(clientId);
+const { puede, cargarPermisos } = usePermisos();
 const form = reactive({
   tipo_identificacion: 'C',
   identificacion: '',
@@ -369,7 +371,16 @@ function goToAdd() {
   window.location.assign('/crud/clientes/agregar/');
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // Sin permiso de modificar no tiene sentido un formulario que fallará al
+  // guardar: se lleva al usuario a la vista de consulta (ficha o listado).
+  await cargarPermisos().catch(() => {});
+  if (!puede('clientes', 'modificar')) {
+    window.location.replace(isEditMode
+      ? `/crud/clientes/ver/?id=${encodeURIComponent(clientId)}`
+      : '/crud/clientes/');
+    return;
+  }
   loadClient();
   loadChoices();
 });

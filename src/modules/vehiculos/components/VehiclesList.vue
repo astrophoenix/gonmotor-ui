@@ -18,6 +18,14 @@ import { useToast } from '../../../shared/composables/useToast';
 import { formatPlate } from '../../../shared/utils/formatPlate';
 import { sanitizeAnio } from '../../../shared/utils/sanitize';
 import EstadoActivoBadge from '../../../shared/components/EstadoActivoBadge.vue';
+import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
+import SinAcceso from '../../../shared/components/SinAcceso.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
+
+const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+const puedeModificarVehiculos = computed(() => puede('vehiculos', 'modificar'));
+// El recordatorio por WhatsApp depende del permiso de notificaciones, no del de vehículos.
+const puedeEnviarRecordatorio = computed(() => puede('notificaciones', 'modificar'));
 
 const { showSuccess } = useToast();
 const {
@@ -197,10 +205,15 @@ function handleExcelError(message) {
 }
 
 
-onMounted(() => loadVehicles());
+onMounted(async () => {
+  await cargarPermisos().catch(() => {});
+  if (!sinAcceso('vehiculos')) loadVehicles();
+});
 </script>
 
 <template>
+  <SinAcceso v-if="sinAcceso('vehiculos')" seccion="Vehículos" />
+  <template v-else>
   <EntityHeader
     mode="list"
     :icon="Car"
@@ -209,7 +222,11 @@ onMounted(() => loadVehicles());
       { label: 'Inicio', href: '/' },
       { label: 'Vehículos' },
     ]"
-  />
+  >
+    <template #title-aside>
+      <ModoConsultaChip v-if="soloConsulta('vehiculos')" objeto="los vehículos" />
+    </template>
+  </EntityHeader>
 
   <div v-if="alert.message" class="px-4 pt-3">
     <Alert
@@ -313,6 +330,7 @@ onMounted(() => loadVehicles());
         <div class="flex flex-wrap items-center gap-2">
           <EntityActionButtons
             entity="vehiculos"
+            :show-add="puedeModificarVehiculos"
             :export-params="exportParams"
             @add="openCreateModal"
             @pdfExportError="handlePdfError"
@@ -351,10 +369,10 @@ onMounted(() => loadVehicles());
             <a :href="`/crud/vehiculos/ver/?id=${encodeURIComponent(item.id)}&tab=historial`" title="Ver historial del vehículo" aria-label="Ver historial del vehículo" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-100 hover:text-brand-900 hover:ring-1 hover:ring-inset hover:ring-brand-200 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white dark:hover:ring-gray-500">
               <History class="w-4.5 h-4.5" />
             </a>
-            <button type="button" title="Enviar recordatorio de mantenimiento por WhatsApp" aria-label="Enviar recordatorio por WhatsApp" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 dark:text-gray-400 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400" @click="openEnviarRecordatorio(item)">
+            <button v-if="puedeEnviarRecordatorio" type="button" title="Enviar recordatorio de mantenimiento por WhatsApp" aria-label="Enviar recordatorio por WhatsApp" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 dark:text-gray-400 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400" @click="openEnviarRecordatorio(item)">
               <MessageCircle class="w-4 h-4" />
             </button>
-            <EntityRowActions entity="vehículo" :delete-disabled="isDeleting" @edit="openEditModal(item.id)" @delete="openDeleteModal(item)" />
+            <EntityRowActions entity="vehículo" :show-view="!puedeModificarVehiculos" :view-href="`/crud/vehiculos/ver/?id=${encodeURIComponent(item.id)}`" :show-edit="puedeModificarVehiculos" :show-delete="puedeModificarVehiculos" :delete-disabled="isDeleting" @edit="openEditModal(item.id)" @delete="openDeleteModal(item)" />
           </div>
         </td>
       </tr>
@@ -397,4 +415,5 @@ onMounted(() => loadVehicles());
     :vehicle="enviarRecordatorioVehicle"
     @sent="onRecordatorioSent"
   />
+  </template>
 </template>

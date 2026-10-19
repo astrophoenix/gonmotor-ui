@@ -19,8 +19,10 @@ import ClientModal from './ClientModal.vue';
 import ClienteVehiculosCell from './ClienteVehiculosCell.vue';
 import { usePermisos } from '../../../shared/composables/usePermisos';
 import EstadoActivoBadge from '../../../shared/components/EstadoActivoBadge.vue';
+import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
+import SinAcceso from '../../../shared/components/SinAcceso.vue';
 
-const { puede } = usePermisos();
+const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
 const puedeModificarClientes = computed(() => puede('clientes', 'modificar'));
 
 const TIPOS_IDENTIFICACION = {
@@ -227,12 +229,17 @@ async function confirmReactivate() {
 }
 
 
-onMounted(() => {
-  loadClients();
+onMounted(async () => {
+  // Los permisos van primero: deciden si se muestra «Ver» o «Editar» en cada
+  // fila y evitan pedir el listado cuando el rol no puede consultarlo.
+  await cargarPermisos().catch(() => {});
+  if (!sinAcceso('clientes')) loadClients();
 });
 </script>
 
 <template>
+  <SinAcceso v-if="sinAcceso('clientes')" seccion="Clientes" />
+  <template v-else>
   <EntityHeader
     mode="list"
     :icon="UsersRound"
@@ -241,7 +248,11 @@ onMounted(() => {
       { label: 'Inicio', href: '/' },
       { label: 'Clientes' },
     ]"
-  />
+  >
+    <template #title-aside>
+      <ModoConsultaChip v-if="soloConsulta('clientes')" objeto="los clientes" />
+    </template>
+  </EntityHeader>
 
   <div v-if="alert.message" class="px-4 pt-3">
     <Alert
@@ -388,7 +399,7 @@ onMounted(() => {
             <button v-if="puedeModificarClientes && !item.is_active" type="button" title="Reactivar cliente" aria-label="Reactivar cliente" :disabled="isReactivating" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400" @click="onReactivateClient(item)">
               <RotateCcw class="w-4 h-4" />
             </button>
-            <EntityRowActions entity="cliente" :show-edit="puedeModificarClientes" :show-delete="puedeModificarClientes && item.is_active" :delete-disabled="isDeleting" @edit="editClient(item.id)" @delete="openDeleteModal(item)" />
+            <EntityRowActions entity="cliente" :show-view="!puedeModificarClientes" :view-href="`/crud/clientes/ver/?id=${encodeURIComponent(item.id)}`" :show-edit="puedeModificarClientes" :show-delete="puedeModificarClientes && item.is_active" :delete-disabled="isDeleting" @edit="editClient(item.id)" @delete="openDeleteModal(item)" />
           </div>
         </td>
       </tr>
@@ -449,4 +460,5 @@ onMounted(() => {
   />
 
   <!-- <ToastContainer /> -->
+  </template>
 </template>

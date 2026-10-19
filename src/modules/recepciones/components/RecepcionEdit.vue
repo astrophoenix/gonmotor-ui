@@ -77,6 +77,7 @@ import {
 import Alert from "../../../shared/components/Alert.vue";
 import EstadoRecepcionBadge from "./EstadoRecepcionBadge.vue";
 import EntityHeader from "../../../shared/components/EntityHeader.vue";
+import { usePermisos } from "../../../shared/composables/usePermisos";
 import {
   TIPOS_TRABAJO_OPCIONES,
   getTipoTrabajoLabel,
@@ -1788,7 +1789,17 @@ watch(
   },
 );
 
-onMounted(() => {
+const { puede, cargarPermisos } = usePermisos();
+
+onMounted(async () => {
+  // Sin permiso de modificar se lleva al usuario a la vista de consulta.
+  await cargarPermisos().catch(() => {});
+  if (!puede("recepciones", "modificar")) {
+    window.location.replace(isEditMode
+      ? `/crud/recepciones/ver/?id=${encodeURIComponent(recepcionId)}`
+      : "/crud/recepciones/");
+    return;
+  }
   const mensajeExito = sessionStorage.getItem("recepcion_exito");
   if (mensajeExito) {
     successMessage.value = mensajeExito;

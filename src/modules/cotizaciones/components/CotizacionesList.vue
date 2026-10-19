@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { Search, Filter, CalendarDays, Car, Gauge, IdCard, Phone, CalendarPlus, Send, CheckCircle2, Receipt, Mail } from 'lucide-vue-next';
 import { IconBrandWhatsapp } from '@tabler/icons-vue';
 import { Icon } from '@iconify/vue';
@@ -26,6 +26,20 @@ import { relacionesDeCotizacion } from '../../../shared/utils/relacionesFlujo';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import EntityActionsMenu from '../../../shared/components/EntityActionsMenu.vue';
 import { referenciaCorta } from '../../../shared/utils/format';
+import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
+import SinAcceso from '../../../shared/components/SinAcceso.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
+
+const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+const puedeModificar = computed(() => puede('cotizaciones'));
+
+/**
+ * Solo una cotización pendiente o enviada se edita; el resto se consulta.
+ * Eliminar, solo la pendiente: enviada ya hay un cliente de por medio.
+ */
+function editable(item) {
+  return puedeModificar.value && ['PENDIENTE', 'ENVIADA'].includes(item.estado);
+}
 
 const {
   cotizaciones,
@@ -260,13 +274,17 @@ function handleExcelError(message) {
 }
 
 
-onMounted(() => {
+onMounted(async () => {
+  await cargarPermisos().catch(() => {});
+  if (sinAcceso('cotizaciones')) return;
   loadTalleres();
   reloadList();
 });
 </script>
 
 <template>
+  <SinAcceso v-if="sinAcceso('cotizaciones')" seccion="Cotizaciones" />
+  <template v-else>
   <EntityHeader
     mode="list"
     :icon="Receipt"
@@ -275,7 +293,11 @@ onMounted(() => {
       { label: 'Inicio', href: '/' },
       { label: 'Cotizaciones' },
     ]"
-  />
+  >
+    <template #title-aside>
+      <ModoConsultaChip v-if="soloConsulta('cotizaciones')" objeto="las cotizaciones" />
+    </template>
+  </EntityHeader>
 
   <div v-if="alert.message" class="px-4 pt-3">
     <Alert
@@ -387,6 +409,7 @@ onMounted(() => {
         <div class="flex flex-wrap items-center gap-2">
           <EntityActionButtons
             entity="cotizaciones"
+            :show-add="puedeModificar"
             :export-params="buildQuery()"
             @pdfExportError="handlePdfError"
             @excelExportError="handleExcelError"
@@ -470,13 +493,15 @@ onMounted(() => {
         </td>
         <td class="px-4 py-3 whitespace-nowrap align-top">
           <div class="flex items-center gap-2">
-            <EntityRowActions entity="cotización" :delete-disabled="isDeleting" @edit="handleEditar(item.id)" @delete="openDeleteModal(item)" />
+            <EntityRowActions entity="cotización" :show-view="!editable(item)" :view-href="`/crud/cotizaciones/ver/?id=${encodeURIComponent(item.id)}`" :show-edit="editable(item)" :show-delete="puedeModificar && item.estado === 'PENDIENTE'" :delete-disabled="isDeleting" @edit="handleEditar(item.id)" @delete="openDeleteModal(item)" />
             <EntityActionsMenu>
               <template #default="{ cerrar }">
                 <button type="button" role="menuitem" title="Descargar PDF" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700" @click="cerrar">
                   <Icon :icon="filePdfIcon" class="w-4 h-4 shrink-0 text-accent-600 dark:text-accent-400" />
                   Descargar PDF
                 </button>
+                <!-- Enviar marca la cotización como enviada: es una modificación. -->
+                <template v-if="puedeModificar">
                 <div class="my-1 border-t border-default" role="separator" />
                 <button
                   v-for="canal in canalesEnvio(item)"
@@ -489,8 +514,12 @@ onMounted(() => {
                   @click="enviarPor(item, canal, cerrar)"
                 >
                   <component :is="canal.icon" class="w-4 h-4 shrink-0" :class="canal.iconClass" />
-                  {{ canal.label }}
+                  <span>
+                    {{ canal.label }}
+                    <span v-if="!canal.href" class="block text-xs text-gray-500 dark:text-gray-400">{{ canal.falta }}</span>
+                  </span>
                 </button>
+                </template>
               </template>
             </EntityActionsMenu>
           </div>
@@ -522,4 +551,5 @@ onMounted(() => {
     @confirm="confirmDelete"
     @cancel="cotizacionToDelete = null"
   />
+  </template>
 </template>

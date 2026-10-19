@@ -3,14 +3,19 @@ import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { X, Save, Wallet, Calendar, Tag, AlignLeft, FileText } from 'lucide-vue-next';
 import Alert from '../../../shared/components/Alert.vue';
 import TallerSelect from '../../../shared/components/TallerSelect.vue';
+import FichaCampos from '../../../shared/components/FichaCampos.vue';
+import { formatCurrency } from '../../../shared/utils/format';
+import { formatDateOnly } from '../../../shared/utils/datetime';
 import { useSucursalDocumento } from '../../../shared/composables/useSucursalDocumento';
 import { gastosService } from '../services/gastosService';
-import { CATEGORIAS_GASTO } from '../constants/categoriasGasto';
+import { CATEGORIAS_GASTO, categoriaLabel } from '../constants/categoriasGasto';
 import { sanitizeObservaciones } from '../../../shared/utils/sanitize';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   gastoId: { type: [Number, String], default: null },
+  // Variante de consulta: ficha de lectura y solo «Cerrar» (rol sin `modificar`).
+  soloLectura: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['update:modelValue', 'created', 'updated']);
@@ -31,6 +36,16 @@ const form = reactive({
   monto: '',
   descripcion: '',
 });
+
+const tallerNombre = ref('');
+
+const camposFicha = computed(() => [
+  ...(tallerNombre.value ? [{ etiqueta: 'Taller', valor: tallerNombre.value }] : []),
+  { etiqueta: 'Fecha', valor: formatDateOnly(form.fecha) },
+  { etiqueta: 'Categoría', valor: categoriaLabel(form.categoria) },
+  { etiqueta: 'Monto', valor: form.monto !== '' ? formatCurrency(form.monto) : '' },
+  { etiqueta: 'Descripción', valor: form.descripcion, ancho: 'completo' },
+]);
 
 const isLoading = ref(false);
 const isSaving = ref(false);
@@ -88,6 +103,7 @@ function resetForm() {
   form.categoria = 'OTROS';
   form.monto = '';
   form.descripcion = '';
+  tallerNombre.value = '';
   fieldErrors.value = {};
   errorMessage.value = '';
   showDiscardWarning.value = false;
@@ -133,6 +149,7 @@ async function open() {
       form.categoria = data.categoria || 'OTROS';
       form.monto = data.monto != null ? String(data.monto) : '';
       form.descripcion = data.descripcion || '';
+      tallerNombre.value = data.taller_nombre || '';
       cargarSucursal(data.taller);
       nextTick().then(() => {
         formSnapshot.value = getComparableState();
@@ -174,7 +191,7 @@ async function submit() {
 }
 
 function close() {
-  if (hasChanges.value && !isSaving.value && !isLoading.value) {
+  if (!props.soloLectura && hasChanges.value && !isSaving.value && !isLoading.value) {
     if (!showDiscardWarning.value) {
       showDiscardWarning.value = true;
       return;
@@ -203,7 +220,7 @@ watch(() => props.modelValue, (val) => {
           <span class="inline-flex items-center gap-2">
             <Wallet v-if="!isEditMode" class="w-5 h-5 inline-block me-2" />
             <Tag v-if="isEditMode" class="w-5 h-5 inline-block me-2" />
-            {{ isEditMode ? 'Editar gasto' : 'Nuevo gasto' }}
+            {{ soloLectura ? 'Detalle del gasto' : (isEditMode ? 'Editar gasto' : 'Nuevo gasto') }}
           </span>
         </h3>
         <button
@@ -228,6 +245,7 @@ watch(() => props.modelValue, (val) => {
         />
 
         <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando gasto...</div>
+        <FichaCampos v-else-if="soloLectura" :campos="camposFicha" />
         <template v-else>
           <h4 class="mb-4 text-base font-semibold dark:text-white flex items-center gap-2">
             <FileText class="w-4 h-4 text-gray-800 dark:text-white" />
@@ -321,6 +339,15 @@ watch(() => props.modelValue, (val) => {
 
       <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
         <button
+          v-if="soloLectura"
+          type="button"
+          class="text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 focus:ring-4 focus:ring-gray-200 font-medium text-sm px-4 py-2.5"
+          @click="close"
+        >
+          Cerrar
+        </button>
+        <template v-else>
+        <button
           type="button"
           class="text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 focus:ring-4 focus:ring-gray-200 font-medium text-sm px-4 py-2.5"
           :disabled="isSaving || isLoading"
@@ -341,6 +368,7 @@ watch(() => props.modelValue, (val) => {
           </svg>
           {{ isSaving ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Crear') }}
         </button>
+        </template>
       </div>
     </div>
   </div>

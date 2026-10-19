@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, onUnmounted, nextTick, h } from 'vue';
+import { computed, onMounted, ref, onUnmounted, nextTick, h } from 'vue';
 import {
   Search, Receipt, Filter, CalendarDays, Flag,
   Car, Gauge, IdCard, Phone, MoreVertical,
@@ -32,6 +32,25 @@ import { ESTADOS_INSPECCION_FILTRABLE } from '../constants/estadosInspeccion';
 import { TIPOS_TRABAJO_OPCIONES } from '../../../shared/config/tiposTrabajo';
 import { referenciaCorta } from '../../../shared/utils/format';
 import { usePdfExport } from '../../../shared/composables/usePdfExport';
+import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
+import SinAcceso from '../../../shared/components/SinAcceso.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
+
+const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+const puedeModificar = computed(() => puede('inspecciones'));
+const puedeCrearCotizacion = computed(() => puede('cotizaciones'));
+
+/** Una inspección finalizada se reabre (no se edita); con orden no se elimina. */
+function editable(item) {
+  return puedeModificar.value && item.estado !== 'FINALIZADA';
+}
+function eliminable(item) {
+  return puedeModificar.value && !item.tiene_orden_trabajo;
+}
+function motivoNoReabrir(item) {
+  if (item.puede_reabrir) return '';
+  return item.tiene_orden_trabajo ? 'Ya tiene una orden de trabajo' : 'Tiene una cotización enviada o aceptada';
+}
 
 // Mismo icono que el enlace de Inspecciones del sidebar.
 const CarSearchIcon = { render: () => h(MdiIcon, { path: mdiCarSearchOutline }) };
@@ -361,10 +380,12 @@ function fechaDisplay(valor) {
 }
 
 
-onMounted(() => {
+onMounted(async () => {
+  document.addEventListener('keydown', onAccionesKeydown);
+  await cargarPermisos().catch(() => {});
+  if (sinAcceso('inspecciones')) return;
   loadPrefijosInspeccion();
   reloadList();
-  document.addEventListener('keydown', onAccionesKeydown);
 });
 
 onUnmounted(() => {
@@ -373,6 +394,8 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <SinAcceso v-if="sinAcceso('inspecciones')" seccion="Inspecciones" />
+  <template v-else>
   <EntityHeader
     mode="list"
     :icon="CarSearchIcon"
@@ -381,7 +404,11 @@ onUnmounted(() => {
       { label: 'Inicio', href: '/' },
       { label: 'Inspecciones' },
     ]"
-  />
+  >
+    <template #title-aside>
+      <ModoConsultaChip v-if="soloConsulta('inspecciones')" objeto="las inspecciones" />
+    </template>
+  </EntityHeader>
 
   <div v-if="alert.message" class="px-4 pt-3">
     <Alert
@@ -505,6 +532,7 @@ onUnmounted(() => {
           <EntityActionButtons
             entity="inspecciones"
             entity-api-path="ordenes/inspecciones"
+            :show-add="puedeModificar"
             :export-params="buildQuery()"
             @pdfExportError="handlePdfError"
             @excelExportError="handleExcelError"
@@ -616,7 +644,7 @@ onUnmounted(() => {
         </td>
         <td class="px-4 py-3 whitespace-nowrap align-top">
           <div class="flex items-center gap-2">
-            <EntityRowActions entity="inspección" :show-edit="item.estado !== 'FINALIZADA'" :delete-disabled="isDeleting" @edit="handleEditar(item)" @delete="openDeleteModal(item)" />
+            <EntityRowActions entity="inspección" :show-view="!editable(item)" :view-href="`/crud/inspecciones/ver/?id=${encodeURIComponent(item.id)}`" :show-edit="editable(item)" :show-delete="eliminable(item)" :delete-disabled="isDeleting" @edit="handleEditar(item)" @delete="openDeleteModal(item)" />
             <button type="button" title="Más acciones" aria-label="Más acciones de la inspección" :aria-expanded="accionesAbierta === item.id" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-100 hover:text-brand-900 hover:ring-1 hover:ring-inset hover:ring-brand-200 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white dark:hover:ring-gray-500 aria-expanded:bg-brand-100 aria-expanded:text-brand-900 aria-expanded:ring-1 aria-expanded:ring-inset aria-expanded:ring-brand-200 dark:aria-expanded:bg-gray-600 dark:aria-expanded:text-white dark:aria-expanded:ring-gray-500" @click.stop="toggleAcciones(item, $event)">
               <MoreVertical class="w-4 h-4" />
             </button>
@@ -629,11 +657,15 @@ onUnmounted(() => {
                 role="menu"
                 aria-label="Acciones de la inspección"
               >
-                <button v-if="item.estado === 'FINALIZADA'" type="button" role="menuitem" :disabled="!item.puede_reabrir" :title="item.puede_reabrir ? 'Reabrir la inspección' : (item.tiene_orden_trabajo ? 'La inspección ya tiene una orden de trabajo.' : 'Tiene una cotización enviada o aceptada.')" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-700" @click="ejecutarAccion('reabrir', item)">
-                  <IconLockOpen2 class="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                  Reabrir
+                <!-- Reabrir: por rol se oculta; por estado se muestra deshabilitado con su motivo. -->
+                <button v-if="puedeModificar && item.estado === 'FINALIZADA'" type="button" role="menuitem" :disabled="!item.puede_reabrir" class="group flex w-full items-start gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft disabled:cursor-not-allowed disabled:hover:bg-transparent dark:hover:bg-gray-700" @click="ejecutarAccion('reabrir', item)">
+                  <IconLockOpen2 class="w-4 h-4 mt-0.5 text-primary-600 group-disabled:opacity-40 dark:text-primary-400" />
+                  <span>
+                    <span class="block group-disabled:opacity-40">Reabrir</span>
+                    <span v-if="motivoNoReabrir(item)" class="block text-xs text-gray-500 dark:text-gray-400">{{ motivoNoReabrir(item) }}</span>
+                  </span>
                 </button>
-                <button v-if="item.estado === 'PENDIENTE'" type="button" role="menuitem" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700" @click="ejecutarAccion('cotizacion', item)">
+                <button v-if="puedeCrearCotizacion && item.estado === 'PENDIENTE'" type="button" role="menuitem" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700" @click="ejecutarAccion('cotizacion', item)">
                   <Receipt class="w-4 h-4 text-primary-600 dark:text-primary-400" />
                   Crear cotización
                 </button>
@@ -686,4 +718,5 @@ onUnmounted(() => {
     @confirm="confirmarReabrir"
     @cancel="showReabrirModal = false"
   />
+  </template>
 </template>

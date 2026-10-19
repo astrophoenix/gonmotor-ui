@@ -42,6 +42,9 @@ import { TESTIGOS } from '../../../shared/config/testigos';
 import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
+import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
+import SinAcceso from '../../../shared/components/SinAcceso.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import PdfExportButton from '../../../shared/components/PdfExportButton.vue';
 import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
@@ -273,6 +276,9 @@ const MENSAJE_SIN_ITEMS = 'La inspección no tiene servicios ni repuestos. Reáb
 // Reapertura: solo si el trabajo no avanzó. Se bloquea cuando la inspección ya
 // generó una orden de trabajo o tiene una cotización enviada/aceptada.
 const tieneCotizacionBloqueante = computed(() => Boolean(inspeccion.value?.tiene_cotizacion_bloqueante));
+const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+const puedeModificar = computed(() => puede('inspecciones'));
+const puedeCotizar = computed(() => puede('cotizaciones'));
 const puedeReabrir = computed(() => estaFinalizada.value && !tieneOrdenTrabajo.value && !tieneCotizacionBloqueante.value);
 const motivoNoReabrir = computed(() => {
   if (!estaFinalizada.value || puedeReabrir.value) return '';
@@ -398,6 +404,11 @@ async function cargarInspeccion() {
 }
 
 onMounted(async () => {
+  await cargarPermisos().catch(() => {});
+  if (sinAcceso('inspecciones')) {
+    loading.value = false;
+    return;
+  }
   if (params.get('finalizada')) {
     mostrarExito('Inspección finalizada correctamente.');
     params.delete('finalizada');
@@ -420,6 +431,8 @@ onMounted(async () => {
 </script>
 
 <template>
+  <SinAcceso v-if="sinAcceso('inspecciones')" seccion="Inspecciones" />
+  <template v-else>
   <EntityHeader
     mode="detail"
     entity="Inspección"
@@ -430,6 +443,9 @@ onMounted(async () => {
       { label: 'Inspección' },
     ]"
   >
+    <template #title-aside>
+      <ModoConsultaChip v-if="inspeccion && soloConsulta('inspecciones')" objeto="esta inspección" acciones="editarla o reabrirla" />
+    </template>
     <template #badges>
       <EstadoInspeccionBadge
         v-if="inspeccion"
@@ -448,7 +464,7 @@ onMounted(async () => {
 
     <template #actions>
       <button
-        v-if="puedeReabrir"
+        v-if="puedeReabrir && puedeCotizar"
         type="button"
         :disabled="isSyncingCotizacion"
         :title="puedeActualizarCotizacion ? 'Actualizar la cotización existente con los cambios de la inspección' : 'Generar una cotización desde este diagnóstico'"
@@ -459,7 +475,7 @@ onMounted(async () => {
         {{ isSyncingCotizacion ? 'Sincronizando...' : textoAccionCotizacion }}
       </button>
       <button
-        v-if="puedeReabrir"
+        v-if="puedeReabrir && puedeModificar"
         type="button"
         :disabled="isReopening"
         title="Reabrir la inspección para editarla"
@@ -469,7 +485,7 @@ onMounted(async () => {
         Reabrir
       </button>
       <button
-        v-if="inspeccion && !estaFinalizada"
+        v-if="inspeccion && !estaFinalizada && puedeModificar"
         type="button"
         class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
         @click="irAEditar">
@@ -489,7 +505,7 @@ onMounted(async () => {
     <div class="space-y-4">
       <Alert v-if="error" type="error" :message="error" dismissible @dismiss="error = ''" />
       <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
-      <Alert v-if="!loading && inspeccion && motivoNoReabrir" type="info" title="Solo lectura" :message="motivoNoReabrir" />
+      <Alert v-if="!loading && inspeccion && motivoNoReabrir && puedeModificar" type="info" title="Solo lectura" :message="motivoNoReabrir" />
     </div>
 
     <div v-if="loading" :class="[SECCION, 'mt-4 flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400']">
@@ -999,4 +1015,5 @@ onMounted(async () => {
     :is-deleting="isGeneratingCotizacion"
     @confirm="crearCotizacion"
   />
+  </template>
 </template>

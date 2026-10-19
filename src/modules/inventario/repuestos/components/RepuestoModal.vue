@@ -4,12 +4,16 @@ import { X, Save, Star, FileText, Images, Package } from 'lucide-vue-next';
 import { repuestosService } from '../services/repuestosService';
 import Alert from '../../../../shared/components/Alert.vue';
 import ImageField from '../../../../shared/components/ImageField.vue';
+import FichaCampos from '../../../../shared/components/FichaCampos.vue';
+import { formatCurrency, formatNumber } from '../../../../shared/utils/format';
 import { IVA_OPCIONES, normalizarIva } from '../../../../shared/utils/impuestos';
 import { recortarEspacios } from '../../../../shared/utils/sanitize';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   repuestoId: { type: [Number, String], default: null },
+  // Variante de consulta: ficha de lectura y solo «Cerrar» (rol sin `modificar`).
+  soloLectura: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['update:modelValue', 'created', 'updated', 'reactivated']);
@@ -97,6 +101,29 @@ function createEmptyForm() {
 }
 
 const form = reactive(createEmptyForm());
+
+function etiquetaDe(opciones, valor) {
+  return opciones.find((o) => o.value === valor)?.label || valor;
+}
+
+const camposFicha = computed(() => [
+  { etiqueta: 'Código', valor: form.codigo },
+  { etiqueta: 'Nombre del repuesto', valor: form.nombre },
+  { etiqueta: 'Categoría', valor: etiquetaDe(CATEGORIAS, form.categoria) },
+  { etiqueta: 'Marca / Fabricante', valor: form.marca },
+  { etiqueta: 'Número de parte', valor: form.numero_parte },
+  { etiqueta: 'Unidad de medida', valor: etiquetaDe(UNIDADES, form.unidad_medida) },
+  { etiqueta: 'Costo referencial (compra)', valor: formatCurrency(form.costo_referencial) },
+  { etiqueta: 'Precio de venta (sin IVA)', valor: formatCurrency(form.precio_venta) },
+  { etiqueta: 'Stock actual', valor: formatNumber(form.stock_actual) },
+  { etiqueta: 'Stock mínimo', valor: formatNumber(form.stock_minimo) },
+  { etiqueta: 'Ubicación / Estante', valor: form.ubicacion },
+  { etiqueta: 'Proveedor habitual', valor: form.proveedor },
+  { etiqueta: 'IVA por defecto', valor: etiquetaDe(IVA_OPCIONES, form.iva_porcentaje_defecto) },
+  { etiqueta: 'ID Producto Contífico', valor: form.contifico_producto_id },
+  { etiqueta: 'Cuenta contable Contífico', valor: form.contifico_cuenta_contable },
+  { etiqueta: 'Descripción', valor: form.descripcion, ancho: 'completo' },
+]);
 const isLoading = ref(false);
 const isSaving = ref(false);
 const errorMessage = ref('');
@@ -265,6 +292,7 @@ async function open() {
         file: null,
         preview: null,
         url: img.imagen,
+        miniatura: img.miniatura || img.imagen,
         es_principal: Boolean(img.es_principal),
         error: null,
       }));
@@ -573,7 +601,7 @@ async function submit() {
 }
 
 function close() {
-  if (hasChanges.value && !isSaving.value) {
+  if (!props.soloLectura && hasChanges.value && !isSaving.value) {
     if (!showDiscardWarning.value) {
       showDiscardWarning.value = true;
       return;
@@ -599,7 +627,7 @@ watch(() => form.codigo, (val) => {
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
           <span class="inline-flex items-center gap-2">
             <Package class="w-5 h-5 inline-block me-2" />
-            {{ isEditMode ? 'Editar repuesto' : 'Nuevo repuesto' }}
+            {{ soloLectura ? 'Detalle del repuesto' : (isEditMode ? 'Editar repuesto' : 'Nuevo repuesto') }}
           </span>
         </h3>
 
@@ -631,6 +659,32 @@ watch(() => form.codigo, (val) => {
         />
 
         <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando repuesto...</div>
+        <div v-else-if="soloLectura" class="space-y-6">
+          <FichaCampos :campos="camposFicha" />
+          <div v-if="imagenes.length">
+            <h4 class="mb-3 text-sm font-medium text-gray-500 dark:text-gray-400">Imágenes</h4>
+            <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
+              <a
+                v-for="(img, index) in imagenes"
+                :key="img.id || index"
+                :href="img.url"
+                target="_blank"
+                rel="noopener"
+                class="relative block overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
+                :title="`Ver imagen ${index + 1} completa`"
+              >
+                <img :src="img.miniatura || img.url" :alt="`Imagen ${index + 1} del repuesto`" loading="lazy" class="aspect-square w-full object-cover" />
+                <span
+                  v-if="img.es_principal"
+                  class="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-xs font-medium text-gray-700 shadow-xs dark:bg-gray-800/90 dark:text-gray-200"
+                >
+                  <Star class="h-3 w-3" fill="currentColor" aria-hidden="true" />
+                  Principal
+                </span>
+              </a>
+            </div>
+          </div>
+        </div>
         <template v-else>
           <div class="border-b border-gray-200 dark:border-gray-700">
             <nav class="flex flex-wrap -mb-px" role="tablist" aria-label="Secciones del repuesto">
@@ -796,6 +850,15 @@ watch(() => form.codigo, (val) => {
 
       <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
         <button
+          v-if="soloLectura"
+          type="button"
+          class="px-5 py-2.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+          @click="close"
+        >
+          Cerrar
+        </button>
+        <template v-else>
+        <button
           type="button"
           class="px-5 py-2.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-300"
           @click="close"
@@ -815,6 +878,7 @@ watch(() => form.codigo, (val) => {
           </svg>
           {{ isSaving ? 'Guardando...' : (isEditMode ? 'Guardar cambios' : 'Crear repuesto') }}
         </button>
+        </template>
       </div>
     </div>
   </div>

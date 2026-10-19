@@ -7,6 +7,7 @@ import {
   Settings2, ShieldCheck, ShieldUser, Sparkles, Truck, UserCog, UserRoundPlus, Users, Wallet,
   Warehouse, Wrench, X
 } from 'lucide-vue-next';
+import InfoPopover from '../../../shared/components/InfoPopover.vue';
 import { request } from '../../../shared/services/httpClient';
 import { useToast } from '../../../shared/composables/useToast';
 import Alert from '../../../shared/components/Alert.vue';
@@ -91,8 +92,8 @@ const RECURSOS_EXTRA = {
 /** Agrupa los recursos por área; lo que no esté aquí cae en «Otros». */
 const GRUPOS_RECURSOS = [
   { id: 'config', titulo: 'Configuración', icono: Settings2, tono: 'brand', recursos: ['empresa', 'talleres', 'usuarios', 'empleados'] },
-  { id: 'clientes', titulo: 'Clientes y agenda', icono: Contact, tono: 'sky', recursos: ['clientes', 'vehiculos', 'citas', 'notificaciones'] },
-  { id: 'flujo', titulo: 'Flujo del taller', icono: Wrench, tono: 'violet', recursos: ['recepciones', 'inspecciones', 'cotizaciones', 'ordenes'] },
+  { id: 'clientes', titulo: 'Clientes y agenda', icono: Contact, tono: 'sky', recursos: ['clientes', 'vehiculos', 'notificaciones'] },
+  { id: 'flujo', titulo: 'Flujo del taller', icono: Wrench, tono: 'violet', recursos: ['citas', 'recepciones', 'inspecciones', 'cotizaciones', 'ordenes'] },
   { id: 'inventario', titulo: 'Inventario y compras', icono: Package, tono: 'amber', recursos: ['inventario', 'proveedores'] },
   { id: 'finanzas', titulo: 'Finanzas', icono: Wallet, tono: 'emerald', recursos: ['facturacion', 'gastos', 'reportes'] },
 ];
@@ -244,11 +245,24 @@ function nivelPermiso(codigo, fuente = borrador.value) {
   return 'ninguno';
 }
 
+// El flujo del taller se consulta completo (regla del backend): dar o quitar
+// «Ver» en un documento se aplica a todo el flujo; «Modificar» es independiente.
+const RECURSOS_FLUJO = ['citas', 'recepciones', 'inspecciones', 'cotizaciones', 'ordenes'];
+
 function fijarNivel(codigo, nivel) {
   borrador.value.permisos[codigo] = {
     ver: nivel !== 'ninguno',
     modificar: nivel === 'modificar',
   };
+  if (!RECURSOS_FLUJO.includes(codigo)) return;
+  RECURSOS_FLUJO.filter((otro) => otro !== codigo).forEach((otro) => {
+    const actual = nivelPermiso(otro);
+    if (nivel === 'ninguno' && actual !== 'ninguno') {
+      borrador.value.permisos[otro] = { ver: false, modificar: false };
+    } else if (nivel !== 'ninguno' && actual === 'ninguno') {
+      borrador.value.permisos[otro] = { ver: true, modificar: false };
+    }
+  });
 }
 
 function fijarNivelGrupo(grupo, nivel) {
@@ -824,6 +838,11 @@ onMounted(async () => {
                     </span>
                     <h3 class="text-sm font-semibold text-heading dark:text-white">{{ grupo.titulo }}</h3>
                     <span class="text-xs text-gray-500 dark:text-gray-400">{{ accesosGrupo(grupo) }}/{{ grupo.lista.length }}</span>
+                    <InfoPopover
+                      v-if="grupo.id === 'flujo'"
+                      etiqueta="Cómo funcionan los permisos del flujo"
+                      :secciones="[{ titulo: 'Se consulta completo', texto: 'Los documentos del flujo se muestran unos dentro de otros, así que «Ver» se aplica a todos a la vez. «Modificar» se elige por separado en cada uno.' }]"
+                    />
                   </div>
                   <div class="flex items-center gap-1 text-xs">
                     <span class="hidden md:inline text-gray-500 dark:text-gray-400 me-1">Todo el grupo:</span>

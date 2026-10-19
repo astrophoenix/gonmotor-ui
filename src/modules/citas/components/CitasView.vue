@@ -27,6 +27,15 @@ import CitaModal from './CitaModal.vue';
 import { ESTADOS_CITA, fechaLocal, proximaHoraFutura } from '../../calendario/composables/useCalendario';
 import CalendarioView from '../../calendario/components/CalendarioView.vue';
 import { referenciaCorta } from '../../../shared/utils/format';
+import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
+import SinAcceso from '../../../shared/components/SinAcceso.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
+
+const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+const puedeModificarCitas = computed(() => puede('citas', 'modificar'));
+// La lista y el calendario piden datos al montarse: se esperan los permisos
+// para no consultar (ni mostrar) nada a un rol sin acceso.
+const permisosListos = ref(false);
 
 const CLAVE_VISTA = 'gonmotor_citas_vista';
 const MENSAJE_REFERENCIAL = 'Esta acción es solo referencial y estará disponible próximamente.';
@@ -158,6 +167,7 @@ const convertingError = ref('');
 const isConverting = ref(false);
 
 function abrirCreacion() {
+  if (!puedeModificarCitas.value) return;
   const hoy = fechaLocal(new Date());
   // En la vista lista se parte de hoy; en la del calendario, del día marcado.
   const base = modo.value === 'calendario' ? (fechaSeleccionada.value || hoy) : hoy;
@@ -182,6 +192,7 @@ function abrirCreacion() {
 }
 
 function crearDesdePanel(datos) {
+  if (!puedeModificarCitas.value) return;
   prefill.value = datos || null;
   citaModalId.value = null;
   showCitaModal.value = true;
@@ -358,6 +369,9 @@ watch(modo, (valor) => {
 });
 
 onMounted(async () => {
+  await cargarPermisos().catch(() => {});
+  permisosListos.value = true;
+  if (sinAcceso('citas')) return;
   document.addEventListener('click', onClickFuera);
   const params = new URLSearchParams(window.location.search);
   const citaId = params.get('id');
@@ -397,7 +411,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div>
+  <SinAcceso v-if="sinAcceso('citas')" seccion="Citas" />
+  <div v-else-if="permisosListos">
     <EntityHeader
       mode="list"
       :icon="CalendarDays"
@@ -406,7 +421,11 @@ onUnmounted(() => {
         { label: 'Inicio', href: '/' },
         { label: 'Citas' },
       ]"
-    />
+    >
+      <template #title-aside>
+        <ModoConsultaChip v-if="soloConsulta('citas')" objeto="las citas" acciones="agendar o editar" />
+      </template>
+    </EntityHeader>
 
     <div v-if="alert.message" id="citas-alertas" class="px-4 pt-3">
       <Alert
@@ -575,6 +594,7 @@ onUnmounted(() => {
             </div>
 
             <button
+              v-if="puedeModificarCitas"
               type="button"
               class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-white rounded-lg shadow-xs bg-brand-900 hover:bg-brand-700 focus:ring-4 focus:ring-brand-200 dark:bg-brand-600 dark:hover:bg-brand-500 dark:focus:ring-brand-800"
               @click="abrirCreacion"
@@ -615,6 +635,7 @@ onUnmounted(() => {
       v-model="showCitaModal"
       :cita-id="citaModalId"
       :prefill="prefill"
+      :solo-lectura="!puedeModificarCitas"
       @created="onCitaGuardada('Cita creada correctamente.')"
       @updated="onCitaGuardada('Cita actualizada correctamente.')"
     />

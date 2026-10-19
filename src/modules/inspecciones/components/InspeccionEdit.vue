@@ -19,6 +19,7 @@ import {
 } from '../../../shared/config/tiposTrabajo';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
 import EstadoInspeccionBadge from './EstadoInspeccionBadge.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TestigosTablero from '../../../shared/components/TestigosTablero.vue';
@@ -1153,7 +1154,17 @@ const PRIORIDAD_CLASE = {
   BAJA: 'text-gray-600 dark:text-gray-400',
 };
 
-onMounted(() => {
+const { puede, cargarPermisos } = usePermisos();
+
+onMounted(async () => {
+  // Sin permiso de modificar se lleva al usuario a la vista de consulta.
+  await cargarPermisos().catch(() => {});
+  if (!puede('inspecciones', 'modificar')) {
+    window.location.replace(inspeccionId
+      ? `/crud/inspecciones/ver/?id=${encodeURIComponent(inspeccionId)}`
+      : '/crud/inspecciones/');
+    return;
+  }
   loadCatalogo();
   loadEmpleados();
   loadRecepcion();

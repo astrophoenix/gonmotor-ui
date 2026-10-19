@@ -14,6 +14,13 @@ import ServicioModal from './ServicioModal.vue';
 import { formatCurrency } from '../../../../shared/utils/format';
 import { vSanitizeSearch } from '../../../../shared/directives/sanitizeSearch';
 import { useFiltrosReactivos } from '../../../../shared/composables/useFiltrosReactivos';
+import ModoConsultaChip from '../../../../shared/components/ModoConsultaChip.vue';
+import SinAcceso from '../../../../shared/components/SinAcceso.vue';
+import { usePermisos } from '../../../../shared/composables/usePermisos';
+
+const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+// Repuestos y servicios comparten el recurso `inventario`.
+const puedeModificar = computed(() => puede('inventario', 'modificar'));
 
 const {
   servicios,
@@ -171,10 +178,15 @@ function handleExcelError(message) {
 }
 
 
-onMounted(() => loadServicios());
+onMounted(async () => {
+  await cargarPermisos().catch(() => {});
+  if (!sinAcceso('inventario')) loadServicios();
+});
 </script>
 
 <template>
+  <SinAcceso v-if="sinAcceso('inventario')" seccion="Inventario" />
+  <template v-else>
   <EntityHeader
     mode="list"
     :icon="Wrench"
@@ -183,7 +195,11 @@ onMounted(() => loadServicios());
       { label: 'Inicio', href: '/' },
       { label: 'Inventario / Servicios' },
     ]"
-  />
+  >
+    <template #title-aside>
+      <ModoConsultaChip v-if="soloConsulta('inventario')" objeto="los servicios" />
+    </template>
+  </EntityHeader>
 
   <div v-if="alert.message" class="px-4 pt-3">
     <Alert
@@ -258,6 +274,7 @@ onMounted(() => loadServicios());
         <div class="flex flex-wrap items-center gap-2">
           <EntityActionButtons
             entity="servicios"
+            :show-add="puedeModificar"
             :export-params="exportParams"
             @add="openCreateModal"
             @pdfExportError="handlePdfError"
@@ -277,7 +294,7 @@ onMounted(() => loadServicios());
     <template #row="{ item }">
       <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
         <td class="px-4 py-3 whitespace-nowrap">
-          <button type="button" title="Editar servicio" class="font-medium text-gray-800 cursor-pointer hover:text-brand-coral dark:text-white" @click="openEditModal(item.id)">{{ item.codigo }}</button>
+          <button type="button" :title="puedeModificar ? 'Editar servicio' : 'Ver servicio'" class="font-medium text-gray-800 cursor-pointer hover:text-brand-coral dark:text-white" @click="openEditModal(item.id)">{{ item.codigo }}</button>
         </td>
         <td class="px-4 py-3 text-gray-800 whitespace-nowrap dark:text-white">{{ item.nombre }}</td>
         <td class="px-4 py-3 text-gray-800 whitespace-nowrap dark:text-white">{{ categoriaLabel(item.categoria) }}</td>
@@ -285,7 +302,7 @@ onMounted(() => loadServicios());
         <td class="px-4 py-3 text-gray-800 whitespace-nowrap dark:text-white">{{ formatCurrency(item.precio_referencial) }}</td>
         <td class="px-4 py-3 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <EntityRowActions entity="servicio" :delete-disabled="isDeleting" @edit="openEditModal(item.id)" @delete="openDeleteModal(item)" />
+            <EntityRowActions entity="servicio" :show-view="!puedeModificar" :show-edit="puedeModificar" :show-delete="puedeModificar" @view="openEditModal(item.id)" :delete-disabled="isDeleting" @edit="openEditModal(item.id)" @delete="openDeleteModal(item)" />
           </div>
         </td>
       </tr>
@@ -318,8 +335,10 @@ onMounted(() => loadServicios());
   <ServicioModal
     v-model="showServicioModal"
     :servicio-id="servicioModalId"
+    :solo-lectura="!puedeModificar"
     @created="onCreated"
     @updated="onUpdated"
     @reactivated="onReactivated"
   />
+  </template>
 </template>

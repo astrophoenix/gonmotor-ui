@@ -14,6 +14,7 @@ import { ordenesService } from '../services/ordenesService';
 import { PRIORIDADES_ORDEN, getEstadoOrden, getPrioridadOrden } from '../constants/estadosOrden';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
 import TextImprover from '../../../shared/components/TextImprover.vue';
 import CatalogoSelect from '../../../shared/components/CatalogoSelect.vue';
@@ -573,7 +574,17 @@ async function guardarDetalles(idOrden) {
   repuestosEliminados.value = [];
 }
 
+const { puede, cargarPermisos } = usePermisos();
+
 onMounted(async () => {
+  // Sin permiso de modificar se lleva al usuario a la vista de consulta.
+  await cargarPermisos().catch(() => {});
+  if (!puede('ordenes', 'modificar')) {
+    window.location.replace(ordenId.value
+      ? `/crud/ordenes/ver/?id=${encodeURIComponent(ordenId.value)}`
+      : '/crud/ordenes/');
+    return;
+  }
   loadCatalogo();
   loadEmpleados();
   if (!isEditMode.value) {

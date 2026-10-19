@@ -19,8 +19,10 @@ import {
   mantenimientoResumen,
 } from '../../vehiculos/utils/fichaVehiculo';
 import { usePermisos } from '../../../shared/composables/usePermisos';
+import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
+import SinAcceso from '../../../shared/components/SinAcceso.vue';
 
-const { puede } = usePermisos();
+const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
 const puedeModificarClientes = computed(() => puede('clientes', 'modificar'));
 const puedeModificarVehiculos = computed(() => puede('vehiculos', 'modificar'));
 
@@ -167,6 +169,11 @@ function onVehicleCreated() {
 }
 
 onMounted(async () => {
+  await cargarPermisos().catch(() => {});
+  if (sinAcceso('clientes')) {
+    loading.value = false;
+    return;
+  }
   if (!clientId) {
     error.value = 'Falta el identificador del cliente.';
     loading.value = false;
@@ -190,6 +197,8 @@ onMounted(async () => {
 </script>
 
 <template>
+  <SinAcceso v-if="sinAcceso('clientes')" seccion="Clientes" />
+  <template v-else>
   <EntityHeader
     mode="detail"
     entity="Cliente"
@@ -200,6 +209,9 @@ onMounted(async () => {
       { label: 'Ver' },
     ]"
   >
+    <template #title-aside>
+      <ModoConsultaChip v-if="client && soloConsulta('clientes')" objeto="los datos de este cliente" acciones="editarlos" />
+    </template>
     <template #actions>
       <button
         v-if="client && puedeModificarClientes"
@@ -374,7 +386,7 @@ onMounted(async () => {
           </span>
           <div>
             <p class="text-sm font-medium text-gray-900 dark:text-white">Este cliente aún no tiene vehículos</p>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Registra su vehículo para crear citas, recepciones y órdenes.</p>
+            <p v-if="puedeModificarVehiculos" class="mt-1 text-sm text-gray-500 dark:text-gray-400">Registra su vehículo para crear citas, recepciones y órdenes.</p>
           </div>
         </div>
 
@@ -502,4 +514,5 @@ onMounted(async () => {
     @created="onVehicleCreated"
     @reactivated="onVehicleCreated"
   />
+  </template>
 </template>

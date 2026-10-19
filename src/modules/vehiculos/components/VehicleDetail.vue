@@ -8,6 +8,9 @@ import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import VehicleModal from './VehicleModal.vue';
 import VehicleHistory from './VehicleHistory.vue';
+import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
+import SinAcceso from '../../../shared/components/SinAcceso.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
 import {
   TRANSMISION_LABELS,
   COMBUSTIBLE_LABELS,
@@ -17,6 +20,9 @@ import {
   mantenimientoPorFecha,
   mantenimientoPorKm,
 } from '../utils/fichaVehiculo';
+
+const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+const puedeModificarVehiculos = computed(() => puede('vehiculos', 'modificar'));
 
 const vehicle = ref(null);
 const loading = ref(true);
@@ -117,6 +123,11 @@ async function onVehicleUpdated() {
 }
 
 onMounted(async () => {
+  await cargarPermisos().catch(() => {});
+  if (sinAcceso('vehiculos')) {
+    loading.value = false;
+    return;
+  }
   if (!vehicleId) {
     error.value = 'Falta el identificador del vehículo.';
     loading.value = false;
@@ -136,6 +147,8 @@ onMounted(async () => {
 </script>
 
 <template>
+  <SinAcceso v-if="sinAcceso('vehiculos')" seccion="Vehículos" />
+  <template v-else>
   <EntityHeader
     mode="detail"
     entity="Vehículo"
@@ -146,9 +159,12 @@ onMounted(async () => {
       { label: pestana === 'historial' ? 'Historial' : 'Ver' },
     ]"
   >
+    <template #title-aside>
+      <ModoConsultaChip v-if="vehicle && soloConsulta('vehiculos')" objeto="los datos de este vehículo" acciones="editarlos" />
+    </template>
     <template #actions>
       <button
-        v-if="vehicle"
+        v-if="vehicle && puedeModificarVehiculos"
         type="button"
         title="Editar vehículo"
         class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
@@ -402,4 +418,5 @@ onMounted(async () => {
     :vehicle-id="vehicleModalId"
     @updated="onVehicleUpdated"
   />
+  </template>
 </template>

@@ -3,6 +3,8 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { Plus, Search, X } from 'lucide-vue-next';
 import FlowStatusBadge from './FlowStatusBadge.vue';
 import { etiquetaCita, referenciaCorta } from '../utils/format';
+import { usePermisos } from '../composables/usePermisos';
+import { RECURSO_POR_TIPO } from '../config/flujoPasos';
 
 const props = defineProps({
   tipo: { type: String, required: true },
@@ -17,6 +19,10 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['update:modelValue', 'select', 'clear']);
+
+// «Crear» abre el alta del documento: solo si el rol puede crearlo.
+const { puede } = usePermisos();
+const puedeCrear = computed(() => puede(RECURSO_POR_TIPO[props.tipo]));
 const query = ref(props.modelValue);
 const options = ref([]);
 const open = ref(false);
@@ -183,7 +189,7 @@ onBeforeUnmount(() => {
         <X class="h-4 w-4" />
       </button>
       <button
-        v-if="!disabled"
+        v-if="!disabled && puedeCrear"
         type="button"
         class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-brand-700 hover:bg-brand-50 dark:text-brand-300 dark:hover:bg-gray-700"
         title="Crear en una pestaña nueva"

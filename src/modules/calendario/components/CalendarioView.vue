@@ -15,6 +15,10 @@ import {
 } from '../composables/useCalendario';
 import { BRAND } from '../../../shared/config/branding';
 import { referenciaCorta } from '../../../shared/utils/format';
+import { usePermisos } from '../../../shared/composables/usePermisos';
+
+// Seleccionar un hueco de la agenda crea una cita: solo para quien puede.
+const { puede } = usePermisos();
 
 /**
  * Panel de calendario de la pantalla unificada de citas.
@@ -175,7 +179,7 @@ const calendarOptions = computed(() => ({
   scrollTime: '08:00:00',
   scrollTimeReset: false,
   nowIndicator: true,
-  selectable: true,
+  selectable: puede('citas'),
   selectMirror: true,
   dayMaxEvents: 3,
   editable: false,

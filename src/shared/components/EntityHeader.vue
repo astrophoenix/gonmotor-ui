@@ -16,6 +16,7 @@ import { FilePen, FilePlusCorner, FolderOpen } from 'lucide-vue-next';
  * - `mode="create"`  → icono de acción `FilePlusCorner`.
  *
  * Slots:
+ * - `title-aside`: junto al título, en la misma línea (p. ej. `ModoConsultaChip`).
  * - `badges`: insignias del registro guardado (estado, prioridad…).
  * - `actions`: botones propios de la vista (vacío en los listados).
  *
@@ -101,7 +102,10 @@ const mostrarSeparador = computed(() => mostrarNumero.value && !!slots.badges);
           aria-hidden="true" />
 
         <div class="min-w-0">
-          <h1 class="text-lg font-semibold leading-8 text-gray-900 sm:text-xl dark:text-white">{{ heading }}</h1>
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <h1 class="text-lg font-semibold leading-8 text-gray-900 sm:text-xl dark:text-white">{{ heading }}</h1>
+            <slot name="title-aside" />
+          </div>
           <div v-if="mostrarLinea" class="flex flex-wrap items-center gap-2 mt-1">
             <span v-if="mostrarNumero" class="font-mono text-sm text-gray-600 dark:text-gray-300">{{ recordNumber }}</span>
             <span v-if="mostrarSeparador" class="text-sm text-gray-400" aria-hidden="true">&bull;</span>
