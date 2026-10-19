@@ -181,18 +181,22 @@ async function confirmCompany() {
 <template>
   <div class="login font-brand min-h-screen w-full bg-brand-50 text-brand-900 dark:bg-brand-950 dark:text-brand-50 lg:grid lg:grid-cols-2">
     <!-- ===== Panel de marca: plano técnico con el motor ===== -->
-    <aside class="marca relative z-10 flex flex-col overflow-hidden rounded-b-[40px] bg-brand-900 px-5 pb-8 pt-7 text-white lg:-me-16 lg:rounded-b-none lg:rounded-br-[280px] lg:px-16 lg:pb-11 lg:pt-13">
+    <aside class="marca relative z-10 flex flex-col overflow-hidden rounded-b-[40px] bg-brand-900 px-5 pb-8 pt-7 text-white lg:rounded-b-none lg:px-16 lg:pb-11 lg:pt-13">
+      <!-- En escritorio el motor y las piezas son una sola composición anclada abajo a la derecha
+           que escala con la altura del panel, así se mantienen alineados en cualquier pantalla. -->
       <svg
-        class="plano plano-marca pointer-events-none absolute inset-y-0 left-0 z-[1] hidden h-full w-full lg:block lg:w-[calc(100%-4rem)]"
+        class="plano plano-marca pointer-events-none absolute inset-0 z-[1] hidden h-full w-full lg:block"
         viewBox="0 0 720 900"
-        preserveAspectRatio="xMidYMid slice"
+        preserveAspectRatio="xMaxYMax meet"
         aria-hidden="true"
-        v-html="planoMarca"
-      ></svg>
+      >
+        <g class="piezas" v-html="planoMarca"></g>
+        <image :href="assetUrl('/images/login/motor-plano.png')" x="270" y="517" width="392" height="349" />
+      </svg>
       <img
         :src="assetUrl('/images/login/motor-plano.png')"
         alt=""
-        class="pointer-events-none absolute -right-8 top-2.5 z-[1] w-[180px] opacity-35 lg:bottom-[34px] lg:right-[58px] lg:top-auto lg:w-[392px] lg:opacity-100"
+        class="pointer-events-none absolute -right-8 top-2.5 z-[1] w-[180px] opacity-35 lg:hidden"
       >
 
       <!-- Logo -->
@@ -544,7 +548,8 @@ async function confirmCompany() {
 .plano :deep(.pz) { fill: none; stroke: var(--plano); stroke-width: 1.3; stroke-linejoin: round; stroke-linecap: round; }
 .plano :deep(.fino) { fill: none; stroke: var(--plano); stroke-width: 0.8; opacity: 0.8; }
 .plano :deep(.som) { fill: none; stroke: var(--plano); stroke-width: 0.6; opacity: 0.45; }
-.plano-marca { --plano: #78ACDE; opacity: 0.85; }
+.plano-marca { --plano: #78ACDE; }
+.plano-marca .piezas { opacity: 0.85; }
 .plano-formulario { --plano: #94A6BF; }
 .dark .plano-formulario { --plano: #3A4F6E; }
 
