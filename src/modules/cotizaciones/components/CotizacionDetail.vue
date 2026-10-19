@@ -8,7 +8,7 @@ import {
   MessageSquareText,
   Package,
   PaintBucket,
-  Pencil,
+  Pen,
   Phone,
   Shapes,
   Store,
@@ -217,10 +217,10 @@ onMounted(cargar);
         Reabrir
       </button>
       <button v-if="puedeEditar" type="button" :class="BOTON_SECUNDARIO" @click="irAEditar">
-        <Pencil class="w-5 h-5 -ms-1 text-brand-700 dark:text-brand-200" aria-hidden="true" />
+        <Pen class="w-5 h-5 -ms-1 text-brand-700 dark:text-brand-200" aria-hidden="true" />
         Editar
       </button>
-      <PdfExportButton v-if="cotizacion" :descargador="descargarPdf" label="PDF" @error="errorMessage = $event" />
+      <PdfExportButton v-if="cotizacion" :descargador="descargarPdf" label="Exportar" @error="errorMessage = $event" />
     </template>
   </EntityHeader>
 
@@ -258,7 +258,7 @@ onMounted(cargar);
         </template>
         <template v-else-if="puedeEditar && esperandoRespuesta" #accion>
           <button type="button" :class="BOTON_PRIMARIO" @click="irAEditar">
-            <Pencil class="w-4 h-4 -ms-0.5" aria-hidden="true" />
+            <Pen class="w-4 h-4 -ms-0.5" aria-hidden="true" />
             {{ cotizacion.estado === 'PENDIENTE' ? 'Revisar y enviar' : 'Registrar respuesta' }}
           </button>
         </template>

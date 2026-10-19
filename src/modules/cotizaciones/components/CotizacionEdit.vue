@@ -1168,7 +1168,7 @@ onMounted(() => {
     </template>
     <template #actions>
       <template v-if="isEditMode && cotizacionId">
-        <PdfExportButton :descargador="descargarPdf" label="PDF" :disabled="isSaving" @error="errorMessage = $event" />
+        <PdfExportButton :descargador="descargarPdf" label="Exportar" :disabled="isSaving" @error="errorMessage = $event" />
         <FormSaveActions
           v-if="esEditable"
           :is-loading="isSaving"
