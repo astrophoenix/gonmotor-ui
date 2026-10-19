@@ -1,11 +1,12 @@
 <script setup>
-import { ref, computed, watch } from 'vue';
-import { User, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, CheckCircle2, Loader2, Building2, ChevronRight } from 'lucide-vue-next';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { User, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, CheckCircle2, Loader2, Building2, ChevronRight, KeyRound } from 'lucide-vue-next';
 import { useAuthStore } from '../stores/authStore';
 import Alert from '../../../shared/components/Alert.vue';
 import { assetUrl } from '../../../shared/utils/assetUrl';
 import TallerSelect from '../../../shared/components/TallerSelect.vue';
 import EmpresaSearchSelect from '../../../shared/components/EmpresaSearchSelect.vue';
+import { escenaMarca, escenaFormulario } from '../utils/piezasPlano';
 
 const authStore = useAuthStore();
 const username = ref('');
@@ -21,11 +22,42 @@ const beneficios = [
   'Inventario de repuestos',
 ];
 
-// Silueta del engranaje decorativo del panel de marca (icono «settings» de Lucide).
-const ENGRANAJE_D =
-  'M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z';
+// Fondos de plano técnico (SVG generado por código propio, sin datos del usuario).
+const planoMarca = escenaMarca();
+const planoFormulario = escenaFormulario();
+
+// Reloj de la tarjeta: saludo, hora y semana en curso con el día de hoy marcado.
+const ahora = ref(new Date());
+let relojId = null;
+onMounted(() => {
+  relojId = window.setInterval(() => { ahora.value = new Date(); }, 15000);
+});
+onBeforeUnmount(() => window.clearInterval(relojId));
+
+const saludo = computed(() => {
+  const hora = ahora.value.getHours();
+  if (hora < 12) return '¡Buenos días!';
+  if (hora < 19) return '¡Buenas tardes!';
+  return '¡Buenas noches!';
+});
+const horas = computed(() => String(ahora.value.getHours()).padStart(2, '0'));
+const minutos = computed(() => String(ahora.value.getMinutes()).padStart(2, '0'));
+const fechaLarga = computed(() =>
+  new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'long' }).format(ahora.value)
+);
+const semana = computed(() => {
+  const lunes = new Date(ahora.value);
+  lunes.setDate(lunes.getDate() - ((lunes.getDay() + 6) % 7));
+  return ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((letra, i) => {
+    const dia = new Date(lunes);
+    dia.setDate(lunes.getDate() + i);
+    return { letra, numero: dia.getDate(), hoy: dia.toDateString() === ahora.value.toDateString() };
+  });
+});
 
 const hasError = computed(() => Boolean(errorMessage.value));
+const CAMPO_NORMAL = 'border-brand-200 focus:border-brand-900 focus:ring-brand-focus-ring dark:border-brand-600 dark:focus:border-brand-300';
+const CAMPO_ERROR = 'border-brand-red focus:border-brand-red focus:ring-brand-red/15';
 
 // Variables para el flujo multi-empresa
 const showCompanyModal = ref(false);
@@ -147,62 +179,46 @@ async function confirmCompany() {
 </script>
 
 <template>
-  <div class="font-brand min-h-screen w-full bg-brand-surface text-brand-ink dark:bg-slate-900 dark:text-slate-100 lg:grid lg:grid-cols-[1.05fr_1fr]">
-    <!-- ===== Panel izquierdo (marca) ===== -->
-    <aside class="relative hidden overflow-hidden bg-brand-navy px-16 py-14 text-white lg:flex lg:flex-col lg:justify-between">
-      <!-- Decoración: engranaje grande en la esquina superior derecha y uno pequeño (acento) engranado con él -->
+  <div class="login font-brand min-h-screen w-full bg-brand-50 text-brand-900 dark:bg-brand-950 dark:text-brand-50 lg:grid lg:grid-cols-2">
+    <!-- ===== Panel de marca: plano técnico con el motor ===== -->
+    <aside class="marca relative z-10 flex flex-col overflow-hidden rounded-b-[40px] bg-brand-900 px-5 pb-8 pt-7 text-white lg:-me-16 lg:rounded-b-none lg:rounded-br-[280px] lg:px-16 lg:pb-11 lg:pt-13">
       <svg
-        class="pointer-events-none absolute -right-36 -top-44 h-[35rem] w-[35rem] text-white/[0.06]"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="0.55"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        class="plano plano-marca pointer-events-none absolute inset-y-0 left-0 z-[1] hidden h-full w-full lg:block lg:w-[calc(100%-4rem)]"
+        viewBox="0 0 720 900"
+        preserveAspectRatio="xMidYMid slice"
         aria-hidden="true"
+        v-html="planoMarca"
+      ></svg>
+      <img
+        :src="assetUrl('/images/login/motor-plano.png')"
+        alt=""
+        class="pointer-events-none absolute -right-8 top-2.5 z-[1] w-[180px] opacity-35 lg:bottom-[34px] lg:right-[58px] lg:top-auto lg:w-[392px] lg:opacity-100"
       >
-        <path :d="ENGRANAJE_D"/>
-        <circle cx="12" cy="12" r="3"/>
-      </svg>
-      <svg
-        class="pointer-events-none absolute right-[15.5rem] top-[14.5rem] h-[10.5rem] w-[10.5rem] rotate-[18deg] text-brand-coral/[0.16]"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="0.7"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-      >
-        <path :d="ENGRANAJE_D"/>
-        <circle cx="12" cy="12" r="3"/>
-      </svg>
 
       <!-- Logo -->
-      <div class="relative z-10">
-        <a href="/" class="inline-flex items-center gap-1">
-          <span class="flex h-13 w-auto shrink-0 items-center justify-center">
-            <img :src="assetUrl('/images/isotipo-blanco.svg')" alt="gonmotor Logo login" class="h-full w-full"/>
+      <a href="/" class="relative z-[2] inline-flex items-center gap-3 self-start">
+        <img :src="assetUrl('/images/login/isotipo-piston-negativo.svg')" alt="" class="h-11 w-11 lg:h-13 lg:w-13">
+        <span>
+          <span class="block text-[26px] font-extrabold leading-[1] tracking-tight lg:text-[31px]">
+            gon<span class="text-brand-coral">motor</span>
           </span>
-          <span class="text-3xl font-extrabold leading-none tracking-tight">
-            <span class="text-white">gon</span><span class="text-brand-coral">motor</span>
-          </span>
-        </a>
-      </div>
+          <span class="mt-1.5 block text-[9.5px] font-bold tracking-[0.32em] text-brand-300 lg:text-[11px]">GESTIÓN DE TALLERES</span>
+        </span>
+      </a>
 
       <!-- Mensaje -->
-      <div class="relative z-10 max-w-[460px]">
-        <p class="text-[44px] font-extrabold leading-[1.1] text-white">
-          Tu taller, siempre bajo control.
+      <div class="relative z-[2] mt-6 lg:mb-auto lg:mt-26">
+        <p class="max-w-[520px] text-[30px] font-extrabold leading-[1.08] tracking-[-0.015em] lg:text-[46px]">
+          Tu taller, siempre<br>bajo control.
         </p>
-        <p class="mt-6 text-lg leading-relaxed text-brand-subtitle">
+        <p class="mt-4.5 hidden max-w-[480px] text-[17px] leading-relaxed text-brand-subtitle lg:block">
           Ingresa para gestionar órdenes, clientes y repuestos desde un solo lugar.
         </p>
-        <ul class="mt-8 space-y-3.5">
+        <ul class="mt-6.5 hidden lg:block">
           <li
             v-for="beneficio in beneficios"
             :key="beneficio"
-            class="flex items-center gap-3 text-base font-semibold text-white"
+            class="mt-3.5 flex items-center gap-3 text-base font-semibold"
           >
             <span class="h-2 w-2 shrink-0 rounded-full bg-brand-coral" aria-hidden="true"></span>
             {{ beneficio }}
@@ -211,42 +227,43 @@ async function confirmCompany() {
       </div>
 
       <!-- Pie -->
-      <div class="relative z-10 text-sm text-brand-muted">&copy; 2026 Gonmotor</div>
+      <div class="relative z-[2] hidden gap-3.5 text-[13px] text-brand-muted lg:flex">
+        <span>&copy; 2026 Gonmotor</span>
+        <span class="w-px bg-brand-500" aria-hidden="true"></span>
+        <span>Hecho para talleres de verdad</span>
+      </div>
     </aside>
 
-    <!-- ===== Panel derecho (formulario) ===== -->
-    <section class="relative flex min-h-screen w-full items-center justify-center overflow-hidden px-4 py-10 sm:px-6">
-      <!-- Decoración: llave de taller sólida y tenue en la esquina inferior derecha -->
+    <!-- ===== Panel del formulario ===== -->
+    <section class="formulario relative flex w-full flex-col items-center justify-start overflow-hidden px-4 pb-7 pt-6 lg:min-h-screen lg:justify-center lg:px-6 lg:py-10">
       <svg
-        class="pointer-events-none absolute -bottom-16 -right-16 hidden h-80 w-80 -rotate-90 text-slate-200/70 md:block dark:text-white/[0.04]"
-        viewBox="0 0 24 24"
-        fill="currentColor"
+        class="plano plano-formulario pointer-events-none absolute inset-0 hidden h-full w-full lg:block"
+        viewBox="0 0 720 900"
+        preserveAspectRatio="xMidYMid slice"
         aria-hidden="true"
-      >
-        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-      </svg>
-      <div class="relative z-10 w-full max-w-[420px]">
-        <h1 class="text-[32px] font-extrabold leading-tight text-brand-ink dark:text-white">
-          Bienvenido de nuevo
-        </h1>
-        <p class="mt-2 text-base text-brand-ink-soft dark:text-slate-400">
-          Inicia sesión para gestionar tus talleres.
-        </p>
+        v-html="planoFormulario"
+      ></svg>
 
-        <div v-if="errorMessage" class="mt-6">
-          <Alert type="error" :message="errorMessage" />
-        </div>
+      <!-- Tarjeta de acceso -->
+      <div class="relative z-[1] w-full max-w-[460px] rounded-[18px] border border-brand-100 bg-white shadow-[0_1px_2px_rgba(17,28,46,0.04),0_10px_28px_-14px_rgba(17,28,46,0.16)] dark:border-brand-700 dark:bg-brand-900 dark:shadow-[0_10px_28px_-14px_rgba(0,0,0,0.6)]">
+        <span
+          class="absolute left-1/2 top-[18px] h-6 w-28 -translate-x-1/2 rounded-xl border border-brand-200 bg-brand-50 shadow-[inset_0_2px_3px_rgba(17,28,46,0.14)] dark:border-brand-600 dark:bg-brand-950"
+          aria-hidden="true"
+        ></span>
 
-        <form autocomplete="on" class="mt-8" novalidate @submit.prevent="submit">
-          <!-- Campo 1: usuario / correo -->
-          <div>
-            <label for="login" class="mb-2 block text-sm font-bold text-brand-ink dark:text-slate-200">
-              Correo electrónico o usuario
-            </label>
+        <div class="px-5 pb-5.5 pt-15 sm:px-9.5 sm:pb-7 sm:pt-17">
+          <p class="text-[15px] font-bold text-brand-500 dark:text-brand-300">{{ saludo }}</p>
+          <h1 class="mt-1.5 text-[30px] font-extrabold tracking-[-0.015em]">Entra a tu taller</h1>
+
+          <div v-if="errorMessage" class="mt-5">
+            <Alert type="error" :message="errorMessage" />
+          </div>
+
+          <form autocomplete="on" novalidate @submit.prevent="submit">
+            <!-- Usuario / correo -->
+            <label for="login" class="mb-2.5 mt-6 block text-[14.5px] font-bold">Correo electrónico o usuario</label>
             <div class="relative">
-              <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3.5">
-                <User class="h-5 w-5 text-slate-400" aria-hidden="true" />
-              </span>
+              <User class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-brand-400 dark:text-brand-300" aria-hidden="true" />
               <input
                 id="login"
                 v-model="username"
@@ -256,23 +273,15 @@ async function confirmCompany() {
                 placeholder="usuario@taller.com"
                 :aria-invalid="hasError"
                 required
-                class="block h-[52px] w-full rounded shadow-sm border-[1.5px] bg-white ps-11 pe-3.5 text-base text-brand-ink outline-none transition-colors placeholder:text-slate-400 focus:ring-4 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500 dark:border-slate-600 dark:focus:border-slate-400"
-                :class="hasError
-                  ? 'border-brand-red focus:border-brand-red focus:ring-brand-red/15'
-                  : 'border-brand-line focus:border-brand-ink focus:ring-brand-focus-ring'"
+                class="block h-[54px] w-full rounded-[10px] border-[1.5px] bg-white ps-12 text-[15.5px] text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:ring-4 dark:bg-brand-950 dark:text-brand-50 dark:placeholder:text-brand-300 pe-4"
+                :class="hasError ? CAMPO_ERROR : CAMPO_NORMAL"
               >
             </div>
-          </div>
 
-          <!-- Campo 2: contraseña -->
-          <div class="mt-5">
-            <label for="password" class="mb-2 block text-sm font-bold text-brand-ink dark:text-slate-200">
-              Contraseña
-            </label>
+            <!-- Contraseña -->
+            <label for="password" class="mb-2.5 mt-6 block text-[14.5px] font-bold">Contraseña</label>
             <div class="relative">
-              <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3.5">
-                <Lock class="h-5 w-5 text-slate-400" aria-hidden="true" />
-              </span>
+              <Lock class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-brand-400 dark:text-brand-300" aria-hidden="true" />
               <input
                 id="password"
                 v-model="password"
@@ -282,75 +291,93 @@ async function confirmCompany() {
                 placeholder="Tu contraseña"
                 :aria-invalid="hasError"
                 required
-                class="block h-[52px] w-full rounded shadow-sm border-[1.5px] bg-white ps-11 pe-11 text-base text-brand-ink outline-none transition-colors placeholder:text-slate-400 focus:ring-4 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500 dark:border-slate-600 dark:focus:border-slate-400"
-                :class="hasError
-                  ? 'border-brand-red focus:border-brand-red focus:ring-brand-red/15'
-                  : 'border-brand-line focus:border-brand-ink focus:ring-brand-focus-ring'"
+                class="block h-[54px] w-full rounded-[10px] border-[1.5px] bg-white ps-12 text-[15.5px] text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:ring-4 dark:bg-brand-950 dark:text-brand-50 dark:placeholder:text-brand-300 pe-12"
+                :class="hasError ? CAMPO_ERROR : CAMPO_NORMAL"
               >
               <button
                 type="button"
-                class="absolute inset-y-0 end-0 flex w-11 items-center justify-center text-slate-400 transition-colors hover:text-brand-ink focus-visible:rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-ink dark:hover:text-slate-200"
+                class="absolute inset-y-0 end-0 flex w-12 items-center justify-center text-brand-400 transition-colors hover:text-brand-900 focus-visible:rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-300 dark:hover:text-white"
                 :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
                 @click="showPassword = !showPassword"
               >
-                <Eye v-if="showPassword" class="h-5 w-5" aria-hidden="true" />
-                <EyeOff v-else class="h-5 w-5" aria-hidden="true" />
+                <EyeOff v-if="showPassword" class="h-5 w-5" aria-hidden="true" />
+                <Eye v-else class="h-5 w-5" aria-hidden="true" />
               </button>
             </div>
-          </div>
 
-          <!-- Opciones -->
-          <div class="mt-7 flex items-center justify-between gap-4">
-            <label
-              for="remember"
-              class="flex min-h-11 cursor-pointer items-center gap-2.5 text-sm font-medium text-brand-ink dark:text-slate-200"
-            >
-              <input
-                id="remember"
-                v-model="remember"
-                name="remember"
-                type="checkbox"
-                class="h-4 w-4 shrink-0 cursor-pointer rounded shadow-sm border-brand-line bg-white accent-brand-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-ink focus-visible:ring-offset-2 dark:bg-slate-800 dark:ring-offset-slate-900"
+            <!-- Opciones -->
+            <div class="mt-5 flex items-center justify-between gap-2 text-[13px] sm:text-sm">
+              <label for="remember" class="flex min-h-11 cursor-pointer items-center gap-2.5 whitespace-nowrap font-medium text-brand-500 dark:text-brand-200">
+                <input
+                  id="remember"
+                  v-model="remember"
+                  name="remember"
+                  type="checkbox"
+                  class="h-[18px] w-[18px] shrink-0 cursor-pointer rounded-[4px] border-brand-200 bg-white text-brand-900 accent-brand-900 dark:border-brand-600 dark:bg-brand-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 focus-visible:ring-offset-2 dark:ring-offset-brand-900"
+                >
+                Recordarme
+              </label>
+              <a
+                href="/authentication/forgot-password/"
+                class="whitespace-nowrap font-semibold text-brand-500 underline underline-offset-[3px] transition-colors hover:text-brand-red-hover focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-200 dark:hover:text-brand-coral"
               >
-              <span>Mantener sesión iniciada</span>
-            </label>
-            <a
-              href="/authentication/forgot-password/"
-              class="text-sm font-semibold text-brand-ink-soft underline underline-offset-[3px] transition-colors hover:text-brand-red-hover focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-ink dark:text-slate-300 dark:hover:text-brand-coral"
+                ¿Olvidaste tu contraseña?
+              </a>
+            </div>
+
+            <!-- Botón principal -->
+            <button
+              type="submit"
+              :disabled="authStore.isLoading"
+              class="mt-6 inline-flex h-14 w-full items-center justify-center gap-3 rounded-[10px] bg-brand-red px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(200,16,46,0.7)] transition-colors hover:bg-brand-red-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-red/40 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              ¿Olvidaste tu contraseña?
+              <template v-if="authStore.isLoading">
+                <Loader2 class="h-5 w-5 animate-spin" aria-hidden="true" />
+                Ingresando…
+              </template>
+              <template v-else>
+                <KeyRound class="h-5 w-5" aria-hidden="true" />
+                Entrar al taller
+                <ArrowRight class="h-5 w-5" aria-hidden="true" />
+              </template>
+            </button>
+          </form>
+
+          <p class="mt-5 text-center text-sm text-brand-400 dark:text-brand-300">
+            ¿No puedes entrar?
+            <a
+              href="#"
+              class="font-bold text-brand-500 underline underline-offset-[3px] transition-colors hover:text-brand-red-hover focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-200 dark:hover:text-brand-coral"
+            >
+              Habla con soporte
             </a>
+          </p>
+        </div>
+
+        <!-- Reloj y semana -->
+        <div class="flex flex-col items-start gap-3 border-t border-brand-100 px-5 pb-4.5 pt-4 dark:border-brand-700 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-9.5 sm:pb-5 sm:pt-4.5">
+          <div>
+            <p class="text-[30px] font-extrabold leading-[1] tracking-[-0.02em] tabular-nums">
+              {{ horas }}<span class="mx-px text-brand-red dark:text-brand-coral">:</span>{{ minutos }}
+            </p>
+            <p class="mt-1.5 whitespace-nowrap text-[13px] font-medium text-brand-400 dark:text-brand-300">{{ fechaLarga }}</p>
           </div>
-
-          <!-- Botón principal -->
-          <button
-            type="submit"
-            :disabled="authStore.isLoading"
-            class="mt-6 inline-flex h-[54px] w-full items-center justify-center gap-2 rounded-xl bg-brand-red px-5 text-[17px] font-bold text-white transition-colors hover:bg-brand-red-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-red/40 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <template v-if="authStore.isLoading">
-              <svg class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z"></path>
-              </svg>
-              Ingresando…
-            </template>
-            <template v-else>
-              Iniciar sesión
-              <ArrowRight class="h-5 w-5" aria-hidden="true" />
-            </template>
-          </button>
-        </form>
-
-        <p class="mt-8 text-center text-sm text-brand-ink-soft dark:text-slate-400">
-          ¿Problemas para ingresar?
-          <a
-            href="#"
-            class="font-semibold text-brand-ink-soft underline underline-offset-[3px] transition-colors hover:text-brand-red-hover focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-ink dark:text-slate-300 dark:hover:text-brand-coral"
-          >
-            Contacta a soporte
-          </a>
-        </p>
+          <ol class="flex w-full justify-between gap-[3px] sm:w-auto sm:justify-start" aria-label="Semana en curso">
+            <li
+              v-for="dia in semana"
+              :key="dia.numero"
+              class="flex-1 text-center text-[11.5px] font-bold leading-tight sm:w-[29px] sm:flex-none"
+              :class="dia.hoy ? 'text-brand-900 dark:text-white' : 'text-brand-400 dark:text-brand-300'"
+              :aria-current="dia.hoy ? 'date' : undefined"
+            >
+              {{ dia.letra }}
+              <span
+                class="mt-1 block h-[26px] rounded-[7px] text-[13px] font-semibold leading-[26px]"
+                :class="dia.hoy ? 'bg-brand-700 text-white dark:bg-brand-500' : 'text-brand-500 dark:text-brand-200'"
+              >{{ dia.numero }}</span>
+            </li>
+          </ol>
+        </div>
       </div>
     </section>
 
@@ -482,3 +509,34 @@ async function confirmCompany() {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Trazos de las piezas de plano (el SVG se inserta con v-html, por eso :deep). */
+.plano :deep(.pz) { fill: none; stroke: var(--plano); stroke-width: 1.3; stroke-linejoin: round; stroke-linecap: round; }
+.plano :deep(.fino) { fill: none; stroke: var(--plano); stroke-width: 0.8; opacity: 0.8; }
+.plano :deep(.som) { fill: none; stroke: var(--plano); stroke-width: 0.6; opacity: 0.45; }
+.plano-marca { --plano: #78ACDE; opacity: 0.85; }
+.plano-formulario { --plano: #94A6BF; }
+.dark .plano-formulario { --plano: #3A4F6E; }
+
+/* Retícula de puntos: en la marca se desvanece en diagonal; junto a la tarjeta se abre un hueco. */
+.marca::before,
+.formulario::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-size: 24px 24px;
+}
+.marca::before {
+  background-image: radial-gradient(circle, rgba(120, 172, 222, 0.3) 1.2px, transparent 1.7px);
+  mask-image: linear-gradient(160deg, #000 0%, rgba(0, 0, 0, 0.35) 45%, rgba(0, 0, 0, 0.15) 65%, rgba(0, 0, 0, 0.6) 100%);
+}
+.formulario::before {
+  background-image: radial-gradient(circle, #D5DDE8 1.3px, transparent 1.8px);
+  mask-image: radial-gradient(ellipse 44% 48% at 50% 48%, transparent 62%, #000 100%);
+}
+.dark .formulario::before {
+  background-image: radial-gradient(circle, #16233A 1.3px, transparent 1.8px);
+}
+</style>
