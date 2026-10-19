@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { request } from '../services/httpClient';
+import { haySesion, request } from '../services/httpClient';
 
 let payload = null;
 let promesa = null;
@@ -7,6 +7,8 @@ let promesa = null;
 function cargar() {
   if (payload) return Promise.resolve(payload);
   if (promesa) return promesa;
+  // Sin token (login/registro) /me/ respondería 401: ni se consulta.
+  if (!haySesion()) return Promise.reject(new Error('Sin sesión'));
   promesa = request('/api/auth/me/')
     .then((data) => {
       payload = data;

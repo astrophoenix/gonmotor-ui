@@ -261,7 +261,7 @@ async function confirmCompany() {
 
           <form autocomplete="on" novalidate @submit.prevent="submit">
             <!-- Usuario / correo -->
-            <label for="login" class="mb-2.5 mt-6 block text-[14.5px] font-bold">Correo electrónico o usuario</label>
+            <label for="login" class="mb-2.5 mt-6 block text-[14.5px] font-bold">Correo | usuario</label>
             <div class="relative">
               <User class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-brand-400 dark:text-brand-300" aria-hidden="true" />
               <input

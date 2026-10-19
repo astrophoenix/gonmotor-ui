@@ -18,6 +18,11 @@ function getAccessToken() {
     || sessionStorage.getItem('gonmotor_access_token');
 }
 
+/** Hay un access token guardado (sesión iniciada). */
+export function haySesion() {
+  return Boolean(getAccessToken());
+}
+
 function getRefreshToken() {
   return localStorage.getItem('gonmotor_refresh_token')
     || sessionStorage.getItem('gonmotor_refresh_token');
