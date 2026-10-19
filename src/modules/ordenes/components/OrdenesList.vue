@@ -25,6 +25,8 @@ import EntityActionButtons from '../../../shared/components/EntityActionButtons.
 import EntityActionsMenu from '../../../shared/components/EntityActionsMenu.vue';
 import EstadoOrdenBadge from './EstadoOrdenBadge.vue';
 import { referenciaCorta } from '../../../shared/utils/format';
+import { ordenesService } from '../services/ordenesService';
+import { usePdfExport } from '../../../shared/composables/usePdfExport';
 
 const {
   ordenes,
@@ -236,6 +238,15 @@ function clienteUrl(item) {
 
 function handlePdfError(message) {
   showAlert('error', '', message || 'No se pudo generar el PDF.');
+}
+
+// «Descargar PDF» del menú de la fila entrega el PDF de esa orden.
+const { isExportingPdf, exportarPdf } = usePdfExport({
+  onError: (message) => handlePdfError(message),
+});
+
+function descargarPdf(orden) {
+  exportarPdf(() => ordenesService.exportarPdf(orden.id));
 }
 
 function handleExcelError(message) {
@@ -491,7 +502,7 @@ onMounted(() => {
             <EntityRowActions entity="orden" :delete-disabled="isDeleting" @edit="handleEditar(item.id)" @delete="openDeleteModal(item)" />
             <EntityActionsMenu>
               <template #default="{ cerrar }">
-                <button type="button" role="menuitem" title="Descargar PDF" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700" @click="cerrar">
+                <button type="button" role="menuitem" title="Descargar la orden de trabajo en PDF" :disabled="isExportingPdf" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-700" @click="cerrar(); descargarPdf(item)">
                   <Icon :icon="filePdfIcon" class="w-4 h-4 shrink-0 text-accent-600 dark:text-accent-400" />
                   Descargar PDF
                 </button>
