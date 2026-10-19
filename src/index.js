@@ -4,7 +4,7 @@ import './sidebar';
 import './charts';
 import './dark-mode';
 import { iniciarResaltadoHoyDatepickers } from './shared/utils/datepicker';
-import { mountLogin, mountRegister, mountForgotPassword, mountResetPassword } from './modules/auth';
+import { mountLogin, mountLoginOld, mountRegister, mountForgotPassword, mountResetPassword } from './modules/auth';
 import { mountClients, mountClientEdit, mountClientDetail } from './modules/clientes';
 import { mountEmpresas } from './modules/empresas';
 import { mountProveedores, mountProveedorEdit, mountProveedorDetail } from './modules/proveedores';
@@ -55,6 +55,12 @@ const loginApp = document.getElementById('login-app');
 
 if (loginApp) {
     mountLogin(loginApp, pinia);
+}
+
+const loginOldApp = document.getElementById('login-old-app');
+
+if (loginOldApp) {
+    mountLoginOld(loginOldApp, pinia);
 }
 
 const registerApp = document.getElementById('register-app');
