@@ -1,9 +1,12 @@
 <script setup>
 import { onMounted, ref } from 'vue';
-import { Search, Filter, CalendarDays, Car, Gauge, IdCard, Phone, CalendarPlus, Send, CheckCircle2, Receipt } from 'lucide-vue-next';
+import { Search, Filter, CalendarDays, Car, Gauge, IdCard, Phone, CalendarPlus, Send, CheckCircle2, Receipt, Mail } from 'lucide-vue-next';
+import { IconBrandWhatsapp } from '@tabler/icons-vue';
 import { Icon } from '@iconify/vue';
 import filePdfIcon from '@iconify-icons/fa6-regular/file-pdf';
 import { useCotizaciones } from '../composables/useCotizaciones';
+import { cotizacionesService } from '../services/cotizacionesService';
+import { correoCotizacionHref, whatsappCotizacionHref } from '../utils/envioCotizacion';
 import { useAuthStore } from '../../auth/stores/authStore';
 import { talleresService } from '../../configuracion/services/talleresService';
 import FilterActions from '../../../shared/components/FilterActions.vue';
@@ -223,6 +226,29 @@ function filasFechasCotizacion(item) {
     { key: 'enviada', label: 'Enviada', icon: Send, valor: formatoFechaHora(item.fecha_envio) },
     { key: 'aceptada', label: 'Aceptada', icon: CheckCircle2, valor: formatoFechaHora(item.fecha_aceptacion) },
   ];
+}
+
+function canalesEnvio(item) {
+  return [
+    { key: 'whatsapp', label: 'WhatsApp', icon: IconBrandWhatsapp, iconClass: 'text-green-600 dark:text-green-400', href: whatsappCotizacionHref(item), falta: 'El cliente no tiene teléfono registrado' },
+    { key: 'correo', label: 'Correo electrónico', icon: Mail, iconClass: 'text-brand-700 dark:text-brand-200', href: correoCotizacionHref(item), falta: 'El cliente no tiene correo registrado' },
+  ];
+}
+
+// Igual que en el detalle: la ventana se abre antes del await (evita el bloqueo
+// de popups) y una cotización pendiente queda marcada como enviada.
+async function enviarPor(item, canal, cerrar) {
+  cerrar();
+  if (!canal.href) return;
+  window.open(canal.href, '_blank', 'noopener');
+  if (item.estado !== 'PENDIENTE') return;
+  try {
+    await cotizacionesService.update(item.id, { estado: 'ENVIADA' });
+    showAlert('success', '', `Cotización ${item.numero_cotizacion} enviada al cliente por ${canal.label}.`);
+    await reloadList(currentPage.value);
+  } catch (error) {
+    showAlert('error', '', error.message || 'No se pudo marcar la cotización como enviada.');
+  }
 }
 
 function handlePdfError(message) {
@@ -450,6 +476,20 @@ onMounted(() => {
                 <button type="button" role="menuitem" title="Descargar PDF" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700" @click="cerrar">
                   <Icon :icon="filePdfIcon" class="w-4 h-4 shrink-0 text-accent-600 dark:text-accent-400" />
                   Descargar PDF
+                </button>
+                <div class="my-1 border-t border-default" role="separator" />
+                <button
+                  v-for="canal in canalesEnvio(item)"
+                  :key="canal.key"
+                  type="button"
+                  role="menuitem"
+                  :disabled="!canal.href"
+                  :title="canal.href ? `Enviar por ${canal.label}` : canal.falta"
+                  class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent dark:hover:bg-gray-700"
+                  @click="enviarPor(item, canal, cerrar)"
+                >
+                  <component :is="canal.icon" class="w-4 h-4 shrink-0" :class="canal.iconClass" />
+                  {{ canal.label }}
                 </button>
               </template>
             </EntityActionsMenu>

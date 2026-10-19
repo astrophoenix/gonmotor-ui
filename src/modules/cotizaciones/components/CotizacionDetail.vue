@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue';
 import {
   ArrowLeftRight,
+  ChevronDown,
   IdCardIcon,
   Loader2,
   Mail,
@@ -10,6 +11,7 @@ import {
   PaintBucket,
   Pen,
   Phone,
+  Send,
   Shapes,
   Store,
   TagIcon,
@@ -34,6 +36,7 @@ import EstadoCotizacionBadge from './EstadoCotizacionBadge.vue';
 import CotizacionCiclo from './CotizacionCiclo.vue';
 import CotizacionTotales from './CotizacionTotales.vue';
 import CotizacionVigencia from './CotizacionVigencia.vue';
+import { correoCotizacionHref, whatsappCotizacionHref } from '../utils/envioCotizacion';
 
 const METODOS_ACEPTACION = [
   { value: 'PRESENCIAL', label: 'Presencial en taller' },
@@ -62,6 +65,13 @@ const mostrarModalReabrir = ref(false);
 const mostrarModalGenerarOrden = ref(false);
 const procesandoReapertura = ref(false);
 const procesandoGeneracionOrden = ref(false);
+const menuEnvioAbierto = ref(false);
+const procesandoEnvio = ref(false);
+
+const canalesEnvio = computed(() => [
+  { key: 'whatsapp', label: 'WhatsApp', icon: IconBrandWhatsapp, iconClass: 'text-green-600 dark:text-green-400', href: whatsappCotizacionHref(cotizacion.value), falta: 'El cliente no tiene teléfono registrado' },
+  { key: 'correo', label: 'Correo electrónico', icon: Mail, iconClass: 'text-brand-700 dark:text-brand-200', href: correoCotizacionHref(cotizacion.value), falta: 'El cliente no tiene correo registrado' },
+]);
 
 const ordenGenerada = computed(() => cotizacion.value?.orden_generada_numero || '');
 const ordenHref = computed(() => (
@@ -145,6 +155,25 @@ function irAEditar() {
 // cotización: el botón depende únicamente de que exista una cotización guardada.
 function descargarPdf() {
   return cotizacionesService.exportarPdf(cotizacionId.value);
+}
+
+// La ventana se abre antes de cualquier await para que el navegador no la
+// bloquee; si la cotización seguía pendiente, queda marcada como enviada.
+async function enviarPor(canal) {
+  menuEnvioAbierto.value = false;
+  if (!canal.href || procesandoEnvio.value) return;
+  window.open(canal.href, '_blank', 'noopener');
+  if (cotizacion.value?.estado !== 'PENDIENTE') return;
+  procesandoEnvio.value = true;
+  try {
+    await cotizacionesService.update(cotizacionId.value, { estado: 'ENVIADA' });
+    successMessage.value = `Cotización enviada al cliente por ${canal.label}.`;
+    await cargar();
+  } catch (error) {
+    errorMessage.value = error.message || 'No se pudo marcar la cotización como enviada.';
+  } finally {
+    procesandoEnvio.value = false;
+  }
 }
 
 async function confirmarGenerarOrden() {
@@ -256,10 +285,49 @@ onMounted(cargar);
             Generar orden de trabajo
           </button>
         </template>
+        <template v-else-if="puedeEditar && cotizacion.estado === 'PENDIENTE'" #accion>
+          <div class="relative" @keydown.esc="menuEnvioAbierto = false">
+            <button
+              type="button"
+              :class="BOTON_PRIMARIO"
+              :disabled="procesandoEnvio"
+              aria-haspopup="menu"
+              :aria-expanded="menuEnvioAbierto"
+              @click="menuEnvioAbierto = !menuEnvioAbierto"
+            >
+              <Loader2 v-if="procesandoEnvio" class="w-4 h-4 -ms-0.5 animate-spin" aria-hidden="true" />
+              <Send v-else class="w-4 h-4 -ms-0.5" aria-hidden="true" />
+              Enviar al cliente
+              <ChevronDown class="w-4 h-4 -me-0.5 transition-transform" :class="{ 'rotate-180': menuEnvioAbierto }" aria-hidden="true" />
+            </button>
+            <template v-if="menuEnvioAbierto">
+              <div class="fixed inset-0 z-40" @click="menuEnvioAbierto = false" />
+              <div
+                class="absolute end-0 z-50 mt-1 w-56 overflow-hidden rounded-base border border-default bg-white py-1 shadow-md dark:bg-gray-800"
+                role="menu"
+                aria-label="Enviar cotización"
+              >
+                <button
+                  v-for="canal in canalesEnvio"
+                  :key="canal.key"
+                  type="button"
+                  role="menuitem"
+                  :disabled="!canal.href"
+                  :title="canal.href ? `Enviar por ${canal.label}` : canal.falta"
+                  class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent dark:hover:bg-gray-700"
+                  @click="enviarPor(canal)"
+                >
+                  <component :is="canal.icon" class="w-4 h-4 shrink-0" :class="canal.iconClass" aria-hidden="true" />
+                  {{ canal.label }}
+                </button>
+              </div>
+            </template>
+          </div>
+        </template>
         <template v-else-if="puedeEditar && esperandoRespuesta" #accion>
           <button type="button" :class="BOTON_PRIMARIO" @click="irAEditar">
             <Pen class="w-4 h-4 -ms-0.5" aria-hidden="true" />
-            {{ cotizacion.estado === 'PENDIENTE' ? 'Revisar y enviar' : 'Registrar respuesta' }}
+            Registrar respuesta
           </button>
         </template>
       </CotizacionCiclo>
