@@ -199,8 +199,8 @@ async function confirmCompany() {
         class="pointer-events-none absolute -right-8 top-2.5 z-[1] w-[180px] opacity-35 lg:hidden"
       >
 
-      <!-- Logo -->
-      <a href="/" class="relative z-[2] inline-flex items-center gap-3 self-start">
+      <!-- Logo: en el login no es enlace (sin sesión, «/» solo devolvería aquí) -->
+      <div class="relative z-[2] inline-flex items-center gap-3 self-start">
         <img :src="assetUrl('/images/login/isotipo-piston-negativo.svg')" alt="" class="h-11 w-11 lg:h-13 lg:w-13">
         <span>
           <span class="block text-[26px] font-extrabold leading-[1] tracking-tight lg:text-[31px]">
@@ -208,7 +208,7 @@ async function confirmCompany() {
           </span>
           <span class="mt-1.5 block text-[9.5px] font-bold tracking-[0.32em] text-brand-300 lg:text-[11px]">GESTIÓN DE TALLERES</span>
         </span>
-      </a>
+      </div>
 
       <!-- Mensaje -->
       <div class="relative z-[2] mt-6 lg:mb-auto lg:mt-26">

@@ -1,5 +1,37 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+  // Guard de sesión. Va en <head>, antes de cualquier CSS, HTML o JS, para que
+  // la redirección ocurra ANTES de pintar la página: si estuviera al final del
+  // <body> (detrás del bundle), se vería el dashboard un instante y Vue llegaría
+  // a pedir datos sin sesión. `replace` no deja la página protegida en el
+  // historial (el botón «atrás» no vuelve a ella).
+  (function () {
+    var publicas = [
+      '/authentication/sign-in/',
+      '/authentication/sign-in-old/',
+      '/authentication/sign-up/',
+      '/authentication/forgot-password/',
+      '/authentication/reset-password/',
+      '/authentication/profile-lock/'
+    ];
+    var ruta = window.location.pathname;
+    var esPublica = publicas.some(function (p) { return ruta === p || ruta.endsWith(p); });
+    var haySesion = false;
+    try {
+      haySesion = Boolean(
+        localStorage.getItem('gonmotor_access_token') ||
+        sessionStorage.getItem('gonmotor_access_token')
+      );
+    } catch (e) { /* almacenamiento bloqueado: se trata como sin sesión */ }
+
+    if (ruta === '/authentication/sign-in/' && haySesion) {
+      window.location.replace('/');
+    } else if (!esPublica && !haySesion) {
+      window.location.replace('/authentication/sign-in/');
+    }
+  })();
+</script>
 <meta name="description" content="{{ .Page.Params.description | default .Site.Params.description | markdownify }}">
 <meta name="author" content="{{ .Site.Params.authors }}">
 <meta name="generator" content="Hugo {{ hugo.Version }}">

@@ -49,7 +49,8 @@ const planoFormulario = propia ? propia.formulario() : escenaFormulario();
         class="pointer-events-none absolute -right-8 top-2.5 z-[1] w-[180px] opacity-35 lg:hidden"
       >
 
-      <a href="/" class="relative z-[2] inline-flex items-center gap-3 self-start">
+      <!-- En recuperar/restablecer contraseña el logo lleva al login (sin sesión, «/» no es accesible) -->
+      <a href="/authentication/sign-in/" class="relative z-[2] inline-flex items-center gap-3 self-start">
         <img :src="assetUrl('/images/login/isotipo-piston-negativo.svg')" alt="" class="h-11 w-11 lg:h-13 lg:w-13">
         <span>
           <span class="block text-[26px] font-extrabold leading-[1] tracking-tight lg:text-[31px]">

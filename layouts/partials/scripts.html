@@ -2,32 +2,8 @@
 <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.3"></script>
 <script src="{{ partial "asset-url" "/app.bundle.js" }}"></script>
 <script>
+  // El guard de sesión vive en partials/header.html (en <head>, antes de pintar).
   (function () {
-    const publicPaths = [
-      '/authentication/sign-in/',
-      '/authentication/sign-in-old/',
-      '/authentication/sign-up/',
-      '/authentication/forgot-password/',
-      '/authentication/reset-password/',
-      '/authentication/profile-lock/'
-    ];
-
-    const currentPath = window.location.pathname;
-    const isPublicPath = publicPaths.some((path) => currentPath === path || currentPath.endsWith(path));
-    const hasToken = Boolean(
-      localStorage.getItem('gonmotor_access_token') ||
-      sessionStorage.getItem('gonmotor_access_token')
-    );
-
-    if (currentPath === '/authentication/sign-in/' && hasToken) {
-      window.location.href = '/';
-      return;
-    }
-
-    if (!isPublicPath && !hasToken) {
-      window.location.href = '/authentication/sign-in/';
-    }
-
     // Sign out functionality
     function setupSignout() {
       const signoutButtons = document.querySelectorAll('#signoutButton');
