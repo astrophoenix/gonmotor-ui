@@ -229,27 +229,12 @@ export function calibrador(L = 160) {
   return s;
 }
 
-/** Lima plana con mango, para retocar el corte de una llave. */
-export function lima(L = 130) {
-  const x0 = -L / 2;
-  let s = `<path class="pz" d="M${x0} -6Q${x0 - 4} 0 ${x0} 6H${x0 + 44}V-6Z"/>`;
-  for (const x of [x0 + 10, x0 + 20, x0 + 30]) s += `<path class="fino" d="M${x} -6V6"/>`;
-  s += rect('pz', x0 + 44, -4.5, 6, 9, 1) + `<path class="pz" d="M${x0 + 50} -4H${L / 2 - 6}L${L / 2} 0L${L / 2 - 6} 4H${x0 + 50}"/>`;
-  for (let x = x0 + 54; x < L / 2 - 6; x += 4) s += `<path class="som" d="M${x} -4L${x + 3} 4"/>`;
+/** Llave recién cortada con su etiqueta «NUEVA» atada por un cordón. */
+export function llaveEtiqueta() {
+  let s = llaveCasa(78);
+  s += `<path class="fino" d="M-31 0C-46 6 -50 22 -44 34"/>`;
+  s += `<g transform="translate(-44 34) rotate(-12)">${rect('pz', -28, 0, 56, 26, 5)}${circ('pz', 0, 6, 3)}${texto(0, 20.5, 'NUEVA', 10, ' letter-spacing="2"')}</g>`;
   return s;
-}
-
-/** Juego de pines del bombín: perno de llave, perno superior y muelle de cada cámara. */
-export function pinesBombin() {
-  let s = '';
-  [[0, 22], [16, 14], [32, 26], [48, 18]].forEach(([x, k]) => {
-    s += `<path class="pz" d="M${x - 3.5} 8V${8 + k}L${x} ${12 + k}L${x + 3.5} ${8 + k}V8Z"/>`;
-    s += rect('pz', x - 3.5, -10, 7, 16, 1.5);
-    let d = `M${x - 3} -12`;
-    for (let i = 0; i < 6; i++) d += `L${x + (i % 2 ? -3 : 3)} ${-14 - i * 3}`;
-    s += `<path class="fino" d="${d}"/>`;
-  });
-  return `<g transform="translate(-24 0)">${s}</g>`;
 }
 
 /** Letrero colgante «ABIERTO» con su cordón: el taller vuelve a estar disponible. */
@@ -314,8 +299,7 @@ export const escenaRestablecer = () => [
   ubicar(572, 106, -32, llaveCasa(78, false), 0.6),
   ubicar(616, 262, 26, muelle(), 0.7),
   ubicar(196, 660, -24, calibrador(), 0.7),
-  ubicar(158, 778, -38, lima(), 0.65),
-  ubicar(268, 776, 0, pinesBombin(), 0.7),
+  ubicar(214, 736, -8, llaveEtiqueta(), 0.75),
   heroe(heroeRestablecer(), 0.68),
 ].join('');
 
