@@ -1,235 +1,214 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
-import { Mail, Key, ArrowLeft, Loader2 } from 'lucide-vue-next';
-import { useAuthStore } from '../stores/authStore';
+import { Mail, MailCheck, ArrowLeft, ArrowRight, Loader2, RotateCw } from 'lucide-vue-next';
 import { authService } from '../services/authService';
-import Alert from '../../../shared/components/Alert.vue';
 import { sanitizeEmail, validateEmail } from '../../../shared/utils/sanitize';
-import { assetUrl } from '../../../shared/utils/assetUrl';
+import AuthShell from './AuthShell.vue';
+import PasosRecuperacion from './PasosRecuperacion.vue';
 
-const authStore = useAuthStore();
 const email = ref('');
 const isLoading = ref(false);
 const errorMessage = ref('');
-const successMessage = ref('');
-const showSuccessState = ref(false);
+const enviado = ref(false);
+const reenviado = ref(false);
 const resendCooldown = ref(0);
-const resendTimer = ref(null);
+let resendTimer = null;
 
 const hasError = computed(() => Boolean(errorMessage.value));
+const CAMPO_NORMAL = 'border-brand-200 focus:border-brand-900 focus:ring-brand-focus-ring dark:border-brand-600 dark:focus:border-brand-300';
+const CAMPO_ERROR = 'border-brand-red focus:border-brand-red focus:ring-brand-red/15';
+
+const cuentaAtras = computed(() =>
+  `${Math.floor(resendCooldown.value / 60)}:${String(resendCooldown.value % 60).padStart(2, '0')}`
+);
+
+/** j•••z@taller.com: confirma a qué correo se envió sin mostrarlo completo. */
+const correoOculto = computed(() => {
+  const [local, dominio] = email.value.split('@');
+  if (!dominio) return email.value;
+  return local.length <= 2 ? `${local[0]}•••@${dominio}` : `${local[0]}•••${local.slice(-1)}@${dominio}`;
+});
 
 function startResendCooldown() {
-  resendCooldown.value = 120; // 2 minutos
-  resendTimer.value = setInterval(() => {
-    resendCooldown.value--;
-    if (resendCooldown.value <= 0) {
-      clearInterval(resendTimer.value);
-      resendTimer.value = null;
-    }
+  window.clearInterval(resendTimer);
+  resendCooldown.value = 120;
+  resendTimer = window.setInterval(() => {
+    resendCooldown.value -= 1;
+    if (resendCooldown.value <= 0) window.clearInterval(resendTimer);
   }, 1000);
 }
 
-function validateAndSanitizeEmail() {
-  const sanitized = sanitizeEmail(email.value);
-  email.value = sanitized;
-  const validationError = validateEmail(sanitized);
-  return validationError;
+async function enviar() {
+  isLoading.value = true;
+  errorMessage.value = '';
+  try {
+    await authService.forgotPassword(email.value.trim());
+    return true;
+  } catch (error) {
+    errorMessage.value = error.message || 'No se pudo enviar el enlace. Intenta nuevamente.';
+    return false;
+  } finally {
+    isLoading.value = false;
+  }
 }
 
 async function submit() {
   if (isLoading.value) return;
-
-  errorMessage.value = '';
-  successMessage.value = '';
-
-  const validationError = validateAndSanitizeEmail();
+  email.value = sanitizeEmail(email.value);
+  const validationError = validateEmail(email.value);
   if (validationError) {
     errorMessage.value = validationError;
     return;
   }
-
-  isLoading.value = true;
-
-  try {
-    await authService.forgotPassword(email.value.trim());
-
-    showSuccessState.value = true;
-    successMessage.value = 'Si el correo está registrado, te enviamos un código. Puede tardar unos minutos.';
+  if (await enviar()) {
+    enviado.value = true;
     startResendCooldown();
-  } catch (error) {
-    errorMessage.value = error.message || 'No se pudo enviar el código. Intenta nuevamente.';
-  } finally {
-    isLoading.value = false;
   }
 }
 
 async function resendCode() {
   if (isLoading.value || resendCooldown.value > 0) return;
-
-  isLoading.value = true;
-  errorMessage.value = '';
-
-  try {
-    await authService.forgotPassword(email.value.trim());
-    successMessage.value = 'Se ha reenviado el código. Revisa tu bandeja de entrada.';
+  if (await enviar()) {
+    reenviado.value = true;
     startResendCooldown();
-  } catch (error) {
-    errorMessage.value = error.message || 'No se pudo reenviar el código.';
-  } finally {
-    isLoading.value = false;
   }
 }
 
-function goBackToLogin() {
-  window.location.assign('/authentication/sign-in/');
+function usarOtroCorreo() {
+  enviado.value = false;
+  reenviado.value = false;
+  errorMessage.value = '';
 }
 
-onMounted(() => {
-  const emailInput = document.getElementById('forgot-email');
-  if (emailInput) {
-    emailInput.focus();
-  }
-});
-
-onUnmounted(() => {
-  if (resendTimer.value) {
-    clearInterval(resendTimer.value);
-  }
-});
+onMounted(() => document.getElementById('forgot-email')?.focus());
+onUnmounted(() => window.clearInterval(resendTimer));
 
 watch(email, () => {
-  if (errorMessage.value && email.value.trim()) {
-    errorMessage.value = '';
-  }
+  if (errorMessage.value && email.value.trim()) errorMessage.value = '';
 });
 </script>
 
 <template>
-  <div class="font-brand min-h-screen w-full bg-brand-surface text-brand-ink dark:bg-slate-900 dark:text-slate-100 flex items-center justify-center px-4 py-10 sm:px-6">
-    <div class="w-full max-w-md">
-      <!-- Logo centrado sobre el card -->
-      <div class="flex justify-center mb-6">
-        <a href="/" class="inline-flex items-center gap-1">
-          <span class="flex h-13 w-auto shrink-0 items-center justify-center">
-            <img :src="assetUrl('/images/logo.svg')" alt="gonmotor Logo" class="h-full w-full" />
-          </span>
-          <!--span class="text-3xl font-extrabold leading-none tracking-tight">
-            <span class="text-white">gon</span><span class="text-brand-coral">motor</span>
-          </span-->
-        </a>
-      </div>
+  <AuthShell>
+    <template #titulo>Recupera el acceso<br>a tu taller.</template>
+    <template #detalle>
+      <p class="mt-4.5 max-w-[480px] text-[17px] leading-relaxed text-brand-subtitle">
+        En tres pasos vuelves a tus órdenes, clientes y repuestos.
+      </p>
+      <PasosRecuperacion :actual="enviado ? 2 : 1" />
+    </template>
 
-      <!-- Card -->
-      <div class="bg-white rounded-2xl border border-brand-line shadow-sm p-6 dark:bg-slate-800 dark:border-slate-700">
-        <!-- Ícono decorativo de llave -->
-        <div class="flex justify-center mb-4">
-          <div class="w-14 h-14 rounded-xl bg-brand-50 flex items-center justify-center dark:bg-brand-900/30">
-            <Key class="h-7 w-7 text-brand-900 dark:text-brand-300" aria-hidden="true" />
-          </div>
-        </div>
+    <!-- Paso 2: enlace enviado -->
+    <div v-if="enviado" role="status" aria-live="polite">
+      <span class="flex h-13 w-13 items-center justify-center rounded-[14px] border border-brand-100 bg-brand-50 text-brand-900 dark:border-brand-700 dark:bg-brand-950 dark:text-brand-50">
+        <MailCheck class="h-6.5 w-6.5" aria-hidden="true" />
+      </span>
+      <h1 class="mt-5 text-[30px] font-extrabold tracking-[-0.015em]">Revisa tu correo</h1>
+      <p class="mt-2 text-[15.5px] leading-relaxed text-brand-500 dark:text-brand-200">
+        Si <strong class="font-bold text-brand-900 dark:text-white">{{ correoOculto }}</strong> tiene una cuenta,
+        te llegará un enlace para crear tu nueva contraseña. Vence en 1 hora.
+      </p>
 
-        <!-- Estado de éxito -->
-        <div v-if="showSuccessState" class="text-center space-y-4" role="status">
-          <h2 class="text-2xl font-semibold text-brand-900 dark:text-white">Revisa tu correo</h2>
-          <p class="text-brand-ink-soft dark:text-slate-400">{{ successMessage }}</p>
-          <button
-            type="button"
-            :disabled="resendCooldown > 0 || isLoading"
-            class="w-full px-5 py-3 text-base font-medium text-brand-700 bg-brand-100 rounded-xl hover:bg-brand-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-ink disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
-            @click="resendCode"
-          >
-            <template v-if="resendCooldown > 0">
-              Reenviar código ({{ Math.floor(resendCooldown / 60) }}:{{ String(resendCooldown % 60).padStart(2, '0') }})
-            </template>
-            <template v-else>
-              Reenviar código
-            </template>
-          </button>
-          <p class="mt-4 text-sm text-brand-ink-soft dark:text-slate-400">
-            <a href="/authentication/sign-in/" class="font-semibold text-brand-700 underline underline-offset-[3px] transition-colors hover:text-brand-red-hover focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-ink dark:text-brand-coral">
-              Volver a iniciar sesión
-              <ArrowLeft class="inline h-4 w-4 ml-1" aria-hidden="true" />
-            </a>
-          </p>
-        </div>
+      <ul class="mt-5 space-y-2 rounded-xl border border-brand-100 bg-brand-50 px-4 py-3.5 text-sm text-brand-500 dark:border-brand-700 dark:bg-brand-950 dark:text-brand-200">
+        <li class="flex gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-coral" aria-hidden="true"></span>Puede tardar unos minutos en llegar.</li>
+        <li class="flex gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-coral" aria-hidden="true"></span>Si no lo ves, busca en spam o promociones.</li>
+      </ul>
 
-        <!-- Formulario -->
-        <form v-else autocomplete="on" novalidate @submit.prevent="submit" class="space-y-6">
-          <div class="text-center space-y-2">
-            <h1 class="text-[32px] font-extrabold leading-tight text-brand-ink dark:text-white">
-              ¿Olvidaste tu contraseña?
-            </h1>
-            <p class="text-base text-brand-ink-soft dark:text-slate-400">
-              Ingresa tu correo y te enviaremos un código para restablecerla.
-            </p>
-          </div>
+      <p v-if="errorMessage" class="mt-4 text-sm font-medium text-brand-red" role="alert">{{ errorMessage }}</p>
+      <p v-else-if="reenviado" class="mt-4 text-sm font-medium text-success">Te enviamos un enlace nuevo.</p>
 
-          <div v-if="errorMessage" class="mt-4" role="alert">
-            <Alert type="error" :message="errorMessage" />
-          </div>
+      <button
+        type="button"
+        :disabled="resendCooldown > 0 || isLoading"
+        class="mt-6 inline-flex h-[52px] w-full items-center justify-center gap-2.5 rounded-[10px] border-[1.5px] border-brand-900 bg-white px-5 text-base font-bold text-brand-900 transition-colors hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-focus-ring disabled:cursor-not-allowed disabled:border-brand-200 disabled:text-brand-400 dark:border-brand-300 dark:bg-brand-900 dark:text-brand-50 dark:hover:bg-brand-800"
+        @click="resendCode"
+      >
+        <Loader2 v-if="isLoading" class="h-5 w-5 animate-spin" aria-hidden="true" />
+        <RotateCw v-else class="h-[18px] w-[18px]" aria-hidden="true" />
+        <span v-if="resendCooldown > 0">Reenviar en <span class="tabular-nums">{{ cuentaAtras }}</span></span>
+        <span v-else>Reenviar enlace</span>
+      </button>
 
-          <!-- Campo: Correo electrónico -->
-          <div>
-            <label for="forgot-email" class="mb-2 block text-sm font-bold text-brand-ink dark:text-slate-200">
-              Correo electrónico
-            </label>
-            <div class="relative">
-              <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3.5">
-                <Mail class="h-5 w-5 text-slate-400" aria-hidden="true" />
-              </span>
-              <input
-                id="forgot-email"
-                v-model="email"
-                type="email"
-                name="email"
-                autocomplete="email"
-                placeholder="nombre@empresa.com"
-                :aria-invalid="hasError"
-                :aria-describedby="hasError ? 'forgot-email-error' : undefined"
-                required
-                class="block h-[52px] w-full rounded-xl border-[1.5px] bg-white ps-11 pe-3.5 text-base text-brand-ink outline-none transition-colors placeholder:text-slate-400 focus:ring-4 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500 dark:border-slate-600 dark:focus:border-slate-400"
-                :class="hasError
-                  ? 'border-brand-red focus:border-brand-red focus:ring-brand-red/15'
-                  : 'border-brand-line focus:border-brand-ink focus:ring-brand-focus-ring'"
-                style="-webkit-text-fill-color: inherit;"
-              >
-            </div>
-            <p id="forgot-email-help" class="mt-1.5 text-sm text-brand-muted dark:text-slate-500">
-              Si el correo está registrado, recibirás las instrucciones.
-            </p>
-            <p v-if="hasError" id="forgot-email-error" class="mt-1.5 text-sm text-brand-red" role="alert" aria-live="polite">
-              {{ errorMessage }}
-            </p>
-          </div>
-
-          <!-- Botón principal -->
-          <button
-            type="submit"
-            :disabled="isLoading"
-            class="w-full h-[54px] inline-flex items-center justify-center gap-2 rounded-xl bg-brand-900 px-5 text-[17px] font-bold text-white transition-colors hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-900/40 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <template v-if="isLoading">
-              <Loader2 class="h-5 w-5 animate-spin" aria-hidden="true" />
-              Enviando…
-            </template>
-            <template v-else>
-              Enviar código
-            </template>
-          </button>
-
-          <!-- Enlace volver a login -->
-          <p class="text-center text-sm text-brand-ink-soft dark:text-slate-400">
-            <a href="/authentication/sign-in/" class="font-semibold text-brand-700 underline underline-offset-[3px] transition-colors hover:text-brand-red-hover focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-ink dark:text-brand-coral flex items-center justify-center gap-1">
-              <ArrowLeft class="h-4 w-4" aria-hidden="true" />
-              Volver a iniciar sesión
-            </a>
-          </p>
-        </form>
-      </div>
-
-      <p class="mt-8 text-center text-sm text-brand-muted dark:text-slate-500">
-        &copy; 2026 Gonmotor
+      <p class="mt-5 text-center text-sm text-brand-400 dark:text-brand-300">
+        ¿Te equivocaste de correo?
+        <button
+          type="button"
+          class="font-bold text-brand-500 underline underline-offset-[3px] transition-colors hover:text-brand-red-hover focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-200 dark:hover:text-brand-coral"
+          @click="usarOtroCorreo"
+        >
+          Usar otro
+        </button>
       </p>
     </div>
-  </div>
+
+    <!-- Paso 1: pedir el enlace -->
+    <template v-else>
+      <p class="text-[15px] font-bold text-brand-500 dark:text-brand-300">Recuperar acceso</p>
+      <h1 class="mt-1.5 text-[30px] font-extrabold leading-tight tracking-[-0.015em]">¿Olvidaste tu contraseña?</h1>
+      <p class="mt-2 text-[15.5px] leading-relaxed text-brand-500 dark:text-brand-200">
+        Escribe el correo de tu cuenta y te enviaremos un enlace para crear una nueva.
+      </p>
+
+      <form autocomplete="on" novalidate @submit.prevent="submit">
+        <label for="forgot-email" class="mb-2.5 mt-6 block text-[14.5px] font-bold">Correo electrónico</label>
+        <div class="relative">
+          <Mail class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-brand-400 dark:text-brand-300" aria-hidden="true" />
+          <input
+            id="forgot-email"
+            v-model="email"
+            type="email"
+            name="email"
+            autocomplete="email"
+            placeholder="usuario@taller.com"
+            :aria-invalid="hasError"
+            :aria-describedby="hasError ? 'forgot-email-error' : undefined"
+            required
+            class="block h-[54px] w-full rounded-[10px] border-[1.5px] bg-white pe-4 ps-12 text-[15.5px] text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:ring-4 dark:bg-brand-950 dark:text-brand-50 dark:placeholder:text-brand-300"
+            :class="hasError ? CAMPO_ERROR : CAMPO_NORMAL"
+          >
+        </div>
+        <p v-if="hasError" id="forgot-email-error" class="mt-2 text-sm font-medium text-brand-red" role="alert">
+          {{ errorMessage }}
+        </p>
+
+        <button
+          type="submit"
+          :disabled="isLoading"
+          class="mt-6 inline-flex h-14 w-full items-center justify-center gap-3 rounded-[10px] bg-brand-red px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(200,16,46,0.7)] transition-colors hover:bg-brand-red-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-red/40 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <template v-if="isLoading">
+            <Loader2 class="h-5 w-5 animate-spin" aria-hidden="true" />
+            Enviando…
+          </template>
+          <template v-else>
+            <Mail class="h-5 w-5" aria-hidden="true" />
+            Enviar enlace
+            <ArrowRight class="h-5 w-5" aria-hidden="true" />
+          </template>
+        </button>
+      </form>
+
+      <p class="mt-5 text-center text-sm text-brand-400 dark:text-brand-300">
+        ¿Ya no usas ese correo?
+        <a
+          href="#"
+          class="font-bold text-brand-500 underline underline-offset-[3px] transition-colors hover:text-brand-red-hover focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-200 dark:hover:text-brand-coral"
+        >
+          Habla con soporte
+        </a>
+      </p>
+    </template>
+
+    <template #pie>
+      <PasosRecuperacion :actual="enviado ? 2 : 1" variante="barra" />
+      <a
+        href="/authentication/sign-in/"
+        class="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-bold text-brand-500 underline underline-offset-[3px] transition-colors hover:text-brand-red-hover focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-200 dark:hover:text-brand-coral"
+      >
+        <ArrowLeft class="h-4 w-4" aria-hidden="true" />
+        <span class="sm:hidden">Iniciar sesión</span>
+        <span class="hidden sm:inline">Volver al inicio de sesión</span>
+      </a>
+    </template>
+  </AuthShell>
 </template>
