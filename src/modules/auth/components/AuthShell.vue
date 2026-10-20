@@ -1,10 +1,22 @@
 <script setup>
 import { assetUrl } from '../../../shared/utils/assetUrl';
 import { escenaMarca, escenaFormulario } from '../utils/piezasPlano';
+import { escenaRecuperar, escenaRestablecer, heroeRecuperar, heroeRestablecer } from '../utils/piezasAcceso';
 
 // Marco común de las pantallas públicas de acceso: panel de marca con el plano técnico
 // y tarjeta con ranura. El mensaje principal es lo único que se ve en móvil.
-const planoMarca = escenaMarca();
+// `escena` cambia el motor por el objeto que cuenta el propósito de cada pantalla.
+const props = defineProps({
+  escena: { type: String, default: 'motor' }, // 'motor' | 'recuperar' | 'restablecer'
+});
+
+const ESCENAS = {
+  recuperar: { piezas: escenaRecuperar, heroe: heroeRecuperar },
+  restablecer: { piezas: escenaRestablecer, heroe: heroeRestablecer },
+};
+const propia = ESCENAS[props.escena] || null;
+const planoMarca = propia ? propia.piezas() : escenaMarca();
+const heroeMovil = propia ? propia.heroe() : '';
 const planoFormulario = escenaFormulario();
 </script>
 
@@ -19,9 +31,17 @@ const planoFormulario = escenaFormulario();
         aria-hidden="true"
       >
         <g class="piezas" v-html="planoMarca"></g>
-        <image :href="assetUrl('/images/login/motor-plano.png')" x="302" y="482" width="392" height="349" />
+        <image v-if="!propia" :href="assetUrl('/images/login/motor-plano.png')" x="302" y="482" width="392" height="349" />
       </svg>
+      <svg
+        v-if="propia"
+        class="plano plano-marca pointer-events-none absolute -right-10 top-3 z-[1] w-[170px] opacity-30 lg:hidden"
+        viewBox="-230 -235 440 460"
+        aria-hidden="true"
+        v-html="heroeMovil"
+      ></svg>
       <img
+        v-else
         :src="assetUrl('/images/login/motor-plano.png')"
         alt=""
         class="pointer-events-none absolute -right-8 top-2.5 z-[1] w-[180px] opacity-35 lg:hidden"
@@ -88,6 +108,8 @@ const planoFormulario = escenaFormulario();
 .plano :deep(.pz) { fill: none; stroke: var(--plano); stroke-width: 1.3; stroke-linejoin: round; stroke-linecap: round; }
 .plano :deep(.fino) { fill: none; stroke: var(--plano); stroke-width: 0.8; opacity: 0.8; }
 .plano :deep(.som) { fill: none; stroke: var(--plano); stroke-width: 0.6; opacity: 0.45; }
+.plano :deep(.eje) { fill: none; stroke: var(--plano); stroke-width: 0.8; stroke-dasharray: 4 3; opacity: 0.7; }
+.plano :deep(.txt) { fill: var(--plano); font-family: inherit; font-weight: 700; opacity: 0.85; }
 .plano-marca { --plano: #78ACDE; }
 .plano-marca .piezas { opacity: 0.85; }
 .plano-formulario { --plano: #94A6BF; }

@@ -78,7 +78,7 @@ onMounted(() => document.getElementById('reset-password')?.focus());
 </script>
 
 <template>
-  <AuthShell>
+  <AuthShell escena="restablecer">
     <template #titulo>Una llave nueva<br>para tu taller.</template>
     <template #detalle>
       <p class="mt-4.5 max-w-[480px] text-[17px] leading-relaxed text-brand-subtitle">

@@ -1,10 +1,10 @@
 // Piezas de taller dibujadas como plano técnico (SVG) para el fondo del inicio de sesión.
 // Cada función devuelve el SVG de una pieza en coordenadas locales centradas en ella;
 // las clases `pz` (contorno), `fino` (detalle) y `som` (sombreado) dan el grosor del trazo.
-const f = (n) => +n.toFixed(1);
-const poly = (pts) => 'M' + pts.map(p => f(p[0]) + ' ' + f(p[1])).join('L') + 'Z';
+export const f = (n) => +n.toFixed(1);
+export const poly = (pts) => 'M' + pts.map(p => f(p[0]) + ' ' + f(p[1])).join('L') + 'Z';
 const hexPts = (r, rot = 0, sy = 1) => [...Array(6)].map((_, i) => [r * Math.cos(i * Math.PI / 3 + rot), sy * r * Math.sin(i * Math.PI / 3 + rot)]);
-const circ = (cls, x, y, r) => `<circle class="${cls}" cx="${f(x)}" cy="${f(y)}" r="${f(r)}"/>`;
+export const circ = (cls, x, y, r) => `<circle class="${cls}" cx="${f(x)}" cy="${f(y)}" r="${f(r)}"/>`;
 
 // Llave combinada horizontal: anillo de 12 puntas a la izquierda, boca abierta a la derecha.
 export function llave(L = 150, r = 20) {
@@ -176,7 +176,7 @@ export function llaveInglesa(L = 150) {
   return s;
 }
 
-const ubicar = (x, y, giro, pieza, opacidad) =>
+export const ubicar = (x, y, giro, pieza, opacidad) =>
   `<g opacity="${opacidad}" transform="translate(${x} ${y}) rotate(${giro})">${pieza}</g>`;
 
 /** Panel de marca (viewBox 720×900): herramientas cayendo hacia el motor y piezas ya caídas a su izquierda. */
