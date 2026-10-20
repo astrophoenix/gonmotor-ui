@@ -1,9 +1,17 @@
+import { escenaSidebar } from './modules/auth/utils/piezasPlano';
+
 const DESKTOP_QUERY = '(min-width: 64rem)';
 const COLLAPSED_KEY = 'sidebar-collapsed';
 
 const sidebar = document.getElementById('sidebar');
 
 if (sidebar) {
+    // Piezas de plano al final del menú (mismo dibujo que el login; SVG generado por código propio).
+    const plano = document.getElementById('sidebarPlano');
+    if (plano) {
+        plano.innerHTML = `<svg viewBox="0 30 256 190" preserveAspectRatio="xMidYMax meet">${escenaSidebar()}</svg>`;
+    }
+
     const toggleSidebarMobile = (sidebar, sidebarBackdrop, toggleSidebarMobileHamburger, toggleSidebarMobileClose) => {
         const abierto = sidebar.classList.contains('hidden');
         sidebar.classList.toggle('hidden');
