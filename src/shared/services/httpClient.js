@@ -289,6 +289,11 @@ export async function request(path, options = {}) {
       throw new Error(error.data.message);
     }
 
+    // Errores HTTP: se conservan `status` y `data` (p. ej. `columnas_faltantes` de la importación).
+    if (error.status) {
+      throw error;
+    }
+
     throw new Error(
       error.message || 'Ocurrió un inconveniente al procesar la solicitud. Intente más tarde.'
     );
