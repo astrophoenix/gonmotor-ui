@@ -216,27 +216,6 @@ export function linterna() {
   return s;
 }
 
-/** Calibrador pie de rey: regla graduada, mordazas y nonio deslizante. */
-export function calibrador(L = 160) {
-  const x0 = -L / 2, x1 = L / 2;
-  let s = rect('pz', x0, -7, L, 14, 2);
-  for (let x = x0 + 22, i = 0; x < x1 - 4; x += 4, i++) s += `<path class="${i % 5 ? 'som' : 'fino'}" d="M${f(x)} -7V${i % 5 ? -3 : -1}"/>`;
-  s += `<path class="pz" d="M${x0} 7V40L${x0 + 6} 46L${x0 + 12} 40V7M${x0} -7V-24L${x0 + 6} -24L${x0 + 9} -7"/>`;
-  const xc = x0 + 54;
-  s += `<path class="pz" d="M${xc} -11H${xc + 44}V11H${xc}Z"/><path class="pz" d="M${xc} 11V40L${xc - 6} 46L${xc - 12} 40V11M${xc + 3} -11V-24L${xc - 3} -24L${xc - 6} -11"/>`;
-  for (let i = 0; i < 9; i++) s += `<path class="fino" d="M${f(xc + 4 + i * 4.3)} 11V${i % 5 ? 7 : 5}"/>`;
-  s += rect('fino', xc + 16, -5, 18, 10, 1.5) + circ('pz', xc + 30, 15, 4) + `<path class="som" d="M${x1 - 30} 7V10H${x1 + 18}"/>`;
-  return s;
-}
-
-/** Llave recién cortada con su etiqueta «NUEVA» atada por un cordón. */
-export function llaveEtiqueta() {
-  let s = llaveCasa(78);
-  s += `<path class="fino" d="M-31 0C-46 6 -50 22 -44 34"/>`;
-  s += `<g transform="translate(-44 34) rotate(-12)">${rect('pz', -28, 0, 56, 26, 5)}${circ('pz', 0, 6, 3)}${texto(0, 20.5, 'NUEVA', 10, ' letter-spacing="2"')}</g>`;
-  return s;
-}
-
 /** Letrero colgante «ABIERTO» con su cordón: el taller vuelve a estar disponible. */
 export function letreroAbierto() {
   let s = `<path class="fino" d="M-30 -24L0 -70L30 -24"/>` + circ('pz', 0, -70, 3.5);
@@ -298,8 +277,6 @@ export const escenaRecuperar = () => [
 export const escenaRestablecer = () => [
   ubicar(572, 106, -32, llaveCasa(78, false), 0.6),
   ubicar(616, 262, 26, muelle(), 0.7),
-  ubicar(196, 660, -24, calibrador(), 0.7),
-  ubicar(214, 736, -8, llaveEtiqueta(), 0.75),
   heroe(heroeRestablecer(), 0.68),
 ].join('');
 
