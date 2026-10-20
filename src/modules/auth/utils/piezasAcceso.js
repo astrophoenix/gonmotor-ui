@@ -2,7 +2,7 @@
 // del login por un objeto que cuenta su propósito (la persiana del taller que se vuelve a abrir y la
 // llave de auto que entra en el encendido). Mismas clases de trazo que piezasPlano.js; `eje` es la
 // línea discontinua de una vista explotada y `txt` el rotulado del plano.
-import { f, circ, ubicar, perno, tuerca, engranaje } from './piezasPlano';
+import { f, circ, ubicar } from './piezasPlano';
 
 const rect = (cls, x, y, w, h, r = 0) =>
   `<rect class="${cls}" x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}"${r ? ` rx="${f(r)}"` : ''}/>`;
@@ -184,6 +184,109 @@ export function muelle(L = 70, r = 9, vueltas = 9) {
     `<path class="pz" d="M${-r} ${f(y0)}H${r - 2}M${-r} ${f(y0 + L)}H${r - 2}"/>`;
 }
 
+/** Control remoto del portón: dos botones (subir / bajar), led y ojal para el llavero. */
+export function controlPorton() {
+  let s = `<path class="pz" d="M-18 -30Q-18 -38 -10 -38H10Q18 -38 18 -30V30Q18 38 10 38H-10Q-18 38 -18 30Z"/>`;
+  s += `<path class="fino" d="M-14 -27Q-14 -34 -8 -34H8Q14 -34 14 -27V27Q14 34 8 34H-8Q-14 34 -14 27Z"/>`;
+  s += circ('pz', 0, -40, 4.5) + circ('fino', 0, -40, 2.2);
+  s += circ('pz', 0, -12, 8) + circ('pz', 0, 10, 8);
+  s += `<path class="fino" d="M-3.5 -10.5L0 -14L3.5 -10.5M-3.5 8.5L0 12L3.5 8.5"/>`;
+  s += circ('fino', 0, -27, 1.6) + `<path class="som" d="M-8 26H8M-8 29H8M10 -28V28"/>`;
+  return s;
+}
+
+/** Credencial del taller con pinza, foto y código de barras. */
+export function credencial() {
+  let s = rect('pz', -27, -38, 54, 78, 5) + rect('fino', -23, -34, 46, 70, 3);
+  s += rect('pz', -8, -50, 16, 10, 2) + `<path class="pz" d="M-4 -50V-56A4 4 0 0 1 4 -56V-50"/>` + rect('fino', -9, -32, 18, 4, 2);
+  s += rect('fino', -17, -22, 18, 22, 2) + circ('fino', -8, -15, 4) + `<path class="fino" d="M-15 -1Q-8 -9 -1 -1"/>`;
+  s += `<path class="fino" d="M5 -18H18M5 -12H15M5 -6H17"/>` + texto(0, 12, 'TALLER', 7, ' letter-spacing="2"');
+  for (let i = 0; i < 16; i++) s += `<path class="${i % 3 ? 'som' : 'fino'}" d="M${-17 + i * 2.2} 20V31"/>`;
+  return s;
+}
+
+/** Linterna de mano encendida, con el haz de luz abriéndose. */
+export function linterna() {
+  let s = `<path class="pz" d="M-52 -9H8L22 -16V16L8 9H-52Q-58 9 -58 3V-3Q-58 -9 -52 -9Z"/>`;
+  s += `<path class="pz" d="M22 -16Q27 0 22 16"/><path class="fino" d="M19 -12Q23 0 19 12"/>`;
+  for (const x of [-44, -38, -32, -26]) s += `<path class="fino" d="M${x} -9V9"/>`;
+  s += rect('pz', -12, -13, 12, 4, 1.5) + `<path class="som" d="M-52 5H6M8 -8L20 -13"/>`;
+  s += `<path class="fino" d="M-58 -3H-62V3H-58"/>`;
+  for (const [y0, y1] of [[-13, -40], [-6, -16], [0, 8], [6, 32], [13, 46]]) s += `<path class="som" d="M30 ${y0}L92 ${y1}"/>`;
+  return s;
+}
+
+/** Calibrador pie de rey: regla graduada, mordazas y nonio deslizante. */
+export function calibrador(L = 160) {
+  const x0 = -L / 2, x1 = L / 2;
+  let s = rect('pz', x0, -7, L, 14, 2);
+  for (let x = x0 + 22, i = 0; x < x1 - 4; x += 4, i++) s += `<path class="${i % 5 ? 'som' : 'fino'}" d="M${f(x)} -7V${i % 5 ? -3 : -1}"/>`;
+  s += `<path class="pz" d="M${x0} 7V40L${x0 + 6} 46L${x0 + 12} 40V7M${x0} -7V-24L${x0 + 6} -24L${x0 + 9} -7"/>`;
+  const xc = x0 + 54;
+  s += `<path class="pz" d="M${xc} -11H${xc + 44}V11H${xc}Z"/><path class="pz" d="M${xc} 11V40L${xc - 6} 46L${xc - 12} 40V11M${xc + 3} -11V-24L${xc - 3} -24L${xc - 6} -11"/>`;
+  for (let i = 0; i < 9; i++) s += `<path class="fino" d="M${f(xc + 4 + i * 4.3)} 11V${i % 5 ? 7 : 5}"/>`;
+  s += rect('fino', xc + 16, -5, 18, 10, 1.5) + circ('pz', xc + 30, 15, 4) + `<path class="som" d="M${x1 - 30} 7V10H${x1 + 18}"/>`;
+  return s;
+}
+
+/** Lima plana con mango, para retocar el corte de una llave. */
+export function lima(L = 130) {
+  const x0 = -L / 2;
+  let s = `<path class="pz" d="M${x0} -6Q${x0 - 4} 0 ${x0} 6H${x0 + 44}V-6Z"/>`;
+  for (const x of [x0 + 10, x0 + 20, x0 + 30]) s += `<path class="fino" d="M${x} -6V6"/>`;
+  s += rect('pz', x0 + 44, -4.5, 6, 9, 1) + `<path class="pz" d="M${x0 + 50} -4H${L / 2 - 6}L${L / 2} 0L${L / 2 - 6} 4H${x0 + 50}"/>`;
+  for (let x = x0 + 54; x < L / 2 - 6; x += 4) s += `<path class="som" d="M${x} -4L${x + 3} 4"/>`;
+  return s;
+}
+
+/** Juego de pines del bombín: perno de llave, perno superior y muelle de cada cámara. */
+export function pinesBombin() {
+  let s = '';
+  [[0, 22], [16, 14], [32, 26], [48, 18]].forEach(([x, k]) => {
+    s += `<path class="pz" d="M${x - 3.5} 8V${8 + k}L${x} ${12 + k}L${x + 3.5} ${8 + k}V8Z"/>`;
+    s += rect('pz', x - 3.5, -10, 7, 16, 1.5);
+    let d = `M${x - 3} -12`;
+    for (let i = 0; i < 6; i++) d += `L${x + (i % 2 ? -3 : 3)} ${-14 - i * 3}`;
+    s += `<path class="fino" d="${d}"/>`;
+  });
+  return `<g transform="translate(-24 0)">${s}</g>`;
+}
+
+/** Letrero colgante «ABIERTO» con su cordón: el taller vuelve a estar disponible. */
+export function letreroAbierto() {
+  let s = `<path class="fino" d="M-30 -24L0 -70L30 -24"/>` + circ('pz', 0, -70, 3.5);
+  s += rect('pz', -50, -24, 100, 44, 6) + rect('fino', -45, -19, 90, 34, 4);
+  for (const x of [-30, 30]) s += circ('pz', x, -24, 2.6);
+  s += texto(0, 3.5, 'ABIERTO', 14, ' letter-spacing="3"');
+  return s + `<path class="som" d="M-40 14H40"/>`;
+}
+
+/** Buzón con la bandera levantada: el correo con el enlace ya llegó. */
+export function buzon() {
+  let s = `<path class="pz" d="M-34 -6Q-34 -30 -10 -30H14Q34 -30 34 -6V20H-34Z"/>`;
+  s += `<path class="fino" d="M-10 -30Q14 -30 14 -6V20M-28 -6H8"/>` + rect('pz', -6, 20, 12, 46, 1.5);
+  s += `<path class="pz" d="M24 -2V-38H40V-28H28"/>` + circ('fino', 24, -2, 2.4);
+  s += `<path class="som" d="M-22 20V0M-28 66H28"/>` + sobre(30, 18).replace(/<rect/, '<rect transform="translate(-14 -14)"').replace(/class="pz" d="M/, 'class="fino" transform="translate(-14 -14)" d="M');
+  return s;
+}
+
+/** Candado cerrado: la cuenta queda protegida con la contraseña nueva. */
+export function candadoCerrado() {
+  let s = `<path class="pz" d="M-16 -6V-22A16 16 0 0 1 16 -22V-6"/><path class="fino" d="M-10 -6V-22A10 10 0 0 1 10 -22V-6"/>`;
+  s += rect('pz', -26, -6, 52, 44, 7) + rect('fino', -21, -1, 42, 34, 5);
+  s += circ('pz', 0, 12, 5) + `<path class="pz" d="M-2.5 16L-4 25H4L2.5 16"/>`;
+  return s + `<path class="som" d="M18 -2V34M14 -2V34"/>`;
+}
+
+/** Bombín de cerradura en vista lateral, con sus cámaras y la leva. */
+export function bombinEuro() {
+  let s = `<path class="pz" d="M-60 -12H60V12H14V26A14 14 0 0 1 -14 26V12H-60Z"/>`;
+  s += circ('pz', -60, 0, 12) + circ('fino', -60, 0, 6) + `<path class="pz" d="M-62 -4H-58V4H-62Z"/>`;
+  for (let x = -46; x <= 40; x += 14) s += `<path class="fino" d="M${x} -12V6"/>` + circ('som', x, 9, 2);
+  s += rect('pz', -6, 12, 12, 10, 2) + circ('fino', 0, 26, 4);
+  return s + `<path class="som" d="M-56 8H56"/>`;
+}
+
 // Bajo la lista de pasos del panel: más pequeño y abajo que el motor del login.
 const HEROE_X = 522, HEROE_Y = 690;
 const heroe = (pieza, k) => `<g transform="translate(${HEROE_X} ${HEROE_Y}) scale(${k})">${pieza}</g>`;
@@ -196,22 +299,33 @@ export const heroeRestablecer = () =>
   `<g transform="translate(0 42)"><g transform="translate(-118 -128) rotate(47)">${llaveAuto()}</g>` +
   `<path class="eje" d="M14 13L49 51"/><g transform="translate(90 95)">${switchEncendido()}</g></g>`;
 
-/** Plano de la marca para «recuperar contraseña» (viewBox 720×900). */
+/** Plano de la marca para «recuperar contraseña» (viewBox 720×900): lo que se usa para volver a entrar. */
 export const escenaRecuperar = () => [
   ubicar(566, 112, -14, sobre(), 0.55),
   ubicar(602, 262, 14, llavero(), 0.7),
-  ubicar(150, 704, -30, llaveCasa(70), 0.75),
-  ubicar(236, 652, -62, perno(88, 16), 0.6),
-  ubicar(214, 786, -16, tuerca(22, 13), 0.75),
+  ubicar(150, 676, -18, controlPorton(), 0.75),
+  ubicar(252, 642, 12, credencial(), 0.65),
+  ubicar(196, 790, -10, linterna(), 0.7),
   heroe(heroeRecuperar(), 0.72),
 ].join('');
 
-/** Plano de la marca para «restablecer contraseña» (viewBox 720×900). */
+/** Plano de la marca para «restablecer contraseña» (viewBox 720×900): lo que se usa para hacer una llave nueva. */
 export const escenaRestablecer = () => [
   ubicar(572, 106, -32, llaveCasa(78, false), 0.6),
   ubicar(616, 262, 26, muelle(), 0.7),
-  ubicar(146, 700, 0, engranaje(14, 38, 32), 0.75),
-  ubicar(236, 652, -62, perno(88, 16), 0.6),
-  ubicar(214, 786, -16, tuerca(22, 13), 0.75),
+  ubicar(196, 660, -24, calibrador(), 0.7),
+  ubicar(158, 778, -38, lima(), 0.65),
+  ubicar(268, 776, 0, pinesBombin(), 0.7),
   heroe(heroeRestablecer(), 0.68),
+].join('');
+
+/** Panel del formulario para cada pantalla (viewBox 720×900): sustituyen a la bujía y el pistón del login. */
+export const formularioRecuperar = () => [
+  ubicar(632, 84, 6, letreroAbierto(), 0.6),
+  ubicar(74, 808, 0, buzon(), 0.6),
+].join('');
+
+export const formularioRestablecer = () => [
+  ubicar(664, 74, 18, candadoCerrado(), 0.6),
+  ubicar(82, 832, 40, bombinEuro(), 0.6),
 ].join('');

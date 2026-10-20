@@ -1,7 +1,9 @@
 <script setup>
 import { assetUrl } from '../../../shared/utils/assetUrl';
 import { escenaMarca, escenaFormulario } from '../utils/piezasPlano';
-import { escenaRecuperar, escenaRestablecer, heroeRecuperar, heroeRestablecer } from '../utils/piezasAcceso';
+import {
+  escenaRecuperar, escenaRestablecer, heroeRecuperar, heroeRestablecer, formularioRecuperar, formularioRestablecer,
+} from '../utils/piezasAcceso';
 
 // Marco común de las pantallas públicas de acceso: panel de marca con el plano técnico
 // y tarjeta con ranura. El mensaje principal es lo único que se ve en móvil.
@@ -11,13 +13,13 @@ const props = defineProps({
 });
 
 const ESCENAS = {
-  recuperar: { piezas: escenaRecuperar, heroe: heroeRecuperar },
-  restablecer: { piezas: escenaRestablecer, heroe: heroeRestablecer },
+  recuperar: { piezas: escenaRecuperar, heroe: heroeRecuperar, formulario: formularioRecuperar },
+  restablecer: { piezas: escenaRestablecer, heroe: heroeRestablecer, formulario: formularioRestablecer },
 };
 const propia = ESCENAS[props.escena] || null;
 const planoMarca = propia ? propia.piezas() : escenaMarca();
 const heroeMovil = propia ? propia.heroe() : '';
-const planoFormulario = escenaFormulario();
+const planoFormulario = propia ? propia.formulario() : escenaFormulario();
 </script>
 
 <template>
