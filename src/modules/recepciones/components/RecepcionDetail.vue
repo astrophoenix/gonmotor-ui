@@ -100,7 +100,7 @@ const ETIQUETA = 'text-xs font-medium text-gray-500 dark:text-gray-400';
 const VALOR = 'mt-0.5 text-sm font-semibold text-gray-900 dark:text-white';
 const CONTADOR = 'px-2 py-0.5 text-xs font-medium rounded-sm tabular-nums';
 const CONTADOR_NEUTRO = 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
-const ENLACE = 'hover:text-brand-coral';
+const ENLACE = 'hover:text-accent-500 dark:hover:text-accent-400';
 
 const PASOS = [
   { key: 'informacion', label: 'Ingreso', icon: Notebook },
@@ -1284,7 +1284,7 @@ async function confirmarFirma() {
         </p>
         <div>
           <div class="flex items-center justify-between gap-2 mb-2">
-            <p class="text-sm font-medium text-gray-900 dark:text-white">Firma del cliente <span class="text-accent-500">*</span></p>
+            <p class="text-sm font-medium text-gray-900 dark:text-white">Firma del cliente <span class="text-accent-500 dark:text-accent-400">*</span></p>
             <button
               v-if="firmaClienteData"
               type="button"

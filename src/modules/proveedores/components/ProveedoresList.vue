@@ -326,7 +326,7 @@ onMounted(async () => {
       <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
         <td class="px-4 py-3 whitespace-nowrap">
           <a :href="`/crud/proveedores/ver/?id=${encodeURIComponent(item.id)}`"
-            class="inline-flex items-center gap-1.5 font-medium text-primary-600 hover:text-brand-coral dark:text-primary-400">
+            class="inline-flex items-center gap-1.5 font-medium text-primary-600 hover:text-accent-500 dark:hover:text-accent-400 dark:text-primary-400">
           {{ item.identificacion }}
           </a>
           <span class="mt-1 flex items-center gap-1 text-sm font-normal text-body text-gray-900">

@@ -307,7 +307,7 @@ onMounted(async () => {
         <td class="px-4 py-3 whitespace-nowrap">
           <a
             :href="`/crud/empleados/ver/?id=${encodeURIComponent(item.id)}`"
-            class="inline-flex items-center gap-1.5 font-medium text-primary-600 hover:text-brand-coral dark:text-primary-400"
+            class="inline-flex items-center gap-1.5 font-medium text-primary-600 hover:text-accent-500 dark:hover:text-accent-400 dark:text-primary-400"
           >
             {{ item.user?.identificacion || '—' }}
           </a>

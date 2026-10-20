@@ -1142,7 +1142,7 @@ onMounted(async () => {
           <Alert v-if="nuevoRolErrors.general" type="error" :message="nuevoRolErrors.general" dismissible @dismiss="nuevoRolErrors.general = ''" />
           <div class="grid grid-cols-1 gap-4">
             <div>
-              <label for="rol-nombre" class="block mb-1 text-sm font-medium text-heading dark:text-white">Nombre <span class="text-accent-500">*</span></label>
+              <label for="rol-nombre" class="block mb-1 text-sm font-medium text-heading dark:text-white">Nombre <span class="text-accent-500 dark:text-accent-400">*</span></label>
               <input
                 id="rol-nombre"
                 v-model="nuevoRol.nombre"

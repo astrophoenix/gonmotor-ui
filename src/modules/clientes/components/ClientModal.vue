@@ -543,14 +543,14 @@ watch(vehiculos, (list) => {
                 </div>
                 <div>
                   <label for="modal_identificacion" class="flex items-center justify-between mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                    <span>Número de identificación <span class="text-accent-500">*</span></span>
+                    <span>Número de identificación <span class="text-accent-500 dark:text-accent-400">*</span></span>
                     <span v-if="largoIdentificacion" class="text-xs font-normal tabular-nums text-gray-400">{{ (form.identificacion || '').length }}/{{ largoIdentificacion }}</span>
                   </label>
                   <input id="modal_identificacion" v-model="form.identificacion" required :maxlength="largoIdentificacion || 20" :inputmode="largoIdentificacion ? 'numeric' : 'text'" :placeholder="form.tipo_identificacion === 'R' ? '13 dígitos' : (form.tipo_identificacion === 'C' ? '10 dígitos' : '')" :class="inputClass('identificacion', 'font-mono tracking-wider placeholder:font-sans placeholder:tracking-normal')">
                   <p v-if="clientErrors.identificacion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.identificacion }}</p>
                 </div>
                 <div>
-                  <label for="modal_nombre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre o razón social <span class="text-accent-500">*</span></label>
+                  <label for="modal_nombre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre o razón social <span class="text-accent-500 dark:text-accent-400">*</span></label>
                   <input id="modal_nombre" v-model="form.nombre" required maxlength="200" placeholder="Como aparece en la factura" :class="inputClass('nombre')" @blur="form.nombre = recortarEspacios(form.nombre)">
                   <p v-if="clientErrors.nombre" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.nombre }}</p>
                 </div>
@@ -565,7 +565,7 @@ watch(vehiculos, (list) => {
               </h4>
               <div class="space-y-4">
                 <div>
-                  <label for="modal_telefono" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Teléfono <span class="text-accent-500">*</span></label>
+                  <label for="modal_telefono" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Teléfono <span class="text-accent-500 dark:text-accent-400">*</span></label>
                   <div class="relative">
                     <Phone class="absolute w-4 h-4 text-gray-400 -translate-y-1/2 pointer-events-none top-1/2 start-3" />
                     <input id="modal_telefono" v-model="form.telefono" type="tel" maxlength="15" placeholder="0991234567" :class="inputClass('telefono', 'ps-9 tabular-nums')">
@@ -574,7 +574,7 @@ watch(vehiculos, (list) => {
                   <p v-else class="mt-2 text-xs text-gray-500 dark:text-gray-400">Lo usamos para los recordatorios por WhatsApp.</p>
                 </div>
                 <div>
-                  <label for="modal_email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Correo electrónico <span class="text-accent-500">*</span></label>
+                  <label for="modal_email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Correo electrónico <span class="text-accent-500 dark:text-accent-400">*</span></label>
                   <div class="relative">
                     <Mail class="absolute w-4 h-4 text-gray-400 -translate-y-1/2 pointer-events-none top-1/2 start-3" />
                     <input id="modal_email" v-model="form.email" type="email" required maxlength="100" placeholder="cliente@correo.com" :class="inputClass('email', 'ps-9')">
@@ -582,7 +582,7 @@ watch(vehiculos, (list) => {
                   <p v-if="clientErrors.email" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.email }}</p>
                 </div>
                 <div>
-                  <label for="modal_direccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Dirección <span class="text-accent-500">*</span></label>
+                  <label for="modal_direccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Dirección <span class="text-accent-500 dark:text-accent-400">*</span></label>
                   <div class="relative">
                     <MapPin class="absolute w-4 h-4 text-gray-400 -translate-y-1/2 pointer-events-none top-1/2 start-3" />
                     <input id="modal_direccion" v-model="form.direccion" maxlength="150" placeholder="Calle, número y ciudad" :class="inputClass('direccion', 'ps-9')">
@@ -675,13 +675,13 @@ watch(vehiculos, (list) => {
                     <p class="flex items-center gap-1.5 mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"><IdCard class="w-3.5 h-3.5" /> Identificación</p>
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                       <div>
-                        <label :for="`modal_cli_veh${index}_placa`" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Placa <span class="text-accent-500">*</span></label>
+                        <label :for="`modal_cli_veh${index}_placa`" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Placa <span class="text-accent-500 dark:text-accent-400">*</span></label>
                         <input :id="`modal_cli_veh${index}_placa`" v-model="vehiculo.placa" maxlength="10" placeholder="ABC-1234" :class="vehiculoClass(vehiculo, 'placa', 'font-mono text-base font-semibold uppercase tracking-widest placeholder:font-normal')">
                         <p v-if="errorVehiculo(vehiculo, 'placa')" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ errorVehiculo(vehiculo, 'placa') }}</p>
                       </div>
                       <div>
                         <label :for="`modal_cli_veh${index}_vin`" class="flex items-center justify-between mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                          <span>VIN / Chasis <span class="text-accent-500">*</span></span>
+                          <span>VIN / Chasis <span class="text-accent-500 dark:text-accent-400">*</span></span>
                           <span class="text-xs font-normal tabular-nums text-gray-400">{{ (vehiculo.vin || '').length }}/17</span>
                         </label>
                         <input :id="`modal_cli_veh${index}_vin`" v-model="vehiculo.vin" maxlength="17" placeholder="17 caracteres" :class="vehiculoClass(vehiculo, 'vin', 'font-mono uppercase placeholder:normal-case placeholder:font-sans')">
@@ -698,12 +698,12 @@ watch(vehiculos, (list) => {
                     <p class="flex items-center gap-1.5 mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"><CarFront class="w-3.5 h-3.5" /> Características</p>
                     <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
                       <div>
-                        <label :for="`modal_cli_veh${index}_marca`" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Marca <span class="text-accent-500">*</span></label>
+                        <label :for="`modal_cli_veh${index}_marca`" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Marca <span class="text-accent-500 dark:text-accent-400">*</span></label>
                         <input :id="`modal_cli_veh${index}_marca`" v-model="vehiculo.marca" maxlength="50" placeholder="Toyota" :class="vehiculoClass(vehiculo, 'marca')" @blur="vehiculo.marca = recortarEspacios(vehiculo.marca)">
                         <p v-if="errorVehiculo(vehiculo, 'marca')" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ errorVehiculo(vehiculo, 'marca') }}</p>
                       </div>
                       <div>
-                        <label :for="`modal_cli_veh${index}_modelo`" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Modelo <span class="text-accent-500">*</span></label>
+                        <label :for="`modal_cli_veh${index}_modelo`" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Modelo <span class="text-accent-500 dark:text-accent-400">*</span></label>
                         <input :id="`modal_cli_veh${index}_modelo`" v-model="vehiculo.modelo" maxlength="50" placeholder="Hilux" :class="vehiculoClass(vehiculo, 'modelo')" @blur="vehiculo.modelo = recortarEspacios(vehiculo.modelo)">
                         <p v-if="errorVehiculo(vehiculo, 'modelo')" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ errorVehiculo(vehiculo, 'modelo') }}</p>
                       </div>
@@ -751,7 +751,7 @@ watch(vehiculos, (list) => {
                   <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
                     <div>
                       <p class="flex items-center h-8 gap-1.5 mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"><Gauge class="w-3.5 h-3.5" /> Kilometraje y foto</p>
-                      <label :for="`modal_cli_veh${index}_km`" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kilometraje actual <span class="text-accent-500">*</span></label>
+                      <label :for="`modal_cli_veh${index}_km`" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kilometraje actual <span class="text-accent-500 dark:text-accent-400">*</span></label>
                       <div class="relative">
                         <input :id="`modal_cli_veh${index}_km`" v-model="vehiculo.kilometraje_actual" type="number" min="0" :class="vehiculoClass(vehiculo, 'kilometraje_actual', 'pe-12 tabular-nums')">
                         <span class="absolute inset-y-0 flex items-center text-sm text-gray-500 pointer-events-none end-0 pe-3 dark:text-gray-400">km</span>
@@ -805,7 +805,7 @@ watch(vehiculos, (list) => {
 
       <!-- Pie fijo -->
       <div class="flex flex-col-reverse gap-3 border-t border-gray-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:border-gray-700">
-        <p class="hidden text-xs text-gray-500 sm:block dark:text-gray-400"><span class="text-accent-500">*</span> Campos obligatorios</p>
+        <p class="hidden text-xs text-gray-500 sm:block dark:text-gray-400"><span class="text-accent-500 dark:text-accent-400">*</span> Campos obligatorios</p>
         <div class="flex items-center justify-end gap-3">
           <button
             type="button"

@@ -351,7 +351,7 @@ onMounted(async () => {
         <td class="px-4 py-3 whitespace-nowrap">
           <a
             :href="`/crud/vehiculos/ver/?id=${encodeURIComponent(item.id)}`"
-            class="font-medium text-gray-800 hover:text-brand-coral dark:text-white"
+            class="font-medium text-gray-800 hover:text-accent-500 dark:hover:text-accent-400 dark:text-white"
           >{{ formatPlate(item.placa) }}</a>
         </td>
         <td class="px-4 py-3 text-gray-800 whitespace-nowrap dark:text-white">{{ item.marca }}</td>

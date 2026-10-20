@@ -63,7 +63,11 @@
     --color-brand-900: #111C2E;
     --color-brand-950: #0B1220;
 
-    /* ===== Acento: rojo ===== */
+    /* ===== Rojo Gonmotor (único rojo de marca) =====
+       accent-500 sobre fondos claros (logo, detalles, botón del login);
+       accent-400 es el mismo rojo para fondos navy/oscuros: sidebar, panel del
+       login y modo oscuro (`dark:`). accent-400 nunca va sobre blanco y
+       accent-500 nunca sobre navy. Errores y borrados usan `danger`, no este rojo. */
     --color-accent-50: #FEF2F3;
     --color-accent-100: #FDE1E4;
     --color-accent-400: #FF4D63;
@@ -86,9 +90,6 @@
 
     /* ===== Login: tokens del rediseño ===== */
     --color-brand-navy: #111C2E;
-    --color-brand-red: #C8102E;
-    --color-brand-red-hover: #B30D25;
-    --color-brand-coral: #FF4D63;
     --color-brand-ink: #1E293B;
     --color-brand-ink-soft: #475569;
     --color-brand-line: #CBD5E1;
@@ -334,12 +335,12 @@
    Sin capa (@layer) a propósito: debe ganar a las utilidades de hover/bg. */
 #sidebar .is-current {
   background-color: var(--sb-active);
-  box-shadow: inset 3px 0 0 var(--color-brand-coral);
+  box-shadow: inset 3px 0 0 var(--color-accent-400);
   color: #fff;
   font-weight: 600;
 }
 #sidebar .is-current .sidebar-icon,
-#sidebar .is-current .sidebar-subicon { color: var(--color-brand-coral); }
+#sidebar .is-current .sidebar-subicon { color: var(--color-accent-400); }
 /* Con el menú abierto, el grupo solo se resalta con el icono: la barra y el
    fondo se quedan en la página activa del submenú. */
 #sidebar .sidebar-group.is-current[aria-expanded="true"] {
@@ -390,7 +391,7 @@
   }
   html.sidebar-collapsed #sidebar .sidebar-group.is-current[aria-expanded="true"] {
     background-color: var(--sb-active);
-    box-shadow: inset 3px 0 0 var(--color-brand-coral);
+    box-shadow: inset 3px 0 0 var(--color-accent-400);
   }
 
   /* Ajuste de navbar y main content */

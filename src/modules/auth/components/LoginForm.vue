@@ -57,7 +57,7 @@ const semana = computed(() => {
 
 const hasError = computed(() => Boolean(errorMessage.value));
 const CAMPO_NORMAL = 'border-brand-200 focus:border-brand-900 focus:ring-brand-focus-ring dark:border-brand-600 dark:focus:border-brand-300';
-const CAMPO_ERROR = 'border-brand-red focus:border-brand-red focus:ring-brand-red/15';
+const CAMPO_ERROR = 'border-accent-500 focus:border-accent-500 focus:ring-accent-500/15';
 
 // Variables para el flujo multi-empresa
 const showCompanyModal = ref(false);
@@ -204,7 +204,7 @@ async function confirmCompany() {
         <img :src="assetUrl('/images/login/isotipo-piston-negativo.svg')" alt="" class="h-11 w-11 lg:h-13 lg:w-13">
         <span>
           <span class="block text-[26px] font-extrabold leading-[1] tracking-tight lg:text-[31px]">
-            gon<span class="text-brand-coral">motor</span>
+            gon<span class="text-accent-400">motor</span>
           </span>
           <span class="mt-1.5 block text-[9.5px] font-bold tracking-[0.32em] text-brand-300 lg:text-[11px]">GESTIÓN DE TALLERES</span>
         </span>
@@ -224,7 +224,7 @@ async function confirmCompany() {
             :key="beneficio"
             class="mt-3.5 flex items-center gap-3 text-base font-semibold"
           >
-            <span class="h-2 w-2 shrink-0 rounded-full bg-brand-coral" aria-hidden="true"></span>
+            <span class="h-2 w-2 shrink-0 rounded-full bg-accent-400" aria-hidden="true"></span>
             {{ beneficio }}
           </li>
         </ul>
@@ -323,7 +323,7 @@ async function confirmCompany() {
               </label>
               <a
                 href="/authentication/forgot-password/"
-                class="whitespace-nowrap font-semibold text-brand-500 underline underline-offset-[3px] transition-colors hover:text-brand-red-hover focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-200 dark:hover:text-brand-coral"
+                class="whitespace-nowrap font-semibold text-brand-500 underline underline-offset-[3px] transition-colors hover:text-accent-600 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-200 dark:hover:text-accent-400"
               >
                 ¿Olvidaste tu contraseña?
               </a>
@@ -333,7 +333,7 @@ async function confirmCompany() {
             <button
               type="submit"
               :disabled="authStore.isLoading"
-              class="mt-6 inline-flex h-14 w-full items-center justify-center gap-3 rounded-[10px] bg-brand-red px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(200,16,46,0.7)] transition-colors hover:bg-brand-red-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-red/40 disabled:cursor-not-allowed disabled:opacity-60"
+              class="mt-6 inline-flex h-14 w-full items-center justify-center gap-3 rounded-[10px] bg-accent-500 px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(200,16,46,0.7)] transition-colors hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-500/40 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <template v-if="authStore.isLoading">
                 <Loader2 class="h-5 w-5 animate-spin" aria-hidden="true" />
@@ -351,7 +351,7 @@ async function confirmCompany() {
             ¿No puedes entrar?
             <a
               href="#"
-              class="font-bold text-brand-500 underline underline-offset-[3px] transition-colors hover:text-brand-red-hover focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-200 dark:hover:text-brand-coral"
+              class="font-bold text-brand-500 underline underline-offset-[3px] transition-colors hover:text-accent-600 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-200 dark:hover:text-accent-400"
             >
               Habla con soporte
             </a>
@@ -362,7 +362,7 @@ async function confirmCompany() {
         <div class="flex flex-col items-start gap-3 border-t border-brand-100 px-5 pb-4.5 pt-4 dark:border-brand-700 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-9.5 sm:pb-5 sm:pt-4.5">
           <div>
             <p class="text-[30px] font-extrabold leading-[1] tracking-[-0.02em] tabular-nums">
-              {{ horas }}<span class="mx-px text-brand-red dark:text-brand-coral">:</span>{{ minutos }}
+              {{ horas }}<span class="mx-px text-accent-500 dark:text-accent-400">:</span>{{ minutos }}
             </p>
             <p class="mt-1.5 whitespace-nowrap text-[13px] font-medium text-brand-400 dark:text-brand-300">{{ fechaLarga }}</p>
           </div>
@@ -406,7 +406,7 @@ async function confirmCompany() {
             v-if="esAdminSaas"
             class="inline-flex h-7 items-center gap-1.5 rounded-full border border-brand-100 bg-brand-50 pe-3 ps-2.5 text-[12.5px] font-bold text-brand-500 dark:border-brand-700 dark:bg-brand-950 dark:text-brand-200"
           >
-            <ShieldCheck class="h-[15px] w-[15px] text-brand-red dark:text-brand-coral" aria-hidden="true" />
+            <ShieldCheck class="h-[15px] w-[15px] text-accent-500 dark:text-accent-400" aria-hidden="true" />
             Administrador del sistema
           </span>
 
@@ -522,7 +522,7 @@ async function confirmCompany() {
           <button
             v-if="esAdminSaas && pasoModal !== 'opciones'"
             type="button"
-            class="inline-flex items-center gap-1.5 text-sm font-bold text-brand-500 underline underline-offset-[3px] transition-colors hover:text-brand-red-hover focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-200 dark:hover:text-brand-coral"
+            class="inline-flex items-center gap-1.5 text-sm font-bold text-brand-500 underline underline-offset-[3px] transition-colors hover:text-accent-600 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-200 dark:hover:text-accent-400"
             @click="pasoModal = 'opciones'"
           >
             <ArrowLeft class="h-4 w-4" aria-hidden="true" />
@@ -531,7 +531,7 @@ async function confirmCompany() {
           <button
             v-else
             type="button"
-            class="inline-flex items-center gap-1.5 text-sm font-bold text-brand-500 underline underline-offset-[3px] transition-colors hover:text-brand-red-hover focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-200 dark:hover:text-brand-coral"
+            class="inline-flex items-center gap-1.5 text-sm font-bold text-brand-500 underline underline-offset-[3px] transition-colors hover:text-accent-600 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-200 dark:hover:text-accent-400"
             @click="cerrarModal"
           >
             <ArrowLeft class="h-4 w-4" aria-hidden="true" />

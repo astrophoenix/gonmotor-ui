@@ -15,7 +15,7 @@ const props = defineProps({
     <div class="flex flex-col gap-3 px-4 py-3 border-b border-default-medium sm:flex-row sm:items-center sm:justify-between">
       <div class="min-w-0">
         <h2 class="flex items-center gap-2 text-lg font-semibold text-heading">
-          <PackageSearch class="w-5 h-5 text-accent-500" aria-hidden="true" />
+          <PackageSearch class="w-5 h-5 text-accent-500 dark:text-accent-400" aria-hidden="true" />
           Alertas de inventario
         </h2>
         <p class="mt-0.5 text-xs text-body">

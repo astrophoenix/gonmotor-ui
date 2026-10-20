@@ -866,7 +866,7 @@ function inputClass(campo) {
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
               <!-- Cliente -->
               <div>
-                <label for="cita_cliente" :class="LABEL">Cliente <span class="text-accent-500">*</span></label>
+                <label for="cita_cliente" :class="LABEL">Cliente <span class="text-accent-500 dark:text-accent-400">*</span></label>
                 <ClienteSearchSelect
                   id="cita_cliente"
                   v-model="clientSearch"
@@ -914,7 +914,7 @@ function inputClass(campo) {
 
               <!-- Vehículo -->
               <div>
-                <label for="cita_vehiculo" :class="LABEL">Vehículo <span class="text-accent-500">*</span></label>
+                <label for="cita_vehiculo" :class="LABEL">Vehículo <span class="text-accent-500 dark:text-accent-400">*</span></label>
                 <VehiculoSearchSelect
                   id="cita_vehiculo"
                   v-model="vehicleSearch"
@@ -979,11 +979,11 @@ function inputClass(campo) {
             </h4>
             <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
               <div class="col-span-1">
-                <label for="cita_fecha" :class="LABEL">Fecha <span class="text-accent-500">*</span></label>
+                <label for="cita_fecha" :class="LABEL">Fecha <span class="text-accent-500 dark:text-accent-400">*</span></label>
                 <input id="cita_fecha" v-model="form.fecha_cita" type="date" :disabled="esFinal" :class="inputClass('fecha_cita')" @input="limpiarError('fecha_cita')">
               </div>
               <div class="col-span-1">
-                <label for="cita_hora" :class="LABEL">Hora <span class="text-accent-500">*</span></label>
+                <label for="cita_hora" :class="LABEL">Hora <span class="text-accent-500 dark:text-accent-400">*</span></label>
                 <input id="cita_hora" v-model="form.hora_cita" type="time" step="900" :disabled="esFinal" :class="inputClass('hora_cita')" @input="limpiarError('hora_cita')">
               </div>
               <div class="col-span-2">
@@ -1005,7 +1005,7 @@ function inputClass(campo) {
             </p>
 
             <div class="mt-4">
-              <span id="cita_duracion_label" :class="LABEL">Duración estimada <span class="text-accent-500">*</span></span>
+              <span id="cita_duracion_label" :class="LABEL">Duración estimada <span class="text-accent-500 dark:text-accent-400">*</span></span>
               <div class="flex flex-wrap items-center gap-2" role="group" aria-labelledby="cita_duracion_label">
                 <button
                   v-for="d in DURACIONES"
@@ -1392,7 +1392,7 @@ function inputClass(campo) {
           Tienes cambios sin guardar. ¿Descartarlos?
         </p>
         <span v-else-if="soloLectura" class="hidden sm:block"></span>
-        <p v-else class="hidden text-xs text-gray-500 sm:block dark:text-gray-400"><span class="text-accent-500">*</span> Campos obligatorios</p>
+        <p v-else class="hidden text-xs text-gray-500 sm:block dark:text-gray-400"><span class="text-accent-500 dark:text-accent-400">*</span> Campos obligatorios</p>
 
         <div v-if="showDiscardWarning" class="flex items-center justify-end gap-3">
           <button

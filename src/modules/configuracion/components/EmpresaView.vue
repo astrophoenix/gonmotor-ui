@@ -235,7 +235,7 @@ const camposFicha = computed(() => [
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="md:col-span-2">
                   <label for="nombre_comercial" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                    Nombre comercial <span class="text-accent-500">*</span>
+                    Nombre comercial <span class="text-accent-500 dark:text-accent-400">*</span>
                   </label>
                   <input
                     id="nombre_comercial"
@@ -248,7 +248,7 @@ const camposFicha = computed(() => [
                 </div>
                 <div class="md:col-span-2">
                   <label for="razon_social" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                    Razón social <span class="text-accent-500">*</span>
+                    Razón social <span class="text-accent-500 dark:text-accent-400">*</span>
                   </label>
                   <input
                     id="razon_social"
@@ -261,7 +261,7 @@ const camposFicha = computed(() => [
                 </div>
                 <div>
                   <label for="ruc" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                    RUC <span class="text-accent-500">*</span>
+                    RUC <span class="text-accent-500 dark:text-accent-400">*</span>
                   </label>
                   <input
                     id="ruc"
@@ -275,7 +275,7 @@ const camposFicha = computed(() => [
                 </div>
                 <div>
                   <label for="telefono" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                    Teléfono <span class="text-accent-500">*</span>
+                    Teléfono <span class="text-accent-500 dark:text-accent-400">*</span>
                   </label>
                   <input
                     id="telefono"
@@ -289,7 +289,7 @@ const camposFicha = computed(() => [
                 </div>
                 <div class="md:col-span-2">
                   <label for="email_contacto" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                    Correo electrónico <span class="text-accent-500">*</span>
+                    Correo electrónico <span class="text-accent-500 dark:text-accent-400">*</span>
                   </label>
                   <input
                     id="email_contacto"

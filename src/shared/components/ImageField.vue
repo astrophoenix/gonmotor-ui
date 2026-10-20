@@ -305,7 +305,7 @@ defineExpose({ resetPreview, clearImage, hasImage, currentSrc });
     @drop.prevent="onDrop"
   >
     <p v-if="label || required" class="mb-2 text-sm font-medium text-heading">
-      {{ label }}<span v-if="required" class="text-accent-500">*</span>
+      {{ label }}<span v-if="required" class="text-accent-500 dark:text-accent-400">*</span>
     </p>
 
     <div

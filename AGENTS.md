@@ -42,9 +42,9 @@ Convenciones y estándares del proyecto. El backend Django vive en `../gonmotor-
 
 ## Paleta visual
 - Tokens canónicos en `@theme` de `src/style.css`; espejo en JS (`BRAND`) en `src/shared/config/branding.js` para canvas/SVG (ECharts, FullCalendar). Al cambiar la paleta hay que actualizar AMBOS.
-- `brand-*` = navy corporativo (`900 #111C2E`, `700 #1B2A44`, `500 #3A4F6E`, `300 #94A6BF`…). `accent-*` = rojo (`500 #C8102E`). `primary-*`/`primary-blue-*` (Flowbite legacy) están remapeados a navy.
+- `brand-*` = navy corporativo (`900 #111C2E`, `700 #1B2A44`, `500 #3A4F6E`, `300 #94A6BF`…). `accent-*` = **Rojo Gonmotor**, el único rojo de marca: `accent-500 #C8102E` sobre fondos claros y `accent-400 #FF4D63` (su versión «coral») solo sobre navy/oscuro: sidebar, panel del login, modo oscuro (`text-accent-500 dark:text-accent-400`). Nunca coral sobre blanco (contraste 3,2:1) ni `accent-500` sobre navy (2,9:1). Los tokens `brand-red`/`brand-coral` ya no existen. `primary-*`/`primary-blue-*` (Flowbite legacy) están remapeados a navy.
 - Semánticos: `info #2563EB` (azul, se mantiene en badges de estado y Alert info), `success #16A34A`, `warning #D97706`, `danger #DC2626`.
-- Regla de uso: botones primarios = navy (`brand-900`); el rojo `accent-500` solo para logo, indicador activo del sidebar y detalles; `danger` se reserva para acciones destructivas.
+- Regla de uso: botones primarios = navy (`brand-900`); el Rojo Gonmotor (`accent-*`) solo para logo, indicador activo del sidebar y detalles; `danger`/`red-*` de Tailwind se reservan para errores y acciones destructivas.
 - La migración de paleta está aplicada, pero los módulos todavía mezclan `gray-*` con la marca. Código nuevo debe usar `brand-*`/`accent-*`.
 
 ## Mejora de texto con IA (REUTILIZABLE)

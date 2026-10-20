@@ -472,13 +472,13 @@ watch(() => form.observaciones, (val) => {
               </h4>
               <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
-                  <label for="modal_veh_placa" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Placa <span class="text-accent-500">*</span></label>
+                  <label for="modal_veh_placa" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Placa <span class="text-accent-500 dark:text-accent-400">*</span></label>
                   <input id="modal_veh_placa" v-model="form.placa" required maxlength="10" placeholder="ABC-1234" :class="inputClass('placa', 'font-mono text-base font-semibold uppercase tracking-widest')">
                   <p v-if="vehicleErrors.placa" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.placa }}</p>
                 </div>
                 <div>
                   <label for="modal_veh_vin" class="flex items-center justify-between mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                    <span>VIN / Chasis <span class="text-accent-500">*</span></span>
+                    <span>VIN / Chasis <span class="text-accent-500 dark:text-accent-400">*</span></span>
                     <span class="text-xs font-normal tabular-nums text-gray-400">{{ (form.vin || '').length }}/17</span>
                   </label>
                   <input id="modal_veh_vin" v-model="form.vin" maxlength="17" placeholder="17 caracteres" :class="inputClass('vin', 'font-mono uppercase placeholder:normal-case placeholder:font-sans')">
@@ -499,12 +499,12 @@ watch(() => form.observaciones, (val) => {
               </h4>
               <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
                 <div>
-                  <label for="modal_veh_marca" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Marca <span class="text-accent-500">*</span></label>
+                  <label for="modal_veh_marca" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Marca <span class="text-accent-500 dark:text-accent-400">*</span></label>
                   <input id="modal_veh_marca" v-model="form.marca" required maxlength="50" placeholder="Toyota" :class="inputClass('marca')" @blur="form.marca = recortarEspacios(form.marca)">
                   <p v-if="vehicleErrors.marca" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.marca }}</p>
                 </div>
                 <div>
-                  <label for="modal_veh_modelo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Modelo <span class="text-accent-500">*</span></label>
+                  <label for="modal_veh_modelo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Modelo <span class="text-accent-500 dark:text-accent-400">*</span></label>
                   <input id="modal_veh_modelo" v-model="form.modelo" required maxlength="50" placeholder="Hilux" :class="inputClass('modelo')" @blur="form.modelo = recortarEspacios(form.modelo)">
                   <p v-if="vehicleErrors.modelo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.modelo }}</p>
                 </div>
@@ -603,7 +603,7 @@ watch(() => form.observaciones, (val) => {
                 <Gauge class="w-4 h-4" />
                 Kilometraje
               </h4>
-              <label for="modal_veh_km" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kilometraje actual <span class="text-accent-500">*</span></label>
+              <label for="modal_veh_km" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kilometraje actual <span class="text-accent-500 dark:text-accent-400">*</span></label>
               <div class="relative">
                 <input id="modal_veh_km" v-model="form.kilometraje_actual" type="number" min="0" :class="inputClass('kilometraje_actual', 'pe-12 tabular-nums')">
                 <span class="absolute inset-y-0 end-0 flex items-center pe-3 text-sm text-gray-500 pointer-events-none dark:text-gray-400">km</span>
@@ -640,7 +640,7 @@ watch(() => form.observaciones, (val) => {
 
       <!-- Pie fijo -->
       <div class="flex flex-col-reverse gap-3 border-t border-gray-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:border-gray-700">
-        <p class="hidden text-xs text-gray-500 sm:block dark:text-gray-400"><span class="text-accent-500">*</span> Campos obligatorios</p>
+        <p class="hidden text-xs text-gray-500 sm:block dark:text-gray-400"><span class="text-accent-500 dark:text-accent-400">*</span> Campos obligatorios</p>
         <div class="flex items-center justify-end gap-3">
           <button
             type="button"

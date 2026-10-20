@@ -1872,7 +1872,7 @@ onMounted(async () => {
           </h4>
           <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_0.7fr_1fr]">
             <div>
-              <label for="cliente" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente <span class="text-accent-500">*</span></label>
+              <label for="cliente" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente <span class="text-accent-500 dark:text-accent-400">*</span></label>
               <ClienteSearchSelect
                 id="cliente"
                 v-model="clienteSearch"
@@ -1904,7 +1904,7 @@ onMounted(async () => {
             </div>
 
             <div class="relative">
-              <label for="vehiculo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo <span class="text-accent-500">*</span></label>
+              <label for="vehiculo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo <span class="text-accent-500 dark:text-accent-400">*</span></label>
               <VehiculoSearchSelect
                 id="vehiculo"
                 v-model="vehiculoSearch"
@@ -1935,7 +1935,7 @@ onMounted(async () => {
             </div>
 
             <div class="relative">
-              <label for="asesor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Responsable <span class="text-accent-500">*</span></label>
+              <label for="asesor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Responsable <span class="text-accent-500 dark:text-accent-400">*</span></label>
               <EmpleadoSearchSelect
                 id="asesor"
                 v-model="recibidoPorSearch"
@@ -1967,7 +1967,7 @@ onMounted(async () => {
           </div>
           <div v-if="mostrarSucursal" class="mt-4 max-w-sm">
             <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-              Taller emisor <span class="text-accent-500">*</span>
+              Taller emisor <span class="text-accent-500 dark:text-accent-400">*</span>
             </label>
             <TallerSelect
               v-model="tallerSucursalId"
@@ -2045,14 +2045,14 @@ onMounted(async () => {
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label for="fecha_ingreso" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                        Fecha de ingreso <span class="text-accent-500">*</span>
+                        Fecha de ingreso <span class="text-accent-500 dark:text-accent-400">*</span>
                       </label>
                       <input id="fecha_ingreso" v-model="form.fecha_ingreso" type="datetime-local" :disabled="readOnly" :class="inputClass('fecha_ingreso')" />
                       <p v-if="formErrors.fecha_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.fecha_ingreso }}</p>
                     </div>
                     <div>
                       <label for="fecha_salida" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                        Fecha de salida <span v-if="esNoAceptada" class="text-accent-500">*</span>
+                        Fecha de salida <span v-if="esNoAceptada" class="text-accent-500 dark:text-accent-400">*</span>
                       </label>
                       <input id="fecha_salida" v-model="form.fecha_salida" type="datetime-local" :disabled="readOnly" :class="inputClass('fecha_salida')" />
                       <p v-if="formErrors.fecha_salida" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.fecha_salida }}</p>
@@ -2062,7 +2062,7 @@ onMounted(async () => {
                     </div>
                     <div>
                       <label for="tipo_recepcion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                        Tipo de recepción <span class="text-accent-500">*</span>
+                        Tipo de recepción <span class="text-accent-500 dark:text-accent-400">*</span>
                       </label>
                       <select id="tipo_recepcion" v-model="form.tipo_recepcion" :disabled="readOnly" :class="inputClass('tipo_recepcion')">
                         <option v-for="item in TIPOS_TRABAJO_OPCIONES" :key="item.value" :value="item.value">
@@ -2084,7 +2084,7 @@ onMounted(async () => {
                       <div class="flex items-center justify-between gap-2 mb-3">
                         <h4 :class="TITULO_SECCION">
                           <Wrench class="w-4 h-4" />
-                          <label for="motivo_ingreso">Motivo de ingreso <span class="text-accent-500">*</span></label>
+                          <label for="motivo_ingreso">Motivo de ingreso <span class="text-accent-500 dark:text-accent-400">*</span></label>
                         </h4>
                         <button
                           v-if="!readOnly"
@@ -2131,7 +2131,7 @@ onMounted(async () => {
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label for="kilometraje_ingreso" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                          Kilometraje <span v-if="!esNoAceptada" class="text-accent-500">*</span>
+                          Kilometraje <span v-if="!esNoAceptada" class="text-accent-500 dark:text-accent-400">*</span>
                         </label>
                         <div class="relative">
                           <input
@@ -2159,7 +2159,7 @@ onMounted(async () => {
                       </div>
                       <div>
                         <p id="nivel_combustible_label" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                          Combustible <span class="text-accent-500">*</span>
+                          Combustible <span class="text-accent-500 dark:text-accent-400">*</span>
                         </p>
                         <div id="nivel_combustible" role="radiogroup" aria-labelledby="nivel_combustible_label">
                           <div class="flex w-full gap-1 p-1 rounded bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:border-gray-600">
@@ -2199,7 +2199,7 @@ onMounted(async () => {
                       </label>
                       <div v-if="form.ingreso_en_grua" class="mt-3">
                         <label for="datos_grua" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                          Datos de la grúa / chófer <span class="text-accent-500">*</span>
+                          Datos de la grúa / chófer <span class="text-accent-500 dark:text-accent-400">*</span>
                         </label>
                         <input
                           id="datos_grua"
@@ -2665,7 +2665,7 @@ onMounted(async () => {
 
                   <div v-if="decisionCliente === 'no_acepta'" class="mt-5 p-4 rounded-lg bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:border-amber-700">
                     <label for="motivo_no_recepcion" class="block mb-2 text-sm font-medium text-amber-900 dark:text-amber-100">
-                      Motivo de no aceptación <span class="text-accent-500">*</span>
+                      Motivo de no aceptación <span class="text-accent-500 dark:text-accent-400">*</span>
                     </label>
                     <textarea
                       id="motivo_no_recepcion"

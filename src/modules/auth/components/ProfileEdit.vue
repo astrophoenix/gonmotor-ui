@@ -281,7 +281,7 @@ async function submitPassword() {
             <div class="grid grid-cols-6 gap-6">
               <div class="col-span-6 sm:col-span-3">
                 <label for="first_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                  Nombres <span class="text-accent-500">*</span>
+                  Nombres <span class="text-accent-500 dark:text-accent-400">*</span>
                 </label>
                 <input
                   id="first_name"
@@ -295,7 +295,7 @@ async function submitPassword() {
 
               <div class="col-span-6 sm:col-span-3">
                 <label for="last_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                  Apellidos <span class="text-accent-500">*</span>
+                  Apellidos <span class="text-accent-500 dark:text-accent-400">*</span>
                 </label>
                 <input
                   id="last_name"
@@ -308,7 +308,7 @@ async function submitPassword() {
               </div>
 
               <div class="col-span-6 sm:col-span-3">
-                <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Correo electrónico <span class="text-accent-500">*</span></label>
+                <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Correo electrónico <span class="text-accent-500 dark:text-accent-400">*</span></label>
                 <input
                   id="email"
                   :value="form.email"
@@ -320,7 +320,7 @@ async function submitPassword() {
               </div>
 
               <div class="col-span-6 sm:col-span-3">
-                <label for="username" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre de usuario <span class="text-accent-500">*</span></label>
+                <label for="username" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre de usuario <span class="text-accent-500 dark:text-accent-400">*</span></label>
                 <input
                   id="username"
                   :value="form.username"
@@ -374,7 +374,7 @@ async function submitPassword() {
         <form novalidate @submit.prevent="submitPassword">
           <div class="grid grid-cols-6 gap-6">
             <div class="col-span-6 sm:col-span-3">
-              <label for="current-password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contraseña actual <span class="text-accent-500">*</span></label>
+              <label for="current-password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contraseña actual <span class="text-accent-500 dark:text-accent-400">*</span></label>
               <div class="relative">
                 <input
                   :type="showCurrentPassword ? 'text' : 'password'"
@@ -405,7 +405,7 @@ async function submitPassword() {
               </p>
             </div>
             <div class="col-span-6 sm:col-span-3">
-              <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nueva contraseña <span class="text-accent-500">*</span></label>
+              <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nueva contraseña <span class="text-accent-500 dark:text-accent-400">*</span></label>
               <div class="relative">
                 <input
                   :type="showNewPassword ? 'text' : 'password'"
@@ -431,7 +431,7 @@ async function submitPassword() {
             </div>
 
             <div class="col-span-6 sm:col-span-3">
-              <label for="confirm-password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Confirmar contraseña <span class="text-accent-500">*</span></label>
+              <label for="confirm-password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Confirmar contraseña <span class="text-accent-500 dark:text-accent-400">*</span></label>
               <div class="relative">
                 <input
                   :type="showConfirmPassword ? 'text' : 'password'"

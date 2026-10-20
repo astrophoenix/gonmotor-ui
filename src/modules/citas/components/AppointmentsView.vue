@@ -121,7 +121,7 @@ onUnmounted(() => clearTimeout(searchTimer));
             class="text-left cursor-pointer group"
             @click="onAccion(item, 'editar')"
           >
-            <span class="block font-medium text-gray-800 group-hover:text-brand-coral dark:text-white">{{ formatDate(item.fecha_cita) }}</span>
+            <span class="block font-medium text-gray-800 group-hover:text-accent-500 dark:group-hover:text-accent-400 dark:text-white">{{ formatDate(item.fecha_cita) }}</span>
             <span class="block text-xs text-gray-500 dark:text-gray-400">{{ formatHour(item.hora_cita) }}</span>
           </button>
         </td>

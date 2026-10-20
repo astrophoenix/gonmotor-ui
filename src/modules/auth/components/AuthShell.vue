@@ -54,7 +54,7 @@ const planoFormulario = propia ? propia.formulario() : escenaFormulario();
         <img :src="assetUrl('/images/login/isotipo-piston-negativo.svg')" alt="" class="h-11 w-11 lg:h-13 lg:w-13">
         <span>
           <span class="block text-[26px] font-extrabold leading-[1] tracking-tight lg:text-[31px]">
-            gon<span class="text-brand-coral">motor</span>
+            gon<span class="text-accent-400">motor</span>
           </span>
           <span class="mt-1.5 block text-[9.5px] font-bold tracking-[0.32em] text-brand-300 lg:text-[11px]">GESTIÓN DE TALLERES</span>
         </span>

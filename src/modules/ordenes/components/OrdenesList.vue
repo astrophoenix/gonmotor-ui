@@ -456,7 +456,7 @@ onMounted(async () => {
       <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
         <td class="px-4 py-3 whitespace-nowrap">
           <a :href="`/crud/ordenes/ver/?id=${encodeURIComponent(item.id)}`"
-            class="font-semibold text-primary-600 hover:text-brand-coral dark:text-primary-400">
+            class="font-semibold text-primary-600 hover:text-accent-500 dark:hover:text-accent-400 dark:text-primary-400">
             {{ item.numero_orden || referenciaCorta(item.id) }}
           </a>
         </td>

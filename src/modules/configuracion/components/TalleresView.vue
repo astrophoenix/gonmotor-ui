@@ -289,7 +289,7 @@ onUnmounted(() => {
         <template #row="{ item }">
           <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
             <td class="px-4 py-3 whitespace-nowrap">
-              <button type="button" :title="puedeModificar ? 'Editar taller' : 'Ver taller'" class="font-medium cursor-pointer text-slate-900 hover:text-brand-coral dark:text-white" @click="openEditModal(item)">{{ item.nombre }}</button>
+              <button type="button" :title="puedeModificar ? 'Editar taller' : 'Ver taller'" class="font-medium cursor-pointer text-slate-900 hover:text-accent-500 dark:hover:text-accent-400 dark:text-white" @click="openEditModal(item)">{{ item.nombre }}</button>
             </td>
             <td class="px-4 py-3 whitespace-nowrap"><span class="px-1.5 py-0.5 font-mono text-xs border rounded text-slate-700 bg-slate-50 border-slate-200 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200">{{ item.codigo_sucursal }}</span></td>
             <td class="px-4 py-3 text-slate-600 whitespace-nowrap dark:text-gray-300">{{ item.ciudad || '—' }}</td>

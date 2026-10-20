@@ -165,7 +165,7 @@ async function confirmCompany() {
         <circle cx="12" cy="12" r="3"/>
       </svg>
       <svg
-        class="pointer-events-none absolute right-[15.5rem] top-[14.5rem] h-[10.5rem] w-[10.5rem] rotate-[18deg] text-brand-coral/[0.16]"
+        class="pointer-events-none absolute right-[15.5rem] top-[14.5rem] h-[10.5rem] w-[10.5rem] rotate-[18deg] text-accent-400/[0.16]"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -185,7 +185,7 @@ async function confirmCompany() {
             <img :src="assetUrl('/images/isotipo-blanco.svg')" alt="gonmotor Logo login" class="h-full w-full"/>
           </span>
           <span class="text-3xl font-extrabold leading-none tracking-tight">
-            <span class="text-white">gon</span><span class="text-brand-coral">motor</span>
+            <span class="text-white">gon</span><span class="text-accent-400">motor</span>
           </span>
         </a>
       </div>
@@ -204,7 +204,7 @@ async function confirmCompany() {
             :key="beneficio"
             class="flex items-center gap-3 text-base font-semibold text-white"
           >
-            <span class="h-2 w-2 shrink-0 rounded-full bg-brand-coral" aria-hidden="true"></span>
+            <span class="h-2 w-2 shrink-0 rounded-full bg-accent-400" aria-hidden="true"></span>
             {{ beneficio }}
           </li>
         </ul>
@@ -258,7 +258,7 @@ async function confirmCompany() {
                 required
                 class="block h-[52px] w-full rounded shadow-sm border-[1.5px] bg-white ps-11 pe-3.5 text-base text-brand-ink outline-none transition-colors placeholder:text-slate-400 focus:ring-4 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500 dark:border-slate-600 dark:focus:border-slate-400"
                 :class="hasError
-                  ? 'border-brand-red focus:border-brand-red focus:ring-brand-red/15'
+                  ? 'border-accent-500 focus:border-accent-500 focus:ring-accent-500/15'
                   : 'border-brand-line focus:border-brand-ink focus:ring-brand-focus-ring'"
               >
             </div>
@@ -284,7 +284,7 @@ async function confirmCompany() {
                 required
                 class="block h-[52px] w-full rounded shadow-sm border-[1.5px] bg-white ps-11 pe-11 text-base text-brand-ink outline-none transition-colors placeholder:text-slate-400 focus:ring-4 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500 dark:border-slate-600 dark:focus:border-slate-400"
                 :class="hasError
-                  ? 'border-brand-red focus:border-brand-red focus:ring-brand-red/15'
+                  ? 'border-accent-500 focus:border-accent-500 focus:ring-accent-500/15'
                   : 'border-brand-line focus:border-brand-ink focus:ring-brand-focus-ring'"
               >
               <button
@@ -316,7 +316,7 @@ async function confirmCompany() {
             </label>
             <a
               href="/authentication/forgot-password/"
-              class="text-sm font-semibold text-brand-ink-soft underline underline-offset-[3px] transition-colors hover:text-brand-red-hover focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-ink dark:text-slate-300 dark:hover:text-brand-coral"
+              class="text-sm font-semibold text-brand-ink-soft underline underline-offset-[3px] transition-colors hover:text-accent-600 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-ink dark:text-slate-300 dark:hover:text-accent-400"
             >
               ¿Olvidaste tu contraseña?
             </a>
@@ -326,7 +326,7 @@ async function confirmCompany() {
           <button
             type="submit"
             :disabled="authStore.isLoading"
-            class="mt-6 inline-flex h-[54px] w-full items-center justify-center gap-2 rounded-xl bg-brand-red px-5 text-[17px] font-bold text-white transition-colors hover:bg-brand-red-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-red/40 disabled:cursor-not-allowed disabled:opacity-60"
+            class="mt-6 inline-flex h-[54px] w-full items-center justify-center gap-2 rounded-xl bg-accent-500 px-5 text-[17px] font-bold text-white transition-colors hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-500/40 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <template v-if="authStore.isLoading">
               <svg class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -346,7 +346,7 @@ async function confirmCompany() {
           ¿Problemas para ingresar?
           <a
             href="#"
-            class="font-semibold text-brand-ink-soft underline underline-offset-[3px] transition-colors hover:text-brand-red-hover focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-ink dark:text-slate-300 dark:hover:text-brand-coral"
+            class="font-semibold text-brand-ink-soft underline underline-offset-[3px] transition-colors hover:text-accent-600 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-ink dark:text-slate-300 dark:hover:text-accent-400"
           >
             Contacta a soporte
           </a>
