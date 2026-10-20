@@ -43,6 +43,7 @@ const {
   citas,
   ordenesActivas,
   stockBajo,
+  secciones,
   granularidad,
   etiquetaPeriodo,
   nombreSucursal,
@@ -54,6 +55,20 @@ const {
 } = useDashboard();
 
 const mostrarError = ref(true);
+
+/** ¿El rol ve este bloque? Sin `secciones` (API anterior) se muestra todo. */
+function ve(seccion) {
+  return secciones.value[seccion] !== false;
+}
+
+// La fila de KPIs se adapta a cuántas tarjetas ve el rol (clases completas
+// para que Tailwind las genere).
+const COLUMNAS_KPI = ['', 'xl:grid-cols-1', 'xl:grid-cols-2', 'xl:grid-cols-3', 'xl:grid-cols-4', 'xl:grid-cols-5'];
+const columnasKpi = computed(() => {
+  const visibles = ['vehiculos_en_taller', 'facturacion', 'citas', 'cotizaciones_por_aprobar', 'inventario']
+    .filter(ve).length;
+  return COLUMNAS_KPI[visibles] || 'xl:grid-cols-5';
+});
 
 const authStore = useAuthStore();
 
@@ -188,8 +203,9 @@ async function refrescar() {
       <template v-else-if="hayDatos">
         <QuickActionsV2 />
 
-        <div class="grid gap-4 mb-4 sm:grid-cols-2 xl:grid-cols-5">
+        <div class="grid gap-4 mb-4 sm:grid-cols-2" :class="columnasKpi">
           <KpiCard
+            v-if="ve('vehiculos_en_taller')"
             titulo="Vehículos en taller"
             :valor="kpis.vehiculos_en_taller ?? 0"
             :subtitulo="`Recepciones sin salida registrada · ${vehiculosDemorados} con más de ${diasAlertaTaller} días`"
@@ -211,6 +227,7 @@ async function refrescar() {
           </KpiCard>
 
           <KpiCard
+            v-if="ve('facturacion')"
             titulo="Facturación del mes"
             :subtitulo="subtituloFacturacion"
             :icono="CircleDollarSign"
@@ -236,6 +253,7 @@ async function refrescar() {
           </KpiCard>
 
           <KpiCard
+            v-if="ve('citas')"
             titulo="Pipeline de citas"
             :valor="kpis.citas_hoy ?? 0"
             :subtitulo="subtituloCitas"
@@ -246,6 +264,7 @@ async function refrescar() {
           />
 
           <KpiCard
+            v-if="ve('cotizaciones_por_aprobar')"
             titulo="Cotizaciones por aprobar"
             :valor="kpis.cotizaciones_pendientes ?? 0"
             :subtitulo="subtituloCotizaciones"
@@ -256,6 +275,7 @@ async function refrescar() {
           />
 
           <KpiCard
+            v-if="ve('inventario')"
             titulo="Alertas de inventario"
             :valor="kpis.alertas_stock_bajo ?? 0"
             :subtitulo="subtituloStock"
@@ -266,8 +286,8 @@ async function refrescar() {
           />
         </div>
 
-        <div class="grid gap-4 mb-4 xl:grid-cols-3">
-          <section class="p-4 bg-neutral-primary-soft shadow-xs rounded-base border border-default xl:col-span-2">
+        <div v-if="ve('tendencia') || ve('ordenes')" class="grid gap-4 mb-4 xl:grid-cols-3">
+          <section v-if="ve('tendencia')" class="p-4 bg-neutral-primary-soft shadow-xs rounded-base border border-default" :class="ve('ordenes') ? 'xl:col-span-2' : 'xl:col-span-3'">
             <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
               <div>
                 <h2 class="text-lg font-semibold text-heading">Tendencia financiera y operativa</h2>
@@ -280,7 +300,7 @@ async function refrescar() {
             <TendenciaFinancieraChart :datos="tendencia" :granularidad="granularidad" />
           </section>
 
-          <section class="p-4 bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+          <section v-if="ve('ordenes')" class="p-4 bg-neutral-primary-soft shadow-xs rounded-base border border-default" :class="ve('tendencia') ? '' : 'xl:col-span-3'">
             <div class="mb-2">
               <h2 class="text-lg font-semibold text-heading">Tipos de trabajo</h2>
               <p class="text-sm text-body">Órdenes del periodo por tipo de ingreso</p>
@@ -289,8 +309,8 @@ async function refrescar() {
           </section>
         </div>
 
-        <div class="grid gap-4 mb-4 xl:grid-cols-2">
-          <section class="p-4 bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+        <div v-if="ve('ordenes') || ve('categoria_servicio')" class="grid gap-4 mb-4 xl:grid-cols-2">
+          <section v-if="ve('ordenes')" class="p-4 bg-neutral-primary-soft shadow-xs rounded-base border border-default" :class="ve('categoria_servicio') ? '' : 'xl:col-span-2'">
             <div class="mb-2">
               <h2 class="text-lg font-semibold text-heading">Embudo de estados</h2>
               <p class="text-sm text-body">Órdenes del periodo por etapa del proceso</p>
@@ -304,7 +324,7 @@ async function refrescar() {
             />
           </section>
 
-          <section class="p-4 bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+          <section v-if="ve('categoria_servicio')" class="p-4 bg-neutral-primary-soft shadow-xs rounded-base border border-default" :class="ve('ordenes') ? '' : 'xl:col-span-2'">
             <div class="mb-2">
               <h2 class="text-lg font-semibold text-heading">Categorías de servicio</h2>
               <p class="text-sm text-body">Trabajos del catálogo usados en las inspecciones</p>
@@ -319,8 +339,8 @@ async function refrescar() {
           </section>
         </div>
 
-        <div class="grid gap-4 mb-4 xl:grid-cols-3">
-          <div class="xl:col-span-2">
+        <div v-if="ve('vehiculos_en_taller') || ve('citas') || ve('inventario')" class="grid gap-4 mb-4 xl:grid-cols-3">
+          <div v-if="ve('vehiculos_en_taller') || ve('citas')" :class="ve('inventario') ? 'xl:col-span-2' : 'xl:col-span-3'">
             <FlujoOperativoTable
               :recepciones="recepciones"
               :citas="citas"
@@ -329,6 +349,8 @@ async function refrescar() {
             />
           </div>
           <AlertasInventario
+            v-if="ve('inventario')"
+            :class="ve('vehiculos_en_taller') || ve('citas') ? '' : 'xl:col-span-3'"
             :items="stockBajo"
             :alertas="kpis.alertas_stock_bajo ?? 0"
             :agotados="kpis.repuestos_agotados ?? 0"
@@ -337,6 +359,7 @@ async function refrescar() {
         </div>
 
         <OrdenesCriticasTable
+          v-if="ve('ordenes')"
           :ordenes="ordenesActivas"
           :cargando="cargando"
           :periodo="`${periodo?.desde} a ${periodo?.hasta}`"

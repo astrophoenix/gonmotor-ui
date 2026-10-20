@@ -20,7 +20,8 @@ const filas = computed(() => props.datos
   .map((fila) => ({
     etiqueta: fila.etiqueta,
     ordenes: Number(fila.ordenes) || 0,
-    facturado: Number(fila.facturado) || 0,
+    // Sin la acción «Ver facturación del mes» la API no envía el monto.
+    facturado: fila.facturado === undefined ? null : Number(fila.facturado) || 0,
   }))
   .sort((a, b) => b.ordenes - a.ordenes));
 
@@ -41,7 +42,8 @@ function escaparHtml(texto) {
 function tooltipHtml(indice) {
   const fila = filas.value[indice];
   if (!fila) return '';
-  const texto = `${fila.etiqueta}: ${fila.ordenes} ${fila.ordenes === 1 ? 'orden' : 'órdenes'} · ${formatCurrency(fila.facturado)} facturado`;
+  const ordenes = `${fila.etiqueta}: ${fila.ordenes} ${fila.ordenes === 1 ? 'orden' : 'órdenes'}`;
+  const texto = fila.facturado === null ? ordenes : `${ordenes} · ${formatCurrency(fila.facturado)} facturado`;
   return `<div class="px-3 py-2 text-xs font-medium">${escaparHtml(texto)}</div>`;
 }
 

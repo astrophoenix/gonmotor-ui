@@ -101,7 +101,7 @@ async function submit() {
   errorMessage.value = '';
 
   if (!username.value.trim() || !password.value) {
-    errorMessage.value = 'Debes completar email/usuario y contraseña.';
+    errorMessage.value = 'Debes completar correo | usuario y contraseña.';
     return;
   }
 
@@ -232,7 +232,7 @@ async function confirmCompany() {
 
       <!-- Pie -->
       <div class="relative z-[2] hidden gap-4 text-[15px] font-medium text-white/90 lg:flex">
-        <span>&copy; 2026 Gonmotor</span>
+        <span>&copy; 2026 gonmotor</span>
         <span class="w-px bg-white/40" aria-hidden="true"></span>
         <span>Hecho para talleres de verdad</span>
       </div>

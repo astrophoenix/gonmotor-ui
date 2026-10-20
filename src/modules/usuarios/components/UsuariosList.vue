@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { Users, Search, Filter, ShieldCheck } from 'lucide-vue-next';
 import { useUsuarios } from '../composables/useUsuarios';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
@@ -13,6 +13,12 @@ import EntityTable from '../../../shared/components/EntityTable.vue';
 import EntityRowActions from '../../../shared/components/EntityRowActions.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
 import UsuarioModal from './UsuarioModal.vue';
+import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
+import SinAcceso from '../../../shared/components/SinAcceso.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
+
+const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+const puedeModificar = computed(() => puede('usuarios'));
 import { useRolesOtorgables } from '../../../shared/composables/useRolesOtorgables';
 import EstadoActivoBadge from '../../../shared/components/EstadoActivoBadge.vue';
 
@@ -150,12 +156,15 @@ async function confirmDelete() {
 }
 
 
-onMounted(() => {
-  loadUsuarios();
+onMounted(async () => {
+  await cargarPermisos().catch(() => {});
+  if (!sinAcceso('usuarios')) loadUsuarios();
 });
 </script>
 
 <template>
+  <SinAcceso v-if="sinAcceso('usuarios')" seccion="Usuarios" />
+  <template v-else>
   <EntityHeader
     mode="list"
     :icon="Users"
@@ -165,7 +174,11 @@ onMounted(() => {
       { label: 'Configuración' },
       { label: 'Usuarios' },
     ]"
-  />
+  >
+    <template #title-aside>
+      <ModoConsultaChip v-if="soloConsulta('usuarios')" objeto="los usuarios" />
+    </template>
+  </EntityHeader>
 
   <div v-if="alert.message" class="px-4 pt-3">
     <Alert
@@ -242,6 +255,7 @@ onMounted(() => {
             entity="usuarios"
             :show-export-pdf="false"
             :show-export-excel="false"
+            :show-add="puedeModificar"
             @add="openCreateModal" />
         </div>
       </div>
@@ -284,7 +298,7 @@ onMounted(() => {
         </td>
         <td class="px-4 py-3 whitespace-nowrap">
           <div class="flex items-center gap-2">
-            <EntityRowActions entity="usuario" :delete-disabled="isDeleting" @edit="editUsuario(item.id)" @delete="openDeleteModal(item)" />
+            <EntityRowActions entity="usuario" :show-view="!puedeModificar" :show-edit="puedeModificar" :show-delete="puedeModificar" @view="editUsuario(item.id)" :delete-disabled="isDeleting" @edit="editUsuario(item.id)" @delete="openDeleteModal(item)" />
           </div>
         </td>
       </tr>
@@ -317,7 +331,9 @@ onMounted(() => {
   <UsuarioModal
     v-model="showUsuarioModal"
     :usuario-id="usuarioModalId"
+    :solo-lectura="!puedeModificar"
     @created="onUsuarioCreated"
     @updated="onUsuarioUpdated"
   />
+  </template>
 </template>

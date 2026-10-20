@@ -5,6 +5,10 @@ import { empresaConfigService } from '../services/empresaConfigService';
 import Alert from '../../../shared/components/Alert.vue';
 import ImageField from '../../../shared/components/ImageField.vue';
 import FormSaveActions from '../../../shared/components/FormSaveActions.vue';
+import FichaCampos from '../../../shared/components/FichaCampos.vue';
+import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
+import SinAcceso from '../../../shared/components/SinAcceso.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
 import {
   sanitizeNombre,
   sanitizeEmail,
@@ -20,6 +24,10 @@ const isSaving = ref(false);
 const errorMessage = ref('');
 const successMessage = ref('');
 const formErrors = ref({});
+
+const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+// Sin `empresa/modificar` los datos se muestran como ficha, no como formulario.
+const soloLectura = computed(() => !puede('empresa'));
 
 const empresaId = ref(null);
 const logoFile = ref(null);
@@ -171,10 +179,28 @@ async function submit() {
   }
 }
 
-onMounted(loadEmpresa);
+onMounted(async () => {
+  await cargarPermisos().catch(() => {});
+  if (sinAcceso('empresa')) {
+    isLoading.value = false;
+    return;
+  }
+  loadEmpresa();
+});
+
+const camposFicha = computed(() => [
+  { etiqueta: 'Nombre comercial', valor: form.nombre_comercial, ancho: 'completo' },
+  { etiqueta: 'Razón social', valor: form.razon_social },
+  { etiqueta: 'RUC', valor: form.ruc },
+  { etiqueta: 'Teléfono', valor: form.telefono },
+  { etiqueta: 'Correo electrónico', valor: form.email_contacto },
+  { etiqueta: 'Condiciones de la cotización', valor: form.condiciones, ancho: 'completo' },
+]);
 </script>
 
 <template>
+  <SinAcceso v-if="sinAcceso('empresa')" seccion="Empresa" />
+  <template v-else>
   <!--div class="p-4 bg-white border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
     <nav class="flex mb-5" aria-label="Breadcrumb">
       <ol class="inline-flex items-center space-x-1 text-sm font-medium md:space-x-2">
@@ -195,9 +221,14 @@ onMounted(loadEmpresa);
             <FileText class="w-6 h-6 text-gray-800 dark:text-white" />
             Información Empresa
           </span>
+          <ModoConsultaChip v-if="soloConsulta('empresa')" class="ms-3 align-middle" objeto="los datos de la empresa" acciones="editarlos" />
         </h3>
         <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando...</div>
         <!--div v-if="isLoading" class="py-10 text-center text-sm text-gray-500 dark:text-gray-400">Cargando configuración de empresa...</div-->
+        <div v-else-if="soloLectura" class="space-y-6">
+          <img v-if="form.logo" :src="form.logo" alt="Logotipo de la empresa" class="max-h-20 w-auto object-contain" />
+          <FichaCampos :campos="camposFicha" />
+        </div>
         <form v-else novalidate @submit.prevent="submit">
           <div class="grid grid-cols-6 gap-6">
             <div class="col-span-6 sm:col-span-4">
@@ -336,4 +367,5 @@ onMounted(loadEmpresa);
         </form>
       </div>
     </div>
+  </template>
 </template>

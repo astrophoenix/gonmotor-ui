@@ -20,7 +20,10 @@
         <div class="sidebar-header">
           <a href="{{ if $enAdminSaas }}{{ "crud/empresas/" | relURL }}{{ else }}{{ "/" | relURL }}{{ end }}" sidebar-logo class="sidebar-brand flex items-center">
             <img src="{{ partial "asset-url" "/images/isotipo-blanco.svg" }}" class="h-10 w-auto" alt="gonmotor Logo" />
-            <span sidebar-toggle-item class="sidebar-wordmark self-center font-brand text-2xl font-extrabold leading-none tracking-tight whitespace-nowrap ml-2 sm:text-[1.75rem]"><span class="text-white">gon</span><span class="text-brand-coral">motor</span></span>
+            <span sidebar-toggle-item class="sidebar-wordmark self-center font-brand text-2xl font-extrabold leading-none tracking-tight whitespace-nowrap ml-2 sm:text-[1.75rem]">
+              <span class="text-white">gon</span>
+              <span class="text-brand-coral">motor</span>
+            </span>
           </a>
           <button id="toggleSidebarDesktop" type="button" class="sidebar-toggle-btn" aria-label="Contraer menú" aria-expanded="true" title="Contraer menú">
             <svg id="toggleSidebarDesktopCollapse" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="m11 17-5-5 5-5"/><path d="m18 17-5-5 5-5"/></svg>
@@ -80,7 +83,6 @@
                   </a>
                 </li>
               </ul>
-            </div>
           </li>
           <li>
             <button type="button" data-recurso="inventario" sidebar-tooltip="Inventario" class="sidebar-link sidebar-group{{ if $enInventario }} is-current{{ end }}" aria-controls="dropdown-inventario" aria-expanded="{{ if $enInventario }}true{{ else }}false{{ end }}" data-collapse-toggle="dropdown-inventario">

@@ -4,6 +4,7 @@ import { X, Building2, Building, MessageSquare, MapPin, Phone, ChevronDown, Sear
 import { usuariosService } from '../services/usuariosService';
 import { request } from '../../../shared/services/httpClient';
 import Alert from '../../../shared/components/Alert.vue';
+import FichaCampos from '../../../shared/components/FichaCampos.vue';
 import { useAuthStore } from '../../auth/stores/authStore';
 import { useRolesOtorgables } from '../../../shared/composables/useRolesOtorgables';
 import {
@@ -15,6 +16,8 @@ import {
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   usuarioId: { type: [Number, String], default: null },
+  // Variante de consulta: ficha de lectura y solo «Cerrar» (rol sin `modificar`).
+  soloLectura: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['update:modelValue', 'created', 'updated']);
@@ -206,6 +209,10 @@ async function open() {
     isLoading.value = true;
     try {
       const data = await usuariosService.getById(props.usuarioId);
+      datosLectura.value = {
+        rol: data.rol_display || data.rol || '',
+        talleres: (data.talleres || []).map((t) => t.nombre).filter(Boolean).join(', '),
+      };
       Object.assign(form, {
         first_name: data.user?.first_name || '',
         last_name: data.user?.last_name || '',
@@ -270,8 +277,23 @@ async function submit() {
   }
 }
 
+const datosLectura = ref({ rol: '', talleres: '' });
+
+const camposFicha = computed(() => [
+  { etiqueta: 'Nombres', valor: form.first_name },
+  { etiqueta: 'Apellidos', valor: form.last_name },
+  { etiqueta: 'Identificación', valor: form.identificacion },
+  { etiqueta: 'Teléfono', valor: form.telefono },
+  { etiqueta: 'Correo electrónico', valor: form.email },
+  { etiqueta: 'Rol', valor: datosLectura.value.rol },
+  { etiqueta: 'Estado', valor: form.is_active ? 'Activo' : 'Inactivo' },
+  { etiqueta: 'Acceso al sistema', valor: form.tiene_acceso ? 'Con acceso' : 'Sin acceso' },
+  { etiqueta: 'Talleres', valor: datosLectura.value.talleres, ancho: 'completo' },
+  { etiqueta: 'Dirección', valor: form.direccion, ancho: 'completo' },
+]);
+
 function close() {
-  if (hasChanges.value && !isSaving.value) {
+  if (!props.soloLectura && hasChanges.value && !isSaving.value) {
     if (!showDiscardWarning.value) {
       showDiscardWarning.value = true;
       return;
@@ -320,7 +342,7 @@ onBeforeUnmount(() => {
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
           <UserPlus v-if="!isEditMode" class="w-5 h-5 inline-block me-2" />
           <UserPen v-if="isEditMode" class="w-5 h-5 inline-block me-2" />
-          {{ isEditMode ? 'Editar usuario' : 'Nuevo usuario' }}
+          {{ soloLectura ? 'Detalle del usuario' : (isEditMode ? 'Editar usuario' : 'Nuevo usuario') }}
         </h3>
         <button
           type="button"
@@ -351,6 +373,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando usuario...</div>
+        <FichaCampos v-else-if="soloLectura" :campos="camposFicha" />
         <template v-else>
           <div class="space-y-4">
             <div class="flex items-start gap-3 p-3 rounded-lg bg-neutral-primary-soft border border-default">
@@ -515,9 +538,10 @@ onBeforeUnmount(() => {
           class="px-5 py-2.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-300"
           @click="close"
         >
-          Cancelar
+          {{ soloLectura ? 'Cerrar' : 'Cancelar' }}
         </button>
         <button
+          v-if="!soloLectura"
           type="button"
           :disabled="isSaving || isLoading"
           class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"

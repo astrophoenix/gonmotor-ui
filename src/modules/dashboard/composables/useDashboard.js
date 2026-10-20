@@ -104,6 +104,9 @@ export function useDashboard() {
   const citas = computed(() => datos.value?.citas || []);
   const ordenesActivas = computed(() => datos.value?.ordenes_activas || []);
   const stockBajo = computed(() => datos.value?.stock_bajo || []);
+  // Bloques que el rol puede ver (permisos + acciones especiales). Lo que no
+  // puede ver ni siquiera llega en la respuesta: esto solo ordena la pantalla.
+  const secciones = computed(() => datos.value?.secciones || {});
 
   const granularidad = computed(() => periodo.value?.granularidad || 'dia');
   const etiquetaPeriodo = computed(() => {
@@ -217,6 +220,7 @@ export function useDashboard() {
     citas,
     ordenesActivas,
     stockBajo,
+    secciones,
     granularidad,
     etiquetaPeriodo,
     hayFiltroSucursal,

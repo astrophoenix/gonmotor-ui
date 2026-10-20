@@ -8,6 +8,9 @@ import {
   Warehouse, Wrench, X
 } from 'lucide-vue-next';
 import InfoPopover from '../../../shared/components/InfoPopover.vue';
+import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
+import SinAcceso from '../../../shared/components/SinAcceso.vue';
+import { usePermisos } from '../../../shared/composables/usePermisos';
 import { request } from '../../../shared/services/httpClient';
 import { useToast } from '../../../shared/composables/useToast';
 import Alert from '../../../shared/components/Alert.vue';
@@ -114,6 +117,15 @@ const roles = ref([]);
 const catalogo = ref({ recursos: [], acciones: [] });
 const selectedId = ref(null);
 const detalle = ref(null);
+
+const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+const puedeModificarRoles = computed(() => puede('usuarios'));
+// La API dice si este rol se puede editar (permiso, propio rol, jerarquía).
+const editable = computed(() => puedeModificarRoles.value && detalle.value?.editable !== false);
+// El motivo solo se muestra a quien sí edita roles: en modo consulta ya lo dice el chip.
+const motivoNoEditable = computed(() => (
+  puedeModificarRoles.value && detalle.value && !editable.value ? detalle.value.motivo_no_editable : ''
+));
 const activeTab = ref('permisos');
 const isLoading = ref(true);
 const isDetailLoading = ref(false);
@@ -250,6 +262,7 @@ function nivelPermiso(codigo, fuente = borrador.value) {
 const RECURSOS_FLUJO = ['citas', 'recepciones', 'inspecciones', 'cotizaciones', 'ordenes'];
 
 function fijarNivel(codigo, nivel) {
+  if (!editable.value) return;
   borrador.value.permisos[codigo] = {
     ver: nivel !== 'ninguno',
     modificar: nivel === 'modificar',
@@ -266,6 +279,7 @@ function fijarNivel(codigo, nivel) {
 }
 
 function fijarNivelGrupo(grupo, nivel) {
+  if (!editable.value) return;
   grupo.lista.forEach((r) => fijarNivel(r.codigo, nivel));
 }
 
@@ -354,6 +368,7 @@ function descartarYCambiar() {
 }
 
 function toggleAccion(codigo, checked) {
+  if (!editable.value) return;
   if (checked) {
     if (!borrador.value.acciones.includes(codigo)) borrador.value.acciones.push(codigo);
   } else {
@@ -485,12 +500,16 @@ async function alternarActivo(rol) {
 }
 
 onMounted(async () => {
+  await cargarPermisos().catch(() => {});
+  if (sinAcceso('usuarios')) return;
   await Promise.all([cargarRoles(), cargarCatalogo()]);
   if (selectedId.value) await cargarDetalle(selectedId.value);
 });
 </script>
 
 <template>
+  <SinAcceso v-if="sinAcceso('usuarios')" seccion="Roles y permisos" />
+  <template v-else>
   <EntityHeader
     mode="list"
     :icon="ShieldCheck"
@@ -501,8 +520,12 @@ onMounted(async () => {
       { label: 'Roles y permisos' },
     ]"
   >
+    <template #title-aside>
+      <ModoConsultaChip v-if="soloConsulta('usuarios')" objeto="los roles y sus permisos" acciones="crearlos o ajustarlos" />
+    </template>
     <template #actions>
       <button
+        v-if="puedeModificarRoles"
         type="button"
         class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-base bg-brand-900 text-white hover:bg-brand-700 focus:ring-4 focus:ring-brand-200 dark:bg-brand-600 dark:hover:bg-brand-500 dark:focus:ring-brand-800"
         @click="abrirNuevoRol"
@@ -607,7 +630,7 @@ onMounted(async () => {
             </button>
 
             <button
-              v-if="grupo.id === 'propios' && !grupo.roles.length && !buscar"
+              v-if="puedeModificarRoles && grupo.id === 'propios' && !grupo.roles.length && !buscar"
               type="button"
               class="w-full flex items-center gap-3 rounded-lg border border-dashed border-gray-300 px-3 py-3 text-left text-sm text-body hover:border-brand-400 hover:bg-brand-50/60 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700/50"
               @click="abrirNuevoRol"
@@ -681,7 +704,7 @@ onMounted(async () => {
 
               <div class="flex items-center gap-2">
                 <button
-                  v-if="isSystem && detalle.personalizado"
+                  v-if="editable && isSystem && detalle.personalizado"
                   type="button"
                   class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-base border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
                   @click="confirmarRestablecer = true"
@@ -690,7 +713,7 @@ onMounted(async () => {
                   Restablecer
                 </button>
                 <button
-                  v-if="!isSystem"
+                  v-if="editable && !isSystem"
                   type="button"
                   class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-base border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
                   @click="abrirEditarRol"
@@ -698,7 +721,7 @@ onMounted(async () => {
                   <Pen class="w-4 h-4" />
                   Editar
                 </button>
-                <span v-if="!isSystem" class="relative">
+                <span v-if="editable && !isSystem" class="relative">
                   <button
                     type="button"
                     class="p-2 rounded-base border border-gray-300 text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -724,6 +747,12 @@ onMounted(async () => {
                 </span>
               </div>
             </div>
+
+            <!-- Por qué este rol no se edita (propio rol, nivel superior): restricción con motivo -->
+            <p v-if="motivoNoEditable" class="flex items-start gap-2 border-t border-gray-200 px-4 py-2.5 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300 sm:px-5">
+              <Info class="w-4 h-4 mt-0.5 shrink-0 text-gray-400" />
+              {{ motivoNoEditable }}
+            </p>
 
             <!-- Indicadores -->
             <dl class="grid grid-cols-2 xl:grid-cols-4 border-t border-gray-200 dark:border-gray-700 [&>div]:p-4 [&>div]:border-gray-200 dark:[&>div]:border-gray-700">
@@ -844,7 +873,7 @@ onMounted(async () => {
                       :secciones="[{ titulo: 'Se consulta completo', texto: 'Los documentos del flujo se muestran unos dentro de otros, así que «Ver» se aplica a todos a la vez. «Modificar» se elige por separado en cada uno.' }]"
                     />
                   </div>
-                  <div class="flex items-center gap-1 text-xs">
+                  <div v-if="editable" class="flex items-center gap-1 text-xs">
                     <span class="hidden md:inline text-gray-500 dark:text-gray-400 me-1">Todo el grupo:</span>
                     <button
                       v-for="nivel in NIVELES_PERMISO"
@@ -886,7 +915,17 @@ onMounted(async () => {
                       </div>
                     </div>
 
+                    <!-- En lectura, el nivel como texto (no como botones bloqueados) -->
+                    <span
+                      v-if="!editable"
+                      class="inline-flex items-center gap-1.5 shrink-0 rounded-md px-2.5 py-1 text-xs font-medium"
+                      :class="NIVELES_PERMISO.find((n) => n.id === nivelPermiso(recurso.codigo)).activo"
+                    >
+                      <component :is="NIVELES_PERMISO.find((n) => n.id === nivelPermiso(recurso.codigo)).icono" class="w-3.5 h-3.5" />
+                      {{ NIVELES_PERMISO.find((n) => n.id === nivelPermiso(recurso.codigo)).label }}
+                    </span>
                     <div
+                      v-else
                       class="grid grid-cols-3 shrink-0 rounded-lg bg-gray-100 p-0.5 dark:bg-gray-700 sm:w-[19rem]"
                       role="radiogroup"
                       :aria-label="`Acceso a ${recurso.nombre}`"
@@ -952,7 +991,16 @@ onMounted(async () => {
                         </p>
                       </div>
                     </div>
-                    <label class="relative inline-flex items-center shrink-0 cursor-pointer">
+                    <span
+                      v-if="!editable"
+                      class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
+                      :class="borrador.acciones.includes(accion.codigo)
+                        ? 'bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300'
+                        : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'"
+                    >
+                      {{ borrador.acciones.includes(accion.codigo) ? 'Concedida' : 'No concedida' }}
+                    </span>
+                    <label v-else class="relative inline-flex items-center shrink-0 cursor-pointer">
                       <input
                         type="checkbox"
                         class="sr-only peer"
@@ -1229,4 +1277,5 @@ onMounted(async () => {
       </div>
     </div>
   </div>
+  </template>
 </template>
