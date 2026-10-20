@@ -1110,9 +1110,6 @@ async function loadEmpleados() {
   try {
     const data = await request("/api/auth/empleados/?page=1&page_size=100");
     empleados.value = Array.isArray(data?.results) ? data.results : [];
-    if (empleados.value.length > 0 && !form.recibido_por) {
-      selectEmpleado(empleados.value[0]);
-    }
   } catch (error) {
     console.error("No se pudieron cargar empleados:", error);
   }
@@ -1939,7 +1936,7 @@ onMounted(async () => {
               <EmpleadoSearchSelect
                 id="asesor"
                 v-model="recibidoPorSearch"
-                placeholder="Buscar asesor..."
+                placeholder="Buscar responsable..."
                 :error="Boolean(formErrors.recibido_por)"
                 :error-message="formErrors.recibido_por"
                 :disabled="readOnly"
