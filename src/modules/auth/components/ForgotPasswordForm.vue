@@ -89,7 +89,7 @@ watch(email, () => {
 </script>
 
 <template>
-  <AuthShell>
+  <AuthShell escena="recuperar">
     <template #titulo>Recupera el acceso<br>a tu taller.</template>
     <template #detalle>
       <p class="mt-4.5 max-w-[480px] text-[17px] leading-relaxed text-brand-subtitle">
