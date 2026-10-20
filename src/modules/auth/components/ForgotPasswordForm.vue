@@ -16,7 +16,7 @@ let resendTimer = null;
 
 const hasError = computed(() => Boolean(errorMessage.value));
 const CAMPO_NORMAL = 'border-brand-200 focus:border-brand-900 focus:ring-brand-focus-ring dark:border-brand-600 dark:focus:border-brand-300';
-const CAMPO_ERROR = 'border-brand-red focus:border-brand-red focus:ring-brand-red/15';
+const CAMPO_ERROR = 'border-accent-500 focus:border-accent-500 focus:ring-accent-500/15';
 
 const cuentaAtras = computed(() =>
   `${Math.floor(resendCooldown.value / 60)}:${String(resendCooldown.value % 60).padStart(2, '0')}`
@@ -110,11 +110,11 @@ watch(email, () => {
       </p>
 
       <ul class="mt-5 space-y-2 rounded-xl border border-brand-100 bg-brand-50 px-4 py-3.5 text-sm text-brand-500 dark:border-brand-700 dark:bg-brand-950 dark:text-brand-200">
-        <li class="flex gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-coral" aria-hidden="true"></span>Puede tardar unos minutos en llegar.</li>
-        <li class="flex gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-coral" aria-hidden="true"></span>Si no lo ves, busca en spam o promociones.</li>
+        <li class="flex gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-accent-500 dark:bg-accent-400" aria-hidden="true"></span>Puede tardar unos minutos en llegar.</li>
+        <li class="flex gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-accent-500 dark:bg-accent-400" aria-hidden="true"></span>Si no lo ves, busca en spam o promociones.</li>
       </ul>
 
-      <p v-if="errorMessage" class="mt-4 text-sm font-medium text-brand-red" role="alert">{{ errorMessage }}</p>
+      <p v-if="errorMessage" class="mt-4 text-sm font-medium text-accent-500 dark:text-accent-400" role="alert">{{ errorMessage }}</p>
       <p v-else-if="reenviado" class="mt-4 text-sm font-medium text-success">Te enviamos un enlace nuevo.</p>
 
       <button
@@ -133,7 +133,7 @@ watch(email, () => {
         ¿Te equivocaste de correo?
         <button
           type="button"
-          class="font-bold text-brand-500 underline underline-offset-[3px] transition-colors hover:text-brand-red-hover focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-200 dark:hover:text-brand-coral"
+          class="font-bold text-brand-500 underline underline-offset-[3px] transition-colors hover:text-accent-600 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-200 dark:hover:text-accent-400"
           @click="usarOtroCorreo"
         >
           Usar otro
@@ -167,14 +167,14 @@ watch(email, () => {
             :class="hasError ? CAMPO_ERROR : CAMPO_NORMAL"
           >
         </div>
-        <p v-if="hasError" id="forgot-email-error" class="mt-2 text-sm font-medium text-brand-red" role="alert">
+        <p v-if="hasError" id="forgot-email-error" class="mt-2 text-sm font-medium text-accent-500 dark:text-accent-400" role="alert">
           {{ errorMessage }}
         </p>
 
         <button
           type="submit"
           :disabled="isLoading"
-          class="mt-6 inline-flex h-14 w-full items-center justify-center gap-3 rounded-[10px] bg-brand-red px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(200,16,46,0.7)] transition-colors hover:bg-brand-red-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-red/40 disabled:cursor-not-allowed disabled:opacity-60"
+          class="mt-6 inline-flex h-14 w-full items-center justify-center gap-3 rounded-[10px] bg-accent-500 px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(200,16,46,0.7)] transition-colors hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-500/40 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <template v-if="isLoading">
             <Loader2 class="h-5 w-5 animate-spin" aria-hidden="true" />
@@ -192,7 +192,7 @@ watch(email, () => {
         ¿Ya no usas ese correo?
         <a
           href="#"
-          class="font-bold text-brand-500 underline underline-offset-[3px] transition-colors hover:text-brand-red-hover focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-200 dark:hover:text-brand-coral"
+          class="font-bold text-brand-500 underline underline-offset-[3px] transition-colors hover:text-accent-600 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-200 dark:hover:text-accent-400"
         >
           Habla con soporte
         </a>
@@ -203,7 +203,7 @@ watch(email, () => {
       <PasosRecuperacion :actual="enviado ? 2 : 1" variante="barra" />
       <a
         href="/authentication/sign-in/"
-        class="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-bold text-brand-500 underline underline-offset-[3px] transition-colors hover:text-brand-red-hover focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-200 dark:hover:text-brand-coral"
+        class="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-bold text-brand-500 underline underline-offset-[3px] transition-colors hover:text-accent-600 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-200 dark:hover:text-accent-400"
       >
         <ArrowLeft class="h-4 w-4" aria-hidden="true" />
         <span class="sm:hidden">Iniciar sesión</span>

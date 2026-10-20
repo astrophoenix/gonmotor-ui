@@ -1293,7 +1293,7 @@ onMounted(async () => {
                 <p class="mb-2 text-base font-semibold text-gray-900 truncate dark:text-white">{{ clienteInfo?.nombre || '—' }}</p>
               </template>
               <template v-else>
-                <label for="cliente" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente <span class="text-accent-500">*</span></label>
+                <label for="cliente" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente <span class="text-accent-500 dark:text-accent-400">*</span></label>
                 <ClienteSearchSelect
                   id="cliente"
                   v-model="clienteSearch"
@@ -1332,7 +1332,7 @@ onMounted(async () => {
                 <p class="mb-2 font-mono text-base font-semibold tracking-widest text-gray-900 dark:text-white">{{ formatPlaca(vehiculoInfo?.placa) || '—' }}</p>
               </template>
               <template v-else>
-                <label for="vehiculo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo <span class="text-accent-500">*</span></label>
+                <label for="vehiculo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo <span class="text-accent-500 dark:text-accent-400">*</span></label>
                 <VehiculoSearchSelect
                   id="vehiculo"
                   v-model="vehiculoSearch"
@@ -1395,7 +1395,7 @@ onMounted(async () => {
           </div>
           <div v-if="mostrarSucursal" class="mt-4 max-w-sm">
             <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-              Taller emisor <span class="text-accent-500">*</span>
+              Taller emisor <span class="text-accent-500 dark:text-accent-400">*</span>
             </label>
             <TallerSelect
               v-model="tallerSucursalId"
@@ -1462,7 +1462,7 @@ onMounted(async () => {
                     </div>
                     <div>
                       <label for="fecha_inspeccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                        Inicio <span class="text-accent-500">*</span>
+                        Inicio <span class="text-accent-500 dark:text-accent-400">*</span>
                       </label>
                       <input id="fecha_inspeccion" v-model="form.fecha_inspeccion" type="datetime-local" :disabled="readOnly" :class="inputClass('fecha_inspeccion')">
                       <p v-if="formErrors.fecha_inspeccion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.fecha_inspeccion }}</p>
@@ -1484,7 +1484,7 @@ onMounted(async () => {
                     </div>
                     <div>
                       <label for="kilometraje_diagnostico" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                        Kilometraje <span class="text-accent-500">*</span>
+                        Kilometraje <span class="text-accent-500 dark:text-accent-400">*</span>
                       </label>
                       <div class="relative">
                         <input
@@ -1511,7 +1511,7 @@ onMounted(async () => {
                   <div class="grid grid-cols-1 gap-5 xl:grid-cols-2">
                     <div>
                       <label for="motivo_ingreso" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                        Motivo <span class="text-accent-500">*</span>
+                        Motivo <span class="text-accent-500 dark:text-accent-400">*</span>
                       </label>
                       <textarea
                         id="motivo_ingreso"
@@ -1562,7 +1562,7 @@ onMounted(async () => {
                       v-slot="{ mejorar, restaurar, mejorando, error, mejorado, tieneOriginal }"
                     >
                       <div class="flex items-center justify-between gap-2 mb-2">
-                        <label for="diagnostico_tecnico" class="block text-sm font-medium text-gray-900 dark:text-white">Diagnóstico <span class="text-accent-500">*</span></label>
+                        <label for="diagnostico_tecnico" class="block text-sm font-medium text-gray-900 dark:text-white">Diagnóstico <span class="text-accent-500 dark:text-accent-400">*</span></label>
                         <button v-if="!readOnly" type="button" title="Mejorar el texto con IA" :disabled="mejorando || !form.diagnostico_tecnico" :class="BOTON_MEJORAR" @click="mejorar">
                           <Loader2 v-if="mejorando" class="w-4 h-4 animate-spin" />
                           <Wand2 v-else class="w-4 h-4" />
@@ -1597,7 +1597,7 @@ onMounted(async () => {
                       v-slot="{ mejorar, restaurar, mejorando, error, mejorado, tieneOriginal }"
                     >
                       <div class="flex items-center justify-between gap-2 mb-2">
-                        <label for="recomendaciones" class="block text-sm font-medium text-gray-900 dark:text-white">Recomendaciones <span class="text-accent-500">*</span></label>
+                        <label for="recomendaciones" class="block text-sm font-medium text-gray-900 dark:text-white">Recomendaciones <span class="text-accent-500 dark:text-accent-400">*</span></label>
                         <button v-if="!readOnly" type="button" title="Mejorar el texto con IA" :disabled="mejorando || !form.recomendaciones" :class="BOTON_MEJORAR" @click="mejorar">
                           <Loader2 v-if="mejorando" class="w-4 h-4 animate-spin" />
                           <Wand2 v-else class="w-4 h-4" />

@@ -45,7 +45,7 @@ function responsable(item) {
     <div class="flex flex-col gap-3 px-4 py-3 border-b border-default-medium sm:flex-row sm:items-center sm:justify-between">
       <div class="min-w-0">
         <h2 class="flex items-center gap-2 text-lg font-semibold text-heading">
-          <Siren class="w-5 h-5 text-accent-500" aria-hidden="true" />
+          <Siren class="w-5 h-5 text-accent-500 dark:text-accent-400" aria-hidden="true" />
           Órdenes críticas abiertas
         </h2>
         <p class="mt-0.5 text-xs text-body">
@@ -75,7 +75,7 @@ function responsable(item) {
             <td class="px-4 py-3 text-sm font-medium whitespace-nowrap text-heading">
               <a
                 :href="`/crud/ordenes/ver/?id=${encodeURIComponent(item.id)}`"
-                class="hover:text-brand-coral"
+                class="hover:text-accent-500 dark:hover:text-accent-400"
                 :title="`Ver orden ${item.numero_orden}`"
               >
                 {{ item.numero_orden }}

@@ -49,9 +49,6 @@ uno nuevo, muévelo a una de estas dos fuentes.
 | Token | Hex |
 |---|---|
 | `brand-navy` | `#111C2E` |
-| `brand-red` | `#C8102E` |
-| `brand-red-hover` | `#B30D25` |
-| `brand-coral` | `#FF4D63` |
 | `brand-ink` | `#1E293B` |
 | `brand-ink-soft` | `#475569` |
 | `brand-line` | `#CBD5E1` |
@@ -84,11 +81,16 @@ uno nuevo, muévelo a una de estas dos fuentes.
 | `brand-800` | `#162238` | superficies del sidebar |
 | `brand-900` | `#111C2E` | sidebar, login, botón primario |
 
-### Acento — rojo `accent`
+### Acento — Rojo Gonmotor `accent` (único rojo de marca)
+Un solo rojo en dos tonos según el fondo, como el isotipo (versión clara con
+`#C8102E`, versión negativa con `#FF4D63`). Ningún hex sirve en los dos fondos:
+`#C8102E` da 5,9:1 sobre blanco pero 2,9:1 sobre navy; `#FF4D63` da 5,3:1 sobre
+navy pero 3,2:1 sobre blanco.
+
 | Token | Hex | Uso |
 |---|---|---|
-| `accent-400` | `#FF4D63` | acento sobre fondos oscuros |
-| `accent-500` | `#C8102E` | logo, indicador activo |
+| `accent-400` | `#FF4D63` | el rojo sobre navy/oscuro (sidebar, panel del login, `dark:`); nunca sobre blanco |
+| `accent-500` | `#C8102E` | el rojo sobre fondos claros: logo claro, detalles, botón del login |
 | `accent-600` | `#B30D25` | hover |
 | `accent-700` | `#8F0A1E` | activo/presionado |
 
@@ -151,7 +153,7 @@ favicons. **Nunca** editar `public/` ni `_gh_pages/` (son salida de build).
 
 | Contexto | Fichero | Render | Fondo | Wordmark |
 |---|---|---|---|---|
-| Sidebar | `layouts/partials/sidebar.html:21` | `h-10` (40px) | navy `#111C2E` | texto `gon` blanco + `motor` coral (Manrope, igual que login) |
+| Sidebar | `layouts/partials/sidebar.html:22` | isotipo pistón negativo `h-10` (40px) | navy `#111C2E` | texto `gon` blanco + `motor` `accent-400` (Manrope, igual que login) |
 | Login | `src/modules/auth/components/LoginForm.vue:106` | caja blanca 44px, `p-1.5` → **~32px visibles** | navy `#111C2E` | texto `gon` blanco + `motor` coral |
 | Navbar/footer | `navbar-main.html:6`, `navbar-stacked-layout.html:6`, `footer-main.html:6` | `h-8` (32px) | claro | — |
 

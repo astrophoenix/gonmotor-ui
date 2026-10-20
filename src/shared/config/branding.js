@@ -24,6 +24,9 @@ export const BRAND = {
   brand900: '#111C2E',
   brand950: '#0B1220',
 
+  // Rojo Gonmotor: un solo rojo de marca. `accent500` sobre fondos claros;
+  // `accent400` es su versión para fondos navy/oscuros (el #C8102E no se lee
+  // sobre navy). Nunca `accent400` sobre blanco.
   accent50: '#FEF2F3',
   accent100: '#FDE1E4',
   accent400: '#FF4D63',
@@ -38,11 +41,7 @@ export const BRAND = {
   surface: '#F8FAFC',
   muted: '#8493A8',
 
-  // Rediseño de login (aliases de la paleta)
   navy: '#111C2E',
-  red: '#C8102E',
-  redHover: '#B30D25',
-  coral: '#FF4D63',
 
   // Legacy Flowbite (azul) — remapeado a navy en la migración
   primary500: '#3A4F6E',

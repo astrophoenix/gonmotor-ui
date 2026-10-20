@@ -255,7 +255,7 @@ watch(() => props.modelValue, (val) => {
           <div class="grid grid-cols-6 gap-4">
             <div v-if="mostrarSucursal" class="col-span-6">
               <label for="modal_taller" class="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Taller emisor <span class="text-accent-500">*</span>
+                Taller emisor <span class="text-accent-500 dark:text-accent-400">*</span>
               </label>
               <TallerSelect
                 v-model="tallerSucursalId"
@@ -268,7 +268,7 @@ watch(() => props.modelValue, (val) => {
             </div>
 
             <div class="col-span-6 sm:col-span-3">
-              <label for="modal_fecha" :class="['block mb-1.5 text-sm font-medium', fieldErrors.fecha ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300']">Fecha <span class="text-accent-500">*</span></label>
+              <label for="modal_fecha" :class="['block mb-1.5 text-sm font-medium', fieldErrors.fecha ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300']">Fecha <span class="text-accent-500 dark:text-accent-400">*</span></label>
               <div class="relative">
                 <Calendar class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-400" />
                 <input
@@ -284,7 +284,7 @@ watch(() => props.modelValue, (val) => {
             </div>
 
             <div class="col-span-6 sm:col-span-3">
-              <label for="modal_categoria" :class="['block mb-1.5 text-sm font-medium', fieldErrors.categoria ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300']">Categoría <span class="text-accent-500">*</span></label>
+              <label for="modal_categoria" :class="['block mb-1.5 text-sm font-medium', fieldErrors.categoria ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300']">Categoría <span class="text-accent-500 dark:text-accent-400">*</span></label>
               <select
                 id="modal_categoria"
                 v-model="form.categoria"
@@ -298,7 +298,7 @@ watch(() => props.modelValue, (val) => {
             </div>
 
             <div class="col-span-6 sm:col-span-3">
-              <label for="modal_monto" :class="['block mb-1.5 text-sm font-medium', fieldErrors.monto ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300']">Monto <span class="text-accent-500">*</span></label>
+              <label for="modal_monto" :class="['block mb-1.5 text-sm font-medium', fieldErrors.monto ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300']">Monto <span class="text-accent-500 dark:text-accent-400">*</span></label>
               <div class="relative">
                 <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
                 <input

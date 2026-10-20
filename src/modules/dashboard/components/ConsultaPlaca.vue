@@ -87,7 +87,7 @@ function onKeyDown(event) {
       </button>
     </div>
 
-    <p v-if="error" class="mt-2 text-sm text-accent-500" role="alert">{{ error }}</p>
+    <p v-if="error" class="mt-2 text-sm text-accent-500 dark:text-accent-400" role="alert">{{ error }}</p>
 
     <ul
       v-if="resultados.length"

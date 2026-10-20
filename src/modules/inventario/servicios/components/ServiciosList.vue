@@ -294,7 +294,7 @@ onMounted(async () => {
     <template #row="{ item }">
       <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
         <td class="px-4 py-3 whitespace-nowrap">
-          <button type="button" :title="puedeModificar ? 'Editar servicio' : 'Ver servicio'" class="font-medium text-gray-800 cursor-pointer hover:text-brand-coral dark:text-white" @click="openEditModal(item.id)">{{ item.codigo }}</button>
+          <button type="button" :title="puedeModificar ? 'Editar servicio' : 'Ver servicio'" class="font-medium text-gray-800 cursor-pointer hover:text-accent-500 dark:hover:text-accent-400 dark:text-white" @click="openEditModal(item.id)">{{ item.codigo }}</button>
         </td>
         <td class="px-4 py-3 text-gray-800 whitespace-nowrap dark:text-white">{{ item.nombre }}</td>
         <td class="px-4 py-3 text-gray-800 whitespace-nowrap dark:text-white">{{ categoriaLabel(item.categoria) }}</td>

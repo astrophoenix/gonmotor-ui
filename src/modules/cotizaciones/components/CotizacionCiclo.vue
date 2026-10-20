@@ -103,7 +103,7 @@ const LINEA = {
             <a
               v-if="paso.href"
               :href="paso.href"
-              class="block text-xs font-mono font-semibold truncate text-brand-700 hover:text-brand-coral dark:text-brand-200"
+              class="block text-xs font-mono font-semibold truncate text-brand-700 hover:text-accent-500 dark:hover:text-accent-400 dark:text-brand-200"
             >{{ paso.detalle }}</a>
             <span v-else class="block text-xs truncate tabular-nums text-gray-500 dark:text-gray-400">{{ paso.detalle }}</span>
           </span>

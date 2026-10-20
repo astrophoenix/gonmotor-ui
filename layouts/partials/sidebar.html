@@ -18,11 +18,10 @@
     <div class="sidebar-scroll flex flex-col flex-1 pt-0 pb-6 overflow-y-auto">
       <div class="flex-1">
         <div class="sidebar-header">
-          <a href="{{ if $enAdminSaas }}{{ "crud/empresas/" | relURL }}{{ else }}{{ "/" | relURL }}{{ end }}" sidebar-logo class="sidebar-brand flex items-center">
-            <img src="{{ partial "asset-url" "/images/isotipo-blanco.svg" }}" class="h-10 w-auto" alt="gonmotor Logo" />
+          <a href="{{ if $enAdminSaas }}{{ "crud/empresas/" | relURL }}{{ else }}{{ "/" | relURL }}{{ end }}" sidebar-logo class="sidebar-brand flex items-center" aria-label="Gonmotor, ir al inicio">
+            <img src="{{ partial "asset-url" "/images/login/isotipo-piston-negativo.svg" }}" class="h-10 w-10" alt="" />
             <span sidebar-toggle-item class="sidebar-wordmark self-center font-brand text-2xl font-extrabold leading-none tracking-tight whitespace-nowrap ml-2 sm:text-[1.75rem]">
-              <span class="text-white">gon</span>
-              <span class="text-brand-coral">motor</span>
+              <span class="text-white">gon</span><span class="text-accent-400">motor</span>
             </span>
           </a>
           <button id="toggleSidebarDesktop" type="button" class="sidebar-toggle-btn" aria-label="Contraer menú" aria-expanded="true" title="Contraer menú">

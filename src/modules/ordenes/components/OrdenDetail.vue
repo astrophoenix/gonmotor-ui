@@ -66,7 +66,7 @@ const SECCION = 'p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs
 const TITULO_SECCION = 'flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200';
 const ETIQUETA = 'text-xs font-medium text-gray-500 dark:text-gray-400';
 const VALOR = 'mt-0.5 text-sm font-semibold text-gray-900 dark:text-white';
-const ENLACE = 'hover:text-brand-coral';
+const ENLACE = 'hover:text-accent-500 dark:hover:text-accent-400';
 const CONTADOR = 'px-1.5 text-xs font-medium normal-case tracking-normal rounded bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 tabular-nums';
 const BASE_INPUT = 'block w-full p-2.5 text-sm rounded shadow-xs focus:outline-none focus:ring-2 dark:bg-gray-700 dark:placeholder-gray-400 disabled:cursor-not-allowed disabled:opacity-70';
 const INPUT_OK = 'bg-gray-50 border border-gray-300 text-gray-900 focus:ring-brand-200 focus:border-brand-500 dark:border-gray-600 dark:text-white dark:focus:ring-brand-500/40 dark:focus:border-brand-300';
@@ -614,7 +614,7 @@ onMounted(async () => {
 
         <!-- Motivo de la espera, en el mismo aviso para no perder el contexto -->
         <div v-if="puedeModificar && pidiendoEspera && estado === 'EN_PROCESO'" class="pt-3 mt-3 border-t border-brand-200 dark:border-brand-500/40">
-          <label for="motivo_espera" class="block mb-2 text-sm font-medium">Motivo de la espera <span class="text-accent-500">*</span></label>
+          <label for="motivo_espera" class="block mb-2 text-sm font-medium">Motivo de la espera <span class="text-accent-500 dark:text-accent-400">*</span></label>
           <div class="flex flex-col gap-2 sm:flex-row">
             <input
               id="motivo_espera"

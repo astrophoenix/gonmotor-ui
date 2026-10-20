@@ -1276,7 +1276,7 @@ onMounted(async () => {
             <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div class="min-w-0">
                 <label for="cliente" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                  Cliente <span v-if="!bloqueadoClienteVehiculo" class="text-accent-500">*</span>
+                  Cliente <span v-if="!bloqueadoClienteVehiculo" class="text-accent-500 dark:text-accent-400">*</span>
                 </label>
                 <ClienteSearchSelect
                   id="cliente"
@@ -1311,7 +1311,7 @@ onMounted(async () => {
 
               <div class="relative min-w-0">
                 <label for="vehiculo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                  Vehículo <span v-if="!bloqueadoClienteVehiculo" class="text-accent-500">*</span>
+                  Vehículo <span v-if="!bloqueadoClienteVehiculo" class="text-accent-500 dark:text-accent-400">*</span>
                 </label>
                 <VehiculoSearchSelect
                   id="vehiculo"
@@ -1346,7 +1346,7 @@ onMounted(async () => {
 
               <div class="min-w-0">
                 <label for="asesor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                  Responsable <span v-if="esEditable" class="text-accent-500">*</span>
+                  Responsable <span v-if="esEditable" class="text-accent-500 dark:text-accent-400">*</span>
                 </label>
                 <EmpleadoSearchSelect
                   v-if="esEditable"
@@ -1379,7 +1379,7 @@ onMounted(async () => {
 
             <div v-if="mostrarSucursal" class="mt-4 max-w-sm">
               <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                Taller emisor <span class="text-accent-500">*</span>
+                Taller emisor <span class="text-accent-500 dark:text-accent-400">*</span>
               </label>
               <TallerSelect
                 v-model="tallerSucursalId"
@@ -1691,7 +1691,7 @@ onMounted(async () => {
         </p>
 
         <div v-if="modal.tipo === 'ACEPTAR'">
-          <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Método de aceptación <span class="text-accent-500">*</span></p>
+          <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Método de aceptación <span class="text-accent-500 dark:text-accent-400">*</span></p>
           <div class="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Método de aceptación">
             <label
               v-for="metodo in METODOS_ACEPTACION"

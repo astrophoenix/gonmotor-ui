@@ -75,7 +75,7 @@ const ETIQUETA = 'text-xs font-medium text-gray-500 dark:text-gray-400';
 const VALOR = 'mt-0.5 text-sm font-semibold text-gray-900 dark:text-white';
 const CONTADOR = 'px-2 py-0.5 text-xs font-medium rounded-sm tabular-nums';
 const CONTADOR_NEUTRO = 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
-const ENLACE = 'hover:text-brand-coral';
+const ENLACE = 'hover:text-accent-500 dark:hover:text-accent-400';
 const BLOQUE_TEXTO = 'p-3 text-sm leading-relaxed whitespace-pre-line text-gray-900 border-s-4 rounded-e-lg dark:text-white';
 
 const PASOS = [
@@ -529,7 +529,7 @@ onMounted(async () => {
             <a
               v-if="recepcionHref"
               :href="recepcionHref"
-              class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-full hover:bg-gray-100 hover:text-brand-coral dark:bg-gray-700/50 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+              class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-full hover:bg-gray-100 hover:text-accent-500 dark:hover:text-accent-400 dark:bg-gray-700/50 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
               title="Abrir la recepción de la que viene esta inspección">
               <ClipboardList class="w-3.5 h-3.5" />
               Viene de la recepción

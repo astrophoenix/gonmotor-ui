@@ -1103,7 +1103,7 @@ const grupos = computed(() => [
 
       <!-- Motivo de la espera, en el mismo aviso para no perder el contexto -->
       <div v-if="pidiendoEspera" class="pt-3 mt-3 border-t border-brand-200 dark:border-brand-500/40">
-        <label for="motivo_espera" class="block mb-2 text-sm font-medium">Motivo de la espera <span class="text-accent-500">*</span></label>
+        <label for="motivo_espera" class="block mb-2 text-sm font-medium">Motivo de la espera <span class="text-accent-500 dark:text-accent-400">*</span></label>
         <div class="flex flex-col gap-2 sm:flex-row">
           <input
             id="motivo_espera"
@@ -1177,7 +1177,7 @@ const grupos = computed(() => [
                 <p class="mb-2 text-base font-semibold text-gray-900 truncate dark:text-white">{{ cliente?.nombre || '—' }}</p>
               </template>
               <template v-else>
-                <label for="cliente" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente <span class="text-accent-500">*</span></label>
+                <label for="cliente" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cliente <span class="text-accent-500 dark:text-accent-400">*</span></label>
                 <ClienteSearchSelect
                   id="cliente"
                   v-model="clienteSearch"
@@ -1219,7 +1219,7 @@ const grupos = computed(() => [
                 <p class="mb-2 font-mono text-base font-semibold tracking-widest text-gray-900 dark:text-white">{{ formatPlaca(vehiculo?.placa) || '—' }}</p>
               </template>
               <template v-else>
-                <label for="vehiculo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo <span class="text-accent-500">*</span></label>
+                <label for="vehiculo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vehículo <span class="text-accent-500 dark:text-accent-400">*</span></label>
                 <VehiculoSearchSelect
                   id="vehiculo"
                   v-model="vehiculoSearch"
@@ -1294,12 +1294,12 @@ const grupos = computed(() => [
               </select>
             </div>
             <div>
-              <label for="fecha_ingreso" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Ingreso <span class="text-accent-500">*</span></label>
+              <label for="fecha_ingreso" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Ingreso <span class="text-accent-500 dark:text-accent-400">*</span></label>
               <input id="fecha_ingreso" v-model="form.fecha_ingreso" type="datetime-local" required :class="inputClass('fecha_ingreso')" @input="formErrors.fecha_ingreso = ''">
               <p v-if="formErrors.fecha_ingreso" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.fecha_ingreso }}</p>
             </div>
             <div>
-              <label for="kilometraje" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kilometraje <span class="text-accent-500">*</span></label>
+              <label for="kilometraje" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kilometraje <span class="text-accent-500 dark:text-accent-400">*</span></label>
               <div class="relative">
                 <input id="kilometraje" v-model="form.kilometraje" type="number" min="0" step="1" inputmode="numeric" required :class="inputClass('kilometraje', 'pe-10 tabular-nums')" @input="formErrors.kilometraje = ''">
                 <span class="pointer-events-none absolute inset-y-0 end-3 flex items-center text-sm text-gray-400">km</span>
@@ -1314,7 +1314,7 @@ const grupos = computed(() => [
           </div>
 
           <div v-if="mostrarSucursal" class="max-w-sm mt-4">
-            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Taller emisor <span class="text-accent-500">*</span></label>
+            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Taller emisor <span class="text-accent-500 dark:text-accent-400">*</span></label>
             <TallerSelect
               v-model="tallerSucursalId"
               :nombre="tallerSucursalNombre"

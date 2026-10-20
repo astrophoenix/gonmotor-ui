@@ -24,7 +24,7 @@ const correo = params.get('email') || '';
 const enlaceInvalido = ref(!uid || !token);
 
 const CAMPO_NORMAL = 'border-brand-200 focus:border-brand-900 focus:ring-brand-focus-ring dark:border-brand-600 dark:focus:border-brand-300';
-const CAMPO_ERROR = 'border-brand-red focus:border-brand-red focus:ring-brand-red/15';
+const CAMPO_ERROR = 'border-accent-500 focus:border-accent-500 focus:ring-accent-500/15';
 const CAMPO_OK = 'border-success focus:border-success focus:ring-success/15';
 
 const fortaleza = computed(() => validatePasswordStrength(password.value));
@@ -36,8 +36,8 @@ const requisitos = computed(() => [
 ]);
 const cumplidos = computed(() => requisitos.value.filter((r) => r.ok).length);
 const NIVELES = [
-  { texto: 'Muy débil', barra: 'bg-brand-red', color: 'text-brand-red' },
-  { texto: 'Débil', barra: 'bg-brand-red', color: 'text-brand-red' },
+  { texto: 'Muy débil', barra: 'bg-accent-500', color: 'text-accent-500 dark:text-accent-400' },
+  { texto: 'Débil', barra: 'bg-accent-500', color: 'text-accent-500 dark:text-accent-400' },
   { texto: 'Aceptable', barra: 'bg-warning', color: 'text-warning' },
   { texto: 'Casi lista', barra: 'bg-warning', color: 'text-warning' },
   { texto: 'Segura', barra: 'bg-success', color: 'text-success' },
@@ -98,7 +98,7 @@ onMounted(() => document.getElementById('reset-password')?.focus());
       </p>
       <a
         href="/authentication/sign-in/"
-        class="mt-7 inline-flex h-14 w-full items-center justify-center gap-3 rounded-[10px] bg-brand-red px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(200,16,46,0.7)] transition-colors hover:bg-brand-red-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-red/40"
+        class="mt-7 inline-flex h-14 w-full items-center justify-center gap-3 rounded-[10px] bg-accent-500 px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(200,16,46,0.7)] transition-colors hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-500/40"
       >
         <KeyRound class="h-5 w-5" aria-hidden="true" />
         Entrar al taller
@@ -108,7 +108,7 @@ onMounted(() => document.getElementById('reset-password')?.focus());
 
     <!-- Enlace vencido o incompleto -->
     <div v-else-if="enlaceInvalido" role="alert">
-      <span class="flex h-13 w-13 items-center justify-center rounded-[14px] bg-accent-50 text-brand-red dark:bg-brand-950 dark:text-brand-coral">
+      <span class="flex h-13 w-13 items-center justify-center rounded-[14px] bg-accent-50 text-accent-500 dark:bg-brand-950 dark:text-accent-400">
         <Link2Off class="h-6.5 w-6.5" aria-hidden="true" />
       </span>
       <h1 class="mt-5 text-[30px] font-extrabold leading-tight tracking-[-0.015em]">Este enlace ya no funciona</h1>
@@ -117,7 +117,7 @@ onMounted(() => document.getElementById('reset-password')?.focus());
       </p>
       <a
         href="/authentication/forgot-password/"
-        class="mt-7 inline-flex h-14 w-full items-center justify-center gap-3 rounded-[10px] bg-brand-red px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(200,16,46,0.7)] transition-colors hover:bg-brand-red-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-red/40"
+        class="mt-7 inline-flex h-14 w-full items-center justify-center gap-3 rounded-[10px] bg-accent-500 px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(200,16,46,0.7)] transition-colors hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-500/40"
       >
         Pedir un enlace nuevo
         <ArrowRight class="h-5 w-5" aria-hidden="true" />
@@ -230,7 +230,7 @@ onMounted(() => document.getElementById('reset-password')?.focus());
             <Eye v-else class="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
-        <p v-if="confirmError" id="reset-confirm-error" class="mt-2 text-sm font-medium text-brand-red" role="alert">{{ confirmError }}</p>
+        <p v-if="confirmError" id="reset-confirm-error" class="mt-2 text-sm font-medium text-accent-500 dark:text-accent-400" role="alert">{{ confirmError }}</p>
         <p v-else-if="coinciden" class="mt-2 flex items-center gap-1.5 text-sm font-medium text-success">
           <Check class="h-4 w-4" stroke-width="3" aria-hidden="true" />
           Las contraseñas coinciden
@@ -239,7 +239,7 @@ onMounted(() => document.getElementById('reset-password')?.focus());
         <button
           type="submit"
           :disabled="isLoading || !isFormValid"
-          class="mt-6 inline-flex h-14 w-full items-center justify-center gap-3 rounded-[10px] bg-brand-red px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(200,16,46,0.7)] transition-colors hover:bg-brand-red-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-red/40 disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none"
+          class="mt-6 inline-flex h-14 w-full items-center justify-center gap-3 rounded-[10px] bg-accent-500 px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(200,16,46,0.7)] transition-colors hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-500/40 disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none"
         >
           <template v-if="isLoading">
             <Loader2 class="h-5 w-5 animate-spin" aria-hidden="true" />
@@ -258,7 +258,7 @@ onMounted(() => document.getElementById('reset-password')?.focus());
       <a
         v-if="!actualizada"
         href="/authentication/sign-in/"
-        class="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-bold text-brand-500 underline underline-offset-[3px] transition-colors hover:text-brand-red-hover focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-200 dark:hover:text-brand-coral"
+        class="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-bold text-brand-500 underline underline-offset-[3px] transition-colors hover:text-accent-600 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-900 dark:text-brand-200 dark:hover:text-accent-400"
       >
         <ArrowLeft class="h-4 w-4" aria-hidden="true" />
         <span class="sm:hidden">Iniciar sesión</span>

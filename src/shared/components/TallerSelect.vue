@@ -121,7 +121,7 @@ const claseDisparador = computed(() => {
     const base =
       'flex h-10 w-full items-center justify-between gap-3 rounded-xl border-[1.5px] bg-white px-3.5 shadow-xstext-base text-brand-ink outline-none transition-colors focus:ring-4 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-800 dark:text-white';
     return props.invalid
-      ? `${base} border-brand-red focus:border-brand-red focus:ring-brand-red/15 dark:border-brand-red`
+      ? `${base} border-accent-500 focus:border-accent-500 focus:ring-accent-500/15 dark:border-accent-500`
       : `${base} border-brand-line focus:border-brand-ink focus:ring-brand-focus-ring dark:border-slate-600`;
   }
   if (props.movilCompacto) {
@@ -131,7 +131,7 @@ const claseDisparador = computed(() => {
   const base =
     'shadow-xs inline-flex min-w-0 max-w-[15rem] items-center gap-2 rounded border bg-brand-50 px-2.5 py-2 text-sm text-ink transition-colors hover:bg-brand-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-brand-800 dark:text-white dark:hover:bg-brand-700';
   return props.invalid
-    ? `${base} border-brand-red dark:border-brand-red`
+    ? `${base} border-accent-500 dark:border-accent-500`
     : `${base} border-brand-100 dark:border-brand-700`;
 });
 

@@ -26,13 +26,13 @@ const PASOS = [
       <span
         v-if="i < PASOS.length - 1"
         class="absolute left-[17px] top-9 h-[calc(100%-36px)] w-px"
-        :class="i + 1 < props.actual ? 'bg-brand-coral/70' : 'bg-white/20'"
+        :class="i + 1 < props.actual ? 'bg-accent-400/70' : 'bg-white/20'"
         aria-hidden="true"
       ></span>
       <span
         class="flex h-[35px] w-[35px] shrink-0 items-center justify-center rounded-full text-sm font-extrabold"
         :class="i + 1 < props.actual
-          ? 'bg-brand-coral text-white'
+          ? 'bg-accent-400 text-white'
           : i + 1 === props.actual
             ? 'bg-white text-brand-900 ring-4 ring-white/15'
             : 'border border-white/30 text-white/60'"
