@@ -14,7 +14,8 @@ import { useFiltrosReactivos } from '../../../shared/composables/useFiltrosReact
 import EntityTable from '../../../shared/components/EntityTable.vue';
 import EntityRowActions from '../../../shared/components/EntityRowActions.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
-import ImportExcelModal from './ImportExcelModal.vue';
+import ImportWizardModal from '../../../shared/components/ImportWizardModal.vue';
+import { IMPORTACION_CLIENTES, SERVICIO_IMPORTACION_CLIENTES } from '../constants/importacionClientes';
 import ClientModal from './ClientModal.vue';
 import ClienteVehiculosCell from './ClienteVehiculosCell.vue';
 import { usePermisos } from '../../../shared/composables/usePermisos';
@@ -159,8 +160,9 @@ function openImportModal() {
   showImportModal.value = true;
 }
 
-async function onImported(count) {
-  showAlert('success', '', `${count} cliente(s) importado(s) exitosamente.`);
+async function onImported(resultado) {
+  const n = resultado.exitosos;
+  showAlert('success', '', `${n} ${n === 1 ? 'cliente importado' : 'clientes importados'} correctamente.`);
   loadClients(1);
 }
 
@@ -446,8 +448,10 @@ onMounted(async () => {
     @cancel="clientToReactivate = null"
   />
 
-  <ImportExcelModal
+  <ImportWizardModal
     v-model="showImportModal"
+    :config="IMPORTACION_CLIENTES"
+    :servicio="SERVICIO_IMPORTACION_CLIENTES"
     @imported="onImported"
   />
 
