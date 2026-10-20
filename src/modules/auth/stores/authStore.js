@@ -182,6 +182,16 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       const data = await authService.changePassword(passwordData);
+      // El backend cierra todas las sesiones y entrega una nueva para este
+      // dispositivo: se guarda en el mismo almacenamiento de la sesión actual.
+      if (data?.access && data?.refresh) {
+        const storage = getStorage();
+        if (storage) {
+          storage.setItem(ACCESS_TOKEN_KEY, data.access);
+          storage.setItem(REFRESH_TOKEN_KEY, data.refresh);
+        }
+        accessToken.value = data.access;
+      }
       return data;
     } finally {
       isLoading.value = false;

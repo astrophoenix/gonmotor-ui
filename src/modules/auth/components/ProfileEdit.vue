@@ -1,4 +1,5 @@
 <script setup>
+import { PASSWORD_MIN_LENGTH } from '../../../shared/utils/sanitize';
 import { onMounted, ref } from 'vue';
 import { Eye, EyeOff, Lock, UserRoundCheck } from 'lucide-vue-next';
 import { useAuthStore } from '../stores/authStore';
@@ -213,19 +214,19 @@ async function submitPassword() {
     errorMessage.value = 'Las contraseñas no coinciden.';
     return;
   }
-  if (passwordForm.value.new_password.length < 8) {
-    errorMessage.value = 'La nueva contraseña debe tener al menos 8 caracteres.';
+  if (passwordForm.value.new_password.length < PASSWORD_MIN_LENGTH) {
+    errorMessage.value = `La nueva contraseña debe tener al menos ${PASSWORD_MIN_LENGTH} caracteres.`;
     return;
   }
 
   isSavingPassword.value = true;
 
   try {
-    await authStore.changePassword({
+    const respuesta = await authStore.changePassword({
       old_password: passwordForm.value.old_password,
       new_password: passwordForm.value.new_password,
     });
-    successMessage.value = 'Contraseña actualizada correctamente.';
+    successMessage.value = respuesta?.detail || 'Contraseña actualizada correctamente.';
     passwordForm.value = {
       old_password: '',
       new_password: '',

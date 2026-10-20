@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue';
 import { Lock, Eye, EyeOff, ArrowLeft, ArrowRight, Check, Circle, Loader2, KeyRound, ShieldCheck, Link2Off, UserRound } from 'lucide-vue-next';
 import { authService } from '../services/authService';
 import Alert from '../../../shared/components/Alert.vue';
-import { validatePassword, validatePasswordStrength } from '../../../shared/utils/sanitize';
+import { PASSWORD_MIN_LENGTH, validatePassword, validatePasswordStrength } from '../../../shared/utils/sanitize';
 import AuthShell from './AuthShell.vue';
 import PasosRecuperacion from './PasosRecuperacion.vue';
 
@@ -29,7 +29,7 @@ const CAMPO_OK = 'border-success focus:border-success focus:ring-success/15';
 
 const fortaleza = computed(() => validatePasswordStrength(password.value));
 const requisitos = computed(() => [
-  { clave: 'largo', texto: '8 o más caracteres', ok: fortaleza.value.checks.length },
+  { clave: 'largo', texto: `${PASSWORD_MIN_LENGTH} o más caracteres`, ok: fortaleza.value.checks.length },
   { clave: 'mayus', texto: 'Mayúscula y minúscula', ok: fortaleza.value.checks.upper && fortaleza.value.checks.lower },
   { clave: 'numero', texto: 'Un número', ok: fortaleza.value.checks.number },
   { clave: 'simbolo', texto: 'Un símbolo', ok: fortaleza.value.checks.symbol },
@@ -152,7 +152,7 @@ onMounted(() => document.getElementById('reset-password')?.focus());
             :type="showPassword ? 'text' : 'password'"
             name="password"
             autocomplete="new-password"
-            placeholder="Mínimo 8 caracteres"
+            :placeholder="`Mínimo ${PASSWORD_MIN_LENGTH} caracteres`"
             aria-describedby="reset-requisitos"
             required
             class="block h-[54px] w-full rounded-[10px] border-[1.5px] bg-white pe-12 ps-12 text-[15.5px] text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:ring-4 dark:bg-brand-950 dark:text-brand-50 dark:placeholder:text-brand-300"

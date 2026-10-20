@@ -272,20 +272,23 @@ export function validateCode(value, length = 6) {
   return '';
 }
 
+/** Longitud mínima de contraseña: la misma que exige el backend (`MinimumLengthValidator`). */
+export const PASSWORD_MIN_LENGTH = 12;
+
 /**
  * Valida requisitos de contraseña.
  * Devuelve objeto con: { isValid: boolean, errors: string[], checks: { length, upper, lower, number, symbol } }
  */
 export function validatePasswordStrength(value) {
   const checks = {
-    length: value.length >= 8,
+    length: value.length >= PASSWORD_MIN_LENGTH,
     upper: /[A-Z]/.test(value),
     lower: /[a-z]/.test(value),
     number: /\d/.test(value),
     symbol: /[^A-Za-z0-9]/.test(value),
   };
   const errors = [];
-  if (!checks.length) errors.push('8 o más caracteres');
+  if (!checks.length) errors.push(`${PASSWORD_MIN_LENGTH} o más caracteres`);
   if (!checks.upper || !checks.lower) errors.push('Mayúscula y minúscula');
   if (!checks.number) errors.push('Un número');
   if (!checks.symbol) errors.push('Un símbolo');
@@ -297,7 +300,7 @@ export function validatePasswordStrength(value) {
 }
 
 /**
- * Valida contraseña completa: longitud 8-128, sin caracteres de control ni byte nulo,
+ * Valida contraseña completa: longitud PASSWORD_MIN_LENGTH-128, sin caracteres de control ni byte nulo,
  * requisitos de complejidad, y coincidencia con confirmación.
  * Devuelve '' si es válido o mensaje de error en español.
  */
@@ -306,8 +309,8 @@ export function validatePassword(value, confirmation = null) {
   if (raw === '') {
     return 'La contraseña es obligatoria.';
   }
-  if (raw.length < 8 || raw.length > 128) {
-    return 'La contraseña debe tener entre 8 y 128 caracteres.';
+  if (raw.length < PASSWORD_MIN_LENGTH || raw.length > 128) {
+    return `La contraseña debe tener entre ${PASSWORD_MIN_LENGTH} y 128 caracteres.`;
   }
   if (/[\u0000-\u001F\u007F]/.test(raw)) {
     return 'La contraseña contiene caracteres no permitidos.';
