@@ -63,12 +63,6 @@ export function persiana() {
   // Suelo frente al taller con la luz que sale por la abertura
   s += `<path class="pz" d="M-200 ${piso}H200"/>`;
   for (const [x0, x1] of [[-120, -176], [-60, -92], [0, 0], [60, 92], [120, 176]]) s += `<path class="som" d="M${x0} ${piso + 4}L${x1} ${piso + 34}"/>`;
-  // Cotas del plano: ancho del vano y altura libre bajo la persiana
-  s += `<path class="som" d="M${-W} -176V-196M${W} -176V-196"/><path class="fino" d="M${-W} -190H-28M28 -190H${W}"/>`;
-  s += punta(-W, -190, 180) + punta(W, -190, 0) + texto(0, -186.5, '3.20 m', 9);
-  s += `<path class="som" d="M${-W - 26} ${yb + 12}H${-W - 46}M${-W - 26} ${piso}H${-W - 46}"/><path class="fino" d="M${-W - 40} ${yb + 12}V${(yb + piso) / 2 - 14}M${-W - 40} ${(yb + piso) / 2 + 14}V${piso}"/>`;
-  s += punta(-W - 40, yb + 12, -90) + punta(-W - 40, piso, 90);
-  s += texto(-W - 40, (yb + piso) / 2 + 3, '1.30', 9, ` transform="rotate(-90 ${-W - 40} ${(yb + piso) / 2})"`);
   return s;
 }
 
