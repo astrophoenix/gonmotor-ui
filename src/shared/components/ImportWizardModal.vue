@@ -423,7 +423,7 @@ const insignias = {
                     >{{ c }}</span>
                   </div>
                 </div>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Las columnas resaltadas son obligatorias.</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Las columnas resaltadas son obligatorias. <span class="text-accent-500 dark:text-accent-400">*</span></p>
               </div>
             </div>
           </template>
