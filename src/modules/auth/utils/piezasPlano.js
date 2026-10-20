@@ -194,3 +194,11 @@ export const escenaFormulario = () => [
   ubicar(692, 30, 45, bujia(0.88), 0.65),
   ubicar(30, 878, 45, piston(0.5), 0.65),
 ].join('');
+
+/** Pie del sidebar (viewBox 256×190): bujía, pistón, llave y tuerca sueltas, como caídas al final del menú. */
+export const escenaSidebar = () => [
+  ubicar(40, 150, -28, bujia(0.62), 0.75),
+  ubicar(198, 138, 22, piston(0.27), 0.7),
+  ubicar(118, 196, -10, `<g transform="scale(0.5)">${llave(120, 16)}</g>`, 0.8),
+  ubicar(228, 200, 0, `<g transform="scale(0.42)">${tuerca(22, 13)}</g>`, 0.55),
+].join('');
