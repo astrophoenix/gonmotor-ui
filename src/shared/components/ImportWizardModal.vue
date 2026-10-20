@@ -250,6 +250,13 @@ async function descargarErrores(errores) {
   }
 }
 
+/** Motivo de error en rojo; en una fila que sí se importa es un aviso (ámbar). */
+function claseMotivo(fila) {
+  return fila.estado === 'error'
+    ? 'text-red-600 dark:text-red-400'
+    : 'text-amber-700 dark:text-amber-300';
+}
+
 const insignias = {
   nuevo: { texto: 'Nuevo', clase: 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:ring-emerald-800' },
   actualiza: { texto: 'Se actualiza', clase: 'bg-brand-50 text-brand-700 ring-brand-200 dark:bg-brand-900/40 dark:text-brand-200 dark:ring-brand-700' },
@@ -559,7 +566,7 @@ const insignias = {
                     <td class="px-3 py-2 align-top">
                       <p class="text-gray-900 dark:text-white">{{ f[config.fila?.principal] || '—' }}</p>
                       <p class="text-xs text-gray-500 dark:text-gray-400">{{ f[config.fila?.secundaria] || '—' }}</p>
-                      <p v-if="f.motivo" class="mt-0.5 text-xs text-red-600 dark:text-red-400">{{ f.motivo }}</p>
+                      <p v-if="f.motivo" class="mt-0.5 text-xs" :class="claseMotivo(f)">{{ f.motivo }}</p>
                     </td>
                     <td v-if="config.fila?.extra" class="px-3 py-2 text-gray-600 align-top dark:text-gray-300">{{ f[config.fila.extra] || '—' }}</td>
                     <td class="px-3 py-2 align-top">
@@ -586,7 +593,7 @@ const insignias = {
                 <p class="text-xs text-gray-500 dark:text-gray-400">
                   {{ [f[config.fila?.secundaria], config.fila?.extra && f[config.fila.extra]].filter(Boolean).join(' · ') || '—' }}
                 </p>
-                <p v-if="f.motivo" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ f.motivo }}</p>
+                <p v-if="f.motivo" class="mt-1 text-xs" :class="claseMotivo(f)">{{ f.motivo }}</p>
               </li>
             </ul>
 

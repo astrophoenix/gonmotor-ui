@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue';
-import { Truck, Phone, Mail, Trash2, IdCard, Search, RotateCcw, Filter, UserRound } from 'lucide-vue-next';
+import { Truck, Phone, Mail, Trash2, IdCard, Search, RotateCcw, Filter, UserRound, Upload } from 'lucide-vue-next';
 import { useProveedores } from '../composables/useProveedores';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
@@ -17,9 +17,19 @@ import EstadoActivoBadge from '../../../shared/components/EstadoActivoBadge.vue'
 import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
 import SinAcceso from '../../../shared/components/SinAcceso.vue';
 import { usePermisos } from '../../../shared/composables/usePermisos';
+import ImportWizardModal from '../../../shared/components/ImportWizardModal.vue';
+import { IMPORTACION_PROVEEDORES, SERVICIO_IMPORTACION_PROVEEDORES } from '../constants/importacionProveedores';
 
 const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
 const puedeModificarProveedores = computed(() => puede('proveedores', 'modificar'));
+
+const showImportModal = ref(false);
+
+function onImported(resultado) {
+  const n = resultado.exitosos;
+  showAlert('success', '', `${n} ${n === 1 ? 'proveedor importado' : 'proveedores importados'} correctamente.`);
+  loadProveedores(1);
+}
 
 const TIPOS_IDENTIFICACION = {
   C: 'Cédula',
@@ -304,6 +314,15 @@ onMounted(async () => {
       <div class="flex flex-col gap-3 px-4 py-3 border-b border-default-medium md:flex-row md:items-center md:justify-between">
         <h2 class="text-base font-semibold text-slate-900 dark:text-white">Listado de Proveedores</h2>
         <div class="flex flex-wrap items-center gap-2">
+          <button
+            v-if="puedeModificarProveedores"
+            type="button"
+            class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border rounded-lg shadow-xs text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-slate-900 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700"
+            @click="showImportModal = true"
+          >
+            <Upload class="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            Importar
+          </button>
           <EntityActionButtons
             entity="proveedores"
             :show-add="puedeModificarProveedores"
@@ -415,6 +434,13 @@ onMounted(async () => {
     @created="onProveedorCreated"
     @updated="onProveedorUpdated"
     @reactivated="onProveedorReactivated"
+  />
+
+  <ImportWizardModal
+    v-model="showImportModal"
+    :config="IMPORTACION_PROVEEDORES"
+    :servicio="SERVICIO_IMPORTACION_PROVEEDORES"
+    @imported="onImported"
   />
   </template>
 </template>

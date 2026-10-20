@@ -1,5 +1,5 @@
 import { Car, CircleCheck, RefreshCw, Users } from 'lucide-vue-next';
-import { clientsService } from '../services/clientesService';
+import { crearServicioImportacion } from '../../../shared/services/importacionService';
 
 /**
  * Configuración del asistente de importación (`shared/components/ImportWizardModal.vue`).
@@ -27,16 +27,11 @@ export const IMPORTACION_CLIENTES = {
   },
   reglas: [
     { icono: Car, titulo: 'Una fila por vehículo', texto: 'Si un cliente tiene varios, repite su identificación.' },
-    { icono: RefreshCw, titulo: 'Sin duplicados', texto: 'Si la identificación existe, sus datos se actualizan.' },
+    { icono: RefreshCw, titulo: 'Sin duplicados', texto: 'Si el cliente o la placa ya existen, solo se actualizan las celdas con valor.' },
     { icono: CircleCheck, titulo: 'Solo 2 obligatorios', texto: 'Identificación y Nombre. El resto es opcional.' },
   ],
   fila: { principal: 'nombre', secundaria: 'identificacion', extra: 'vehiculo', extraEtiqueta: 'Vehículo' },
   contadores: [{ clave: 'vehiculos', etiqueta: 'vehículos' }],
 };
 
-export const SERVICIO_IMPORTACION_CLIENTES = {
-  descargarPlantilla: () => clientsService.descargarPlantilla(),
-  validar: (archivo) => clientsService.validarImportacion(archivo),
-  importar: (archivo) => clientsService.importarArchivo(archivo),
-  descargarErrores: (errores) => clientsService.descargarErrores(errores),
-};
+export const SERVICIO_IMPORTACION_CLIENTES = crearServicioImportacion('/api/clientes/', 'clientes');

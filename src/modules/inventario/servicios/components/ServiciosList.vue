@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { Wrench, Search, Filter } from 'lucide-vue-next';
+import { Wrench, Search, Filter, Upload } from 'lucide-vue-next';
 import { useServicios } from '../composables/useServicios';
 import ConfirmModal from '../../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../../shared/components/Alert.vue';
@@ -17,10 +17,20 @@ import { useFiltrosReactivos } from '../../../../shared/composables/useFiltrosRe
 import ModoConsultaChip from '../../../../shared/components/ModoConsultaChip.vue';
 import SinAcceso from '../../../../shared/components/SinAcceso.vue';
 import { usePermisos } from '../../../../shared/composables/usePermisos';
+import ImportWizardModal from '../../../../shared/components/ImportWizardModal.vue';
+import { IMPORTACION_SERVICIOS, SERVICIO_IMPORTACION_SERVICIOS } from '../constants/importacionServicios';
 
 const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
 // Repuestos y servicios comparten el recurso `inventario`.
 const puedeModificar = computed(() => puede('inventario', 'modificar'));
+
+const showImportModal = ref(false);
+
+function onImported(resultado) {
+  const n = resultado.exitosos;
+  showAlert('success', '', `${n} ${n === 1 ? 'servicio importado' : 'servicios importados'} correctamente.`);
+  loadServicios(1);
+}
 
 const {
   servicios,
@@ -272,6 +282,15 @@ onMounted(async () => {
       <div class="flex flex-col gap-3 px-4 py-3 border-b border-default-medium md:flex-row md:items-center md:justify-between">
         <h2 class="text-base font-semibold text-slate-900 dark:text-white">Listado de Servicios</h2>
         <div class="flex flex-wrap items-center gap-2">
+          <button
+            v-if="puedeModificar"
+            type="button"
+            class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border rounded-lg shadow-xs text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-slate-900 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700"
+            @click="showImportModal = true"
+          >
+            <Upload class="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            Importar
+          </button>
           <EntityActionButtons
             entity="servicios"
             :show-add="puedeModificar"
@@ -339,6 +358,13 @@ onMounted(async () => {
     @created="onCreated"
     @updated="onUpdated"
     @reactivated="onReactivated"
+  />
+
+  <ImportWizardModal
+    v-model="showImportModal"
+    :config="IMPORTACION_SERVICIOS"
+    :servicio="SERVICIO_IMPORTACION_SERVICIOS"
+    @imported="onImported"
   />
   </template>
 </template>
