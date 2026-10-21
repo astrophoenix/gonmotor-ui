@@ -7,6 +7,7 @@ defineProps({
   id: { type: String, default: 'flujo-inspeccion' },
   placeholder: { type: String, default: 'Buscar inspección...' },
   disabled: { type: Boolean, default: false },
+  esCompatible: { type: Function, default: null },
   soloSinRelacion: { type: Boolean, default: false },
   createUrl: { type: String, default: '/crud/inspecciones/editar/' },
 });

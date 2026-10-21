@@ -7,6 +7,7 @@ defineProps({
   id: { type: String, default: 'flujo-cita' },
   placeholder: { type: String, default: 'Buscar cita...' },
   disabled: { type: Boolean, default: false },
+  esCompatible: { type: Function, default: null },
   soloSinRelacion: { type: Boolean, default: false },
   createUrl: { type: String, default: '/crud/citas/?crear=1' },
 });

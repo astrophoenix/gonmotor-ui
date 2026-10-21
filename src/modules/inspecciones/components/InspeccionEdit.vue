@@ -1,6 +1,6 @@
 <script setup>
 import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
-import { Car, Toolbox, TriangleAlert, CheckCircle2, Loader2, Plus, Trash2, Wand2, IdCardIcon, TagIcon, Shapes, PaintBucket, Phone, Mail, Camera, ShieldCheck, Workflow, Package, Check, CircleAlert, ArrowLeft, ArrowRight, ListChecks, Stethoscope, CalendarClock, ScanSearch, ClipboardList, CircleStop } from 'lucide-vue-next';
+import { Car, Toolbox, TriangleAlert, CheckCircle2, Loader2, Plus, Trash2, Wand2, IdCardIcon, TagIcon, Shapes, PaintBucket, Phone, Mail, Camera, ShieldCheck, Workflow, Package, Check, CircleAlert, ArrowLeft, ArrowRight, ListChecks, Stethoscope, CalendarClock, ScanSearch, ClipboardList, CircleStop, Lock } from 'lucide-vue-next';
 import { IconClockCheck, IconClockPlay, IconEngine, IconManualGearbox, IconAutomaticGearbox, IconGasStation } from '@tabler/icons-vue';
 import { request } from '../../../shared/services/httpClient';
 import { API_BASE_URL } from '../../../shared/config/env';
@@ -51,6 +51,7 @@ const formErrors = ref({});
 const RELACIONES_VACIAS = () => ({ cita: [], recepcion: [], cotizacion: [], orden: [] });
 const PUEDE_AGREGAR = { cita: true, recepcion: true, cotizacion: true, orden: true };
 const relacionesInspeccion = ref(RELACIONES_VACIAS());
+const politicaRelaciones = ref({});
 const puedeAgregarRelacion = ref({ ...PUEDE_AGREGAR });
 const relacionesCargadas = ref(false);
 
@@ -120,6 +121,9 @@ const breadcrumb = computed(() => [
 
 const inspeccionFinalizada = computed(() => estadoInspeccion.value === 'FINALIZADA');
 const readOnly = computed(() => isEditMode && inspeccionFinalizada.value);
+// Pendiente: el diagnóstico (pasos y responsable) se habilita al iniciar la inspección.
+const pendienteDeInicio = computed(() => isEditMode && estadoInspeccion.value === 'PENDIENTE');
+const diagnosticoBloqueado = computed(() => readOnly.value || pendienteDeInicio.value);
 const detalleHref = computed(() => `/crud/inspecciones/ver/?id=${encodeURIComponent(inspeccionId)}`);
 const mensajeSoloLectura = computed(() => {
   if (inspeccionData.value?.tiene_orden_trabajo) {
@@ -457,9 +461,10 @@ const responsableNombre = computed(() => {
   return empleado ? `${nombreEmpleado(empleado)} — ${empleado.rol_display || ''}`.trim().replace(/— $/, '') : (form.responsable ? '—' : 'Sin asignar');
 });
 
-function solicitarIniciar() {
+// Inicia sin confirmación: es reversible. El modal se conserva (confirmarIniciar) por si se reactiva.
+async function solicitarIniciar() {
   if (transicionEstado.value) return;
-  showIniciarModal.value = true;
+  await cambiarEstado('EN_PROCESO');
 }
 
 async function confirmarIniciar() {
@@ -507,8 +512,18 @@ async function cambiarEstado(nuevoEstado) {
         form.fecha_inspeccion = toLocalDatetimeInput(actualizada.fecha_inspeccion);
       }
     }
-    successMessage.value = 'Inspección iniciada. Ahora está en proceso.';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    successMessage.value = 'Inspección iniciada. Ya puedes registrar el diagnóstico.';
+    // Lleva al usuario al primer campo recién habilitado.
+    activeTab.value = 'informacion';
+    nextTick(() => {
+      const campo = document.getElementById('tipo_inspeccion');
+      if (campo) {
+        campo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        campo.focus({ preventScroll: true });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
   } catch (error) {
     showError(error);
   } finally {
@@ -924,6 +939,7 @@ async function cargarRelacionesInspeccion(id = inspeccionId) {
   try {
     const data = await inspeccionesService.listarRelaciones(id);
     relacionesInspeccion.value = data?.relaciones || RELACIONES_VACIAS();
+    politicaRelaciones.value = data || {};
     puedeAgregarRelacion.value = data?.puede_agregar || PUEDE_AGREGAR;
     relacionesCargadas.value = true;
   } catch (error) {
@@ -1214,7 +1230,7 @@ onMounted(async () => {
   -->
 
   <div class="px-4 pt-4">
-    <!-- Avisos de cambio de estado: único lugar para iniciar y para finalizar la inspección. -->
+    <!-- Avisos de cambio de estado (iniciar también se ofrece en la guía del formulario). -->
     <div
       v-if="(estadoInspeccion === 'PENDIENTE' && !readOnly) || puedeFinalizar"
       class="flex flex-col gap-3 p-4 mb-4 text-sm border rounded-lg sm:flex-row sm:items-center sm:justify-between bg-brand-50 border-brand-200 text-brand-900 dark:bg-brand-700/20 dark:border-brand-500/40 dark:text-brand-100">
@@ -1369,7 +1385,7 @@ onMounted(async () => {
               <EmpleadoSearchSelect
                 id="inspector"
                 v-model="responsableSearch"
-                :disabled="readOnly"
+                :disabled="diagnosticoBloqueado"
                 placeholder="Asignar responsable..."
                 @select="selectResponsable"
                 @clear="clearResponsable"
@@ -1446,6 +1462,23 @@ onMounted(async () => {
             </nav>
 
             <div class="p-4 sm:p-5 space-y-4 bg-gray-50/60 dark:bg-gray-900/30">
+              <!-- Guía discreta mientras está pendiente: los pasos se habilitan al iniciar. -->
+              <div
+                v-if="pendienteDeInicio"
+                class="flex flex-wrap items-center gap-x-2 gap-y-1 px-3 py-2 text-sm text-gray-600 border border-dashed border-gray-300 rounded-lg dark:text-gray-300 dark:border-gray-600">
+                <Lock class="w-4 h-4 shrink-0 text-gray-400 dark:text-gray-500" />
+                <span>Los campos se habilitan al iniciar la inspección.</span>
+                <button
+                  type="button"
+                  :disabled="transicionEstado"
+                  class="inline-flex items-center gap-1 font-medium text-brand-700 hover:underline disabled:opacity-60 disabled:no-underline dark:text-brand-200"
+                  @click="solicitarIniciar">
+                  <Loader2 v-if="transicionEstado" class="w-3.5 h-3.5 animate-spin" />
+                  {{ transicionEstado ? 'Iniciando...' : 'Iniciar ahora' }}
+                  <ArrowRight v-if="!transicionEstado" class="w-3.5 h-3.5" />
+                </button>
+              </div>
+
               <!-- 1. Diagnóstico -->
               <div v-show="activeTab === 'informacion'" class="space-y-4">
                 <section :class="SECCION">
@@ -1456,7 +1489,7 @@ onMounted(async () => {
                   <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     <div>
                       <label for="tipo_inspeccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de inspección</label>
-                      <select id="tipo_inspeccion" v-model="form.tipo_inspeccion" :disabled="readOnly" :class="inputClass('tipo_inspeccion')">
+                      <select id="tipo_inspeccion" v-model="form.tipo_inspeccion" :disabled="diagnosticoBloqueado" :class="inputClass('tipo_inspeccion')">
                         <option v-for="item in TIPOS_TRABAJO_OPCIONES" :key="item.value" :value="item.value">{{ item.label }}</option>
                       </select>
                     </div>
@@ -1464,7 +1497,7 @@ onMounted(async () => {
                       <label for="fecha_inspeccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                         Inicio <span class="text-accent-500 dark:text-accent-400">*</span>
                       </label>
-                      <input id="fecha_inspeccion" v-model="form.fecha_inspeccion" type="datetime-local" :disabled="readOnly" :class="inputClass('fecha_inspeccion')">
+                      <input id="fecha_inspeccion" v-model="form.fecha_inspeccion" type="datetime-local" :disabled="diagnosticoBloqueado" :class="inputClass('fecha_inspeccion')">
                       <p v-if="formErrors.fecha_inspeccion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.fecha_inspeccion }}</p>
                     </div>
                     <div>
@@ -1493,7 +1526,7 @@ onMounted(async () => {
                           type="text"
                           inputmode="numeric"
                           autocomplete="off"
-                          :disabled="readOnly"
+                          :disabled="diagnosticoBloqueado"
                           placeholder="Lectura del odómetro"
                           :class="inputClass('kilometraje_diagnostico', 'pe-12 tabular-nums')">
                         <span class="absolute inset-y-0 end-0 flex items-center pe-3 text-sm text-gray-500 pointer-events-none dark:text-gray-400">km</span>
@@ -1518,7 +1551,7 @@ onMounted(async () => {
                         v-model="form.motivo_ingreso"
                         rows="3"
                         maxlength="500"
-                        :disabled="readOnly"
+                        :disabled="diagnosticoBloqueado"
                         placeholder="Razón por la cual el cliente trae el vehículo o falla reportada..."
                         :class="inputClass('motivo_ingreso')"></textarea>
                       <div class="flex items-start justify-between gap-3 mt-1.5">
@@ -1534,7 +1567,7 @@ onMounted(async () => {
                         id="codigos_dtc"
                         v-model="form.codigos_dtc"
                         maxlength="255"
-                        :disabled="readOnly"
+                        :disabled="diagnosticoBloqueado"
                         placeholder="Ej.: P0300, P0171"
                         :class="inputClass('codigos_dtc', 'font-mono uppercase placeholder:font-sans placeholder:normal-case')">
                       <div v-if="dtcLista.length" class="flex flex-wrap gap-1.5 mt-2.5" aria-label="Códigos leídos">
@@ -1563,7 +1596,7 @@ onMounted(async () => {
                     >
                       <div class="flex items-center justify-between gap-2 mb-2">
                         <label for="diagnostico_tecnico" class="block text-sm font-medium text-gray-900 dark:text-white">Diagnóstico <span class="text-accent-500 dark:text-accent-400">*</span></label>
-                        <button v-if="!readOnly" type="button" title="Mejorar el texto con IA" :disabled="mejorando || !form.diagnostico_tecnico" :class="BOTON_MEJORAR" @click="mejorar">
+                        <button v-if="!diagnosticoBloqueado" type="button" title="Mejorar el texto con IA" :disabled="mejorando || !form.diagnostico_tecnico" :class="BOTON_MEJORAR" @click="mejorar">
                           <Loader2 v-if="mejorando" class="w-4 h-4 animate-spin" />
                           <Wand2 v-else class="w-4 h-4" />
                           {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
@@ -1574,7 +1607,7 @@ onMounted(async () => {
                         v-model="form.diagnostico_tecnico"
                         rows="4"
                         maxlength="1000"
-                        :disabled="readOnly"
+                        :disabled="diagnosticoBloqueado"
                         placeholder="¿Qué encontró el técnico? Piezas desgastadas, fugas, mediciones..."
                         :class="inputClass('diagnostico_tecnico')"></textarea>
                       <div class="flex items-start justify-between gap-3 mt-1.5">
@@ -1598,7 +1631,7 @@ onMounted(async () => {
                     >
                       <div class="flex items-center justify-between gap-2 mb-2">
                         <label for="recomendaciones" class="block text-sm font-medium text-gray-900 dark:text-white">Recomendaciones <span class="text-accent-500 dark:text-accent-400">*</span></label>
-                        <button v-if="!readOnly" type="button" title="Mejorar el texto con IA" :disabled="mejorando || !form.recomendaciones" :class="BOTON_MEJORAR" @click="mejorar">
+                        <button v-if="!diagnosticoBloqueado" type="button" title="Mejorar el texto con IA" :disabled="mejorando || !form.recomendaciones" :class="BOTON_MEJORAR" @click="mejorar">
                           <Loader2 v-if="mejorando" class="w-4 h-4 animate-spin" />
                           <Wand2 v-else class="w-4 h-4" />
                           {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
@@ -1609,7 +1642,7 @@ onMounted(async () => {
                         v-model="form.recomendaciones"
                         rows="3"
                         maxlength="1000"
-                        :disabled="readOnly"
+                        :disabled="diagnosticoBloqueado"
                         placeholder="Trabajos sugeridos y su urgencia. Servirán de base para la cotización."
                         :class="inputClass('recomendaciones')"></textarea>
                       <div class="flex items-start justify-between gap-3 mt-1.5">
@@ -1645,7 +1678,7 @@ onMounted(async () => {
                 <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
                   Confirma los testigos que siguen encendidos durante el diagnóstico. Llegan precargados desde la recepción.
                 </p>
-                <TestigosTablero v-model="testigos" :disabled="readOnly" />
+                <TestigosTablero v-model="testigos" :disabled="diagnosticoBloqueado" />
               </section>
 
               <!-- 3. Evidencia -->
@@ -1668,8 +1701,10 @@ onMounted(async () => {
                   :service="inspeccionesService"
                   :max="FOTO_MAX"
                   entity-label="inspección"
-                  :disabled="readOnly"
-                  disabled-message="La inspección está finalizada; reábrela para poder modificar las fotos."
+                  :disabled="diagnosticoBloqueado"
+                  :disabled-message="pendienteDeInicio
+                    ? 'Inicia la inspección para poder cargar las fotos.'
+                    : 'La inspección está finalizada; reábrela para poder modificar las fotos.'"
                 />
               </section>
 
@@ -1688,7 +1723,7 @@ onMounted(async () => {
                       {{ grupo.titulo }}
                       <span class="px-1.5 text-xs font-medium normal-case tracking-normal rounded bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 tabular-nums">{{ grupo.filas.length }}</span>
                     </h4>
-                    <button v-if="!readOnly" type="button" :class="BOTON_AGREGAR" :title="`Añadir ${grupo.entidad}`" @click="grupo.agregar">
+                    <button v-if="!diagnosticoBloqueado" type="button" :class="BOTON_AGREGAR" :title="`Añadir ${grupo.entidad}`" @click="grupo.agregar">
                       <Plus class="w-4 h-4" />
                       Agregar
                     </button>
@@ -1714,7 +1749,7 @@ onMounted(async () => {
                               :input-id="`${grupo.key}-desc-${fila.sufijo}`"
                               v-model="fila.descripcion"
                               :catalogo="grupo.catalogo"
-                              :disabled="readOnly"
+                              :disabled="diagnosticoBloqueado"
                               placeholder="Busca y selecciona..."
                               :mostrar-stock="grupo.key === 'rpt'"
                               :mensaje-sin-resultados="`Sin coincidencias. Puedes escribir un ${grupo.entidad} libre.`"
@@ -1725,18 +1760,18 @@ onMounted(async () => {
                             <div class="flex flex-wrap items-center gap-2 mt-2 sm:hidden">
                               <input
                                 v-model="fila[grupo.campo]"
-                                :disabled="readOnly"
+                                :disabled="diagnosticoBloqueado"
                                 type="number"
                                 :step="grupo.step"
                                 min="0"
                                 :max="grupo.max"
                                 :aria-label="grupo.columna"
                                 :class="inputClass('', '!w-20 !p-1.5 text-xs text-center tabular-nums')">
-                              <select v-model="fila.prioridad" :disabled="readOnly" :aria-label="`Prioridad del ${grupo.entidad}`" :class="inputClass('', ['!w-24 !py-1.5 !ps-2.5 text-xs font-medium', PRIORIDAD_CLASE[fila.prioridad]])">
+                              <select v-model="fila.prioridad" :disabled="diagnosticoBloqueado" :aria-label="`Prioridad del ${grupo.entidad}`" :class="inputClass('', ['!w-24 !py-1.5 !ps-2.5 text-xs font-medium', PRIORIDAD_CLASE[fila.prioridad]])">
                                 <option v-for="p in PRIORIDADES" :key="p.value" :value="p.value">{{ p.label }}</option>
                               </select>
                               <label class="inline-flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-300">
-                                <input v-model="fila.es_sugerido" :disabled="readOnly" type="checkbox" class="w-4 h-4 rounded border-gray-300 text-brand-900 focus:ring-brand-300 dark:bg-gray-700 dark:border-gray-600">
+                                <input v-model="fila.es_sugerido" :disabled="diagnosticoBloqueado" type="checkbox" class="w-4 h-4 rounded border-gray-300 text-brand-900 focus:ring-brand-300 dark:bg-gray-700 dark:border-gray-600">
                                 Opcional
                               </label>
                             </div>
@@ -1745,7 +1780,7 @@ onMounted(async () => {
                             <input
                               :id="`${grupo.key === 'svc' ? 'svc-horas' : 'rpt-cant'}-${fila.sufijo}`"
                               v-model="fila[grupo.campo]"
-                              :disabled="readOnly"
+                              :disabled="diagnosticoBloqueado"
                               type="number"
                               :step="grupo.step"
                               min="0"
@@ -1753,19 +1788,19 @@ onMounted(async () => {
                               :class="inputClass('', '!p-2 text-center tabular-nums')">
                           </td>
                           <td class="hidden px-2 py-2 sm:table-cell">
-                            <select v-model="fila.prioridad" :disabled="readOnly" :class="inputClass('', ['!p-2 font-medium', PRIORIDAD_CLASE[fila.prioridad]])">
+                            <select v-model="fila.prioridad" :disabled="diagnosticoBloqueado" :class="inputClass('', ['!p-2 font-medium', PRIORIDAD_CLASE[fila.prioridad]])">
                               <option v-for="p in PRIORIDADES" :key="p.value" :value="p.value">{{ p.label }}</option>
                             </select>
                           </td>
                           <td class="hidden px-2 py-2 text-center sm:table-cell">
-                            <input v-model="fila.es_sugerido" :disabled="readOnly" type="checkbox" :aria-label="`${grupo.entidad} opcional`" class="w-4 h-4 mt-3 rounded border-gray-300 text-brand-900 focus:ring-brand-300 dark:bg-gray-700 dark:border-gray-600 disabled:opacity-60">
+                            <input v-model="fila.es_sugerido" :disabled="diagnosticoBloqueado" type="checkbox" :aria-label="`${grupo.entidad} opcional`" class="w-4 h-4 mt-3 rounded border-gray-300 text-brand-900 focus:ring-brand-300 dark:bg-gray-700 dark:border-gray-600 disabled:opacity-60">
                           </td>
                           <td class="px-2 py-2 text-center">
                             <button
                               type="button"
                               :title="`Quitar ${grupo.entidad}`"
                               :aria-label="`Quitar ${grupo.entidad}`"
-                              :disabled="readOnly"
+                              :disabled="diagnosticoBloqueado"
                               class="inline-flex items-center p-2 mt-0.5 text-gray-400 rounded-lg hover:bg-red-50 hover:text-red-600 dark:hover:bg-gray-700 dark:hover:text-red-400 disabled:opacity-40 disabled:cursor-not-allowed"
                               @click="grupo.quitar(index)">
                               <Trash2 class="w-4 h-4" />
@@ -1926,6 +1961,9 @@ onMounted(async () => {
             :entidad-id="inspeccionId"
             :relaciones="relacionesInspeccion"
             :puede-agregar="puedeAgregarRelacion"
+            :puede-editar="politicaRelaciones.puede_editar"
+            :contexto="politicaRelaciones.contexto"
+            :motivo-bloqueo="politicaRelaciones.motivo_bloqueo"
             :al-vincular="vincularRelacion"
             :al-desvincular="desvincularRelacion"
           />

@@ -79,6 +79,7 @@ const ordenPersistidaId = ref(null);
 const RELACIONES_VACIAS = () => ({ cita: [], recepcion: [], inspeccion: [], cotizacion: [] });
 const PUEDE_AGREGAR = { cita: true, recepcion: true, inspeccion: true, cotizacion: true };
 const relacionesOrden = ref(RELACIONES_VACIAS());
+const politicaRelaciones = ref({});
 const puedeAgregarRelacion = ref({ ...PUEDE_AGREGAR });
 const relacionesCargadas = ref(false);
 const photoEntityId = computed(() => (isEditMode.value ? ordenId.value : ordenPersistidaId.value));
@@ -611,6 +612,7 @@ async function cargarRelacionesOrden(id = ordenId.value) {
   try {
     const data = await ordenesService.listarRelaciones(id);
     relacionesOrden.value = data?.relaciones || RELACIONES_VACIAS();
+    politicaRelaciones.value = data || {};
     puedeAgregarRelacion.value = data?.puede_agregar || PUEDE_AGREGAR;
     relacionesCargadas.value = true;
   } catch (err) {
@@ -1722,6 +1724,9 @@ const grupos = computed(() => [
           :entidad-id="ordenId"
           :relaciones="relacionesOrden"
           :puede-agregar="puedeAgregarRelacion"
+          :puede-editar="politicaRelaciones.puede_editar"
+          :contexto="politicaRelaciones.contexto"
+          :motivo-bloqueo="politicaRelaciones.motivo_bloqueo"
           :al-vincular="vincularRelacion"
           :al-desvincular="desvincularRelacion"
         />

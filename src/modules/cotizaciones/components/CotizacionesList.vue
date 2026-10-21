@@ -15,6 +15,7 @@ import { useFiltrosReactivos } from '../../../shared/composables/useFiltrosReact
 import { estadoADisplay } from '../../../shared/utils/estadoFlujo';
 import { ESTADOS_COTIZACION_FILTRABLE } from '../constants/estadosCotizacion';
 import EstadoCotizacionBadge from './EstadoCotizacionBadge.vue';
+import CotizacionesOrdenModal from './CotizacionesOrdenModal.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
@@ -65,6 +66,11 @@ function hideAlert() {
   alert.value = { type: 'default', title: '', message: '' };
 }
 
+const mostrarSelectorOrden = ref(false);
+async function ordenGeneradaCorrectamente(resultado) {
+  showAlert('success', '', `Orden ${resultado.numero_orden} generada correctamente.`);
+  await reloadList(currentPage.value);
+}
 const showDeleteModal = ref(false);
 const cotizacionToDelete = ref(null);
 
@@ -294,6 +300,9 @@ onMounted(async () => {
       { label: 'Cotizaciones' },
     ]"
   >
+    <template #actions>
+      <button v-if="puedeModificar && puede('ordenes')" type="button" class="inline-flex items-center gap-2 rounded bg-brand-900 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 focus:ring-4 focus:ring-brand-500/30" @click="mostrarSelectorOrden = true"><Receipt class="h-4 w-4" />Generar OT desde cotizaciones</button>
+    </template>
     <template #title-aside>
       <ModoConsultaChip v-if="soloConsulta('cotizaciones')" objeto="las cotizaciones" />
     </template>
@@ -542,6 +551,8 @@ onMounted(async () => {
     </EntityTable>
     </div>
   </div>
+
+  <CotizacionesOrdenModal v-model="mostrarSelectorOrden" @completed="ordenGeneradaCorrectamente" />
 
   <ConfirmModal
     v-model="showDeleteModal"

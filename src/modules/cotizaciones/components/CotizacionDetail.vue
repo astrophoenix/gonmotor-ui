@@ -1,7 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import {
-  ArrowLeftRight,
   ChevronDown,
   IdCardIcon,
   Loader2,
@@ -39,6 +38,7 @@ import EstadoCotizacionBadge from './EstadoCotizacionBadge.vue';
 import CotizacionCiclo from './CotizacionCiclo.vue';
 import CotizacionTotales from './CotizacionTotales.vue';
 import CotizacionVigencia from './CotizacionVigencia.vue';
+import CotizacionesOrdenModal from './CotizacionesOrdenModal.vue';
 import { correoCotizacionHref, whatsappCotizacionHref } from '../utils/envioCotizacion';
 
 const METODOS_ACEPTACION = [
@@ -63,11 +63,11 @@ const cotizacion = ref(null);
 const loading = ref(true);
 const errorMessage = ref('');
 const successMessage = ref('');
+const ordenCreada = ref(null);
 
 const mostrarModalReabrir = ref(false);
 const mostrarModalGenerarOrden = ref(false);
 const procesandoReapertura = ref(false);
-const procesandoGeneracionOrden = ref(false);
 const menuEnvioAbierto = ref(false);
 const procesandoEnvio = ref(false);
 
@@ -84,7 +84,9 @@ const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
 const puedeModificar = computed(() => puede('cotizaciones'));
 const aceptadaSinOrden = computed(() => cotizacion.value?.estado === 'ACEPTADA' && !ordenGenerada.value);
 // Generar la orden crea otro documento: hace falta poder crear órdenes.
-const puedeGenerarOrden = computed(() => aceptadaSinOrden.value && puedeModificar.value && puede('ordenes'));
+const puedeGenerarOrden = computed(() => Boolean(cotizacion.value?.es_convertible) && puedeModificar.value && puede('ordenes'));
+const puedeIncorporar = computed(() => Boolean(cotizacion.value?.es_incorporable) && puedeModificar.value && puede('ordenes'));
+const destinoHref = computed(() => `/crud/ordenes/ver/?id=${encodeURIComponent(cotizacion.value?.orden_trabajo_destino_id || '')}`);
 const puedeReabrir = computed(() => aceptadaSinOrden.value && puedeModificar.value);
 const puedeEditar = computed(() => Boolean(cotizacion.value) && puedeModificar.value && cotizacion.value.estado !== 'ACEPTADA');
 const esperandoRespuesta = computed(() => ['PENDIENTE', 'ENVIADA'].includes(cotizacion.value?.estado));
@@ -183,21 +185,14 @@ async function enviarPor(canal) {
   }
 }
 
-async function confirmarGenerarOrden() {
-  if (!cotizacionId.value || !cotizacion.value || procesandoGeneracionOrden.value) return;
-  procesandoGeneracionOrden.value = true;
-  try {
-    const resultado = await cotizacionesService.generarOrden(cotizacionId.value, {
-      metodo_aceptacion: cotizacion.value.metodo_aceptacion || 'PRESENCIAL',
-    });
-    mostrarModalGenerarOrden.value = false;
-    successMessage.value = `Orden de trabajo N° ${resultado.numero_orden} generada correctamente.`;
-    await cargar();
-  } catch (error) {
-    errorMessage.value = error.message || 'No se pudo completar la operación.';
-  } finally {
-    procesandoGeneracionOrden.value = false;
-  }
+async function ordenGeneradaCorrectamente(resultado) {
+  ordenCreada.value = {
+    id: resultado.id,
+    numero: resultado.numero_orden,
+    mensaje: `Orden de trabajo N° ${resultado.numero_orden} generada correctamente.`,
+  };
+  successMessage.value = ordenCreada.value.mensaje;
+  await cargar();
 }
 
 async function confirmarReabrir() {
@@ -274,7 +269,13 @@ onMounted(async () => {
 
   <div class="px-4 pt-4 pb-6">
     <div class="space-y-4">
-      <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
+      <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''">
+        <template v-if="ordenCreada?.id && successMessage === ordenCreada.mensaje" #default>
+          Orden de trabajo N°
+          <a :href="`/crud/ordenes/ver/?id=${encodeURIComponent(ordenCreada.id)}`" class="font-semibold underline underline-offset-2 hover:no-underline">{{ ordenCreada.numero }}</a>
+          generada correctamente.
+        </template>
+      </Alert>
       <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
     </div>
 
@@ -303,6 +304,9 @@ onMounted(async () => {
             <Wrench class="w-5 h-5 -ms-1" aria-hidden="true" />
             Generar orden de trabajo
           </button>
+        </template>
+        <template v-else-if="puedeIncorporar" #accion>
+          <a :href="destinoHref" :class="BOTON_PRIMARIO"><Wrench class="w-5 h-5" />Ver OT para incorporar</a>
         </template>
         <template v-else-if="puedeEditar && cotizacion.estado === 'PENDIENTE'" #accion>
           <div class="relative" @keydown.esc="menuEnvioAbierto = false">
@@ -571,17 +575,10 @@ onMounted(async () => {
     @confirm="confirmarReabrir"
   />
 
-  <ConfirmModal
+  <CotizacionesOrdenModal
     v-model="mostrarModalGenerarOrden"
-    title="Generar orden de trabajo"
-    message="Se generará una orden de trabajo a partir de esta cotización aceptada."
-    :icon="ArrowLeftRight"
-    icon-class="text-brand-700 dark:text-brand-200"
-    confirm-text="Generar orden"
-    confirming-text="Generando..."
-    variant="primary"
-    :is-deleting="procesandoGeneracionOrden"
-    @confirm="confirmarGenerarOrden"
+    :inicial="cotizacion"
+    @completed="ordenGeneradaCorrectamente"
   />
   </template>
 </template>

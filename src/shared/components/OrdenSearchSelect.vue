@@ -7,6 +7,7 @@ defineProps({
   id: { type: String, default: 'flujo-orden' },
   placeholder: { type: String, default: 'Buscar orden...' },
   disabled: { type: Boolean, default: false },
+  esCompatible: { type: Function, default: null },
   soloSinRelacion: { type: Boolean, default: false },
   createUrl: { type: String, default: '/crud/ordenes/editar/' },
 });

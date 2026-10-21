@@ -52,6 +52,7 @@ import PdfExportButton from '../../../shared/components/PdfExportButton.vue';
 import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
 import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
 import EstadoOrdenBadge from './EstadoOrdenBadge.vue';
+import OrdenCotizaciones from './OrdenCotizaciones.vue';
 import { relacionesDeOrden } from '../../../shared/utils/relacionesFlujo';
 import { referenciaCorta } from '../../../shared/utils/format';
 
@@ -473,6 +474,15 @@ function mostrarErrorPdf(message) {
   error.value = message || 'No se pudo generar el PDF.';
 }
 
+async function cotizacionesIncorporadas() {
+  successMessage.value = 'Cotizaciones incorporadas correctamente.';
+  try {
+    orden.value = await ordenesService.getById(ordenId.value);
+  } catch (err) {
+    error.value = err.message || 'La incorporación se completó, pero no se pudo actualizar la OT. Recarga la ficha.';
+  }
+}
+
 onMounted(async () => {
   await cargarPermisos().catch(() => {});
   if (sinAcceso('ordenes')) {
@@ -777,6 +787,8 @@ onMounted(async () => {
               </div>
             </dl>
           </section>
+
+          <OrdenCotizaciones v-if="puede('cotizaciones', 'ver')" :orden="orden" :puede-incorporar="puedeModificar && puede('cotizaciones')" @incorporadas="cotizacionesIncorporadas" />
 
           <div class="bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
             <!-- Pasos: Trabajo y Evidencia -->

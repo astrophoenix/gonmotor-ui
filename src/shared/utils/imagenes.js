@@ -35,32 +35,42 @@ export async function comprimirImagen(file, perfil) {
     return file;
   }
 
-  const escala = Math.min(1, perfil.lado_mayor / Math.max(bitmap.width, bitmap.height));
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.max(1, Math.round(bitmap.width * escala));
-  canvas.height = Math.max(1, Math.round(bitmap.height * escala));
-  const ctx = canvas.getContext('2d');
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  bitmap.close?.();
+  let canvas;
+  try {
+    const escala = Math.min(1, perfil.lado_mayor / Math.max(bitmap.width, bitmap.height));
+    canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bitmap.width * escala));
+    canvas.height = Math.max(1, Math.round(bitmap.height * escala));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return file;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
 
-  let blob;
-  if (perfil.sin_perdida) {
-    // Logo: conserva la transparencia.
-    blob = await aBlob(canvas, 'image/png');
-  } else {
-    blob = await aBlob(canvas, 'image/webp', perfil.calidad);
-    // Navegadores sin codificador WebP devuelven PNG: se usa JPEG.
-    if (!blob || blob.type !== 'image/webp') {
-      blob = await aBlob(canvas, 'image/jpeg', perfil.calidad);
+    let blob;
+    if (perfil.sin_perdida) {
+      // Logo: conserva la transparencia.
+      blob = await aBlob(canvas, 'image/png');
+    } else {
+      blob = await aBlob(canvas, 'image/webp', perfil.calidad);
+      // Navegadores sin codificador WebP devuelven PNG: se usa JPEG.
+      if (!blob || blob.type !== 'image/webp') {
+        blob = await aBlob(canvas, 'image/jpeg', perfil.calidad);
+      }
+    }
+
+    if (!blob || (escala === 1 && blob.size >= file.size)) return file;
+    return new File([blob], renombrar(file.name, blob.type), {
+      type: blob.type,
+      lastModified: Date.now(),
+    });
+  } catch {
+    // El lienzo o el codificador pueden fallar: el backend procesa el original.
+    return file;
+  } finally {
+    bitmap.close?.();
+    if (canvas) {
+      canvas.width = 0;
+      canvas.height = 0;
     }
   }
-  canvas.width = 0;
-  canvas.height = 0;
-
-  if (!blob || (escala === 1 && blob.size >= file.size)) return file;
-  return new File([blob], renombrar(file.name, blob.type), {
-    type: blob.type,
-    lastModified: Date.now(),
-  });
 }

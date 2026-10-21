@@ -767,10 +767,7 @@ onMounted(async () => {
                 <span :class="[CONTADOR, CONTADOR_NEUTRO]">{{ plural(fotos.length, 'foto', 'fotos') }}</span>
               </div>
               <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">Fotos de los hallazgos. Toca una para ampliarla.</p>
-              <div
-                v-if="!fotos.length"
-                class="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center border-2 border-dashed border-gray-200 rounded-lg dark:border-gray-600"
-              >
+              <div v-if="!fotos.length" class="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center border-2 border-dashed border-gray-200 rounded-lg dark:border-gray-600">
                 <Camera class="w-7 h-7 text-gray-400" />
                 <p class="text-sm font-medium text-gray-900 dark:text-white">Sin fotos de evidencia</p>
                 <p class="max-w-xs text-xs text-gray-500 dark:text-gray-400">Las fotos del diagnóstico son opcionales.</p>
@@ -781,14 +778,13 @@ onMounted(async () => {
                     type="button"
                     :title="foto.descripcion || `Ampliar foto ${index + 1}`"
                     class="group relative block w-full overflow-hidden rounded-lg aspect-square bg-gray-100 cursor-zoom-in focus:outline-none focus:ring-4 focus:ring-brand-200 dark:bg-gray-700 dark:focus:ring-brand-700"
-                    @click="abrirFoto(foto.url || foto.imagen)"
-                  >
+                    @click="abrirFoto(foto.url || foto.imagen)">
                     <img :src="foto.miniatura || foto.url || foto.imagen" :alt="foto.descripcion || `Foto ${index + 1}`" loading="lazy" class="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105" />
                     <span class="absolute inset-0 flex items-center justify-center bg-brand-900/0 transition-colors group-hover:bg-brand-900/40">
                       <ZoomIn class="w-6 h-6 text-white opacity-0 transition-opacity group-hover:opacity-100" />
                     </span>
                   </button>
-                  <figcaption class="mt-2 text-xs text-center text-gray-600 dark:text-gray-300">{{ foto.descripcion || `Foto ${index + 1}` }}</figcaption>
+                  <figcaption class="mt-2 text-xs text-center text-gray-600 dark:text-gray-300 text-justify">{{ foto.descripcion || `Foto ${index + 1}` }}</figcaption>
                 </figure>
               </div>
             </section>

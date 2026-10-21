@@ -124,6 +124,7 @@ const formErrors = ref({});
 const fotoErrors = ref({});
 const fotosPresence = ref({});
 const relacionesRecepcion = ref({ cita: [], inspeccion: [], cotizacion: [], orden: [] });
+const politicaRelaciones = ref({});
 const puedeAgregarRelacion = ref({ cita: true, inspeccion: true, cotizacion: true, orden: true });
 const relacionesCargadas = ref(false);
 const recepcionData = ref(null);
@@ -1257,6 +1258,7 @@ async function cargarRelacionesRecepcion(id = recepcionId) {
   try {
     const data = await recepcionesService.listarRelaciones(id);
     relacionesRecepcion.value = data?.relaciones || { cita: [], inspeccion: [], cotizacion: [], orden: [] };
+    politicaRelaciones.value = data || {};
     puedeAgregarRelacion.value = data?.puede_agregar || { cita: true, inspeccion: true, cotizacion: true, orden: true };
     relacionesCargadas.value = true;
   } catch (error) {
@@ -1265,12 +1267,14 @@ async function cargarRelacionesRecepcion(id = recepcionId) {
   }
 }
 
-function vincularRelacion({ tipo, id }) {
-  return recepcionesService.actualizarRelacion(recepcionId, { tipo, id, accion: 'vincular' });
+async function vincularRelacion({ tipo, id }) {
+  await recepcionesService.actualizarRelacion(recepcionId, { tipo, id, accion: 'vincular' });
+  await cargarRelacionesRecepcion();
 }
 
-function desvincularRelacion({ tipo, id }) {
-  return recepcionesService.actualizarRelacion(recepcionId, { tipo, id, accion: 'desvincular' });
+async function desvincularRelacion({ tipo, id }) {
+  await recepcionesService.actualizarRelacion(recepcionId, { tipo, id, accion: 'desvincular' });
+  await cargarRelacionesRecepcion();
 }
 
 async function cargarBlueprint(grupo) {
@@ -2819,6 +2823,9 @@ onMounted(async () => {
             :entidad-id="form.id"
             :relaciones="relacionesRecepcion"
             :puede-agregar="puedeAgregarRelacion"
+            :puede-editar="politicaRelaciones.puede_editar"
+            :contexto="politicaRelaciones.contexto"
+            :motivo-bloqueo="politicaRelaciones.motivo_bloqueo"
             :al-vincular="vincularRelacion"
             :al-desvincular="desvincularRelacion"
           />

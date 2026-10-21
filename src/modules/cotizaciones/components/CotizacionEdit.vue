@@ -86,6 +86,7 @@ const isSaving = ref(false);
 const isCreando = ref(false);
 const errorMessage = ref('');
 const successMessage = ref('');
+const ordenCreada = ref(null);
 const formErrors = ref({});
 
 const estado = ref('PENDIENTE');
@@ -125,6 +126,7 @@ const breadcrumb = computed(() => [
 const RELACIONES_VACIAS = () => ({ cita: [], recepcion: [], inspeccion: [], orden: [] });
 const PUEDE_AGREGAR = { cita: true, recepcion: true, inspeccion: true, orden: true };
 const relacionesCotizacion = ref(RELACIONES_VACIAS());
+const politicaRelaciones = ref({});
 const puedeAgregarRelacion = ref({ ...PUEDE_AGREGAR });
 const relacionesCargadas = ref(false);
 
@@ -628,6 +630,7 @@ async function cargarRelacionesCotizacion(id = cotizacionId.value) {
   try {
     const data = await cotizacionesService.listarRelaciones(id);
     relacionesCotizacion.value = data?.relaciones || RELACIONES_VACIAS();
+    politicaRelaciones.value = data || {};
     puedeAgregarRelacion.value = data?.puede_agregar || PUEDE_AGREGAR;
     relacionesCargadas.value = true;
   } catch (error) {
@@ -923,7 +926,12 @@ async function confirmarGenerarOrden() {
       metodo_aceptacion: metodoAceptacion.value || 'PRESENCIAL',
     });
     mostrarModalGenerarOrden.value = false;
-    successMessage.value = `Orden de trabajo N° ${resultado.numero_orden} generada correctamente.`;
+    ordenCreada.value = {
+      id: resultado.id,
+      numero: resultado.numero_orden,
+      mensaje: `Orden de trabajo N° ${resultado.numero_orden} generada correctamente.`,
+    };
+    successMessage.value = ordenCreada.value.mensaje;
     await cargarCotizacion(cotizacionId.value);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (error) {
@@ -1200,7 +1208,13 @@ onMounted(async () => {
 
   <div class="px-4 pt-4 pb-6">
     <div class="space-y-4">
-      <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
+      <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''">
+        <template v-if="ordenCreada?.id && successMessage === ordenCreada.mensaje" #default>
+          Orden de trabajo N°
+          <a :href="`/crud/ordenes/ver/?id=${encodeURIComponent(ordenCreada.id)}`" class="font-semibold underline underline-offset-2 hover:no-underline">{{ ordenCreada.numero }}</a>
+          generada correctamente.
+        </template>
+      </Alert>
       <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
       <Alert
         v-if="!isLoading && isEditMode && cotizacionId && !esEditable"
@@ -1643,6 +1657,9 @@ onMounted(async () => {
               :entidad-id="cotizacionId"
               :relaciones="relacionesCotizacion"
               :puede-agregar="puedeAgregarRelacion"
+              :puede-editar="politicaRelaciones.puede_editar"
+              :contexto="politicaRelaciones.contexto"
+              :motivo-bloqueo="politicaRelaciones.motivo_bloqueo"
               :al-vincular="vincularRelacion"
               :al-desvincular="desvincularRelacion"
             />

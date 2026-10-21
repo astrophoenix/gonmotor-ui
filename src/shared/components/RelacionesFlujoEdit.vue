@@ -1,8 +1,7 @@
 <script setup>
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, markRaw, reactive, ref, watch } from 'vue';
 import {
   CalendarDays,
-  ChevronDown,
   ClipboardList,
   FileSearchCorner,
   Workflow,
@@ -11,11 +10,11 @@ import {
   Wrench,
 } from 'lucide-vue-next';
 import ConfirmModal from './ConfirmModal.vue';
+import RelacionesFlujo from './RelacionesFlujo.vue';
 import FlowStatusBadge from './FlowStatusBadge.vue';
 import CitaSearchSelect from './CitaSearchSelect.vue';
 import RecepcionSearchSelect from './RecepcionSearchSelect.vue';
 import InspeccionSearchSelect from './InspeccionSearchSelect.vue';
-import CotizacionSearchSelect from './CotizacionSearchSelect.vue';
 import OrdenSearchSelect from './OrdenSearchSelect.vue';
 import { etiquetaCita, referenciaCorta } from '../utils/format';
 import { usePermisos } from '../composables/usePermisos';
@@ -26,22 +25,20 @@ const props = defineProps({
   entidadId: { type: [Number, String], required: true },
   relaciones: { type: Object, default: () => ({}) },
   puedeAgregar: { type: Object, default: () => ({}) },
+  puedeEditar: { type: Object, default: () => ({}) },
+  contexto: { type: Object, default: () => ({}) },
+  motivoBloqueo: { type: String, default: '' },
   alVincular: { type: Function, required: true },
   alDesvincular: { type: Function, required: true },
   disabled: { type: Boolean, default: false },
 });
 
-// `multiple`: el grupo admite más de una entidad a la vez.
-// `buscarConItems`: el buscador sigue visible aunque el grupo ya tenga elementos.
-// Cita, recepción, inspección y orden son de una sola pieza, así que su buscador
-// solo aparece cuando el grupo está vacío; la cotización es el único caso
-// donde se pueden seguir agregando documentos.
 const CONFIGURACION = [
-  { tipo: 'cita', label: 'Cita', icono: CalendarDays, color: 'bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-900/40 dark:text-sky-200 dark:border-sky-800', selector: CitaSearchSelect, multiple: true, buscarConItems: false },
-  { tipo: 'recepcion', label: 'Recepción', icono: ClipboardList, color: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-200 dark:border-blue-800', selector: RecepcionSearchSelect, multiple: false, buscarConItems: false },
-  { tipo: 'inspeccion', label: 'Inspección', icono: FileSearchCorner, color: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-200 dark:border-blue-800', selector: InspeccionSearchSelect, multiple: false, buscarConItems: false },
-  { tipo: 'cotizacion', label: 'Cotización', icono: Receipt, color: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-800', selector: CotizacionSearchSelect, multiple: true, buscarConItems: true },
-  { tipo: 'orden', label: 'Orden', icono: Wrench, color: 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-800', selector: OrdenSearchSelect, multiple: false, buscarConItems: false },
+  { tipo: 'cita', label: 'Cita', icono: markRaw(CalendarDays), selector: markRaw(CitaSearchSelect), multiple: true },
+  { tipo: 'recepcion', label: 'Recepción', icono: markRaw(ClipboardList), selector: markRaw(RecepcionSearchSelect) },
+  { tipo: 'inspeccion', label: 'Inspección', icono: markRaw(FileSearchCorner), selector: markRaw(InspeccionSearchSelect) },
+  { tipo: 'cotizacion', label: 'Cotización', icono: markRaw(Receipt) },
+  { tipo: 'orden', label: 'Orden', icono: markRaw(Wrench), selector: markRaw(OrdenSearchSelect) },
 ];
 
 // Vincular o quitar un vínculo modifica también el documento relacionado: el
@@ -49,7 +46,7 @@ const CONFIGURACION = [
 // muestra solo para consulta (sin buscador ni botón de quitar).
 const { puede } = usePermisos();
 function editable(grupo) {
-  return puede(RECURSO_POR_TIPO[grupo.tipo]);
+  return props.puedeEditar[grupo.tipo] === true && puede(RECURSO_POR_TIPO[grupo.tipo]);
 }
 
 const grupos = ref([]);
@@ -58,24 +55,65 @@ const modalVisible = ref(false);
 const procesando = ref(false);
 const errorMessage = ref('');
 const relacionPendiente = ref(null);
-const abierto = reactive({});
+const vinculoPendiente = ref(null);
+const modalVincular = ref(false);
 
 watch(
-  () => [props.tipoEntidad, props.relaciones, props.puedeAgregar],
+  () => [props.tipoEntidad, props.relaciones, props.puedeAgregar, props.puedeEditar],
   () => {
     grupos.value = CONFIGURACION
       .filter((grupo) => grupo.tipo !== props.tipoEntidad)
       .map((grupo) => ({
         ...grupo,
         items: [...(props.relaciones?.[grupo.tipo] || [])],
-        puedeAgregar: props.puedeAgregar?.[grupo.tipo] ?? true,
+        puedeAgregar: props.puedeAgregar?.[grupo.tipo] === true,
       }));
-    grupos.value.forEach((grupo) => {
-      if (abierto[grupo.tipo] === undefined) abierto[grupo.tipo] = true;
-    });
   },
   { immediate: true, deep: true }
 );
+
+const soloConsulta = computed(() => props.disabled || !grupos.value.some(editable));
+const gruposEditables = computed(() => soloConsulta.value ? [] : grupos.value.filter(editable));
+const pasos = computed(() => grupos.value.filter((grupo) => soloConsulta.value || !editable(grupo)).flatMap((grupo) => grupo.items.map((item) => ({
+  key: `${grupo.tipo}-${item.id}`, label: grupo.label, icon: grupo.icono,
+  numero: nombreItem(item), estado: item.estadoDisplay || item.estado,
+  url: urlItem({ ...item, tipo: grupo.tipo }),
+}))));
+
+function esCompatible(tipo, item) {
+  const id = (valor) => String(valor?.id || valor || '');
+  for (const campo of ['empresa', 'sucursal', 'cliente', 'vehiculo']) {
+    const valor = item[campo] || (campo === 'sucursal' ? item.taller : null) || item.recepcion?.[campo];
+    if (valor && props.contexto[campo] && id(valor) !== id(props.contexto[campo])) return false;
+  }
+  if (tipo === 'cita') return !['CANCELADA', 'NO_ASISTIO'].includes(item.estado) && !item.recepcion_generada;
+  if (tipo === 'orden') {
+    if (!['PENDIENTE', 'EN_ESPERA', 'EN_PROCESO'].includes(item.estado)) return false;
+    const recepciones = [...(item.recepciones || []), item.inspeccion?.recepcion].filter(Boolean);
+    if (props.contexto.recepcion && recepciones.length
+        && !recepciones.some((recepcion) => id(recepcion) === id(props.contexto.recepcion))) return false;
+  }
+  if (tipo === 'recepcion' && props.tipoEntidad === 'inspeccion' && (item.orden_trabajo || item.estado === 'NO_ACEPTADA')) return false;
+  if (tipo === 'recepcion' && props.contexto.recepcion && id(item) !== id(props.contexto.recepcion)) return false;
+  if (tipo === 'inspeccion' && props.contexto.recepcion && item.recepcion
+      && id(props.contexto.recepcion) !== id(item.recepcion)) return false;
+  return true;
+}
+
+function pedirVinculacion(grupo, item) {
+  if (props.disabled || procesando.value || !editable(grupo) || !item?.id) return;
+  vinculoPendiente.value = { grupo, item };
+  modalVincular.value = true;
+}
+
+async function confirmarVinculacion() {
+  const pendiente = vinculoPendiente.value;
+  if (!pendiente || procesando.value) return;
+  if (await vincular(pendiente.grupo, pendiente.item)) {
+    modalVincular.value = false;
+    vinculoPendiente.value = null;
+  }
+}
 
 const relacionPendienteLabel = computed(() => {
   const grupo = grupos.value.find((item) => item.tipo === relacionPendiente.value?.tipo);
@@ -98,23 +136,6 @@ function nombreItem(item) {
   if (item.label) return item.label;
   if (item.tipo === 'cita') return etiquetaCita(item);
   return item.numero || referenciaCorta(item.id);
-}
-
-function fechaCotizacion(item) {
-  if (!item?.created_at) return '';
-  const fecha = new Date(item.created_at);
-  return Number.isNaN(fecha.getTime()) ? '' : fecha.toLocaleDateString('es-EC');
-}
-
-function totalCotizacion(item) {
-  return Number(item?.total || 0).toLocaleString('es-EC', {
-    style: 'currency',
-    currency: 'USD',
-  });
-}
-
-function toggleGrupo(grupo) {
-  abierto[grupo.tipo] = !abierto[grupo.tipo];
 }
 
 function normalizarSeleccion(grupo, item) {
@@ -148,15 +169,18 @@ async function vincular(grupo, item) {
       grupo.puedeAgregar = false;
     }
     busquedas[grupo.tipo] = '';
+    return true;
   } catch (error) {
     errorMessage.value = error.message || 'No se pudo crear la relación.';
+    modalVincular.value = false;
+    return false;
   } finally {
     procesando.value = false;
   }
 }
 
 function pedirDesvinculacion(grupo, item) {
-  if (props.disabled) return;
+  if (props.disabled || procesando.value || !editable(grupo) || item.canDelete === false) return;
   relacionPendiente.value = { tipo: grupo.tipo, item };
   errorMessage.value = '';
   modalVisible.value = true;
@@ -203,85 +227,48 @@ async function confirmarDesvinculacion() {
       {{ errorMessage }}
     </p>
 
-    <div :id="`accordion-relaciones-${tipoEntidad}-${entidadId}`" data-accordion="open" class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-      <section v-for="(grupo, index) in grupos" :key="grupo.tipo">
-        <h2 :id="`relacion-heading-${tipoEntidad}-${entidadId}-${grupo.tipo}`">
-          <button
-            type="button"
-            class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-medium text-gray-800 hover:bg-gray-50 dark:text-gray-100 dark:hover:bg-gray-700/50"
-            :class="index < grupos.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : ''"
-            :data-accordion-target="`#relacion-body-${tipoEntidad}-${entidadId}-${grupo.tipo}`"
-            :aria-expanded="abierto[grupo.tipo]"
-            :aria-controls="`relacion-body-${tipoEntidad}-${entidadId}-${grupo.tipo}`"
-            @click="toggleGrupo(grupo)"
-          >
-            <span class="inline-flex items-center gap-2">
-              <component :is="grupo.icono" class="h-4 w-4 shrink-0" />
-              {{ grupo.label }}
-              <span v-if="grupo.items.length" class="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-700 dark:bg-gray-700 dark:text-gray-200">
-                {{ grupo.items.length }}
-              </span>
-            </span>
-            <ChevronDown data-accordion-icon class="h-4 w-4 shrink-0 transition-transform" :class="abierto[grupo.tipo] ? 'rotate-180' : ''" />
-          </button>
-        </h2>
-        <div
-          :id="`relacion-body-${tipoEntidad}-${entidadId}-${grupo.tipo}`"
-          :class="abierto[grupo.tipo] ? 'block' : 'hidden'"
-          :aria-labelledby="`relacion-heading-${tipoEntidad}-${entidadId}-${grupo.tipo}`"
-          role="region"
-        >
-          <div class="space-y-3 border-b border-gray-200 p-3 dark:border-gray-700">
-            <div v-if="grupo.items.length" class="space-y-2">
-              <div
-                v-for="item in grupo.items"
-                :key="item.id"
-                class="flex flex-wrap items-center gap-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-700/40"
-              >
-                <a :href="urlItem({ ...item, tipo: grupo.tipo })"
-                  class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium hover:brightness-95"
-                  :class="grupo.color" >
-                  <component :is="grupo.icono" class="h-3.5 w-3.5 shrink-0" />
-                  {{ nombreItem(item) }}
-                </a>
-                <FlowStatusBadge :tipo="grupo.tipo" :estado="item.estado" :estado-display="item.estadoDisplay" />
-                <!--template v-if="grupo.tipo === 'cita'">
-                  <span v-if="item.fecha" class="text-xs text-gray-500 dark:text-gray-400">{{ item.fecha }} {{ item.hora }}</span>
-                </template>
-                <template v-else-if="grupo.tipo === 'cotizacion'">
-                  <span v-if="fechaCotizacion(item)" class="text-xs text-gray-500 dark:text-gray-400">{{ fechaCotizacion(item) }}</span>
-                  <span class="text-xs font-medium tabular-nums text-gray-700 dark:text-gray-200">{{ totalCotizacion(item) }}</span>
-                </template-->
-                <button
-                  v-if="editable(grupo)"
-                  type="button"
-                  class="inline-flex h-7 w-7 items-center justify-center rounded-full text-red-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300"
-                  :disabled="disabled || procesando || item.canDelete === false"
-                  :title="item.deleteReason || `Quitar relación de ${grupo.label.toLowerCase()}`"
-                  :aria-label="`Quitar relación de ${grupo.label.toLowerCase()}`"
-                  @click="pedirDesvinculacion(grupo, item)">
-                  <Trash2 class="h-4 w-4" />
-                </button>
-              </div>
-            </div>
+    <RelacionesFlujo :pasos="pasos" />
+    <p v-if="soloConsulta && !pasos.length" class="text-sm text-brand-500">Sin documentos relacionados.</p>
+    <p v-if="motivoBloqueo && tipoEntidad !== 'orden'" class="mt-2 text-xs text-brand-500">{{ motivoBloqueo }}</p>
+    <a v-if="tipoEntidad === 'orden' && puede('cotizaciones')" :href="`/crud/ordenes/ver/?id=${encodeURIComponent(entidadId)}`" class="mt-3 inline-block text-sm text-primary-700 underline dark:text-primary-300">Gestionar cotizaciones en la ficha de la OT</a>
 
-            <component
-              :is="grupo.selector"
-              v-if="!disabled && editable(grupo) && grupo.selector && grupo.puedeAgregar && (grupo.buscarConItems || !grupo.items.length)"
-              :id="`relacion-${entidadId}-${grupo.tipo}`"
-              v-model="busquedas[grupo.tipo]"
-              :disabled="procesando"
-              :exclude-ids="grupo.items.map((item) => item.id)"
-              solo-sin-relacion
-              @select="vincular(grupo, $event)"/>
-            <p v-if="!grupo.items.length && (!grupo.selector || !editable(grupo))" class="text-sm text-gray-500 dark:text-gray-400">
-              Sin {{ grupo.label.toLowerCase() }} relacionada.
-            </p>
-          </div>
-        </div>
-      </section>
+    <div v-for="grupo in gruposEditables" :key="grupo.tipo" class="mt-3 space-y-2 border-t border-brand-100 pt-3 dark:border-brand-700">
+      <h4 class="text-sm font-medium text-brand-900 dark:text-brand-100">{{ grupo.label }}</h4>
+      <div v-for="item in grupo.items" :key="item.id" class="flex flex-wrap items-center gap-2">
+        <a :href="urlItem({ ...item, tipo: grupo.tipo })" class="text-sm text-primary-700 underline dark:text-primary-300">{{ nombreItem(item) }}</a>
+        <FlowStatusBadge :tipo="grupo.tipo" :estado="item.estado" :estado-display="item.estadoDisplay" />
+        <button type="button" class="rounded p-1 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40 dark:text-red-400"
+          :disabled="procesando || item.canDelete === false"
+          :title="item.deleteReason || 'Quitar vínculo (conserva el documento)'"
+          :aria-label="`Quitar relación de ${grupo.label.toLowerCase()}`"
+          @click="pedirDesvinculacion(grupo, item)">
+          <Trash2 class="h-4 w-4" />
+        </button>
+      </div>
+      <template v-if="grupo.puedeAgregar">
+        <p class="text-xs text-brand-500">
+          {{ grupo.tipo === 'orden' ? 'Asociar OT para presupuestar trabajos adicionales. La incorporación se realiza después de aceptar la cotización.' : `Vincular ${grupo.label.toLowerCase()} existente` }}
+        </p>
+        <component :is="grupo.selector"
+          :id="`relacion-${entidadId}-${grupo.tipo}`"
+          v-model="busquedas[grupo.tipo]"
+          :disabled="procesando"
+          :exclude-ids="grupo.items.map((item) => item.id)"
+          :solo-sin-relacion="grupo.tipo === 'cita'"
+          :es-compatible="(item) => esCompatible(grupo.tipo, item)"
+          @select="pedirVinculacion(grupo, $event)" />
+      </template>
     </div>
 
+    <ConfirmModal
+      v-model="modalVincular"
+      title="Vincular documento existente"
+      :message="`¿Vincular ${vinculoPendiente ? nombreItem(normalizarSeleccion(vinculoPendiente.grupo, vinculoPendiente.item)) : ''}? Esta acción solo relaciona documentos; no incorpora servicios ni repuestos a una OT.`"
+      variant="primary"
+      confirm-text="Vincular"
+      confirming-text="Vinculando..."
+      :is-deleting="procesando"
+      @confirm="confirmarVinculacion" />
     <ConfirmModal
       v-model="modalVisible"
       title="Quitar relación"

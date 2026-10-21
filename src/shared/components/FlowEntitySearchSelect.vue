@@ -12,6 +12,7 @@ const props = defineProps({
   placeholder: { type: String, default: 'Buscar...' },
   id: { type: String, default: '' },
   disabled: { type: Boolean, default: false },
+  esCompatible: { type: Function, default: null },
   soloSinRelacion: { type: Boolean, default: false },
   excludeIds: { type: Array, default: () => [] },
   createUrl: { type: String, default: '' },
@@ -69,7 +70,7 @@ async function loadOptions() {
     if (sequence !== requestSequence) return;
     const results = Array.isArray(response) ? response : (response?.results || []);
     const excluded = new Set(props.excludeIds.map(String));
-    options.value = results.filter((item) => !excluded.has(String(item.id)));
+    options.value = results.filter((item) => !excluded.has(String(item.id)) && (!props.esCompatible || props.esCompatible(item)));
     activeIndex.value = -1;
   } catch (cause) {
     if (sequence !== requestSequence) return;

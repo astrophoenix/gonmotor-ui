@@ -59,6 +59,15 @@ export const cotizacionesService = {
     });
   },
 
+  generarOrdenConsolidada(cotizaciones, ordenTrabajo = null) {
+    const payload = { cotizaciones };
+    if (ordenTrabajo) payload.orden_trabajo = ordenTrabajo;
+    return request(`${ENDPOINT}generar_orden_consolidada/`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
   /**
    * Descarga el PDF del documento de cotización.
    *
