@@ -255,7 +255,7 @@ async function confirmCompany() {
           aria-hidden="true"
         ></span>
 
-        <div class="px-5 pb-5.5 pt-15 sm:px-9.5 sm:pb-7 sm:pt-17 lg:bajo:pb-5 lg:bajo:pt-13">
+        <div class="px-5 pb-5.5 pt-15 sm:px-9.5 sm:pb-7 sm:pt-17 lg:bajo:pb-5 lg:bajo:pt-13 lg:muy-bajo:pb-4 lg:muy-bajo:pt-12">
           <p class="text-[15px] font-bold text-brand-500 dark:text-brand-300">{{ saludo }}</p>
           <h1 class="mt-1.5 text-[30px] font-extrabold tracking-[-0.015em] lg:bajo:mt-1 lg:bajo:text-[26px]">Entra a tu taller</h1>
 
@@ -265,7 +265,7 @@ async function confirmCompany() {
 
           <form autocomplete="on" novalidate @submit.prevent="submit">
             <!-- Usuario / correo -->
-            <label for="login" class="mb-2.5 mt-6 block text-[14.5px] font-bold lg:bajo:mb-2 lg:bajo:mt-4">Correo | usuario</label>
+            <label for="login" class="mb-2.5 mt-6 block text-[14.5px] font-bold lg:bajo:mb-2 lg:bajo:mt-4 lg:muy-bajo:mb-1.5 lg:muy-bajo:mt-3">Correo | usuario</label>
             <div class="relative">
               <User class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-brand-400 dark:text-brand-300" aria-hidden="true" />
               <input
@@ -277,13 +277,13 @@ async function confirmCompany() {
                 placeholder="usuario@taller.com"
                 :aria-invalid="hasError"
                 required
-                class="block h-[54px] lg:bajo:h-12 w-full rounded-[10px] border-[1.5px] bg-white ps-12 text-[15.5px] text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:ring-4 dark:bg-brand-950 dark:text-brand-50 dark:placeholder:text-brand-300 pe-4"
+                class="block h-[54px] lg:bajo:h-12 lg:muy-bajo:h-11 w-full rounded-[10px] border-[1.5px] bg-white ps-12 text-[15.5px] text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:ring-4 dark:bg-brand-950 dark:text-brand-50 dark:placeholder:text-brand-300 pe-4"
                 :class="hasError ? CAMPO_ERROR : CAMPO_NORMAL"
               >
             </div>
 
             <!-- Contraseña -->
-            <label for="password" class="mb-2.5 mt-6 block text-[14.5px] font-bold lg:bajo:mb-2 lg:bajo:mt-4">Contraseña</label>
+            <label for="password" class="mb-2.5 mt-6 block text-[14.5px] font-bold lg:bajo:mb-2 lg:bajo:mt-4 lg:muy-bajo:mb-1.5 lg:muy-bajo:mt-3">Contraseña</label>
             <div class="relative">
               <Lock class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-brand-400 dark:text-brand-300" aria-hidden="true" />
               <input
@@ -295,7 +295,7 @@ async function confirmCompany() {
                 placeholder="Tu contraseña"
                 :aria-invalid="hasError"
                 required
-                class="block h-[54px] lg:bajo:h-12 w-full rounded-[10px] border-[1.5px] bg-white ps-12 text-[15.5px] text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:ring-4 dark:bg-brand-950 dark:text-brand-50 dark:placeholder:text-brand-300 pe-12"
+                class="block h-[54px] lg:bajo:h-12 lg:muy-bajo:h-11 w-full rounded-[10px] border-[1.5px] bg-white ps-12 text-[15.5px] text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:ring-4 dark:bg-brand-950 dark:text-brand-50 dark:placeholder:text-brand-300 pe-12"
                 :class="hasError ? CAMPO_ERROR : CAMPO_NORMAL"
               >
               <button
@@ -333,7 +333,7 @@ async function confirmCompany() {
             <button
               type="submit"
               :disabled="authStore.isLoading"
-              class="mt-6 inline-flex h-14 w-full items-center justify-center gap-3 lg:bajo:mt-3 lg:bajo:h-12 rounded-[10px] bg-accent-500 px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(200,16,46,0.7)] transition-colors hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-500/40 disabled:cursor-not-allowed disabled:opacity-60"
+              class="mt-6 inline-flex h-14 w-full items-center justify-center gap-3 lg:bajo:mt-3 lg:bajo:h-12 lg:muy-bajo:mt-2 lg:muy-bajo:h-11 rounded-[10px] bg-accent-500 px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(200,16,46,0.7)] transition-colors hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-500/40 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <template v-if="authStore.isLoading">
                 <Loader2 class="h-5 w-5 animate-spin" aria-hidden="true" />
@@ -359,24 +359,24 @@ async function confirmCompany() {
         </div>
 
         <!-- Reloj y semana -->
-        <div class="flex flex-col items-start gap-3 border-t border-brand-100 px-5 pb-4.5 pt-4 dark:border-brand-700 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-9.5 sm:pb-5 sm:pt-4.5 lg:bajo:py-3 lg:muy-bajo:hidden">
+        <div class="flex flex-col items-start gap-3 border-t border-brand-100 px-5 pb-4.5 pt-4 dark:border-brand-700 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-9.5 sm:pb-5 sm:pt-4.5 lg:bajo:py-3 lg:muy-bajo:py-2">
           <div>
-            <p class="text-[30px] lg:bajo:text-[26px] font-extrabold leading-[1] tracking-[-0.02em] tabular-nums">
+            <p class="text-[30px] lg:bajo:text-[26px] lg:muy-bajo:text-[20px] font-extrabold leading-[1] tracking-[-0.02em] tabular-nums">
               {{ horas }}<span class="mx-px text-accent-500 dark:text-accent-400">:</span>{{ minutos }}
             </p>
-            <p class="mt-1.5 whitespace-nowrap text-[13px] font-medium text-brand-400 dark:text-brand-300">{{ fechaLarga }}</p>
+            <p class="mt-1.5 whitespace-nowrap text-[13px] font-medium lg:muy-bajo:mt-0.5 lg:muy-bajo:text-[11.5px] text-brand-400 dark:text-brand-300">{{ fechaLarga }}</p>
           </div>
           <ol class="flex w-full justify-between gap-[3px] sm:w-auto sm:justify-start" aria-label="Semana en curso">
             <li
               v-for="dia in semana"
               :key="dia.numero"
-              class="flex-1 text-center text-[11.5px] font-bold leading-tight sm:w-[29px] sm:flex-none"
+              class="flex-1 text-center text-[11.5px] font-bold leading-tight sm:w-[29px] sm:flex-none lg:muy-bajo:w-6 lg:muy-bajo:text-[10px]"
               :class="dia.hoy ? 'text-brand-900 dark:text-white' : 'text-brand-400 dark:text-brand-300'"
               :aria-current="dia.hoy ? 'date' : undefined"
             >
               {{ dia.letra }}
               <span
-                class="mt-1 block h-[26px] rounded-[7px] text-[13px] font-semibold leading-[26px]"
+                class="mt-1 block h-[26px] rounded-[7px] text-[13px] font-semibold leading-[26px] lg:muy-bajo:mt-0.5 lg:muy-bajo:h-5 lg:muy-bajo:rounded-[5px] lg:muy-bajo:text-[11.5px] lg:muy-bajo:leading-5"
                 :class="dia.hoy ? 'bg-brand-700 text-white dark:bg-brand-500' : 'text-brand-500 dark:text-brand-200'"
               >{{ dia.numero }}</span>
             </li>
