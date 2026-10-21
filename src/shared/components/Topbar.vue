@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { Bell, Building2, ChevronDown, ShieldCheck, Settings, Warehouse, Users } from 'lucide-vue-next';
+import { Bell, Building2, ChevronDown, FileClock, IdCardLanyard, ShieldCheck, Settings, Warehouse, Users } from 'lucide-vue-next';
 import GlobalSearch from './GlobalSearch.vue';
 import TallerSelect from './TallerSelect.vue';
 import UserMenu from './UserMenu.vue';
@@ -20,15 +20,20 @@ const menuConfiguracionRef = ref(null);
 const TODOS_ENLACES_CONFIGURACION = [
   { href: '/configuracion/empresa/', label: 'Empresa', icon: Building2, recurso: 'empresa' },
   { href: '/configuracion/talleres/', label: 'Talleres', icon: Warehouse, recurso: 'talleres' },
+  { href: '/crud/empleados/', label: 'Empleados', icon: IdCardLanyard, recurso: 'empleados' },
   { href: '/configuracion/usuarios/', label: 'Usuarios', icon: Users, recurso: 'usuarios' },
   { href: '/configuracion/roles/', label: 'Roles', icon: ShieldCheck, recurso: 'usuarios' },
+  { href: '/configuracion/auditoria/', label: 'Auditoría', icon: FileClock, recurso: 'auditoria' },
 ];
 
 // Solo las pantallas que el rol puede consultar; sin ninguna, no hay menú.
 const { puede } = usePermisos();
 const enlacesConfiguracion = computed(() => TODOS_ENLACES_CONFIGURACION.filter((e) => puede(e.recurso, 'ver')));
 
-const enConfiguracion = computed(() => window.location.pathname.startsWith('/configuracion/'));
+const enConfiguracion = computed(() => {
+  const ruta = window.location.pathname;
+  return ruta.startsWith('/configuracion/') || TODOS_ENLACES_CONFIGURACION.some((e) => ruta.startsWith(e.href));
+});
 
 /** Gestión de empresas (admin SaaS): sin búsqueda global, notificaciones ni configuración. */
 const enAdminSaas = window.location.pathname.startsWith('/crud/empresas/');

@@ -30,9 +30,9 @@ function ocultarEnlacesSinPermiso(permisos) {
     if (acciones.includes('ver')) return;
     el.closest('li')?.remove();
   });
-  // Un grupo desplegable (Operación, Inventario…) sin enlaces visibles sobra.
-  document.querySelectorAll('ul.sidebar-submenu').forEach((submenu) => {
-    if (!submenu.querySelector('li')) submenu.closest('li')?.remove();
+  // Una sección (Taller, Catálogo…) sin enlaces visibles sobra, con su etiqueta.
+  document.querySelectorAll('[data-sidebar-seccion]').forEach((seccion) => {
+    if (!seccion.querySelector('a')) seccion.remove();
   });
 }
 

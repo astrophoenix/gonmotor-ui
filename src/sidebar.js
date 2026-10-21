@@ -75,6 +75,24 @@ if (sidebar) {
         });
     }
 
+    // Acordeón propio: evita competir con los listeners de Collapse de Flowbite.
+    const groupButtons = [...sidebar.querySelectorAll('[data-sidebar-group]')];
+    const setGroupOpen = (button, open) => {
+        const submenu = document.getElementById(button.getAttribute('aria-controls'));
+        if (!submenu) return;
+        submenu.classList.toggle('hidden', !open);
+        button.setAttribute('aria-expanded', String(open));
+    };
+
+    groupButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const collapsed = desktopMedia.matches && document.documentElement.classList.contains('sidebar-collapsed');
+            const open = collapsed || button.getAttribute('aria-expanded') !== 'true';
+            if (collapsed) applyDesktopCollapse(false, true);
+            groupButtons.forEach(group => setGroupOpen(group, group === button && open));
+        });
+    });
+
     // Restaurar preferencia guardada (ignorada mientras el viewport sea móvil)
     applyDesktopCollapse(localStorage.getItem(COLLAPSED_KEY) === '1');
 

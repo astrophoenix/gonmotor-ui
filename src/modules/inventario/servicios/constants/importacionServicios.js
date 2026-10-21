@@ -1,4 +1,4 @@
-import { CircleCheck, Clock, RefreshCw, Wrench } from 'lucide-vue-next';
+import { CircleCheck, Clock, RefreshCw, ToolCase } from 'lucide-vue-next';
 import { crearServicioImportacion } from '../../../../shared/services/importacionService';
 
 /**
@@ -9,7 +9,7 @@ import { crearServicioImportacion } from '../../../../shared/services/importacio
 export const IMPORTACION_SERVICIOS = {
   titulo: 'Importar servicios',
   subtitulo: 'Catálogo de mano de obra desde Excel',
-  icono: Wrench,
+  icono: ToolCase,
   entidad: { singular: 'servicio', plural: 'servicios' },
   plantilla: {
     nombre: 'plantilla_importacion_servicios.xlsx',

@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { Wrench, Search, Filter, Upload } from 'lucide-vue-next';
+import { ToolCase, Search, Filter, Upload } from 'lucide-vue-next';
 import { useServicios } from '../composables/useServicios';
 import ConfirmModal from '../../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../../shared/components/Alert.vue';
@@ -199,7 +199,7 @@ onMounted(async () => {
   <template v-else>
   <EntityHeader
     mode="list"
-    :icon="Wrench"
+    :icon="ToolCase"
     entity="Servicios"
     :breadcrumb="[
       { label: 'Inicio', href: '/' },
