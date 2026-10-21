@@ -156,6 +156,12 @@
           <li class="sidebar-separator" aria-hidden="true"></li>
           <li class="sidebar-section-label" sidebar-toggle-item>Reportes</li>
           <li>
+            <a href="{{ "configuracion/auditoria/" | relURL }}" data-recurso="auditoria" sidebar-tooltip="Auditoría" class="sidebar-link{{ if eq $sub "auditoria" }} is-current{{ end }}" {{ if eq $sub "auditoria" }}aria-current="page"{{ end }}>
+              <svg class="sidebar-icon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 22h2a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v2.85"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M8 14v2.2l1.6 1"/><circle cx="8" cy="16" r="6"/></svg>
+              <span class="sidebar-label" sidebar-toggle-item>Auditoría</span>
+            </a>
+          </li>
+          <li>
             <a href="{{ "reportes/rentabilidad/" | relURL }}" data-recurso="reportes" sidebar-tooltip="Rentabilidad" class="sidebar-link{{ if and (eq $mod "reportes") (eq $sub "rentabilidad") }} is-current{{ end }}" {{ if and (eq $mod "reportes") (eq $sub "rentabilidad") }}aria-current="page"{{ end }}>
               <svg class="sidebar-icon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 16v5"/><path d="M16 14v7"/><path d="M20 10v11"/><path d="m22 3-8.646 8.646a.5.5 0 0 1-.708 0L9.354 8.354a.5.5 0 0 0-.707 0L2 15"/><path d="M4 18v3"/><path d="M8 14v7"/></svg>
               <span class="sidebar-label" sidebar-toggle-item>Rentabilidad</span>

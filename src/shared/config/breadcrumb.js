@@ -7,7 +7,7 @@
  */
 
 /** Prefijos de ruta que no son el módulo en sí (van seguidos del módulo). */
-const PREFIJOS = new Set(['crud', 'configuracion']);
+const PREFIJOS = new Set(['crud', 'configuracion', 'reportes']);
 
 /** Sección visible → etiqueta del primer nivel. */
 const GRUPOS = {
@@ -18,6 +18,7 @@ const GRUPOS = {
   sistema: 'Sistema',
   cuenta: 'Cuenta',
   administracion: 'Administración',
+  reportes: 'Reportes',
 };
 
 /** Módulo (segmento de URL) → grupo + etiqueta de la entidad. */
@@ -39,6 +40,9 @@ const MODULOS = {
   talleres: { grupo: 'sistema', entidad: 'Talleres' },
   usuarios: { grupo: 'sistema', entidad: 'Usuarios' },
   roles: { grupo: 'sistema', entidad: 'Roles' },
+  auditoria: { grupo: 'reportes', entidad: 'Auditoría' },
+  rentabilidad: { grupo: 'reportes', entidad: 'Rentabilidad' },
+  'reportes-rentabilidad': { grupo: 'reportes', entidad: 'Rentabilidad' },
   perfil: { grupo: 'cuenta', entidad: 'Editar perfil' },
   empresas: { grupo: 'administracion', entidad: 'Empresas' },
 };
