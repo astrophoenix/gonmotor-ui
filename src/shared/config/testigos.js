@@ -21,6 +21,16 @@ import {
   iconLucesEmergencia,
   iconPuertaAbierta,
   iconFrenoMano,
+  iconEvListo,
+  iconPotenciaBaja,
+  iconCargaEv,
+  iconBateriaAltoVoltaje,
+  iconServicioEv,
+  iconDpf,
+  iconAntirrobo,
+  iconPrecolision,
+  iconSalidaCarril,
+  iconPuntoCiego,
 } from './iconosTestigos';
 
 // Fuente única de verdad de los testigos del tablero.
@@ -146,6 +156,66 @@ export const TESTIGOS = [
     label: 'Frenos',
     color: 'red',
     path: mdiCarBrakeAlert,
+  },
+  {
+    key: 'testigo_ev_listo',
+    label: 'EV Listo',
+    color: 'green',
+    path: iconEvListo,
+  },
+  {
+    key: 'testigo_potencia_baja',
+    label: 'Potencia Baja',
+    color: 'yellow',
+    path: iconPotenciaBaja,
+  },
+  {
+    key: 'testigo_carga_ev',
+    label: 'Carga EV',
+    color: 'red',
+    path: iconCargaEv,
+  },
+  {
+    key: 'testigo_bateria_alto_voltaje',
+    label: 'Batería EV',
+    color: 'yellow',
+    path: iconBateriaAltoVoltaje,
+  },
+  {
+    key: 'testigo_servicio_ev',
+    label: 'Servicio EV',
+    color: 'yellow',
+    path: iconServicioEv,
+  },
+  {
+    key: 'testigo_dpf',
+    label: 'DPF',
+    color: 'yellow',
+    path: iconDpf,
+  },
+  {
+    key: 'testigo_antirrobo',
+    label: 'Antirrobo',
+    color: 'yellow',
+    path: iconAntirrobo,
+  },
+  {
+    key: 'testigo_precolision',
+    label: 'Precolisión',
+    color: 'yellow',
+    path: iconPrecolision,
+  },
+  {
+    key: 'testigo_salida_carril',
+    label: 'Salida Carril',
+    color: 'yellow',
+    path: iconSalidaCarril,
+  },
+  {
+    key: 'testigo_punto_ciego',
+    label: 'Punto Ciego',
+    color: 'yellow',
+    path: iconPuntoCiego,
   },
 ];
 

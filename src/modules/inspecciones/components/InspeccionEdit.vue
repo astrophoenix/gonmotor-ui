@@ -1233,7 +1233,10 @@ onMounted(async () => {
     <!-- Avisos de cambio de estado (iniciar también se ofrece en la guía del formulario). -->
     <div
       v-if="(estadoInspeccion === 'PENDIENTE' && !readOnly) || puedeFinalizar"
-      class="flex flex-col gap-3 p-4 mb-4 text-sm border rounded-lg sm:flex-row sm:items-center sm:justify-between bg-brand-50 border-brand-200 text-brand-900 dark:bg-brand-700/20 dark:border-brand-500/40 dark:text-brand-100">
+      class="flex flex-col gap-3 p-4 mb-4 text-sm border rounded-lg sm:flex-row sm:items-center sm:justify-between"
+      :class="puedeFinalizar
+        ? 'bg-brand-50 border-brand-200 text-brand-900 dark:bg-brand-700/20 dark:border-brand-500/40 dark:text-brand-100'
+        : 'bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-900/30 dark:border-blue-700/60 dark:text-blue-100'">
       <div class="flex items-start gap-3">
         <component :is="puedeFinalizar ? CheckCircle2 : CircleStop" class="w-5 h-5 mt-0.5 shrink-0" />
         <p v-if="puedeFinalizar">
@@ -1462,23 +1465,6 @@ onMounted(async () => {
             </nav>
 
             <div class="p-4 sm:p-5 space-y-4 bg-gray-50/60 dark:bg-gray-900/30">
-              <!-- Guía discreta mientras está pendiente: los pasos se habilitan al iniciar. -->
-              <div
-                v-if="pendienteDeInicio"
-                class="flex flex-wrap items-center gap-x-2 gap-y-1 px-3 py-2 text-sm text-gray-600 border border-dashed border-gray-300 rounded-lg dark:text-gray-300 dark:border-gray-600">
-                <Lock class="w-4 h-4 shrink-0 text-gray-400 dark:text-gray-500" />
-                <span>Los campos se habilitan al iniciar la inspección.</span>
-                <button
-                  type="button"
-                  :disabled="transicionEstado"
-                  class="inline-flex items-center gap-1 font-medium text-brand-700 hover:underline disabled:opacity-60 disabled:no-underline dark:text-brand-200"
-                  @click="solicitarIniciar">
-                  <Loader2 v-if="transicionEstado" class="w-3.5 h-3.5 animate-spin" />
-                  {{ transicionEstado ? 'Iniciando...' : 'Iniciar ahora' }}
-                  <ArrowRight v-if="!transicionEstado" class="w-3.5 h-3.5" />
-                </button>
-              </div>
-
               <!-- 1. Diagnóstico -->
               <div v-show="activeTab === 'informacion'" class="space-y-4">
                 <section :class="SECCION">
