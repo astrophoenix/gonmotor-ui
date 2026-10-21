@@ -311,24 +311,25 @@ span.sidebar-section-label { display: block; }
   inset: 0;
 }
 .sidebar-puntos::before {
-  background-image: radial-gradient(circle, rgb(120 172 222 / 0.28) 1.1px, transparent 1.6px);
+  background-image: radial-gradient(circle, rgb(120 172 222 / 0.16) 1.1px, transparent 1.6px);
   background-size: 20px 20px;
   background-position: 10px 10px;
   mask-image: linear-gradient(to top, #000 0%, rgb(0 0 0 / 0.5) 35%, rgb(0 0 0 / 0.12) 70%, transparent 100%);
 }
 .sidebar-puntos::after {
-  background: radial-gradient(120% 60% at 30% 100%, rgb(120 172 222 / 0.09), transparent 70%);
+  background: radial-gradient(120% 60% at 30% 100%, rgb(120 172 222 / 0.05), transparent 70%);
 }
 .sidebar-plano {
-  margin-top: 1rem;
-  height: 150px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: min(150px, 22vh);
   pointer-events: none;
 }
-/* Decorativo: nunca debe provocar scroll; solo aparece si sobra altura. */
-@media (max-height: 56rem) {
-  .sidebar-plano { display: none; }
-}
-.sidebar-plano svg { display: block; width: 100%; height: 100%; opacity: 0.45; }
+/* Capa de fondo anclada abajo (detrás del menú): visible a cualquier altura sin
+   provocar scroll, y tenue para no competir con los enlaces que pasan encima. */
+.sidebar-plano svg { display: block; width: 100%; height: 100%; opacity: 0.2; }
 .sidebar-plano .pz,
 .sidebar-plano .fino,
 .sidebar-plano .som {
