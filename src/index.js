@@ -17,6 +17,7 @@ import { mountCitas } from './modules/citas';
 import { mountCalendario } from './modules/calendario';
 import { mountEmpleados, mountEmpleadoDetail } from './modules/empleados';
 import { mountUsuarios } from './modules/usuarios';
+import { mountAuditoria } from './modules/auditoria';
 import { mountRepuestos } from './modules/inventario/repuestos';
 import { mountServicios } from './modules/inventario/servicios';
 import { mountProfileEdit } from './modules/auth';
@@ -262,6 +263,8 @@ if (talleresConfigApp) {
 }
 
 const rolesApp = document.getElementById('roles-app');
+const auditoriaApp = document.getElementById('auditoria-app');
+if (auditoriaApp) mountAuditoria(auditoriaApp, pinia);
 
 if (rolesApp) {
     mountRoles(rolesApp, pinia);
