@@ -117,7 +117,7 @@ export const TESTIGOS = [
   },
   {
     key: 'testigo_bujias_precalentamiento',
-    label: 'Pre calentamiento (Diésel)',
+    label: 'Pre calentamiento',
     color: 'yellow',
     path: iconPrecalentamiento,
   },

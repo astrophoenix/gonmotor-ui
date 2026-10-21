@@ -90,7 +90,7 @@ const clienteSearch = ref('');
 const vehiculoSearch = ref('');
 const mecanicoSearch = ref('');
 const showClientCreateModal = ref(false);
-const formErrors = ref({ cliente: '', vehiculo: '', kilometraje: '' });
+const formErrors = ref({ cliente: '', vehiculo: '', kilometraje: '', mecanico: '' });
 
 const {
   tallerId: tallerSucursalId,
@@ -194,6 +194,7 @@ function seleccionarMecanico(empleado) {
   mecanicoSeleccionado.value = empleado || null;
   form.value.mecanico_principal = empleado?.user?.id ? String(empleado.user.id) : '';
   mecanicoSearch.value = nombreEmpleado(empleado);
+  formErrors.value.mecanico = '';
 }
 
 function limpiarMecanico() {
@@ -644,7 +645,7 @@ async function handleSubmit(mensajeExito = 'Orden de trabajo guardada correctame
   error.value = '';
   successMessage.value = '';
 
-  formErrors.value = { cliente: '', vehiculo: '', fecha_ingreso: '', kilometraje: '' };
+  formErrors.value = { cliente: '', vehiculo: '', fecha_ingreso: '', kilometraje: '', mecanico: '' };
   if (!clienteSeleccionado.value) formErrors.value.cliente = 'Selecciona el cliente de la orden.';
   if (!vehiculoSeleccionado.value) formErrors.value.vehiculo = 'Selecciona el vehículo a atender.';
   if (formErrors.value.cliente || formErrors.value.vehiculo) {
@@ -667,6 +668,14 @@ async function handleSubmit(mensajeExito = 'Orden de trabajo guardada correctame
   if (kilometraje == null || !Number.isInteger(kilometraje) || kilometraje < 0) {
     formErrors.value.kilometraje = 'El kilometraje es obligatorio.';
     error.value = 'Registra el kilometraje del vehículo en esta orden.';
+    saving.value = false;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return false;
+  }
+
+  if (!form.value.mecanico_principal) {
+    formErrors.value.mecanico = 'Asigna el responsable de la orden.';
+    error.value = 'Asigna el responsable de la orden de trabajo.';
     saving.value = false;
     window.scrollTo({ top: 0, behavior: 'smooth' });
     return false;
@@ -715,6 +724,7 @@ async function handleSubmit(mensajeExito = 'Orden de trabajo guardada correctame
       error.value = err.message || 'No se pudo crear la orden de trabajo.';
       if (err.data?.fecha_ingreso) formErrors.value.fecha_ingreso = [].concat(err.data.fecha_ingreso)[0];
       if (err.data?.kilometraje) formErrors.value.kilometraje = [].concat(err.data.kilometraje)[0];
+      if (err.data?.mecanico_principal) formErrors.value.mecanico = [].concat(err.data.mecanico_principal)[0];
     } finally {
       saving.value = false;
     }
@@ -743,6 +753,7 @@ async function handleSubmit(mensajeExito = 'Orden de trabajo guardada correctame
     error.value = err.message || 'No se pudo guardar la orden de trabajo.';
     if (err.data?.fecha_ingreso) formErrors.value.fecha_ingreso = [].concat(err.data.fecha_ingreso)[0];
     if (err.data?.kilometraje) formErrors.value.kilometraje = [].concat(err.data.kilometraje)[0];
+    if (err.data?.mecanico_principal) formErrors.value.mecanico = [].concat(err.data.mecanico_principal)[0];
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } finally {
     saving.value = false;
@@ -1259,11 +1270,13 @@ const grupos = computed(() => [
 
             <!-- Mecánico -->
             <div class="min-w-0">
-              <label for="mecanico" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Responsable</label>
+              <label for="mecanico" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Responsable <span class="text-accent-500 dark:text-accent-400">*</span></label>
               <EmpleadoSearchSelect
                 id="mecanico"
                 v-model="mecanicoSearch"
                 placeholder="Asignar responsable..."
+                :error="Boolean(formErrors.mecanico)"
+                :error-message="formErrors.mecanico"
                 @select="seleccionarMecanico"
                 @clear="limpiarMecanico"/>
               <dl class="mt-3 space-y-1.5 text-xs">
@@ -1310,7 +1323,7 @@ const grupos = computed(() => [
               <p v-else-if="vehiculo?.kilometraje_actual != null" class="mt-1 text-xs text-gray-500 dark:text-gray-400">Último registrado: {{ Number(vehiculo.kilometraje_actual).toLocaleString('es-EC') }} km</p>
             </div>
             <div>
-              <label for="fecha_entrega" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Entrega comprometida</label>
+              <label for="fecha_entrega" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Entrega</label>
               <input id="fecha_entrega" v-model="form.fecha_entrega" type="datetime-local" :class="inputClass('fecha_entrega')">
             </div>
           </div>
