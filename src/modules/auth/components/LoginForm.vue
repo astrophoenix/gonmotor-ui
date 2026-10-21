@@ -181,7 +181,7 @@ async function confirmCompany() {
 <template>
   <div class="login font-brand min-h-screen w-full bg-brand-50 text-brand-900 dark:bg-brand-950 dark:text-brand-50 lg:grid lg:grid-cols-2">
     <!-- ===== Panel de marca: plano técnico con el motor ===== -->
-    <aside class="marca relative z-10 flex flex-col overflow-hidden rounded-b-[40px] bg-brand-900 px-5 pb-8 pt-7 text-white lg:rounded-b-none lg:px-16 lg:pb-11 lg:pt-13">
+    <aside class="marca relative z-10 flex flex-col overflow-hidden rounded-b-[40px] bg-brand-900 px-5 pb-8 pt-7 text-white lg:rounded-b-none lg:px-16 lg:pb-11 lg:pt-13 lg:bajo:pb-8 lg:bajo:pt-9">
       <!-- En escritorio el motor y las piezas son una sola composición anclada abajo a la derecha
            que escala con la altura del panel, así se mantienen alineados en cualquier pantalla. -->
       <svg
@@ -211,14 +211,14 @@ async function confirmCompany() {
       </div>
 
       <!-- Mensaje -->
-      <div class="relative z-[2] mt-6 lg:mb-auto lg:mt-26">
-        <p class="max-w-[520px] text-[30px] font-extrabold leading-[1.08] tracking-[-0.015em] lg:text-[46px]">
+      <div class="relative z-[2] mt-6 lg:mb-auto lg:mt-26 lg:bajo:mt-12 lg:muy-bajo:mt-8">
+        <p class="max-w-[520px] text-[30px] font-extrabold leading-[1.08] tracking-[-0.015em] lg:text-[46px] lg:bajo:text-[38px]">
           Tu taller, siempre<br>bajo control.
         </p>
         <p class="mt-4.5 hidden max-w-[480px] text-[17px] leading-relaxed text-brand-subtitle lg:block">
           Ingresa para gestionar órdenes, clientes y repuestos desde un solo lugar.
         </p>
-        <ul class="mt-6.5 hidden lg:block">
+        <ul class="mt-6.5 hidden lg:block lg:bajo:mt-4 lg:muy-bajo:hidden">
           <li
             v-for="beneficio in beneficios"
             :key="beneficio"
@@ -239,7 +239,7 @@ async function confirmCompany() {
     </aside>
 
     <!-- ===== Panel del formulario ===== -->
-    <section class="formulario relative flex w-full flex-col items-center justify-start overflow-hidden px-4 pb-7 pt-6 lg:min-h-screen lg:justify-center lg:px-6 lg:py-10">
+    <section class="formulario relative flex w-full flex-col items-center justify-start overflow-hidden px-4 pb-7 pt-6 lg:min-h-screen lg:justify-center lg:px-6 lg:py-10 lg:bajo:py-6">
       <svg
         class="plano plano-formulario pointer-events-none absolute inset-0 hidden h-full w-full lg:block"
         viewBox="0 0 720 900"
@@ -255,9 +255,9 @@ async function confirmCompany() {
           aria-hidden="true"
         ></span>
 
-        <div class="px-5 pb-5.5 pt-15 sm:px-9.5 sm:pb-7 sm:pt-17">
+        <div class="px-5 pb-5.5 pt-15 sm:px-9.5 sm:pb-7 sm:pt-17 lg:bajo:pb-5 lg:bajo:pt-13">
           <p class="text-[15px] font-bold text-brand-500 dark:text-brand-300">{{ saludo }}</p>
-          <h1 class="mt-1.5 text-[30px] font-extrabold tracking-[-0.015em]">Entra a tu taller</h1>
+          <h1 class="mt-1.5 text-[30px] font-extrabold tracking-[-0.015em] lg:bajo:mt-1 lg:bajo:text-[26px]">Entra a tu taller</h1>
 
           <div v-if="errorMessage" class="mt-5">
             <Alert type="error" :message="errorMessage" />
@@ -265,7 +265,7 @@ async function confirmCompany() {
 
           <form autocomplete="on" novalidate @submit.prevent="submit">
             <!-- Usuario / correo -->
-            <label for="login" class="mb-2.5 mt-6 block text-[14.5px] font-bold">Correo | usuario</label>
+            <label for="login" class="mb-2.5 mt-6 block text-[14.5px] font-bold lg:bajo:mb-2 lg:bajo:mt-4">Correo | usuario</label>
             <div class="relative">
               <User class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-brand-400 dark:text-brand-300" aria-hidden="true" />
               <input
@@ -277,13 +277,13 @@ async function confirmCompany() {
                 placeholder="usuario@taller.com"
                 :aria-invalid="hasError"
                 required
-                class="block h-[54px] w-full rounded-[10px] border-[1.5px] bg-white ps-12 text-[15.5px] text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:ring-4 dark:bg-brand-950 dark:text-brand-50 dark:placeholder:text-brand-300 pe-4"
+                class="block h-[54px] lg:bajo:h-12 w-full rounded-[10px] border-[1.5px] bg-white ps-12 text-[15.5px] text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:ring-4 dark:bg-brand-950 dark:text-brand-50 dark:placeholder:text-brand-300 pe-4"
                 :class="hasError ? CAMPO_ERROR : CAMPO_NORMAL"
               >
             </div>
 
             <!-- Contraseña -->
-            <label for="password" class="mb-2.5 mt-6 block text-[14.5px] font-bold">Contraseña</label>
+            <label for="password" class="mb-2.5 mt-6 block text-[14.5px] font-bold lg:bajo:mb-2 lg:bajo:mt-4">Contraseña</label>
             <div class="relative">
               <Lock class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-brand-400 dark:text-brand-300" aria-hidden="true" />
               <input
@@ -295,7 +295,7 @@ async function confirmCompany() {
                 placeholder="Tu contraseña"
                 :aria-invalid="hasError"
                 required
-                class="block h-[54px] w-full rounded-[10px] border-[1.5px] bg-white ps-12 text-[15.5px] text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:ring-4 dark:bg-brand-950 dark:text-brand-50 dark:placeholder:text-brand-300 pe-12"
+                class="block h-[54px] lg:bajo:h-12 w-full rounded-[10px] border-[1.5px] bg-white ps-12 text-[15.5px] text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:ring-4 dark:bg-brand-950 dark:text-brand-50 dark:placeholder:text-brand-300 pe-12"
                 :class="hasError ? CAMPO_ERROR : CAMPO_NORMAL"
               >
               <button
@@ -310,7 +310,7 @@ async function confirmCompany() {
             </div>
 
             <!-- Opciones -->
-            <div class="mt-5 flex items-center justify-between gap-2 text-[13px] sm:text-sm">
+            <div class="mt-5 flex items-center justify-between gap-2 text-[13px] sm:text-sm lg:bajo:mt-2">
               <label for="remember" class="flex min-h-11 cursor-pointer items-center gap-2.5 whitespace-nowrap font-medium text-brand-500 dark:text-brand-200">
                 <input
                   id="remember"
@@ -333,7 +333,7 @@ async function confirmCompany() {
             <button
               type="submit"
               :disabled="authStore.isLoading"
-              class="mt-6 inline-flex h-14 w-full items-center justify-center gap-3 rounded-[10px] bg-accent-500 px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(200,16,46,0.7)] transition-colors hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-500/40 disabled:cursor-not-allowed disabled:opacity-60"
+              class="mt-6 inline-flex h-14 w-full items-center justify-center gap-3 lg:bajo:mt-3 lg:bajo:h-12 rounded-[10px] bg-accent-500 px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(200,16,46,0.7)] transition-colors hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-500/40 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <template v-if="authStore.isLoading">
                 <Loader2 class="h-5 w-5 animate-spin" aria-hidden="true" />
@@ -347,7 +347,7 @@ async function confirmCompany() {
             </button>
           </form>
 
-          <p class="mt-5 text-center text-sm text-brand-400 dark:text-brand-300">
+          <p class="mt-5 text-center text-sm text-brand-400 dark:text-brand-300 lg:bajo:mt-4">
             ¿No puedes entrar?
             <a
               href="#"
@@ -359,9 +359,9 @@ async function confirmCompany() {
         </div>
 
         <!-- Reloj y semana -->
-        <div class="flex flex-col items-start gap-3 border-t border-brand-100 px-5 pb-4.5 pt-4 dark:border-brand-700 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-9.5 sm:pb-5 sm:pt-4.5">
+        <div class="flex flex-col items-start gap-3 border-t border-brand-100 px-5 pb-4.5 pt-4 dark:border-brand-700 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-9.5 sm:pb-5 sm:pt-4.5 lg:bajo:py-3 lg:muy-bajo:hidden">
           <div>
-            <p class="text-[30px] font-extrabold leading-[1] tracking-[-0.02em] tabular-nums">
+            <p class="text-[30px] lg:bajo:text-[26px] font-extrabold leading-[1] tracking-[-0.02em] tabular-nums">
               {{ horas }}<span class="mx-px text-accent-500 dark:text-accent-400">:</span>{{ minutos }}
             </p>
             <p class="mt-1.5 whitespace-nowrap text-[13px] font-medium text-brand-400 dark:text-brand-300">{{ fechaLarga }}</p>

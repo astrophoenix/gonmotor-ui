@@ -6,6 +6,9 @@
 @source "../node_modules/flowbite-datepicker";
 
 @custom-variant dark (&:where(.dark, .dark *));
+/* Variantes por altura de ventana (laptops con escalado y ventanas bajas). */
+@custom-variant bajo (@media (max-height: 860px));
+@custom-variant muy-bajo (@media (max-height: 720px));
 
 /* ===== Manrope (alojada localmente) — usada solo en el login ===== */
 @font-face {
