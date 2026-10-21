@@ -8,7 +8,7 @@ import {
   NotebookPen, Gauge, LoaderCircle, ShieldCheck,
 } from 'lucide-vue-next';
 import { IconClockPlay, IconClockCheck, IconPlayerPause, IconPlayerPlay } from '@tabler/icons-vue';
-import { request } from '../../../shared/services/httpClient';
+import { enOperacion, request } from '../../../shared/services/httpClient';
 import { API_BASE_URL } from '../../../shared/config/env';
 import { ordenesService } from '../services/ordenesService';
 import { PRIORIDADES_ORDEN, getEstadoOrden, getPrioridadOrden } from '../constants/estadosOrden';
@@ -712,13 +712,15 @@ async function handleSubmit(mensajeExito = 'Orden de trabajo guardada correctame
 
   if (!isEditMode.value) {
     try {
-      const creada = await ordenesService.create(datosOrden);
-      ordenPersistidaId.value = creada && creada.id;
-      if (!ordenPersistidaId.value) {
-        throw new Error('No se pudo confirmar la orden de trabajo creada.');
-      }
-      await guardarDetalles(ordenPersistidaId.value);
-      await photosGrid.value?.guardarFotos();
+      await enOperacion(async () => {
+        const creada = await ordenesService.create(datosOrden);
+        ordenPersistidaId.value = creada && creada.id;
+        if (!ordenPersistidaId.value) {
+          throw new Error('No se pudo confirmar la orden de trabajo creada.');
+        }
+        await guardarDetalles(ordenPersistidaId.value);
+        await photosGrid.value?.guardarFotos();
+      });
       window.location.assign(`/crud/ordenes/editar/?id=${ordenPersistidaId.value}`);
     } catch (err) {
       error.value = err.message || 'No se pudo crear la orden de trabajo.';
@@ -738,9 +740,12 @@ async function handleSubmit(mensajeExito = 'Orden de trabajo guardada correctame
 
   let guardado = false;
   try {
-    const actualizada = await ordenesService.update(orden.value.id, datosOrden);
-    await guardarDetalles(orden.value.id);
-    await photosGrid.value?.guardarFotos();
+    const actualizada = await enOperacion(async () => {
+      const respuesta = await ordenesService.update(orden.value.id, datosOrden);
+      await guardarDetalles(orden.value.id);
+      await photosGrid.value?.guardarFotos();
+      return respuesta;
+    });
     orden.value = {
       ...orden.value,
       estado: form.value.estado,

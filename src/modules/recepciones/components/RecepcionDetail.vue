@@ -63,6 +63,7 @@ import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
 import MdiIcon from '../../../shared/components/MdiIcon.vue';
 import { TESTIGOS } from '../../../shared/config/testigos';
 import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
+import HistorialCambios from '../../../shared/components/HistorialCambios.vue';
 import { relacionesDeRecepcion } from '../../../shared/utils/relacionesFlujo';
 import { useRecepciones } from '../composables/useRecepciones';
 import { recepcionesService } from '../services/recepcionesService';
@@ -262,7 +263,7 @@ const clienteUrl = computed(() => (cliente.value?.id ? `/crud/clientes/ver/?id=$
 const vehiculoUrl = computed(() => (vehiculo.value?.id ? `/crud/vehiculos/ver/?id=${encodeURIComponent(vehiculo.value.id)}` : null));
 const tieneInspeccion = computed(() => (recepcion.value?.inspecciones?.length ?? 0) > 0);
 
-const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+const { puede, tieneAccion, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
 const puedeModificar = computed(() => puede('recepciones'));
 // Crear la inspección crea otro documento: hacen falta ambos permisos.
 const puedeCrearInspeccion = computed(() => puede('recepciones') && puede('inspecciones'));
@@ -1215,11 +1216,11 @@ async function confirmarFirma() {
           </dl>
         </section>
 
-        <!-- Historial (timeline de Flowbite) -->
+        <!-- Hitos del documento (timeline de Flowbite); los cambios van en HistorialCambios -->
         <section :class="SECCION">
           <h4 :class="[TITULO_SECCION, 'mb-4']">
             <History class="w-4 h-4" />
-            Historial
+            Hitos
           </h4>
           <ol class="relative ms-2 border-s border-gray-200 dark:border-gray-700">
             <li v-for="evento in historial" :key="evento.key" class="mb-5 ms-5 last:mb-0">
@@ -1243,6 +1244,11 @@ async function confirmarFirma() {
           <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">Documentos generados a partir de esta recepción.</p>
           <RelacionesFlujo :pasos="relacionesRecepcion" />
         </section>
+
+        <HistorialCambios
+          v-if="tieneAccion('historial_recepciones')"
+          :endpoint="`/api/recepciones/${encodeURIComponent(recepcion.id)}/historial/`"
+          :version="recepcion" />
       </aside>
     </div>
   </div>

@@ -51,6 +51,7 @@ import { usePermisos } from '../../../shared/composables/usePermisos';
 import PdfExportButton from '../../../shared/components/PdfExportButton.vue';
 import TipoTrabajoBadge from '../../../shared/components/TipoTrabajoBadge.vue';
 import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
+import HistorialCambios from '../../../shared/components/HistorialCambios.vue';
 import EstadoOrdenBadge from './EstadoOrdenBadge.vue';
 import OrdenCotizaciones from './OrdenCotizaciones.vue';
 import { relacionesDeOrden } from '../../../shared/utils/relacionesFlujo';
@@ -194,7 +195,7 @@ const entregada = computed(() => estado.value === 'ENTREGADO');
 // ---- Aviso de estado con sus transiciones (las mismas de la edición) ----
 const serviciosHechos = computed(() => servicios.value.filter((s) => s.completado).length);
 
-const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+const { puede, tieneAccion, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
 const puedeModificar = computed(() => puede('ordenes'));
 const ordenCerrada = computed(() => ['ENTREGADO', 'CANCELADO'].includes(estado.value));
 
@@ -1124,6 +1125,11 @@ onMounted(async () => {
             <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">Recepción, inspección y cotización que originaron esta orden.</p>
             <RelacionesFlujo :pasos="relacionesOrden" />
           </section>
+
+          <HistorialCambios
+            v-if="tieneAccion('historial_ordenes')"
+            :endpoint="`/api/ordenes/ordenes-trabajo/${encodeURIComponent(orden.id)}/historial/`"
+            :version="orden" />
         </aside>
       </div>
     </template>

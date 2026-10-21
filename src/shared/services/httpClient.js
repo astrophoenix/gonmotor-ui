@@ -18,6 +18,24 @@ function getAccessToken() {
     || sessionStorage.getItem('gonmotor_access_token');
 }
 
+// Operación en curso (un clic en Guardar): el backend agrupa en el historial
+// de documentos todos los cambios que llegan con el mismo X-Operacion-ID.
+let operacionActual = null;
+
+/**
+ * Ejecuta `fn` enviando el mismo `X-Operacion-ID` en todas sus peticiones.
+ * Úsalo alrededor de un guardado que hace varias llamadas (cabecera + líneas).
+ */
+export async function enOperacion(fn) {
+  const previa = operacionActual;
+  operacionActual = globalThis.crypto?.randomUUID?.() || null;
+  try {
+    return await fn();
+  } finally {
+    operacionActual = previa;
+  }
+}
+
 /** Hay un access token guardado (sesión iniciada). */
 export function haySesion() {
   return Boolean(getAccessToken());
@@ -214,6 +232,7 @@ export async function request(path, options = {}) {
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(tallerId ? { 'X-Taller-ID': tallerId } : {}),
+      ...(operacionActual ? { 'X-Operacion-ID': operacionActual } : {}),
       ...(options.headers || {})
     }
   };

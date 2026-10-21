@@ -56,6 +56,8 @@ export async function iniciarPermisosGlobal() {
 
 export function usePermisos() {
   const permisos = ref(payload?.permisos || {});
+  // Acciones especiales del rol (`AccionEspecial.codigo`), p. ej. `historial_ordenes`.
+  const acciones = ref(payload?.acciones || []);
   const isLoading = ref(false);
   // `true` cuando los permisos ya llegaron: evita mostrar avisos de consulta o
   // la pantalla «sin acceso» mientras `puede()` todavía devuelve `false`.
@@ -66,6 +68,7 @@ export function usePermisos() {
     try {
       const data = await cargar();
       permisos.value = data.permisos || {};
+      acciones.value = data.acciones || [];
       cargado.value = true;
       return permisos.value;
     } finally {
@@ -76,6 +79,10 @@ export function usePermisos() {
   function puede(recurso, accion = 'modificar') {
     const acciones = permisos.value[recurso] || [];
     return acciones.includes(accion);
+  }
+
+  function tieneAccion(codigo) {
+    return acciones.value.includes(codigo);
   }
 
   /** El rol puede consultar el recurso pero no modificarlo. */
@@ -90,5 +97,5 @@ export function usePermisos() {
 
   cargarPermisos().catch(() => {});
 
-  return { permisos, isLoading, cargado, cargarPermisos, puede, soloConsulta, sinAcceso };
+  return { permisos, acciones, isLoading, cargado, cargarPermisos, puede, tieneAccion, soloConsulta, sinAcceso };
 }

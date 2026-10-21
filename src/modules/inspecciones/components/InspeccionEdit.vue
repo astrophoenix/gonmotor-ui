@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
 import { Car, Toolbox, TriangleAlert, CheckCircle2, Loader2, Plus, Trash2, Wand2, IdCardIcon, TagIcon, Shapes, PaintBucket, Phone, Mail, Camera, ShieldCheck, Workflow, Package, Check, CircleAlert, ArrowLeft, ArrowRight, ListChecks, Stethoscope, CalendarClock, ScanSearch, ClipboardList, CircleStop, Lock } from 'lucide-vue-next';
 import { IconClockCheck, IconClockPlay, IconEngine, IconManualGearbox, IconAutomaticGearbox, IconGasStation } from '@tabler/icons-vue';
-import { request } from '../../../shared/services/httpClient';
+import { enOperacion, request } from '../../../shared/services/httpClient';
 import { API_BASE_URL } from '../../../shared/config/env';
 import CatalogoSelect from '../../../shared/components/CatalogoSelect.vue';
 import PhotoUploadGrid from '../../../shared/components/PhotoUploadGrid.vue';
@@ -1030,19 +1030,26 @@ async function submit() {
     };
 
     if (isEditMode) {
-      await inspeccionesService.update(inspeccionId, payload);
-      await guardarDetalles(inspeccionId);
-      await photosGrid.value.guardarFotos();
+      await enOperacion(async () => {
+        await inspeccionesService.update(inspeccionId, payload);
+        await guardarDetalles(inspeccionId);
+        await photosGrid.value.guardarFotos();
+      });
       successMessage.value = 'Inspección actualizada correctamente.';
       window.scrollTo({ top: 0, behavior: 'smooth' });
       guardado = true;
     } else {
-      const response = await inspeccionesService.create(payload);
-      const nuevoId = response && response.id;
+      const nuevoId = await enOperacion(async () => {
+        const response = await inspeccionesService.create(payload);
+        const id = response && response.id;
+        if (id) {
+          fotosEntityId.value = String(id);
+          await guardarDetalles(id);
+          await photosGrid.value.guardarFotos();
+        }
+        return id;
+      });
       if (nuevoId) {
-        fotosEntityId.value = String(nuevoId);
-        await guardarDetalles(nuevoId);
-        await photosGrid.value.guardarFotos();
         window.location.assign(`/crud/inspecciones/editar/?id=${encodeURIComponent(nuevoId)}`);
       } else {
         successMessage.value = 'Inspección creada correctamente.';

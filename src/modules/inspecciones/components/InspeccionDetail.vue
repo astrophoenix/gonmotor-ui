@@ -48,6 +48,7 @@ import { usePermisos } from '../../../shared/composables/usePermisos';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import PdfExportButton from '../../../shared/components/PdfExportButton.vue';
 import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
+import HistorialCambios from '../../../shared/components/HistorialCambios.vue';
 import { relacionesDeInspeccion } from '../../../shared/utils/relacionesFlujo';
 import { formatDateTime, formatDuration, minutesBetween } from '../../../shared/utils/datetime';
 import EstadoInspeccionBadge from './EstadoInspeccionBadge.vue';
@@ -276,7 +277,7 @@ const MENSAJE_SIN_ITEMS = 'La inspección no tiene servicios ni repuestos. Reáb
 // Reapertura: solo si el trabajo no avanzó. Se bloquea cuando la inspección ya
 // generó una orden de trabajo o tiene una cotización enviada/aceptada.
 const tieneCotizacionBloqueante = computed(() => Boolean(inspeccion.value?.tiene_cotizacion_bloqueante));
-const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+const { puede, tieneAccion, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
 const puedeModificar = computed(() => puede('inspecciones'));
 const puedeCotizar = computed(() => puede('cotizaciones'));
 const puedeReabrir = computed(() => estaFinalizada.value && !tieneOrdenTrabajo.value && !tieneCotizacionBloqueante.value);
@@ -940,11 +941,11 @@ onMounted(async () => {
           </dl>
         </section>
 
-        <!-- Historial (timeline de Flowbite) -->
+        <!-- Hitos del documento (timeline de Flowbite); los cambios van en HistorialCambios -->
         <section :class="SECCION">
           <h4 :class="[TITULO_SECCION, 'mb-4']">
             <History class="w-4 h-4" />
-            Historial
+            Hitos
           </h4>
           <ol class="relative ms-2 border-s border-gray-200 dark:border-gray-700">
             <li v-for="evento in historial" :key="evento.key" class="mb-5 ms-5 last:mb-0">
@@ -968,6 +969,11 @@ onMounted(async () => {
           <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">Recepción de origen, cotización y orden de trabajo.</p>
           <RelacionesFlujo :pasos="relacionesInspeccion" />
         </section>
+
+        <HistorialCambios
+          v-if="tieneAccion('historial_inspecciones')"
+          :endpoint="`/api/ordenes/inspecciones/${encodeURIComponent(inspeccion.id)}/historial/`"
+          :version="inspeccion" />
       </aside>
     </div>
   </div>

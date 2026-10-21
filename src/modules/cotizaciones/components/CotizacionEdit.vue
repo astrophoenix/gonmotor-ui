@@ -27,7 +27,7 @@ import {
   MessageSquareText,
 } from 'lucide-vue-next';
 import { IconBrandWhatsapp } from '@tabler/icons-vue';
-import { request } from '../../../shared/services/httpClient';
+import { enOperacion, request } from '../../../shared/services/httpClient';
 import { formatDateTime } from '../../../shared/utils/datetime';
 import { cotizacionesService } from '../services/cotizacionesService';
 import { sanitizeObservaciones, normalizarDecimal } from '../../../shared/utils/sanitize';
@@ -689,18 +689,20 @@ async function crearCotizacionDesdeInspeccion() {
 
     prefillDesdeInspeccion(data);
 
-    const creada = await cotizacionesService.create({
-      sucursal: sucursalDocumento.value,
-      cliente: clienteId,
-      vehiculo: vehiculoId,
-      inspeccion_origen: inspeccionId,
-      recepcion_origen: data.recepcion?.id || null,
-      validez_dias: 15,
-      observaciones: observacionesIniciales(data),
+    await enOperacion(async () => {
+      const creada = await cotizacionesService.create({
+        sucursal: sucursalDocumento.value,
+        cliente: clienteId,
+        vehiculo: vehiculoId,
+        inspeccion_origen: inspeccionId,
+        recepcion_origen: data.recepcion?.id || null,
+        validez_dias: 15,
+        observaciones: observacionesIniciales(data),
+      });
+      cotizacionId.value = creada && creada.id;
+      isEditMode.value = true;
+      await guardarDetalles(cotizacionId.value);
     });
-    cotizacionId.value = creada && creada.id;
-    isEditMode.value = true;
-    await guardarDetalles(cotizacionId.value);
     const recargada = await cotizacionesService.getById(cotizacionId.value);
     aplicarCotizacion(recargada);
     successMessage.value = `Cotización "${recargada.numero_cotizacion}" creada desde la inspección. Revisa los precios y detalles antes de enviarla al cliente.`;
@@ -967,29 +969,32 @@ async function crearCotizacionIndependiente() {
   }
   isCreando.value = true;
   try {
-    const creada = await cotizacionesService.create({
-      sucursal: sucursalDocumento.value,
-      cliente: form.cliente.id,
-      vehiculo: form.vehiculo.id,
-      asesor: form.asesor || null,
-      validez_dias: Number(form.validez_dias) || 15,
-      observaciones: sanitizeObservaciones(form.observaciones || '').slice(0, 2000).trim(),
-    });
-    const nuevoId = creada && creada.id;
-    if (!nuevoId) throw new Error('No se pudo crear la cotización. Intenta nuevamente.');
-    cotizacionId.value = nuevoId;
-
     // Si el usuario ya agregó servicios/repuestos antes de crear, se persisten
     // antes de redirigir para no perderlos al recargar desde el servidor.
     const teniaDetalles = hayItems();
     let errorDetalles = '';
-    if (teniaDetalles) {
-      try {
-        await guardarDetalles(nuevoId);
-      } catch (error) {
-        errorDetalles = error.message || '';
+    const creada = await enOperacion(async () => {
+      const respuesta = await cotizacionesService.create({
+        sucursal: sucursalDocumento.value,
+        cliente: form.cliente.id,
+        vehiculo: form.vehiculo.id,
+        asesor: form.asesor || null,
+        validez_dias: Number(form.validez_dias) || 15,
+        observaciones: sanitizeObservaciones(form.observaciones || '').slice(0, 2000).trim(),
+      });
+      const id = respuesta && respuesta.id;
+      if (!id) throw new Error('No se pudo crear la cotización. Intenta nuevamente.');
+      cotizacionId.value = id;
+      if (teniaDetalles) {
+        try {
+          await guardarDetalles(id);
+        } catch (error) {
+          errorDetalles = error.message || '';
+        }
       }
-    }
+      return respuesta;
+    });
+    const nuevoId = creada.id;
 
     sessionStorage.setItem(
       'cotizacion_exito',
@@ -1048,8 +1053,10 @@ async function submit({ silencioso = false } = {}) {
 
   isSaving.value = true;
   try {
-    await cotizacionesService.update(cotizacionId.value, payload);
-    await guardarDetalles(cotizacionId.value);
+    await enOperacion(async () => {
+      await cotizacionesService.update(cotizacionId.value, payload);
+      await guardarDetalles(cotizacionId.value);
+    });
     await cargarCotizacion(cotizacionId.value);
     if (!silencioso) {
       successMessage.value = 'Cotización actualizada correctamente.';

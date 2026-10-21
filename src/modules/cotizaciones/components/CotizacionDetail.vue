@@ -33,6 +33,7 @@ import { usePermisos } from '../../../shared/composables/usePermisos';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import PdfExportButton from '../../../shared/components/PdfExportButton.vue';
 import RelacionesFlujo from '../../../shared/components/RelacionesFlujo.vue';
+import HistorialCambios from '../../../shared/components/HistorialCambios.vue';
 import { relacionesDeCotizacion } from '../../../shared/utils/relacionesFlujo';
 import EstadoCotizacionBadge from './EstadoCotizacionBadge.vue';
 import CotizacionCiclo from './CotizacionCiclo.vue';
@@ -80,7 +81,7 @@ const ordenGenerada = computed(() => cotizacion.value?.orden_generada_numero || 
 const ordenHref = computed(() => (
   cotizacion.value?.orden_generada_id ? `/crud/ordenes/ver/?id=${encodeURIComponent(cotizacion.value.orden_generada_id)}` : ''
 ));
-const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
+const { puede, tieneAccion, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
 const puedeModificar = computed(() => puede('cotizaciones'));
 const aceptadaSinOrden = computed(() => cotizacion.value?.estado === 'ACEPTADA' && !ordenGenerada.value);
 // Generar la orden crea otro documento: hace falta poder crear órdenes.
@@ -556,6 +557,11 @@ onMounted(async () => {
               <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">Recepción, inspección y orden de trabajo relacionadas.</p>
               <RelacionesFlujo :pasos="relacionesCotizacion" />
             </section>
+
+            <HistorialCambios
+              v-if="tieneAccion('historial_cotizaciones')"
+              :endpoint="`/api/cotizaciones/${encodeURIComponent(cotizacion.id)}/historial/`"
+              :version="cotizacion" />
           </div>
         </aside>
       </div>
