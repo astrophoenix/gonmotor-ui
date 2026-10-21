@@ -10,6 +10,8 @@ const LOGGED_IN_KEY = 'gonmotor_logged_in';
 const EMPRESA_ID_KEY = 'gonmotor_empresa_id';
 const TALLER_ID_KEY = 'gonmotor_taller_id';
 const TALLER_NOMBRE_KEY = 'gonmotor_taller_nombre';
+// Copia de /api/auth/me/ que guarda usePermisos; se descarta con cada sesión nueva.
+const PERMISOS_KEY = 'gonmotor_permisos';
 
 function getStorage() {
   if (localStorage.getItem(ACCESS_TOKEN_KEY)) {
@@ -47,10 +49,11 @@ export const useAuthStore = defineStore('auth', () => {
     const targetStorage = remember ? localStorage : sessionStorage;
     const otherStorage = remember ? sessionStorage : localStorage;
 
-    [ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, USER_KEY, LOGGED_IN_KEY, EMPRESA_ID_KEY, TALLER_ID_KEY, TALLER_NOMBRE_KEY].forEach((key) => {
+    [ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, USER_KEY, LOGGED_IN_KEY, EMPRESA_ID_KEY, TALLER_ID_KEY, TALLER_NOMBRE_KEY, PERMISOS_KEY].forEach((key) => {
       otherStorage.removeItem(key);
     });
 
+    targetStorage.removeItem(PERMISOS_KEY);
     targetStorage.setItem(ACCESS_TOKEN_KEY, data.access);
     if (data.refresh) {
       targetStorage.setItem(REFRESH_TOKEN_KEY, data.refresh);
@@ -228,7 +231,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   function logout() {
     [localStorage, sessionStorage].forEach((currentStorage) => {
-      [ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, USER_KEY, LOGGED_IN_KEY, EMPRESA_ID_KEY, TALLER_ID_KEY, TALLER_NOMBRE_KEY].forEach((key) => {
+      [ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, USER_KEY, LOGGED_IN_KEY, EMPRESA_ID_KEY, TALLER_ID_KEY, TALLER_NOMBRE_KEY, PERMISOS_KEY].forEach((key) => {
         currentStorage.removeItem(key);
       });
     });

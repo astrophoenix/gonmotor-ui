@@ -1,22 +1,56 @@
 import { ref } from 'vue';
 import { haySesion, request } from '../services/httpClient';
 
-let payload = null;
+// Copia de /me/ junto a la sesión: cada página es una recarga completa y, sin ella,
+// los botones condicionados a permisos tardaban lo que tarda /me/ en aparecer.
+// Se usa al instante y se revalida una vez por página; ocultar es cosmético.
+const CLAVE_CACHE = 'gonmotor_permisos';
+
+function almacenSesion() {
+  if (localStorage.getItem('gonmotor_access_token')) return localStorage;
+  if (sessionStorage.getItem('gonmotor_access_token')) return sessionStorage;
+  return null;
+}
+
+/** La copia solo vale para el mismo usuario y empresa con que se guardó. */
+function duenoSesion(almacen) {
+  return `${almacen.getItem('gonmotor_user')}|${almacen.getItem('gonmotor_empresa_id')}`;
+}
+
+function leerCache() {
+  try {
+    const almacen = almacenSesion();
+    const cache = almacen && JSON.parse(almacen.getItem(CLAVE_CACHE));
+    return cache?.dueno === duenoSesion(almacen) ? cache.data : null;
+  } catch {
+    return null;
+  }
+}
+
+function guardarCache(data) {
+  try {
+    const almacen = almacenSesion();
+    almacen?.setItem(CLAVE_CACHE, JSON.stringify({ dueno: duenoSesion(almacen), data }));
+  } catch {
+    // Storage lleno o bloqueado: se sigue con la copia en memoria.
+  }
+}
+
+let payload = leerCache();
+let revalidado = false;
 let promesa = null;
 
 function cargar() {
-  if (payload) return Promise.resolve(payload);
+  if (payload && revalidado) return Promise.resolve(payload);
   if (promesa) return promesa;
   // Sin token (login/registro) /me/ respondería 401: ni se consulta.
   if (!haySesion()) return Promise.reject(new Error('Sin sesión'));
   promesa = request('/api/auth/me/')
     .then((data) => {
       payload = data;
+      revalidado = true;
+      guardarCache(data);
       return data;
-    })
-    .catch((error) => {
-      payload = null;
-      throw error;
     })
     .finally(() => {
       promesa = null;
@@ -45,6 +79,10 @@ function mostrarEnlacesAdminSaas(esSuperusuario) {
 }
 
 export async function iniciarPermisosGlobal() {
+  if (payload) {
+    ocultarEnlacesSinPermiso(payload.permisos || {});
+    mostrarEnlacesAdminSaas(Boolean(payload.es_superusuario));
+  }
   try {
     const data = await cargar();
     ocultarEnlacesSinPermiso(data.permisos || {});

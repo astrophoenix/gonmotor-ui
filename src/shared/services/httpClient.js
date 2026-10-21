@@ -130,7 +130,8 @@ function clearSession() {
       'gonmotor_logged_in',
       'gonmotor_empresa_id',
       'gonmotor_taller_id',
-      'gonmotor_taller_nombre'
+      'gonmotor_taller_nombre',
+      'gonmotor_permisos'
     ].forEach((key) => {
       currentStorage.removeItem(key);
     });

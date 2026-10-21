@@ -15,6 +15,7 @@
             storage.removeItem('gonmotor_refresh_token');
             storage.removeItem('gonmotor_user');
             storage.removeItem('gonmotor_logged_in');
+            storage.removeItem('gonmotor_permisos');
           });
           console.log('Sesión cerrada, redirigiendo a login...');
           window.location.href = '/authentication/sign-in/';
