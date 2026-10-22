@@ -112,6 +112,14 @@ function loadGastos(page = 1) {
   });
 }
 
+// El Excel usa los mismos filtros que el listado.
+const filtrosExporte = computed(() => ({
+  categoria: categoria.value,
+  taller_id: tallerId.value,
+  fecha_desde: fechaDesde.value,
+  fecha_hasta: fechaHasta.value,
+}));
+
 function applyFilters() {
   loadGastos(1);
 }
@@ -242,9 +250,10 @@ onMounted(async () => {
             <EntityActionButtons
               entity="gastos"
               :show-export-pdf="false"
-              :show-export-excel="false"
               :show-add="puedeModificarGastos"
+              :export-params="filtrosExporte"
               @add="openCreateModal"
+              @excel-export-error="(message) => showAlert('error', message || 'No se pudo generar el Excel.')"
             />
           </div>
         </div>
