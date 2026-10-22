@@ -1,9 +1,12 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
-import { Ban, Banknote, Loader2, Undo2, Wallet, X } from 'lucide-vue-next';
+import { Ban, Banknote, FileDown, Loader2, Send, Undo2, Wallet, X } from 'lucide-vue-next';
 import Alert from '../../../shared/components/Alert.vue';
 import { formatDateTime } from '../../../shared/utils/datetime';
 import { pagosService } from '../services/pagosService';
+import { usePdfExport } from '../../../shared/composables/usePdfExport';
+import ComprobanteOrden from './ComprobanteOrden.vue';
+import EnviarReciboModal from './EnviarReciboModal.vue';
 import EstadoPagoBadge from './EstadoPagoBadge.vue';
 import RegistrarPagoModal from './RegistrarPagoModal.vue';
 
@@ -42,6 +45,30 @@ const devuelto = computed(() => Number(props.orden.total_devuelto) || 0);
 const anulada = computed(() => props.orden.estado === 'CANCELADO');
 const puedePagar = computed(() => props.puedeModificar && !anulada.value && saldo.value > 0);
 const puedeDevolver = computed(() => props.puedeModificar && pagadoNeto.value > 0);
+
+// Recibo: descarga del PDF y confirmación al cliente.
+const enviando = ref(null);
+const descargando = ref(null);
+const { exportarPdf } = usePdfExport({
+  onError: (mensaje) => { errorMessage.value = mensaje; },
+});
+const mostrarEnvio = computed({
+  get: () => Boolean(enviando.value),
+  set: (valor) => { if (!valor) enviando.value = null; },
+});
+
+async function descargarRecibo(movimiento) {
+  descargando.value = movimiento.id;
+  try {
+    await exportarPdf(() => pagosService.descargarRecibo(movimiento.id));
+  } finally {
+    descargando.value = null;
+  }
+}
+
+function onReciboEnviado(respuesta) {
+  emit('cambio', respuesta?.resultado?.descripcion || 'Comprobante enviado al cliente.');
+}
 
 const mostrarModal = computed({
   get: () => Boolean(modalTipo.value),
@@ -193,6 +220,25 @@ async function confirmarAnulacion() {
                 {{ mov.tipo === 'DEVOLUCION' ? '−' : '' }}$ {{ formatNumber(mov.monto) }}
               </span>
               <button
+                type="button"
+                class="inline-flex items-center justify-center w-7 h-7 text-gray-400 rounded hover:bg-gray-100 hover:text-brand-700 dark:hover:bg-gray-700 dark:hover:text-brand-200"
+                :disabled="descargando === mov.id"
+                title="Descargar recibo en PDF"
+                aria-label="Descargar recibo en PDF"
+                @click="descargarRecibo(mov)">
+                <Loader2 v-if="descargando === mov.id" class="w-4 h-4 animate-spin" />
+                <FileDown v-else class="w-4 h-4" />
+              </button>
+              <button
+                v-if="puedeModificar && !mov.anulado"
+                type="button"
+                class="inline-flex items-center justify-center w-7 h-7 text-gray-400 rounded hover:bg-gray-100 hover:text-emerald-600 dark:hover:bg-gray-700 dark:hover:text-emerald-400"
+                title="Enviar comprobante al cliente"
+                aria-label="Enviar comprobante al cliente"
+                @click="enviando = mov">
+                <Send class="w-4 h-4" />
+              </button>
+              <button
                 v-if="puedeModificar && !mov.anulado"
                 type="button"
                 class="inline-flex items-center justify-center w-7 h-7 text-gray-400 rounded hover:bg-gray-100 hover:text-red-600 dark:hover:bg-gray-700 dark:hover:text-red-400"
@@ -206,7 +252,11 @@ async function confirmarAnulacion() {
         </li>
       </ul>
     </template>
+
+    <ComprobanteOrden v-if="puedeVer" :orden="orden" :puede-modificar="puedeModificar" @cambio="(mensaje) => emit('cambio', mensaje)" />
   </section>
+
+  <EnviarReciboModal v-model="mostrarEnvio" :movimiento="enviando" :cliente-nombre="orden.cliente?.nombre || ''" @enviado="onReciboEnviado" />
 
   <RegistrarPagoModal v-model="mostrarModal" :orden="orden" :tipo="modalTipo || 'PAGO'" @registrado="onRegistrado" />
 

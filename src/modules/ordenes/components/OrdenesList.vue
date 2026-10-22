@@ -107,6 +107,7 @@ const emptyAdvancedFilters = () => ({
   estado: '',
   prioridad: '',
   estadoPago: '',
+  sinFactura: false,
   tipoTrabajo: '',
   sucursal: '',
   fechaDesde: '',
@@ -147,6 +148,7 @@ function buildQuery() {
     prioridad: appliedFilters.value.prioridad,
     tipo_trabajo: appliedFilters.value.tipoTrabajo,
     estado_pago: appliedFilters.value.estadoPago,
+    sin_factura: appliedFilters.value.sinFactura ? '1' : '',
     sucursal: appliedFilters.value.sucursal,
     fecha_desde: appliedFilters.value.fechaDesde,
     fecha_hasta: appliedFilters.value.fechaHasta,
@@ -392,6 +394,17 @@ onMounted(async () => {
               <option value="">Todos</option>
               <option v-for="item in ESTADOS_PAGO_FILTRABLE" :key="item" :value="item">{{ getEstadoPago(item).label }}</option>
             </select>
+          </div>
+
+          <div v-if="puede('facturacion', 'ver')" class="w-full sm:w-auto sm:shrink-0 sm:self-center sm:pt-6">
+            <label for="filtro-sin-factura" class="inline-flex items-center gap-2 text-sm font-medium text-heading">
+              <input
+                id="filtro-sin-factura"
+                v-model="draftFilters.sinFactura"
+                type="checkbox"
+                class="w-4 h-4 rounded border-gray-300 text-brand-700 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600">
+              Cobradas sin factura
+            </label>
           </div>
 
           <div class="w-full sm:w-auto sm:shrink-0">

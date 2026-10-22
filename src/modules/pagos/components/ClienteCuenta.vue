@@ -1,10 +1,11 @@
 <script setup>
 import { onMounted, ref } from 'vue';
-import { Loader2, Wallet } from 'lucide-vue-next';
+import { FileDown, Loader2, Wallet } from 'lucide-vue-next';
 import Alert from '../../../shared/components/Alert.vue';
 import Pagination from '../../../shared/components/Pagination.vue';
 import { formatCurrency } from '../../../shared/utils/format';
 import { formatDateOnly, formatDateTime } from '../../../shared/utils/datetime';
+import { usePdfExport } from '../../../shared/composables/usePdfExport';
 import { pagosService } from '../services/pagosService';
 
 /**
@@ -25,6 +26,21 @@ const anterior = ref(null);
 const cargando = ref(true);
 const cargandoPagos = ref(false);
 const errorMessage = ref('');
+
+const descargando = ref(null);
+const errorRecibo = ref('');
+const { exportarPdf } = usePdfExport({
+  onError: (mensaje) => { errorRecibo.value = mensaje; },
+});
+
+async function descargarRecibo(pago) {
+  descargando.value = pago.id;
+  try {
+    await exportarPdf(() => pagosService.descargarRecibo(pago.id));
+  } finally {
+    descargando.value = null;
+  }
+}
 
 async function cargarPagos(page = 1) {
   cargandoPagos.value = true;
@@ -99,6 +115,7 @@ onMounted(async () => {
         <!-- Historial de pagos -->
         <div>
           <p class="mb-2 text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">Historial de pagos</p>
+          <p v-if="errorRecibo" class="mb-2 text-sm text-red-600 dark:text-red-400">{{ errorRecibo }}</p>
           <p v-if="!pagos.length" class="text-sm text-gray-500 dark:text-gray-400">Este cliente aún no tiene pagos registrados.</p>
           <div v-else class="overflow-x-auto border border-gray-100 rounded-lg dark:border-gray-700">
             <table class="w-full text-sm" :class="cargandoPagos ? 'opacity-60' : ''">
@@ -108,6 +125,7 @@ onMounted(async () => {
                   <th class="px-4 py-2 font-medium text-left">Orden</th>
                   <th class="px-4 py-2 font-medium text-left">Movimiento</th>
                   <th class="px-4 py-2 font-medium text-right">Monto</th>
+                  <th class="w-10 px-2 py-2"><span class="sr-only">Recibo</span></th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
@@ -126,6 +144,18 @@ onMounted(async () => {
                     class="px-4 py-2 font-semibold text-right tabular-nums whitespace-nowrap"
                     :class="[pago.tipo === 'DEVOLUCION' ? 'text-red-700 dark:text-red-400' : 'text-gray-900 dark:text-white', pago.anulado ? 'line-through' : '']">
                     {{ pago.tipo === 'DEVOLUCION' ? '−' : '' }}{{ formatCurrency(pago.monto) }}
+                  </td>
+                  <td class="px-2 py-2 text-center">
+                    <button
+                      type="button"
+                      class="inline-flex items-center justify-center w-7 h-7 text-gray-400 rounded hover:bg-gray-100 hover:text-brand-700 dark:hover:bg-gray-700 dark:hover:text-brand-200"
+                      :disabled="descargando === pago.id"
+                      title="Descargar recibo en PDF"
+                      aria-label="Descargar recibo en PDF"
+                      @click="descargarRecibo(pago)">
+                      <Loader2 v-if="descargando === pago.id" class="w-4 h-4 animate-spin" />
+                      <FileDown v-else class="w-4 h-4" />
+                    </button>
                   </td>
                 </tr>
               </tbody>
