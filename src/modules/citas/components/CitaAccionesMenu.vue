@@ -12,7 +12,7 @@ import { usePermisos } from '../../../shared/composables/usePermisos';
 /**
  * Menú desplegable con las acciones secundarias de una cita.
  * Editar y eliminar se muestran siempre como botones en la fila, así que aquí
- * solo quedan compartir, avisos por WhatsApp/correo y convertir a recepción.
+ * solo quedan compartir, avisos al cliente por WhatsApp/correo y convertir a recepción.
  *
  * El menú se teletransporta a `body` y se posiciona de forma fija: la tabla vive
  * dentro de contenedores con `overflow-x-auto`, que recortarían el desplegable.
@@ -46,6 +46,16 @@ const motivoNoConvertible = computed(() => {
   }
   return `La cita está ${String(props.cita.estado_display || '').toLowerCase()}`;
 });
+
+// Avisar al cliente depende del permiso de notificaciones; solo una cita
+// programada o confirmada admite el aviso (restricción del estado: se muestra
+// deshabilitada con el motivo).
+const puedeAvisar = computed(() => puede('notificaciones', 'modificar'));
+const motivoNoAvisable = computed(() => (
+  ['PROGRAMADA', 'CONFIRMADA'].includes(props.cita.estado)
+    ? ''
+    : `La cita está ${String(props.cita.estado_display || '').toLowerCase()}`
+));
 
 const ANCHO_MENU = 240;
 const MARGEN_VENTANA = 8;
@@ -156,25 +166,23 @@ onBeforeUnmount(() => {
         Compartir / agregar al calendario
       </button>
 
-      <button
-        type="button"
-        role="menuitem"
-        class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-        @click="elegir('whatsapp')"
-      >
-        <MessageCircle class="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-        Enviar por WhatsApp
-      </button>
-
-      <button
-        type="button"
-        role="menuitem"
-        class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-        @click="elegir('correo')"
-      >
-        <Mail class="w-4 h-4 text-primary-600 dark:text-primary-400" />
-        Enviar por correo
-      </button>
+      <template v-if="puedeAvisar">
+        <button
+          v-for="opcion in [{ tipo: 'whatsapp', label: 'Avisar por WhatsApp', icon: MessageCircle, color: 'text-emerald-600 dark:text-emerald-400' }, { tipo: 'correo', label: 'Avisar por correo', icon: Mail, color: 'text-primary-600 dark:text-primary-400' }]"
+          :key="opcion.tipo"
+          type="button"
+          role="menuitem"
+          :disabled="Boolean(motivoNoAvisable) || disabled"
+          class="group flex w-full items-start gap-3 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:hover:bg-transparent dark:text-gray-300 dark:hover:bg-gray-700"
+          @click="elegir(opcion.tipo)"
+        >
+          <component :is="opcion.icon" :class="['w-4 h-4 mt-0.5 group-disabled:opacity-40', opcion.color]" />
+          <span>
+            <span class="block group-disabled:opacity-40">{{ opcion.label }}</span>
+            <span v-if="motivoNoAvisable" class="block text-xs text-gray-500 dark:text-gray-400">{{ motivoNoAvisable }}</span>
+          </span>
+        </button>
+      </template>
 
       <template v-if="puedeConvertir">
         <div class="my-1 border-t border-gray-200 dark:border-gray-700" />

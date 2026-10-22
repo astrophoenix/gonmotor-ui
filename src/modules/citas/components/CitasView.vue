@@ -4,6 +4,8 @@ import {
   CalendarDays,
   Filter,
   LoaderCircle,
+  Mail,
+  MessageCircle,
   Plus,
   Search,
 } from 'lucide-vue-next';
@@ -39,6 +41,33 @@ const permisosListos = ref(false);
 
 const CLAVE_VISTA = 'gonmotor_citas_vista';
 const MENSAJE_REFERENCIAL = 'Esta acción es solo referencial y estará disponible próximamente.';
+
+// Aviso inmediato al cliente (acción «Avisar por WhatsApp/correo» del menú).
+const citaAAvisar = ref(null);
+const canalAviso = ref('whatsapp');
+const showAvisoModal = ref(false);
+const enviandoAviso = ref(false);
+
+function pedirAviso(cita, canal) {
+  citaAAvisar.value = cita;
+  canalAviso.value = canal;
+  showAvisoModal.value = true;
+}
+
+async function confirmarAviso() {
+  if (!citaAAvisar.value) return;
+  enviandoAviso.value = true;
+  try {
+    const respuesta = await citasService.notificar(citaAAvisar.value.id, canalAviso.value);
+    avisar('success', '', respuesta?.resultado?.descripcion || 'Aviso enviado al cliente.');
+  } catch (error) {
+    avisar('error', '', error.data?.resultado?.error || error.data?.resultado?.descripcion || error.message || 'No se pudo enviar el aviso.');
+  } finally {
+    enviandoAviso.value = false;
+    showAvisoModal.value = false;
+    citaAAvisar.value = null;
+  }
+}
 
 function leerVistaInicial() {
   try {
@@ -220,10 +249,8 @@ function onAccion({ cita, tipo }) {
       showConvertModal.value = true;
       break;
     case 'whatsapp':
-      avisar('info', 'Enviar por WhatsApp', MENSAJE_REFERENCIAL);
-      break;
     case 'correo':
-      avisar('info', 'Enviar por correo', MENSAJE_REFERENCIAL);
+      pedirAviso(cita, tipo);
       break;
     default:
       break;
@@ -649,6 +676,19 @@ onUnmounted(() => {
       :is-deleting="isDeleting"
       @confirm="confirmarEliminar"
       @cancel="citaAEliminar = null"
+    />
+
+    <ConfirmModal
+      v-model="showAvisoModal"
+      :title="canalAviso === 'correo' ? 'Avisar por correo' : 'Avisar por WhatsApp'"
+      :message="`Se enviará a ${citaAAvisar?.cliente?.nombre || 'el cliente'} un recordatorio de su cita (${citaAAvisar ? rangoCita(citaAAvisar) : ''}). Si no tiene ${canalAviso === 'correo' ? 'correo' : 'teléfono'}, se usa el otro canal.`"
+      :icon="canalAviso === 'correo' ? Mail : MessageCircle"
+      variant="primary"
+      confirm-text="Enviar aviso"
+      confirming-text="Enviando..."
+      :is-deleting="enviandoAviso"
+      @confirm="confirmarAviso"
+      @cancel="citaAAvisar = null"
     />
 
     <div

@@ -54,6 +54,14 @@ export const citasService = {
     });
   },
 
+  /** Aviso inmediato de la cita al cliente (`canal`: whatsapp | correo). */
+  notificar(id, canal = 'whatsapp') {
+    return request(`${buildUrl(id)}notificar/`, {
+      method: 'POST',
+      body: JSON.stringify({ canal }),
+    });
+  },
+
   convertirARecepcion(id) {
     return request(`${buildUrl(id)}convertir_a_recepcion/`, {
       method: 'POST',

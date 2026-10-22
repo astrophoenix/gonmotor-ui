@@ -37,7 +37,7 @@ const MODULOS = {
   vehiculos: { grupo: 'clientes', entidad: 'Vehículos' },
   empleados: { grupo: 'sistema', entidad: 'Empleados' },
   gastos: { grupo: 'negocio', entidad: 'Gastos' },
-  notificaciones: { grupo: 'clientes', entidad: 'Notificaciones WhatsApp' },
+  notificaciones: { grupo: 'clientes', entidad: 'Notificaciones' },
   empresa: { grupo: 'sistema', entidad: 'Empresa' },
   talleres: { grupo: 'sistema', entidad: 'Talleres' },
   usuarios: { grupo: 'sistema', entidad: 'Usuarios' },

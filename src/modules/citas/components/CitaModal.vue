@@ -18,6 +18,7 @@ import VehiculoSearchSelect from '../../../shared/components/VehiculoSearchSelec
 import EmpleadoSearchSelect from '../../../shared/components/EmpleadoSearchSelect.vue';
 import FichaCampos from '../../../shared/components/FichaCampos.vue';
 import { formatDateOnly } from '../../../shared/utils/datetime';
+import RecordatoriosCita from '../../notificaciones/components/RecordatoriosCita.vue';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -1377,6 +1378,8 @@ function inputClass(campo) {
               </div>
             </div>
           </section>
+
+          <RecordatoriosCita v-if="isEditMode && !isLoading" :key="citaId" :cita-id="citaId" />
         </div>
       </div>
 

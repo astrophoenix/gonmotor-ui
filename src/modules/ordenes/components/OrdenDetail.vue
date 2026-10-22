@@ -37,6 +37,7 @@ import {
   Hourglass,
   LoaderCircle,
   RotateCcw,
+  BellRing,
 } from 'lucide-vue-next';
 import { IconClockPlay, IconClockCheck, IconPlayerPause, IconPlayerPlay } from '@tabler/icons-vue';
 import { API_BASE_URL } from '../../../shared/config/env';
@@ -56,6 +57,7 @@ import EstadoOrdenBadge from './EstadoOrdenBadge.vue';
 import OrdenCotizaciones from './OrdenCotizaciones.vue';
 import { relacionesDeOrden } from '../../../shared/utils/relacionesFlujo';
 import { referenciaCorta } from '../../../shared/utils/format';
+import NotificarRetiroModal from '../../notificaciones/components/NotificarRetiroModal.vue';
 
 const orden = ref(null);
 const loading = ref(true);
@@ -197,6 +199,13 @@ const serviciosHechos = computed(() => servicios.value.filter((s) => s.completad
 
 const { puede, tieneAccion, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
 const puedeModificar = computed(() => puede('ordenes'));
+// El aviso de retiro depende del permiso de notificaciones, no del de órdenes.
+const puedeAvisarRetiro = computed(() => puede('notificaciones', 'modificar'));
+const showRetiroModal = ref(false);
+
+function onRetiroEnviado(respuesta) {
+  successMessage.value = respuesta?.resultado?.descripcion || 'Aviso de retiro enviado al cliente.';
+}
 const ordenCerrada = computed(() => ['ENTREGADO', 'CANCELADO'].includes(estado.value));
 
 // Para quien solo consulta, el aviso informa sin instrucciones de lo que no puede hacer.
@@ -587,7 +596,7 @@ onMounted(async () => {
               {{ aviso.detalle }}
             </p>
           </div>
-          <div v-if="puedeModificar" class="flex flex-wrap gap-2 sm:justify-end">
+          <div v-if="puedeModificar || (puedeAvisarRetiro && estado === 'COMPLETADO')" class="flex flex-wrap gap-2 sm:justify-end">
             <template v-if="estado === 'PENDIENTE'">
               <button type="button" :disabled="saving" :class="BOTON_ESTADO" @click="solicitarTransicion('iniciar')">
                 <IconClockPlay class="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -611,6 +620,11 @@ onMounted(async () => {
               </button>
             </template>
             <template v-else-if="estado === 'COMPLETADO'">
+              <button v-if="puedeAvisarRetiro" type="button" :class="BOTON_ESTADO" @click="showRetiroModal = true">
+                <BellRing class="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                Avisar retiro
+              </button>
+              <template v-if="puedeModificar">
               <button type="button" :disabled="saving" :class="BOTON_ESTADO" @click="solicitarTransicion('reabrir')">
                 <RotateCcw class="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 Reabrir
@@ -619,6 +633,7 @@ onMounted(async () => {
                 <CheckCheck class="w-5 h-5 text-green-600 dark:text-green-400" />
                 Registrar entrega
               </button>
+              </template>
             </template>
           </div>
         </div>
@@ -1162,5 +1177,7 @@ onMounted(async () => {
     @confirm="confirmarTransicion"
     @cancel="transicion = null"
   />
+
+  <NotificarRetiroModal v-model="showRetiroModal" :orden="orden" @enviado="onRetiroEnviado" />
   </template>
 </template>

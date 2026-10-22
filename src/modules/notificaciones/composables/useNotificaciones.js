@@ -15,7 +15,6 @@ export function useNotificaciones() {
   const isLoadingEstado = ref(false);
   const isLoadingRegistros = ref(false);
   const isSending = ref(false);
-  const isEjecutando = ref(false);
   const isGuardandoPreferencias = ref(false);
 
   const configuracion = ref(null);
@@ -104,36 +103,6 @@ export function useNotificaciones() {
     }
   }
 
-  /** Detección/envío automático (o vista previa) de la empresa actual. */
-  async function ejecutar({ preview = false, vehiculosIds = [] } = {}) {
-    isEjecutando.value = true;
-    try {
-      const resultado = await notificacionesService.ejecutar({ preview, vehiculosIds });
-      if (preview) {
-        showInfo(
-          resultado.pendientes === 0
-            ? 'No hay vehículos pendientes de recordatorio.'
-            : `${resultado.pendientes} vehículo(s) pendiente(s) de recordatorio.`,
-        );
-      } else if (resultado.detenido) {
-        showInfo(resultado.mensaje || 'Las notificaciones están desactivadas.');
-      } else {
-        showSuccess(
-          `${resultado.enviados} recordatorio(s) enviado(s) · ${resultado.errores} error(es).`,
-        );
-      }
-      if (!preview && !resultado.detenido) {
-        await fetchRegistros();
-      }
-      return resultado;
-    } catch (error) {
-      showError(error.message || 'No se pudo ejecutar el proceso de recordatorios.');
-      throw error;
-    } finally {
-      isEjecutando.value = false;
-    }
-  }
-
   /** Guarda preferencias (intervalo km, antelación, plantilla, etc.). */
   async function guardarPreferencias(payload) {
     isGuardandoPreferencias.value = true;
@@ -154,7 +123,6 @@ export function useNotificaciones() {
     isLoadingEstado,
     isLoadingRegistros,
     isSending,
-    isEjecutando,
     isGuardandoPreferencias,
     configuracion,
     preferencias,
@@ -166,7 +134,6 @@ export function useNotificaciones() {
     fetchRegistros,
     enviarRecordatorio,
     enviarPrueba,
-    ejecutar,
     guardarPreferencias,
   };
 }

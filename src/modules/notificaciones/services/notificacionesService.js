@@ -48,11 +48,90 @@ export const notificacionesService = {
     });
   },
 
-  /** Ejecuta el barrido de vehículos próximos a mantenimiento. */
-  ejecutar({ preview = false, vehiculosIds = [] } = {}) {
-    return request(`${BASE}/recordatorios/ejecutar/`, {
-      method: 'POST',
-      body: JSON.stringify({ preview, vehiculos_ids: vehiculosIds }),
+  // ── Cola de notificaciones programadas ──────────────────────────────────
+
+  /** Listado paginado de la cola. Filtros: estado, tipo, canal, vehiculo, cliente… */
+  listarProgramadas({ page = 1, filtros = {}, signal } = {}) {
+    const params = new URLSearchParams({ page: String(page) });
+    Object.entries(filtros).forEach(([clave, valor]) => {
+      if (valor) params.set(clave, valor);
     });
+    return request(`${BASE}/programadas/?${params.toString()}`, { signal });
+  },
+
+  /** Alta manual del próximo mantenimiento (reemplaza el pendiente del vehículo). */
+  crearMantenimiento(payload) {
+    return request(`${BASE}/programadas/`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  /** Edita una notificación pendiente (fecha, canal, asunto, mensaje…). */
+  actualizarProgramada(id, payload) {
+    return request(`${BASE}/programadas/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  cancelarProgramada(id) {
+    return request(`${BASE}/programadas/${id}/cancelar/`, { method: 'POST' });
+  },
+
+  /** Envía ya una pendiente, o reintenta una con error. */
+  enviarProgramadaAhora(id) {
+    return request(`${BASE}/programadas/${id}/enviar-ahora/`, { method: 'POST' });
+  },
+
+  /** Aviso inmediato de "vehículo listo" de una orden COMPLETADO (409 si ya se avisó). */
+  notificarRetiro(ordenId, { canal = 'whatsapp', reenviar = false } = {}) {
+    return request(`/api/ordenes/ordenes-trabajo/${ordenId}/notificar-retiro/`, {
+      method: 'POST',
+      body: JSON.stringify({ canal, reenviar }),
+    });
+  },
+
+  // ── Campañas ────────────────────────────────────────────────────────────
+
+  listarCampanas({ page = 1, estado = '', signal } = {}) {
+    const params = new URLSearchParams({ page: String(page) });
+    if (estado) params.set('estado', estado);
+    return request(`${BASE}/campanas/?${params.toString()}`, { signal });
+  },
+
+  obtenerCampana(id) {
+    return request(`${BASE}/campanas/${id}/`);
+  },
+
+  crearCampana(payload) {
+    return request(`${BASE}/campanas/`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  actualizarCampana(id, payload) {
+    return request(`${BASE}/campanas/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  eliminarCampana(id) {
+    return request(`${BASE}/campanas/${id}/`, { method: 'DELETE' });
+  },
+
+  /** Destinatarios según el segmento: `{ total, muestra: [...] }` (máx. 50). */
+  audienciaCampana(id) {
+    return request(`${BASE}/campanas/${id}/audiencia/`);
+  },
+
+  lanzarCampana(id) {
+    return request(`${BASE}/campanas/${id}/lanzar/`, { method: 'POST' });
+  },
+
+  cancelarCampana(id) {
+    return request(`${BASE}/campanas/${id}/cancelar/`, { method: 'POST' });
   },
 };

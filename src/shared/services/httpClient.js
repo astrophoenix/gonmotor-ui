@@ -80,24 +80,40 @@ function getStorage() {
   return null;
 }
 
-function getErrorMessage(data) {
-  if (Array.isArray(data?.detail)) {
-    return data.detail[0];
+function firstErrorMessage(value) {
+  if (typeof value === 'string') return value.trim();
+  if (!value || typeof value !== 'object') return '';
+  // DRF también devuelve listas/diccionarios anidados (p. ej. talleres[0]).
+  for (const child of Object.values(value)) {
+    const message = firstErrorMessage(child);
+    if (message) return message;
   }
+  return '';
+}
 
-  if (typeof data?.detail === 'string') {
-    return data.detail;
+function getErrorMessage(data, status) {
+  const message = firstErrorMessage(data?.detail)
+    || firstErrorMessage(data?.non_field_errors)
+    || firstErrorMessage(data?.message)
+    || firstErrorMessage(data);
+  if (message) return message;
+
+  // Un proxy o el servidor pueden responder HTML o un cuerpo vacío.
+  if (status >= 500) {
+    return `El servidor no pudo completar la solicitud (HTTP ${status}). Verifica si el cambio se guardó antes de volver a intentarlo.`;
   }
+  if (status === 403) return 'No tienes permiso para realizar esta operación (HTTP 403).';
+  if (status === 404) return 'No se encontró el recurso solicitado (HTTP 404).';
+  if (status === 429) return 'Se realizaron demasiadas solicitudes. Espera unos minutos e intenta nuevamente (HTTP 429).';
+  return `La solicitud no pudo completarse (HTTP ${status}).`;
+}
 
-  if (data?.non_field_errors?.[0]) {
-    return data.non_field_errors[0];
-  }
-
-  const fieldMessage = Object.values(data || {})
-    .flat()
-    .find((message) => typeof message === 'string');
-
-  return fieldMessage || 'La solicitud no pudo completarse.';
+async function createHttpError(response) {
+  const data = await response.json().catch(() => ({}));
+  const error = new Error(getErrorMessage(data, response.status));
+  error.status = response.status;
+  error.data = data;
+  return error;
 }
 
 function isAbortError(error) {
@@ -255,20 +271,9 @@ export async function request(path, options = {}) {
         })();
       }
 
+      let newToken;
       try {
-        const newToken = await refreshPromise;
-        config.headers.Authorization = `Bearer ${newToken}`;
-
-        const retryResponse = await fetch(`${API_BASE_URL}${path}`, config);
-
-        if (!retryResponse.ok) {
-          const message = getErrorMessage(await retryResponse.json().catch(() => ({})));
-          const error = new Error(message);
-          error.status = retryResponse.status;
-          throw error;
-        }
-
-        return await readBody(retryResponse, responseType);
+        newToken = await refreshPromise;
       } catch (refreshError) {
         if (isAbortError(refreshError)) {
           throw refreshError;
@@ -281,15 +286,23 @@ export async function request(path, options = {}) {
         isRefreshing = false;
         refreshPromise = null;
       }
+
+      config.headers.Authorization = `Bearer ${newToken}`;
+      const retryResponse = await fetch(`${API_BASE_URL}${path}`, config);
+      if (!retryResponse.ok) {
+        if (retryResponse.status === 401) {
+          clearSession();
+          const sessionError = new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+          sessionError.isSessionExpired = true;
+          throw sessionError;
+        }
+        throw await createHttpError(retryResponse);
+      }
+      return await readBody(retryResponse, responseType);
     }
 
     if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      const message = getErrorMessage(data);
-      const error = new Error(message);
-      error.status = response.status;
-      error.data = data;
-      throw error;
+      throw await createHttpError(response);
     }
 
     return await readBody(response, responseType);
@@ -303,10 +316,6 @@ export async function request(path, options = {}) {
       const networkError = new Error(NETWORK_ERROR_MESSAGE);
       networkError.isNetworkError = true;
       throw networkError;
-    }
-
-    if (error.data?.message) {
-      throw new Error(error.data.message);
     }
 
     // Errores HTTP: se conservan `status` y `data` (p. ej. `columnas_faltantes` de la importación).

@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { Eye, Filter, Search, CalendarDays, Wrench, Car, Gauge, IdCard, Phone, ChevronsDown, Equal, ChevronsUp, Siren, Minus } from 'lucide-vue-next';
+import { BellRing, Eye, Filter, Search, CalendarDays, Wrench, Car, Gauge, IdCard, Phone, ChevronsDown, Equal, ChevronsUp, Siren, Minus } from 'lucide-vue-next';
 import { Icon } from '@iconify/vue';
 import filePdfIcon from '@iconify-icons/fa6-regular/file-pdf';
 import { useOrdenes } from '../composables/useOrdenes';
@@ -30,9 +30,23 @@ import { usePdfExport } from '../../../shared/composables/usePdfExport';
 import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
 import SinAcceso from '../../../shared/components/SinAcceso.vue';
 import { usePermisos } from '../../../shared/composables/usePermisos';
+import NotificarRetiroModal from '../../notificaciones/components/NotificarRetiroModal.vue';
 
 const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
 const puedeModificar = computed(() => puede('ordenes'));
+// El aviso de retiro depende del permiso de notificaciones, no del de órdenes.
+const puedeAvisarRetiro = computed(() => puede('notificaciones', 'modificar'));
+const ordenRetiro = ref(null);
+const showRetiroModal = ref(false);
+
+function abrirAvisoRetiro(item) {
+  ordenRetiro.value = item;
+  showRetiroModal.value = true;
+}
+
+function onRetiroEnviado(respuesta) {
+  showAlert('success', '', respuesta?.resultado?.descripcion || 'Aviso de retiro enviado al cliente.');
+}
 
 /**
  * Una orden entregada o anulada ya no se edita: se consulta.
@@ -529,6 +543,10 @@ onMounted(async () => {
                   <Icon :icon="filePdfIcon" class="w-4 h-4 shrink-0 text-accent-600 dark:text-accent-400" />
                   Descargar PDF
                 </button>
+                <button v-if="puedeAvisarRetiro && item.estado === 'COMPLETADO'" type="button" role="menuitem" title="Avisar al cliente que el vehículo está listo para retirar" class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-heading hover:bg-neutral-secondary-soft dark:hover:bg-gray-700" @click="cerrar(); abrirAvisoRetiro(item)">
+                  <BellRing class="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  Avisar retiro
+                </button>
               </template>
             </EntityActionsMenu>
           </div>
@@ -560,5 +578,7 @@ onMounted(async () => {
     @confirm="confirmDelete"
     @cancel="ordenToDelete = null"
   />
+
+  <NotificarRetiroModal v-model="showRetiroModal" :orden="ordenRetiro" @enviado="onRetiroEnviado" />
   </template>
 </template>

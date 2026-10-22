@@ -27,6 +27,13 @@ const CATEGORIAS = [
   { value: 'GARANTIA', label: 'Garantía' },
 ];
 
+function textoIntervalo(km, meses) {
+  const partes = [];
+  if (km) partes.push(`cada ${Number(km).toLocaleString('es-EC')} km`);
+  if (meses) partes.push(`cada ${meses} meses`);
+  return partes.length ? partes.join(' o ') : 'Según las preferencias de notificaciones';
+}
+
 function createEmptyForm() {
   return {
     codigo: '',
@@ -35,6 +42,8 @@ function createEmptyForm() {
     categoria: 'MECANICA',
     tiempo_estimado_minutos: 60,
     tareas_estandar: '',
+    intervalo_km: '',
+    intervalo_meses: '',
     precio_referencial: '0.00',
     iva_porcentaje_defecto: '0.1500',
     contifico_producto_id: '',
@@ -51,6 +60,7 @@ const camposFicha = computed(() => [
   { etiqueta: 'Precio referencial de mano de obra', valor: formatCurrency(form.precio_referencial) },
   { etiqueta: 'IVA por defecto', valor: IVA_OPCIONES.find((o) => o.value === form.iva_porcentaje_defecto)?.label || '' },
   { etiqueta: 'ID Producto/Servicio Contífico', valor: form.contifico_producto_id },
+  { etiqueta: 'Próximo mantenimiento', valor: textoIntervalo(form.intervalo_km, form.intervalo_meses) },
   { etiqueta: 'Tareas estándar incluidas', valor: form.tareas_estandar, ancho: 'completo' },
   { etiqueta: 'Descripción', valor: form.descripcion, ancho: 'completo' },
 ]);
@@ -69,6 +79,8 @@ function getComparableState() {
     categoria: form.categoria,
     tiempo_estimado_minutos: form.tiempo_estimado_minutos,
     tareas_estandar: form.tareas_estandar,
+    intervalo_km: form.intervalo_km,
+    intervalo_meses: form.intervalo_meses,
     precio_referencial: form.precio_referencial,
     iva_porcentaje_defecto: form.iva_porcentaje_defecto,
     contifico_producto_id: form.contifico_producto_id,
@@ -123,6 +135,13 @@ function validate() {
     errors.tiempo_estimado_minutos = 'Debe ser un número mayor o igual a 0.';
   }
 
+  for (const campo of ['intervalo_km', 'intervalo_meses']) {
+    const valor = form[campo];
+    if (valor !== '' && valor !== null && (!Number.isInteger(Number(valor)) || Number(valor) < 1)) {
+      errors[campo] = 'Debe ser un número entero mayor a 0, o vacío.';
+    }
+  }
+
   const precio = Number(form.precio_referencial);
   if (Number.isNaN(precio) || precio < 0) {
     errors.precio_referencial = 'Debe ser un número mayor o igual a 0.';
@@ -154,6 +173,8 @@ function buildPayload() {
     categoria: form.categoria,
     tiempo_estimado_minutos: Number(form.tiempo_estimado_minutos ?? 60),
     tareas_estandar: form.tareas_estandar || '',
+    intervalo_km: form.intervalo_km === '' || form.intervalo_km === null ? null : Number(form.intervalo_km),
+    intervalo_meses: form.intervalo_meses === '' || form.intervalo_meses === null ? null : Number(form.intervalo_meses),
     precio_referencial: String(form.precio_referencial ?? '0.00'),
     iva_porcentaje_defecto: normalizarIva(form.iva_porcentaje_defecto),
     contifico_producto_id: form.contifico_producto_id || '',
@@ -302,6 +323,20 @@ watch(() => form.codigo, (val) => {
             <div class="col-span-2">
               <label for="ser_contifico" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">ID Producto/Servicio Contífico</label>
               <input id="ser_contifico" v-model="form.contifico_producto_id" maxlength="100" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+            </div>
+            <div class="col-span-1 md:col-span-4">
+              <p class="text-sm font-medium text-gray-900 dark:text-white">Próximo mantenimiento sugerido</p>
+              <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Al entregar una orden con este servicio se programa el aviso al cliente con este intervalo. Vacío: se usan las preferencias de notificaciones.</p>
+            </div>
+            <div class="col-span-2">
+              <label for="ser_intervalo_km" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Repetir cada (km)</label>
+              <input id="ser_intervalo_km" v-model="form.intervalo_km" type="number" step="1" min="1" placeholder="Ej.: 5000" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', servicioErrors.intervalo_km ? 'bg-red-50 border border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+              <p v-if="servicioErrors.intervalo_km" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ servicioErrors.intervalo_km }}</p>
+            </div>
+            <div class="col-span-2">
+              <label for="ser_intervalo_meses" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Repetir cada (meses)</label>
+              <input id="ser_intervalo_meses" v-model="form.intervalo_meses" type="number" step="1" min="1" placeholder="Ej.: 6" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', servicioErrors.intervalo_meses ? 'bg-red-50 border border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+              <p v-if="servicioErrors.intervalo_meses" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ servicioErrors.intervalo_meses }}</p>
             </div>
             <div class="col-span-1 md:col-span-4">
               <label for="ser_tareas" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tareas Estándar Incluidas</label>
