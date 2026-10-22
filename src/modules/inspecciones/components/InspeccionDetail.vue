@@ -749,7 +749,7 @@ onMounted(async () => {
               <div class="grid grid-cols-5 gap-2 lg:grid-cols-10 lg:gap-3">
                 <div v-for="testigo in TESTIGOS" :key="testigo.key" :class="testigoCardClass(testigo)" :title="testigo.label">
                   <MdiIcon :path="testigo.path" :class="testigoIconClass(testigo)" />
-                  <span class="mt-2 text-xs font-medium text-center text-gray-700 dark:text-gray-300">{{ testigo.label }}</span>
+                  <span class="sr-only sm:not-sr-only sm:mt-2 text-xs font-medium text-center text-gray-700 dark:text-gray-300">{{ testigo.label }}</span>
                 </div>
               </div>
               <p v-if="inspeccion.otros_testigos_observaciones" class="mt-4 text-sm text-gray-700 dark:text-gray-300">

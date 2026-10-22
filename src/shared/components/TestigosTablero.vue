@@ -52,7 +52,7 @@ function getCardClasses(testigo) {
       >
         <MdiIcon :path="testigo.path" :class="getIconClasses(testigo)" />
 
-        <span class="mt-2 text-xs font-medium text-center text-gray-700 dark:text-gray-300">
+        <span class="sr-only sm:not-sr-only sm:mt-2 text-xs font-medium text-center text-gray-700 dark:text-gray-300">
           {{ testigo.label }}
         </span>
       </div>
