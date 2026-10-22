@@ -1,5 +1,5 @@
 import {
-  Ban, CalendarClock, CircleAlert, CircleCheck, Clock, FlaskConical, Megaphone, PencilLine, Send,
+  Ban, CalendarClock, CircleAlert, CircleCheck, Clock, FlaskConical, Megaphone, PencilLine, Send, Wallet,
 } from 'lucide-vue-next';
 
 /**
@@ -35,6 +35,7 @@ export const TIPOS_NOTIFICACION = {
   CITA_24H: { label: 'Cita (24 h antes)', icon: Clock },
   CITA_2H: { label: 'Cita (2 h antes)', icon: Clock },
   MASIVA: { label: 'Campaña', icon: Megaphone },
+  SALDO: { label: 'Saldo pendiente', icon: Wallet },
 };
 
 export function tipoNotificacionLabel(tipo, tipoDisplay) {

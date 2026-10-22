@@ -60,7 +60,7 @@ Salidas generadas (no editar, gitignored): `public/`, `_gh_pages/` (`publishDir`
 
 ### Módulos (`src/modules/`)
 
-`auth`, `dashboard`, `dashboard-v2`, `clientes`, `vehiculos`, `proveedores`, `empleados`, `usuarios`, `citas`, `calendario` (vista de citas), `recepciones`, `inspecciones`, `cotizaciones`, `ordenes`, `inventario/{repuestos,servicios}`, `gastos`, `reportes`, `notificaciones`, `configuracion`.
+`auth`, `dashboard`, `dashboard-v2`, `clientes`, `vehiculos`, `proveedores`, `empleados`, `usuarios`, `citas`, `calendario` (vista de citas), `recepciones`, `inspecciones`, `cotizaciones`, `ordenes`, `inventario/{repuestos,servicios}`, `gastos`, `pagos` (sección «Cobro» de la ficha de la orden: `OrdenPagos.vue`, `RegistrarPagoModal.vue`, `EstadoPagoBadge.vue`; página `crud/cuentas-por-cobrar/` con `CuentasPorCobrarList.vue` y `RecordarSaldoModal.vue`; `ClienteCuenta.vue` en la ficha del cliente), `reportes`, `notificaciones`, `configuracion`.
 
 Estructura de cada módulo:
 ```

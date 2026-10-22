@@ -20,6 +20,7 @@ import TextImprover from '../../../shared/components/TextImprover.vue';
 import CatalogoSelect from '../../../shared/components/CatalogoSelect.vue';
 import PhotoUploadGrid from '../../../shared/components/PhotoUploadGrid.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
+import { saldoDeEntregaRechazada, transicionEntregaCredito } from '../../pagos/constants/pagos';
 import EstadoOrdenBadge from './EstadoOrdenBadge.vue';
 import ClienteSearchSelect from '../../../shared/components/ClienteSearchSelect.vue';
 import VehiculoSearchSelect from '../../../shared/components/VehiculoSearchSelect.vue';
@@ -708,6 +709,7 @@ async function handleSubmit(mensajeExito = 'Orden de trabajo guardada correctame
     kilometraje,
     observaciones: form.value.observaciones || '',
     motivo_espera: form.value.motivo_espera || null,
+    ...(entregaACredito.value ? { entrega_a_credito: true } : {}),
   };
 
   if (!isEditMode.value) {
@@ -755,7 +757,8 @@ async function handleSubmit(mensajeExito = 'Orden de trabajo guardada correctame
     window.scrollTo({ top: 0, behavior: 'smooth' });
     guardado = true;
   } catch (err) {
-    error.value = err.message || 'No se pudo guardar la orden de trabajo.';
+    saldoRechazado = saldoDeEntregaRechazada(err);
+    if (saldoRechazado === null) error.value = err.message || 'No se pudo guardar la orden de trabajo.';
     if (err.data?.fecha_ingreso) formErrors.value.fecha_ingreso = [].concat(err.data.fecha_ingreso)[0];
     if (err.data?.kilometraje) formErrors.value.kilometraje = [].concat(err.data.kilometraje)[0];
     if (err.data?.mecanico_principal) formErrors.value.mecanico = [].concat(err.data.mecanico_principal)[0];
@@ -930,8 +933,17 @@ const mostrarTransicion = computed({
 
 function solicitarTransicion(clave) {
   if (saving.value) return;
-  transicion.value = { clave, ...TRANSICIONES[clave] };
+  // Con saldo pendiente, la entrega se confirma como entrega a crédito.
+  const saldo = Number(orden.value?.saldo) || 0;
+  transicion.value = clave === 'entregar' && saldo > 0
+    ? { clave, ...transicionEntregaCredito(saldo) }
+    : { clave, ...TRANSICIONES[clave] };
 }
+
+// Confirmación de entrega a crédito para el próximo guardado, y saldo con el
+// que el backend rechazó una entrega sin confirmar (datos desactualizados).
+const entregaACredito = ref(false);
+let saldoRechazado = null;
 
 async function cambiarEstado(nuevoEstado, mensajeExito, motivo = null) {
   const anterior = { estado: form.value.estado, motivo_espera: form.value.motivo_espera, fecha_entrega: form.value.fecha_entrega };
@@ -948,8 +960,11 @@ async function cambiarEstado(nuevoEstado, mensajeExito, motivo = null) {
 async function confirmarTransicion() {
   const t = transicion.value;
   if (!t) return;
+  entregaACredito.value = Boolean(t.credito);
   await cambiarEstado(t.estado, t.exito);
-  transicion.value = null;
+  entregaACredito.value = false;
+  transicion.value = saldoRechazado !== null ? { clave: 'entregar', ...transicionEntregaCredito(saldoRechazado) } : null;
+  saldoRechazado = null;
 }
 
 function abrirEspera() {

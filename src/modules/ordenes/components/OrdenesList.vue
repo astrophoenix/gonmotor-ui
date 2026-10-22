@@ -24,6 +24,8 @@ import { relacionesDeOrden } from '../../../shared/utils/relacionesFlujo';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import EntityActionsMenu from '../../../shared/components/EntityActionsMenu.vue';
 import EstadoOrdenBadge from './EstadoOrdenBadge.vue';
+import EstadoPagoBadge from '../../pagos/components/EstadoPagoBadge.vue';
+import { ESTADOS_PAGO_FILTRABLE, getEstadoPago } from '../../pagos/constants/pagos';
 import { referenciaCorta } from '../../../shared/utils/format';
 import { ordenesService } from '../services/ordenesService';
 import { usePdfExport } from '../../../shared/composables/usePdfExport';
@@ -104,6 +106,7 @@ const search = ref('');
 const emptyAdvancedFilters = () => ({
   estado: '',
   prioridad: '',
+  estadoPago: '',
   tipoTrabajo: '',
   sucursal: '',
   fechaDesde: '',
@@ -143,6 +146,7 @@ function buildQuery() {
     estado: appliedFilters.value.estado,
     prioridad: appliedFilters.value.prioridad,
     tipo_trabajo: appliedFilters.value.tipoTrabajo,
+    estado_pago: appliedFilters.value.estadoPago,
     sucursal: appliedFilters.value.sucursal,
     fecha_desde: appliedFilters.value.fechaDesde,
     fecha_hasta: appliedFilters.value.fechaHasta,
@@ -380,6 +384,17 @@ onMounted(async () => {
           </div>
 
           <div class="w-full sm:w-auto sm:shrink-0">
+            <label for="filtro-estado-pago" class="block mb-1 text-sm font-medium text-heading">Pago</label>
+            <select
+              id="filtro-estado-pago"
+              v-model="draftFilters.estadoPago"
+              class="block w-full sm:w-44 px-3 py-2 bg-white border border-default-medium text-heading text-sm rounded shadow-xs focus:ring-brand focus:border-brand dark:bg-gray-800">
+              <option value="">Todos</option>
+              <option v-for="item in ESTADOS_PAGO_FILTRABLE" :key="item" :value="item">{{ getEstadoPago(item).label }}</option>
+            </select>
+          </div>
+
+          <div class="w-full sm:w-auto sm:shrink-0">
             <label for="filtro-tipo-trabajo" class="block mb-1 text-sm font-medium text-heading">Tipo de trabajo</label>
             <select
               id="filtro-tipo-trabajo"
@@ -521,6 +536,12 @@ onMounted(async () => {
             <component :is="prioridadConfig(item.prioridad).icon" class="w-4 h-4 shrink-0" :class="prioridadConfig(item.prioridad).color" />
             {{ prioridadConfig(item.prioridad).label }}
           </span>
+          <EstadoPagoBadge
+            v-if="item.estado_pago && item.estado_pago !== 'SIN_COBRO'"
+            class="mt-1"
+            :estado="item.estado_pago"
+            :estado-display="item.estado_pago_display"
+            size="sm" />
         </td>
         <td class="px-4 py-3 text-gray-800 whitespace-nowrap align-top dark:text-white">
           <div class="flex flex-col gap-1" :title="getFechaOrden(item).completo">

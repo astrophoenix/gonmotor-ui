@@ -25,6 +25,7 @@ import { mountEmpresaConfig, mountTalleresConfig, mountRoles } from './modules/c
 import { mountNotificaciones } from './modules/notificaciones';
 import { mountReportesRentabilidad } from './modules/reportes';
 import { mountGastos } from './modules/gastos';
+import { mountCuentasPorCobrar } from './modules/pagos';
 import { mountDashboard } from './modules/dashboard';
 import { iniciarPermisosGlobal } from './shared/composables/usePermisos';
 import Topbar from './shared/components/Topbar.vue';
@@ -304,6 +305,12 @@ const gastosApp = document.getElementById('gastos-app');
 
 if (gastosApp) {
     mountGastos(gastosApp, pinia);
+}
+
+const cuentasPorCobrarApp = document.getElementById('cuentas-por-cobrar-app');
+
+if (cuentasPorCobrarApp) {
+    mountCuentasPorCobrar(cuentasPorCobrarApp, pinia);
 }
 
 iniciarPermisosGlobal();
