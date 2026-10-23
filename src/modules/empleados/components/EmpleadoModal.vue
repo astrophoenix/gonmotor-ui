@@ -21,6 +21,7 @@ const emit = defineEmits(['update:modelValue', 'created', 'updated']);
 const isEditMode = computed(() => Boolean(props.empleadoId));
 
 const form = reactive({
+  comision_porcentaje: '0.00',
   first_name: '',
   last_name: '',
   email: '',
@@ -57,6 +58,7 @@ const showDiscardWarning = ref(false);
 
 function getComparableState() {
   return {
+    comision_porcentaje: form.comision_porcentaje,
     first_name: form.first_name,
     last_name: form.last_name,
     email: form.email,
@@ -127,6 +129,7 @@ async function loadTalleres() {
 }
 
 function resetForm() {
+  form.comision_porcentaje = '0.00';
   form.first_name = '';
   form.last_name = '';
   form.email = '';
@@ -161,6 +164,11 @@ function validateForm() {
     errors.email = 'Ingresa un correo electrónico válido.';
   }
 
+  const porcentaje = Number(form.comision_porcentaje);
+  if (String(form.comision_porcentaje).trim() === '' || !Number.isFinite(porcentaje) || porcentaje < 0 || porcentaje > 100) {
+    errors.comision_porcentaje = 'Ingresa un porcentaje entre 0 y 100.';
+  }
+
   empleadoErrors.value = errors;
   return Object.keys(errors).length === 0;
 }
@@ -168,6 +176,7 @@ function validateForm() {
 function applyBackendErrors(data) {
   if (!data || typeof data !== 'object') return;
   const fieldMap = {
+    comision_porcentaje: 'comision_porcentaje',
     first_name: 'first_name',
     last_name: 'last_name',
     email: 'email',
@@ -198,6 +207,7 @@ async function open() {
     try {
       const data = await empleadosService.getById(props.empleadoId);
       Object.assign(form, {
+        comision_porcentaje: data.comision_porcentaje ?? '0.00',
         first_name: data.user?.first_name || '',
         last_name: data.user?.last_name || '',
         email: data.user?.email || '',
@@ -232,6 +242,7 @@ async function submit() {
     }
 
     const payload = {
+      comision_porcentaje: form.comision_porcentaje,
       first_name: form.first_name.trim(),
       last_name: form.last_name.trim(),
       email: form.email.trim().toLowerCase(),
@@ -380,6 +391,13 @@ onBeforeUnmount(() => {
                 <label for="modal_telefono" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Teléfono</label>
                 <input id="modal_telefono" autocomplete="off" v-model="form.telefono" maxlength="20" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
               </div>
+            </div>
+
+            <div>
+              <label for="modal_comision" class="block mb-2 text-sm font-medium text-brand-900 dark:text-white">Comisión sobre mano de obra (%)</label>
+              <input id="modal_comision" v-model="form.comision_porcentaje" type="number" min="0" max="100" step="0.01" :aria-invalid="Boolean(empleadoErrors.comision_porcentaje)" aria-describedby="modal_comision_ayuda" class="block w-full rounded-lg border border-brand-300 bg-brand-50 p-2.5 text-base text-brand-900 dark:border-brand-500 dark:bg-gray-700 dark:text-white">
+              <p id="modal_comision_ayuda" class="mt-2 text-xs text-brand-500 dark:text-brand-300">Porcentaje actual en esta empresa. Cambiarlo recalcula también los periodos anteriores. No genera pagos.</p>
+              <p v-if="empleadoErrors.comision_porcentaje" class="mt-2 text-sm text-red-600 dark:text-red-400">{{ empleadoErrors.comision_porcentaje }}</p>
             </div>
 
             <div v-if="form.tiene_acceso" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
