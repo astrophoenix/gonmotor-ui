@@ -19,7 +19,7 @@ const props = defineProps({
 
 const emit = defineEmits(['cambiar-rango', 'cambiar-fechas', 'cambiar-sucursal', 'refrescar']);
 
-const SEGMENTO = 'px-3 py-1.5 text-sm font-medium rounded shadow-xs focus:ring-4 focus:ring-brand-500/20 whitespace-nowrap';
+const SEGMENTO = 'px-3 py-1.5 text-sm font-medium rounded shadow-xs focus:ring-4 focus:ring-primary-500/20 whitespace-nowrap';
 const SEGMENTO_ACTIVO = `${SEGMENTO} text-white bg-brand-500`;
 const SEGMENTO_INACTIVO = `${SEGMENTO} text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium dark:bg-gray-800 dark:hover:bg-gray-700`;
 
@@ -79,7 +79,7 @@ function alCambiarFecha(campo, evento) {
               type="date"
               :value="fechaDesde"
               :max="fechaHasta || undefined"
-              class="text-sm bg-white border rounded shadow-xs text-heading border-default-medium focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400"
+              class="text-sm bg-white border rounded shadow-xs text-heading border-default-medium focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400"
               @change="alCambiarFecha('desde', $event)"
             />
           </label>
@@ -89,7 +89,7 @@ function alCambiarFecha(campo, evento) {
               type="date"
               :value="fechaHasta"
               :min="fechaDesde || undefined"
-              class="text-sm bg-white border rounded shadow-xs text-heading border-default-medium focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400"
+              class="text-sm bg-white border rounded shadow-xs text-heading border-default-medium focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400"
               @change="alCambiarFecha('hasta', $event)"
             />
           </label>
@@ -106,7 +106,7 @@ function alCambiarFecha(campo, evento) {
           <select
             :value="sucursal ?? ''"
             :disabled="cargandoSucursales"
-            class="text-sm bg-white border rounded shadow-xs text-heading border-default-medium focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-800 dark:border-gray-600"
+            class="text-sm bg-white border rounded shadow-xs text-heading border-default-medium focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-800 dark:border-gray-600"
             @change="emit('cambiar-sucursal', $event.target.value || null)"
           >
             <option value="">Toda la empresa</option>
@@ -129,7 +129,7 @@ function alCambiarFecha(campo, evento) {
           <button
             type="button"
             :disabled="cargando"
-            class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded shadow-xs text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-4 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-gray-800"
+            class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded shadow-xs text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-4 focus:ring-primary-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-gray-800"
             @click="emit('refrescar')"
           >
             <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': cargando }" aria-hidden="true" />

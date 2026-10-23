@@ -133,8 +133,8 @@ function cerrar() {
   emit('update:modelValue', false);
 }
 
-const INPUT = 'block w-full px-3 py-2 bg-white border border-gray-300 text-sm rounded focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white';
-const INPUT_ERROR = 'block w-full px-3 py-2 bg-white border border-red-500 text-sm rounded focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white';
+const INPUT = 'block w-full p-2.5 bg-white border border-gray-300 text-sm rounded focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white';
+const INPUT_ERROR = 'block w-full p-2.5 bg-white border border-red-500 text-sm rounded focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white';
 const ETIQUETA = 'block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300';
 </script>
 

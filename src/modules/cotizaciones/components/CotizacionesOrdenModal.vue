@@ -204,13 +204,13 @@ onBeforeUnmount(() => {
             <label class="block text-sm font-medium text-brand-700 dark:text-brand-200" for="buscar-cotizaciones-orden">Buscar por número, cliente o vehículo</label>
             <form class="relative" @submit.prevent="cargar(1)">
               <Search class="pointer-events-none absolute left-3 top-3 h-4 w-4 text-brand-500" />
-              <input id="buscar-cotizaciones-orden" v-model="busqueda" type="search" maxlength="100" autofocus class="block w-full rounded border border-brand-200 bg-white py-2 pl-9 pr-3 text-sm text-brand-900 focus:ring-2 focus:ring-brand-300 dark:border-brand-500 dark:bg-brand-800 dark:text-white">
+              <input id="buscar-cotizaciones-orden" v-model="busqueda" type="search" maxlength="100" autofocus class="block w-full rounded border border-brand-200 bg-white py-2 pl-9 pr-3 text-sm text-brand-900 focus:ring-2 focus:ring-primary-300 dark:border-brand-500 dark:bg-brand-800 dark:text-white">
             </form>
             <button type="button" :class="BOTON" :disabled="cargando || enviando" @click="cargar(pagina)">Actualizar cotizaciones</button>
             <EntityTable :columns="columnas" :items="filas" :loading="cargando" empty-text="No se encontraron cotizaciones aceptadas." :show-pagination="true" :previous-url="anterior" :next-url="siguiente" :pagination-disabled="cargando || enviando" :range-label="`Página ${pagina} · ${cantidad} resultados`" @page-change="cargar(pagina + $event)">
               <template #row="{ item }">
                 <tr :class="motivo(item) && !elegida(item) ? 'opacity-60' : ''">
-                  <td class="p-4"><input type="checkbox" :checked="elegida(item)" :disabled="enviando || item.id === inicial?.id || (!elegida(item) && Boolean(motivo(item)))" :aria-label="`Seleccionar ${item.numero_cotizacion}`" :title="motivo(item) || 'Seleccionar cotización'" class="h-4 w-4 rounded border-brand-300 text-brand-900 focus:ring-brand-300" @change="cambiar(item)"></td>
+                  <td class="p-4"><input type="checkbox" :checked="elegida(item)" :disabled="enviando || item.id === inicial?.id || (!elegida(item) && Boolean(motivo(item)))" :aria-label="`Seleccionar ${item.numero_cotizacion}`" :title="motivo(item) || 'Seleccionar cotización'" class="h-4 w-4 rounded border-brand-300 text-brand-900 focus:ring-primary-300" @change="cambiar(item)"></td>
                   <td class="p-4 text-sm text-brand-900 dark:text-white"><span class="font-mono">{{ item.numero_cotizacion }}</span><p v-if="motivo(item)" class="mt-1 max-w-64 text-xs text-brand-500 dark:text-brand-300">{{ motivo(item) }}</p></td>
                   <td class="p-4 text-sm text-brand-700 dark:text-brand-200">{{ item.cliente_nombre || '—' }}</td>
                   <td class="p-4 text-sm text-brand-700 dark:text-brand-200">{{ item.vehiculo_placa || '—' }}<span class="block text-xs">{{ [item.vehiculo_marca, item.vehiculo_modelo].filter(Boolean).join(' ') }}</span></td>

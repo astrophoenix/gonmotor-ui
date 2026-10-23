@@ -78,7 +78,7 @@ function onKeyDown(event) {
       <button
         type="button"
         :disabled="cargando || !puedeConsultar()"
-        class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white rounded shadow-xs bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+        class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white rounded shadow-xs bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-500/20 disabled:cursor-not-allowed disabled:opacity-60"
         @click="consultar"
       >
         <Loader2 v-if="cargando" class="w-4 h-4 animate-spin" aria-hidden="true" />

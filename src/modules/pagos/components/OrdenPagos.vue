@@ -296,7 +296,7 @@ async function confirmarAnulacion() {
             class="block w-full p-2.5 text-sm rounded shadow-xs focus:outline-none focus:ring-2 dark:bg-gray-700 dark:placeholder-gray-400"
             :class="errorMotivo
               ? 'bg-red-50 border border-red-500 text-red-900 focus:ring-red-200 focus:border-red-500 dark:text-red-400 dark:border-red-500'
-              : 'bg-gray-50 border border-gray-300 text-gray-900 focus:ring-brand-200 focus:border-brand-500 dark:border-gray-600 dark:text-white'"
+              : 'bg-white border border-gray-300 text-gray-900 focus:ring-primary-200 focus:border-primary-500 dark:border-gray-600 dark:text-white'"
             @keydown.enter.prevent="confirmarAnulacion">
           <p v-if="errorMotivo" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ errorMotivo }}</p>
         </div>

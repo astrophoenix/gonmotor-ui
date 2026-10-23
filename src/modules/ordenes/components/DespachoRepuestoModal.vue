@@ -118,7 +118,7 @@ async function confirmar(autorizarNegativo = false) {
             type="text"
             maxlength="255"
             placeholder="Ej.: sobró, no era la pieza correcta"
-            class="block w-full p-2.5 text-sm bg-gray-50 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            class="block w-full p-2.5 text-sm bg-white border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
         </div>
 
         <!-- Stock insuficiente -->

@@ -55,7 +55,7 @@ const restanteBadge = computed(() => {
         type="button"
         role="radio"
         :aria-checked="Number(dias) === opcion"
-        class="flex-1 px-2 py-2 text-sm font-medium border focus:z-10 focus:ring-2 focus:ring-brand-200 dark:focus:ring-brand-500/40"
+        class="flex-1 px-2 py-2 text-sm font-medium border focus:z-10 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-500/40"
         :class="[
           i === 0 ? 'rounded-s-lg' : '-ms-px',
           i === opciones.length - 1 ? 'rounded-e-lg' : '',

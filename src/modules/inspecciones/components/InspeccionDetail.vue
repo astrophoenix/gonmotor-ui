@@ -480,7 +480,7 @@ onMounted(async () => {
         type="button"
         :disabled="isReopening"
         title="Reabrir la inspección para editarla"
-        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800"
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-primary-500/20 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800"
         @click="solicitarReabrir">
         <IconLockOpen2 class="w-5 h-5 -ms-1 text-brand-700 dark:text-brand-200" aria-hidden="true" />
         Reabrir
@@ -488,7 +488,7 @@ onMounted(async () => {
       <button
         v-if="inspeccion && !estaFinalizada && puedeModificar"
         type="button"
-        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-primary-500/20 dark:bg-gray-800"
         @click="irAEditar">
         <FilePen class="w-5 h-5 -ms-1 text-brand-700 dark:text-brand-200" aria-hidden="true" />
         Editar
@@ -778,7 +778,7 @@ onMounted(async () => {
                   <button
                     type="button"
                     :title="foto.descripcion || `Ampliar foto ${index + 1}`"
-                    class="group relative block w-full overflow-hidden rounded-lg aspect-square bg-gray-100 cursor-zoom-in focus:outline-none focus:ring-4 focus:ring-brand-200 dark:bg-gray-700 dark:focus:ring-brand-700"
+                    class="group relative block w-full overflow-hidden rounded-lg aspect-square bg-gray-100 cursor-zoom-in focus:outline-none focus:ring-4 focus:ring-primary-200 dark:bg-gray-700 dark:focus:ring-brand-700"
                     @click="abrirFoto(foto.url || foto.imagen)">
                     <img :src="foto.miniatura || foto.url || foto.imagen" :alt="foto.descripcion || `Foto ${index + 1}`" loading="lazy" class="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105" />
                     <span class="absolute inset-0 flex items-center justify-center bg-brand-900/0 transition-colors group-hover:bg-brand-900/40">

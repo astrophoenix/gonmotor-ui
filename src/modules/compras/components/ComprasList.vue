@@ -191,7 +191,7 @@ onMounted(async () => {
                 type="search"
                 maxlength="100"
                 placeholder="N.º factura, proveedor o RUC"
-                class="block w-full py-2 text-sm bg-white border border-gray-300 rounded-lg ps-9 pe-3 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                class="block w-full py-2 text-sm bg-white border border-gray-300 rounded-lg ps-9 pe-3 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
             </form>
           </div>
           <div class="w-full sm:w-auto">

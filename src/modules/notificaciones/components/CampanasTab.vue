@@ -133,7 +133,7 @@ async function confirmar() {
   }
 }
 
-const SELECT = 'block w-full px-3 py-2 bg-white border border-gray-300 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white';
+const SELECT = 'block w-full px-3 py-2 bg-white border border-gray-300 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white';
 const BOTON_FILA = 'inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-50 hover:text-brand-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white';
 
 onMounted(() => fetchCampanas(1));

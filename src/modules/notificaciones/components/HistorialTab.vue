@@ -16,7 +16,7 @@ function cargar() {
   fetchRegistros({ estado: estado.value, origen: origen.value }).catch(() => {});
 }
 
-const SELECT = 'block w-full px-3 py-2 bg-white border border-gray-300 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white';
+const SELECT = 'block w-full px-3 py-2 bg-white border border-gray-300 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white';
 
 onMounted(cargar);
 </script>

@@ -168,10 +168,10 @@ onBeforeUnmount(() => {
       :maxlength="maxLength"
       :aria-invalid="error"
       :class="[
-        'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body',
+        'bg-white border border-default-medium dark:bg-gray-700 text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-2.5 py-2 shadow-xs placeholder:text-body',
         error
           ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500'
-          : 'bg-gray-50 border border-gray-300 dark:bg-gray-600 dark:border-gray-500 dark:text-white',
+          : 'bg-white border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
         { 'opacity-60 cursor-not-allowed': disabled },
       ]"
       @focus="abrir"

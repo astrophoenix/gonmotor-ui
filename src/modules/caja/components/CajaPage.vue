@@ -268,7 +268,7 @@ onMounted(async () => {
                   inputmode="decimal"
                   min="0"
                   step="0.01"
-                  class="block w-full p-2.5 ps-7 text-sm rounded shadow-xs tabular-nums bg-gray-50 border border-gray-300 text-gray-900 focus:ring-2 focus:ring-brand-200 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                  class="block w-full p-2.5 ps-7 text-sm rounded shadow-xs tabular-nums bg-white border border-gray-300 text-gray-900 focus:ring-2 focus:ring-primary-200 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
               </div>
             </div>
             <button type="submit" :disabled="abriendo" :class="BOTON_PRIMARIO">

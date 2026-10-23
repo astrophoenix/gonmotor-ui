@@ -47,7 +47,7 @@ const hasChanges = computed(() => JSON.stringify(formSnapshot.value) !== JSON.st
 function inputClass(field) {
   return empresaErrors.value[field]
     ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong'
-    : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body';
+    : 'bg-white border border-default-medium dark:bg-gray-700 text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body';
 }
 
 function labelClass(field) {
@@ -247,7 +247,7 @@ watch(() => form.email_contacto, (val) => {
             </div>
             <div class="col-span-6 sm:col-span-3">
               <label for="empresa_estado" class="block mb-2.5 text-sm font-medium text-heading">Estado</label>
-              <select id="empresa_estado" v-model="form.is_active" class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs">
+              <select id="empresa_estado" v-model="form.is_active" class="block w-full px-3 py-2.5 bg-white border border-default-medium dark:bg-gray-700 text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs">
                 <option :value="true">Activa</option>
                 <option :value="false">Inactiva</option>
               </select>

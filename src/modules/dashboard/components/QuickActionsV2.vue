@@ -4,7 +4,7 @@ import ConsultaPlaca from './ConsultaPlaca.vue';
 
 const BTN = 'inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4';
 const BTN_PRIMARIO = `${BTN} text-white bg-primary-700 hover:bg-primary-800 focus:ring-primary-200 dark:focus:ring-primary-800`;
-const BTN_SECUNDARIO = `${BTN} text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800`;
+const BTN_SECUNDARIO = `${BTN} text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-primary-500/20 dark:bg-gray-800`;
 </script>
 
 <template>

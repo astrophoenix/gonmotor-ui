@@ -265,8 +265,8 @@ watch(() => props.modelValue, (val) => {
                   v-model="form.fecha"
                   type="date"
                   required
-                  :class="fieldErrors.fecha ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'"
-                  class="block w-full pl-9 pr-3 py-2 bg-white border text-sm rounded focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  :class="fieldErrors.fecha ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'"
+                  class="block w-full pl-9 pr-3 py-2 bg-white border text-sm rounded focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 />
               </div>
               <p v-if="fieldErrors.fecha" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ fieldErrors.fecha }}</p>
@@ -278,8 +278,8 @@ watch(() => props.modelValue, (val) => {
                 id="modal_categoria"
                 v-model="form.categoria"
                 required
-                :class="fieldErrors.categoria ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'"
-                class="block w-full px-3 py-2 bg-white border text-sm rounded focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                :class="fieldErrors.categoria ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'"
+                class="block w-full px-3 py-2 bg-white border text-sm rounded focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
                 <option v-for="cat in CATEGORIAS_GASTO" :key="cat.value" :value="cat.value">{{ cat.label }}</option>
               </select>
@@ -299,8 +299,8 @@ watch(() => props.modelValue, (val) => {
                   min="0"
                   required
                   placeholder="0.00"
-                  :class="fieldErrors.monto ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'"
-                  class="block w-full pl-7 pr-3 py-2 bg-white border text-sm rounded focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  :class="fieldErrors.monto ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'"
+                  class="block w-full pl-7 pr-3 py-2 bg-white border text-sm rounded focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 />
               </div>
               <p v-if="fieldErrors.monto" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ fieldErrors.monto }}</p>
@@ -316,8 +316,8 @@ watch(() => props.modelValue, (val) => {
                   rows="2"
                   maxlength="255"
                   placeholder="Detalle del gasto (opcional)"
-                  :class="fieldErrors.descripcion ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'"
-                  class="block w-full pl-9 pr-3 py-2 bg-white border text-sm rounded focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  :class="fieldErrors.descripcion ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white'"
+                  class="block w-full pl-9 pr-3 py-2 bg-white border text-sm rounded focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 ></textarea>
               </div>
               <p v-if="fieldErrors.descripcion" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ fieldErrors.descripcion }}</p>

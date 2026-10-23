@@ -242,7 +242,7 @@ const camposFicha = computed(() => [
                     v-model="form.nombre_comercial"
                     maxlength="200"
                     @input="form.nombre_comercial = sanitizeNombre(form.nombre_comercial)"
-                    :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.nombre_comercial ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                    :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.nombre_comercial ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']"
                   >
                   <p v-if="formErrors.nombre_comercial" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.nombre_comercial }}</p>
                 </div>
@@ -255,7 +255,7 @@ const camposFicha = computed(() => [
                     v-model="form.razon_social"
                     maxlength="200"
                     @input="form.razon_social = sanitizeNombre(form.razon_social)"
-                    :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.razon_social ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                    :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.razon_social ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']"
                   >
                   <p v-if="formErrors.razon_social" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.razon_social }}</p>
                 </div>
@@ -269,7 +269,7 @@ const camposFicha = computed(() => [
                     inputmode="numeric"
                     maxlength="13"
                     @input="form.ruc = sanitizeIdentificacion(form.ruc, 'R')"
-                    :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.ruc ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                    :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.ruc ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']"
                   >
                   <p v-if="formErrors.ruc" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.ruc }}</p>
                 </div>
@@ -283,7 +283,7 @@ const camposFicha = computed(() => [
                     inputmode="numeric"
                     maxlength="20"
                     @input="form.telefono = sanitizeTelefono(form.telefono)"
-                    :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.telefono ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                    :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.telefono ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']"
                   >
                   <p v-if="formErrors.telefono" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.telefono }}</p>
                 </div>
@@ -297,7 +297,7 @@ const camposFicha = computed(() => [
                     type="email"
                     maxlength="254"
                     @input="form.email_contacto = sanitizeEmail(form.email_contacto)"
-                    :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.email_contacto ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                    :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.email_contacto ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
                   <p v-if="formErrors.email_contacto" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ formErrors.email_contacto }}</p>
                 </div>
               </div>
@@ -330,7 +330,7 @@ const camposFicha = computed(() => [
                 :maxlength="CONDICIONES_MAX"
                 placeholder="Una condición por línea. Ej.: Si el total supera los $500, se requiere un anticipo del 60%."
                 @input="onCondicionesInput"
-                :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.condiciones ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"
+                :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', formErrors.condiciones ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']"
               ></textarea>
               <div class="flex justify-between gap-4 mt-2">
                 <p v-if="formErrors.condiciones" class="text-sm text-red-600 dark:text-red-500">{{ formErrors.condiciones }}</p>

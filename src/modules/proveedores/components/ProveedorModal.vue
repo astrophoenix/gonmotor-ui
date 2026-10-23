@@ -293,7 +293,7 @@ watch(() => form.contacto, (val) => {
           <div class="grid grid-cols-6 gap-4">
             <div class="col-span-6 sm:col-span-3">
               <label for="modal_tipo_identificacion" class="block mb-2.5 text-sm font-medium text-heading">Tipo de identificación</label>
-              <select id="modal_tipo_identificacion" v-model="form.tipo_identificacion" required class="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
+              <select id="modal_tipo_identificacion" v-model="form.tipo_identificacion" required class="block w-full px-3 py-2.5 bg-white border border-default-medium dark:bg-gray-700 text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                 <option value="C">Cédula</option>
                 <option value="R">RUC</option>
                 <option value="P">Pasaporte</option>
@@ -301,31 +301,31 @@ watch(() => form.contacto, (val) => {
             </div>
             <div class="col-span-6 sm:col-span-3">
               <label for="modal_identificacion" :class="['block mb-2.5 text-sm font-medium', proveedorErrors.identificacion ? 'text-fg-danger-strong' : 'text-gray-900 dark:text-white']">Identificación</label>
-              <input id="modal_identificacion" v-model="form.identificacion" required maxlength="20" :class="proveedorErrors.identificacion ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+              <input id="modal_identificacion" v-model="form.identificacion" required maxlength="20" :class="proveedorErrors.identificacion ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-white border border-default-medium dark:bg-gray-700 text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
               <p v-if="proveedorErrors.identificacion" class="mt-2.5 text-sm text-fg-danger-strong">{{ proveedorErrors.identificacion }}</p>
             </div>
             <div class="col-span-6 sm:col-span-3">
               <label for="modal_nombre" :class="['block mb-2.5 text-sm font-medium', proveedorErrors.nombre ? 'text-fg-danger-strong' : 'text-heading']">Nombre o razón social</label>
-              <input id="modal_nombre" v-model="form.nombre" @blur="form.nombre = recortarEspacios(form.nombre)" required maxlength="200" :class="proveedorErrors.nombre ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+              <input id="modal_nombre" v-model="form.nombre" @blur="form.nombre = recortarEspacios(form.nombre)" required maxlength="200" :class="proveedorErrors.nombre ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-white border border-default-medium dark:bg-gray-700 text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
               <p v-if="proveedorErrors.nombre" class="mt-2.5 text-sm text-fg-danger-strong">{{ proveedorErrors.nombre }}</p>
             </div>
             <div class="col-span-6 sm:col-span-3">
               <label for="modal_email" :class="['block mb-2.5 text-sm font-medium', proveedorErrors.email ? 'text-fg-danger-strong' : 'text-heading']">Correo electrónico</label>
-              <input id="modal_email" v-model="form.email" type="email" required maxlength="100" :class="proveedorErrors.email ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+              <input id="modal_email" v-model="form.email" type="email" required maxlength="100" :class="proveedorErrors.email ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-white border border-default-medium dark:bg-gray-700 text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
               <p v-if="proveedorErrors.email" class="mt-2.5 text-sm text-fg-danger-strong">{{ proveedorErrors.email }}</p>
             </div>
             <div class="col-span-6 sm:col-span-3">
               <label for="modal_telefono" :class="['block mb-2.5 text-sm font-medium', proveedorErrors.telefono ? 'text-fg-danger-strong' : 'text-heading']">Teléfono</label>
-              <input id="modal_telefono" v-model="form.telefono" maxlength="15" :class="proveedorErrors.telefono ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
+              <input id="modal_telefono" v-model="form.telefono" maxlength="15" :class="proveedorErrors.telefono ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-white border border-default-medium dark:bg-gray-700 text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'">
               <p v-if="proveedorErrors.telefono" class="mt-2.5 text-sm text-fg-danger-strong">{{ proveedorErrors.telefono }}</p>
             </div>
             <div class="col-span-6 sm:col-span-3">
               <label for="modal_contacto" class="block mb-2.5 text-sm font-medium text-heading">Persona de contacto</label>
-              <input id="modal_contacto" v-model="form.contacto" @blur="form.contacto = recortarEspacios(form.contacto)" maxlength="100" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body">
+              <input id="modal_contacto" v-model="form.contacto" @blur="form.contacto = recortarEspacios(form.contacto)" maxlength="100" class="bg-white border border-default-medium dark:bg-gray-700 text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body">
             </div>
             <div class="col-span-6 sm:col-span-3">
               <label for="modal_direccion" :class="['block mb-2.5 text-sm font-medium', proveedorErrors.direccion ? 'text-fg-danger-strong' : 'text-heading']">Dirección</label>
-              <textarea id="modal_direccion" v-model="form.direccion" rows="2" maxlength="150" :class="proveedorErrors.direccion ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'"></textarea>
+              <textarea id="modal_direccion" v-model="form.direccion" rows="2" maxlength="150" :class="proveedorErrors.direccion ? 'bg-danger-soft border border-danger-subtle text-fg-danger-strong text-sm rounded focus:ring-danger focus:border-danger block w-full px-3 py-2.5 shadow-xs placeholder:text-fg-danger-strong' : 'bg-white border border-default-medium dark:bg-gray-700 text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body'"></textarea>
               <p v-if="proveedorErrors.direccion" class="mt-2.5 text-sm text-fg-danger-strong">{{ proveedorErrors.direccion }}</p>
             </div>
           </div>

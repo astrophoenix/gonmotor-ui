@@ -22,7 +22,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'registrado']);
 
 const BASE_INPUT = 'block w-full p-2.5 text-sm rounded shadow-xs focus:outline-none focus:ring-2 dark:bg-gray-700 dark:placeholder-gray-400';
-const INPUT_OK = 'bg-gray-50 border border-gray-300 text-gray-900 focus:ring-brand-200 focus:border-brand-500 dark:border-gray-600 dark:text-white';
+const INPUT_OK = 'bg-white border border-gray-300 text-gray-900 focus:ring-primary-200 focus:border-primary-500 dark:border-gray-600 dark:text-white';
 const INPUT_ERROR = 'bg-red-50 border border-red-500 text-red-900 focus:ring-red-200 focus:border-red-500 dark:text-red-400 dark:border-red-500';
 const ETIQUETA = 'block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300';
 
@@ -116,7 +116,7 @@ async function guardar() {
         </div>
         <div v-if="esEgreso && puedeRegistrarGasto" class="space-y-2">
           <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-            <input v-model="form.comoGasto" type="checkbox" class="w-4 h-4 border-gray-300 rounded text-brand-700 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600">
+            <input v-model="form.comoGasto" type="checkbox" class="w-4 h-4 border-gray-300 rounded text-brand-700 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600">
             Registrar también como gasto del taller
           </label>
           <select v-if="form.comoGasto" v-model="form.categoria" aria-label="Categoría del gasto" :class="[BASE_INPUT, errores.categoria_gasto ? INPUT_ERROR : INPUT_OK]">

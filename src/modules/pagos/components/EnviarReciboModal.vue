@@ -80,7 +80,7 @@ async function enviar() {
           <legend class="block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">Canal</legend>
           <div class="flex flex-wrap gap-4">
             <label v-for="opcion in CANALES" :key="opcion.value" class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-              <input v-model="canal" type="radio" name="canal-recibo" :value="opcion.value" class="w-4 h-4 text-brand-700 border-gray-300 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600" />
+              <input v-model="canal" type="radio" name="canal-recibo" :value="opcion.value" class="w-4 h-4 text-brand-700 border-gray-300 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600" />
               {{ opcion.label }}
             </label>
           </div>

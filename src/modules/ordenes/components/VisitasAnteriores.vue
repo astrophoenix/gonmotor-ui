@@ -47,7 +47,7 @@ function etiqueta(v) {
           v-if="visitas.length > 1"
           v-model="seleccionada"
           aria-label="Visita a copiar"
-          class="block w-full mt-2 p-2 text-sm bg-white border border-gray-300 rounded shadow-xs sm:w-80 focus:ring-2 focus:ring-brand-200 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+          class="block w-full mt-2 p-2 text-sm bg-white border border-gray-300 rounded shadow-xs sm:w-80 focus:ring-2 focus:ring-primary-200 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
           <option v-for="v in visitas" :key="v.id" :value="v.id">{{ etiqueta(v) }}</option>
         </select>
         <p v-else-if="visita" class="mt-1 text-sm text-gray-700 dark:text-gray-300">{{ etiqueta(visita) }}</p>
@@ -74,7 +74,7 @@ function etiqueta(v) {
           Copiar trabajos ({{ totalLineas }})
         </button>
         <label class="inline-flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
-          <input v-model="preciosCatalogo" type="checkbox" class="w-4 h-4 border-gray-300 rounded text-brand-700 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600">
+          <input v-model="preciosCatalogo" type="checkbox" class="w-4 h-4 border-gray-300 rounded text-brand-700 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600">
           Usar precios actuales del catálogo
         </label>
       </div>

@@ -325,7 +325,7 @@ const TITULO_SECCION =
 const BASE_INPUT =
   "block w-full p-2.5 text-sm rounded shadow-xs focus:outline-none focus:ring-2 dark:bg-gray-700 dark:placeholder-gray-400 disabled:cursor-not-allowed disabled:opacity-70";
 const INPUT_OK =
-  "bg-gray-50 border border-gray-300 text-gray-900 focus:ring-brand-200 focus:border-brand-500 dark:border-gray-600 dark:text-white dark:focus:ring-brand-500/40 dark:focus:border-brand-300";
+  "bg-white border border-gray-300 text-gray-900 focus:ring-primary-200 focus:border-primary-500 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500/40 dark:focus:border-primary-300";
 const INPUT_ERROR =
   "bg-red-50 border border-red-500 text-red-900 placeholder-red-700 focus:ring-red-200 focus:border-red-500 dark:text-red-400 dark:border-red-500 dark:placeholder-red-400";
 
@@ -1832,7 +1832,7 @@ onMounted(async () => {
       <!--button
         v-if="puedeCrearInspeccion"
         type="button"
-        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-primary-500/20 dark:bg-gray-800"
         title="Crear Inspección"
         @click="abrirModalCrearInspeccion">
         <Loader2 v-if="creandoInspeccion" class="w-4 h-4 animate-spin" />
@@ -2196,7 +2196,7 @@ onMounted(async () => {
                     <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                       <label class="inline-flex items-center gap-3" :class="readOnly ? 'cursor-default' : 'cursor-pointer'">
                         <input v-model="form.ingreso_en_grua" type="checkbox" class="sr-only peer" :disabled="readOnly" />
-                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-200 dark:peer-focus:ring-brand-700 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-900 dark:peer-checked:bg-brand-500"></div>
+                        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-200 dark:peer-focus:ring-brand-700 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-900 dark:peer-checked:bg-brand-500"></div>
                         <span class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-900 dark:text-white">
                           <Truck class="w-4 h-4 text-gray-500 dark:text-gray-400" />
                           Ingresó en grúa
@@ -2237,7 +2237,7 @@ onMounted(async () => {
                           role="radio"
                           :aria-checked="Number(form.cantidad_llaves) === opcion.value"
                           :disabled="readOnly"
-                          class="min-w-12 px-4 py-2 text-sm font-medium border focus:z-10 focus:ring-2 focus:ring-brand-200 dark:focus:ring-brand-500/40 disabled:cursor-not-allowed"
+                          class="min-w-12 px-4 py-2 text-sm font-medium border focus:z-10 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-500/40 disabled:cursor-not-allowed"
                           :class="[
                             i === 0 ? 'rounded-s-lg' : '-ms-px',
                             i === OPCIONES_LLAVES.length - 1 ? 'rounded-e-lg' : '',
@@ -2288,7 +2288,7 @@ onMounted(async () => {
                     <label class="inline-flex items-center gap-2" :class="readOnly ? 'cursor-default' : 'cursor-pointer'">
                       <span class="text-sm text-gray-600 dark:text-gray-300">Aplica</span>
                       <input v-model="mostrarSeguro" type="checkbox" class="sr-only peer" :disabled="readOnly || tieneDatosSeguro" />
-                      <div class="relative w-11 h-6 bg-gray-200 rounded-full peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-200 dark:peer-focus:ring-brand-700 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-900 dark:peer-checked:bg-brand-500"></div>
+                      <div class="relative w-11 h-6 bg-gray-200 rounded-full peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-200 dark:peer-focus:ring-brand-700 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-900 dark:peer-checked:bg-brand-500"></div>
                     </label>
                   </div>
                   <p v-if="!mostrarSeguro" class="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -2657,7 +2657,7 @@ onMounted(async () => {
                         v-model="form.aceptacion_condiciones"
                         type="checkbox"
                         :disabled="readOnly || (isEditMode && form.estado !== 'PENDIENTE')"
-                        class="w-4 h-4 mt-0.5 text-brand-900 bg-gray-100 border-gray-300 rounded focus:ring-brand-500 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 dark:ring-offset-gray-800"
+                        class="w-4 h-4 mt-0.5 text-brand-900 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 dark:ring-offset-gray-800"
                       />
                       <span class="text-sm text-gray-900 dark:text-white">
                         El cliente acepta las condiciones de recepción y el estado reportado del vehículo.

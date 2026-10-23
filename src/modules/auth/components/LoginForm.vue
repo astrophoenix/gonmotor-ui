@@ -56,7 +56,7 @@ const semana = computed(() => {
 });
 
 const hasError = computed(() => Boolean(errorMessage.value));
-const CAMPO_NORMAL = 'border-brand-200 focus:border-brand-900 focus:ring-brand-focus-ring dark:border-brand-600 dark:focus:border-brand-300';
+const CAMPO_NORMAL = 'border-brand-200 focus:border-primary-700 focus:ring-brand-focus-ring dark:border-brand-600 dark:focus:border-primary-300';
 const CAMPO_ERROR = 'border-accent-500 focus:border-accent-500 focus:ring-accent-500/15';
 
 // Variables para el flujo multi-empresa
@@ -277,7 +277,7 @@ async function confirmCompany() {
                 placeholder="usuario@taller.com"
                 :aria-invalid="hasError"
                 required
-                class="block h-[54px] lg:bajo:h-12 lg:muy-bajo:h-11 w-full rounded-[10px] border-[1.5px] bg-white ps-12 text-[15.5px] text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:ring-4 dark:bg-brand-950 dark:text-brand-50 dark:placeholder:text-brand-300 pe-4"
+                class="block h-[54px] lg:bajo:h-12 lg:muy-bajo:h-11 w-full rounded-lg border-[1.5px] bg-white ps-12 text-[15.5px] text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:ring-4 dark:bg-brand-950 dark:text-brand-50 dark:placeholder:text-brand-300 pe-4"
                 :class="hasError ? CAMPO_ERROR : CAMPO_NORMAL"
               >
             </div>
@@ -295,7 +295,7 @@ async function confirmCompany() {
                 placeholder="Tu contraseña"
                 :aria-invalid="hasError"
                 required
-                class="block h-[54px] lg:bajo:h-12 lg:muy-bajo:h-11 w-full rounded-[10px] border-[1.5px] bg-white ps-12 text-[15.5px] text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:ring-4 dark:bg-brand-950 dark:text-brand-50 dark:placeholder:text-brand-300 pe-12"
+                class="block h-[54px] lg:bajo:h-12 lg:muy-bajo:h-11 w-full rounded-lg border-[1.5px] bg-white ps-12 text-[15.5px] text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:ring-4 dark:bg-brand-950 dark:text-brand-50 dark:placeholder:text-brand-300 pe-12"
                 :class="hasError ? CAMPO_ERROR : CAMPO_NORMAL"
               >
               <button
@@ -333,7 +333,7 @@ async function confirmCompany() {
             <button
               type="submit"
               :disabled="authStore.isLoading"
-              class="mt-6 inline-flex h-14 w-full items-center justify-center gap-3 lg:bajo:mt-3 lg:bajo:h-12 lg:muy-bajo:mt-2 lg:muy-bajo:h-11 rounded-[10px] bg-accent-500 px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(200,16,46,0.7)] transition-colors hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-500/40 disabled:cursor-not-allowed disabled:opacity-60"
+              class="mt-6 inline-flex h-14 w-full items-center justify-center gap-3 lg:bajo:mt-3 lg:bajo:h-12 lg:muy-bajo:mt-2 lg:muy-bajo:h-11 rounded-lg bg-primary-700 px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(36,74,143,0.55)] transition-colors hover:bg-primary-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-200 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <template v-if="authStore.isLoading">
                 <Loader2 class="h-5 w-5 animate-spin" aria-hidden="true" />
@@ -498,7 +498,7 @@ async function confirmCompany() {
             <button
               type="button"
               :disabled="!selectedCompanyId || authStore.isLoading"
-              class="mt-6 inline-flex h-[52px] w-full items-center justify-center gap-2.5 rounded-[10px] bg-brand-900 px-5 text-base font-bold text-white transition-colors hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-focus-ring disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-50 dark:text-brand-900 dark:hover:bg-white"
+              class="mt-6 inline-flex h-[52px] w-full items-center justify-center gap-2.5 rounded-lg bg-primary-700 px-5 text-base font-bold text-white transition-colors hover:bg-primary-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-focus-ring disabled:cursor-not-allowed disabled:opacity-50 dark:bg-primary-600 dark:text-white dark:hover:bg-primary-700"
               @click="confirmCompany"
             >
               <Loader2 v-if="authStore.isLoading" class="h-5 w-5 animate-spin" aria-hidden="true" />

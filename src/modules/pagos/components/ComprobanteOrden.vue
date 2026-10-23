@@ -18,7 +18,7 @@ const props = defineProps({
 const emit = defineEmits(['cambio']);
 
 const BASE_INPUT = 'block w-full p-2 text-sm rounded shadow-xs focus:outline-none focus:ring-2 dark:bg-gray-700 dark:placeholder-gray-400';
-const INPUT_OK = 'bg-gray-50 border border-gray-300 text-gray-900 focus:ring-brand-200 focus:border-brand-500 dark:border-gray-600 dark:text-white';
+const INPUT_OK = 'bg-white border border-gray-300 text-gray-900 focus:ring-primary-200 focus:border-primary-500 dark:border-gray-600 dark:text-white';
 const INPUT_ERROR = 'bg-red-50 border border-red-500 text-red-900 focus:ring-red-200 focus:border-red-500 dark:text-red-400 dark:border-red-500';
 const ETIQUETA = 'block mb-1 text-xs font-medium text-gray-700 dark:text-gray-300';
 

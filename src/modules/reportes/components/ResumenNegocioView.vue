@@ -179,7 +179,7 @@ onMounted(async () => {
             v-for="opcion in ATAJOS"
             :key="opcion.clave"
             type="button"
-            class="px-3 py-1.5 text-sm font-medium rounded-full border"
+            class="px-3 py-1.5 text-sm font-medium rounded-lg border"
             :class="atajo === opcion.clave
               ? 'bg-brand-900 text-white border-brand-900 dark:bg-brand-300 dark:text-brand-900 dark:border-brand-300'
               : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'"
@@ -195,7 +195,7 @@ onMounted(async () => {
               id="resumen-desde"
               v-model="fechaDesde"
               type="date"
-              class="block w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+              class="block w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
           </div>
           <div v-if="atajo === 'rango'" class="w-full sm:w-44">
             <label for="resumen-hasta" class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Hasta</label>
@@ -203,7 +203,7 @@ onMounted(async () => {
               id="resumen-hasta"
               v-model="fechaHasta"
               type="date"
-              class="block w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+              class="block w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
           </div>
           <!-- Solo con «Todos los talleres»: con un taller activo el backend ya filtra por él. -->
           <div v-if="authStore.esTodosLosTalleres" class="w-full sm:w-auto sm:max-w-[22rem]">

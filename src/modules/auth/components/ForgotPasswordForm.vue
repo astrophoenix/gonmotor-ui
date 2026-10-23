@@ -15,7 +15,7 @@ const resendCooldown = ref(0);
 let resendTimer = null;
 
 const hasError = computed(() => Boolean(errorMessage.value));
-const CAMPO_NORMAL = 'border-brand-200 focus:border-brand-900 focus:ring-brand-focus-ring dark:border-brand-600 dark:focus:border-brand-300';
+const CAMPO_NORMAL = 'border-brand-200 focus:border-primary-700 focus:ring-brand-focus-ring dark:border-brand-600 dark:focus:border-primary-300';
 const CAMPO_ERROR = 'border-accent-500 focus:border-accent-500 focus:ring-accent-500/15';
 
 const cuentaAtras = computed(() =>
@@ -120,7 +120,7 @@ watch(email, () => {
       <button
         type="button"
         :disabled="resendCooldown > 0 || isLoading"
-        class="mt-6 inline-flex h-[52px] w-full items-center justify-center gap-2.5 rounded-[10px] border-[1.5px] border-brand-900 bg-white px-5 text-base font-bold text-brand-900 transition-colors hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-focus-ring disabled:cursor-not-allowed disabled:border-brand-200 disabled:text-brand-400 dark:border-brand-300 dark:bg-brand-900 dark:text-brand-50 dark:hover:bg-brand-800"
+        class="mt-6 inline-flex h-[52px] w-full items-center justify-center gap-2.5 rounded-lg border-[1.5px] border-primary-700 bg-white px-5 text-base font-bold text-primary-700 transition-colors hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-focus-ring disabled:cursor-not-allowed disabled:border-brand-200 disabled:text-brand-400 dark:border-brand-300 dark:bg-brand-900 dark:text-brand-50 dark:hover:bg-brand-800"
         @click="resendCode"
       >
         <Loader2 v-if="isLoading" class="h-5 w-5 animate-spin" aria-hidden="true" />
@@ -163,7 +163,7 @@ watch(email, () => {
             :aria-invalid="hasError"
             :aria-describedby="hasError ? 'forgot-email-error' : undefined"
             required
-            class="block h-[54px] w-full rounded-[10px] border-[1.5px] bg-white pe-4 ps-12 text-[15.5px] text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:ring-4 dark:bg-brand-950 dark:text-brand-50 dark:placeholder:text-brand-300"
+            class="block h-[54px] w-full rounded-lg border-[1.5px] bg-white pe-4 ps-12 text-[15.5px] text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:ring-4 dark:bg-brand-950 dark:text-brand-50 dark:placeholder:text-brand-300"
             :class="hasError ? CAMPO_ERROR : CAMPO_NORMAL"
           >
         </div>
@@ -174,7 +174,7 @@ watch(email, () => {
         <button
           type="submit"
           :disabled="isLoading"
-          class="mt-6 inline-flex h-14 w-full items-center justify-center gap-3 rounded-[10px] bg-accent-500 px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(200,16,46,0.7)] transition-colors hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-500/40 disabled:cursor-not-allowed disabled:opacity-60"
+          class="mt-6 inline-flex h-14 w-full items-center justify-center gap-3 rounded-lg bg-primary-700 px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(36,74,143,0.55)] transition-colors hover:bg-primary-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-200 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <template v-if="isLoading">
             <Loader2 class="h-5 w-5 animate-spin" aria-hidden="true" />

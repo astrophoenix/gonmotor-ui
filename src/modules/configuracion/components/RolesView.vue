@@ -559,7 +559,7 @@ onMounted(async () => {
               v-model="buscar"
               type="text"
               placeholder="Buscar rol"
-              class="w-full rounded-base border border-gray-300 bg-gray-50 pl-9 pr-3 py-2 text-sm text-heading placeholder:text-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              class="w-full rounded-base border border-gray-300 bg-white pl-9 pr-3 py-2 text-sm text-heading placeholder:text-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             >
           </div>
           <div class="flex rounded-lg bg-gray-100 p-0.5 dark:bg-gray-700" role="tablist" aria-label="Filtrar por estado">
@@ -1148,7 +1148,7 @@ onMounted(async () => {
                 v-model="nuevoRol.nombre"
                 type="text"
                 placeholder="Ej. Supervisor de patio"
-                class="w-full rounded-base border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-heading placeholder:text-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                class="w-full rounded-base border border-gray-300 bg-white px-3 py-2 text-sm text-heading placeholder:text-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
               <p v-if="nuevoRolErrors.nombre" class="mt-1 text-xs text-danger">{{ nuevoRolErrors.nombre }}</p>
             </div>
@@ -1159,14 +1159,14 @@ onMounted(async () => {
                 v-model="nuevoRol.descripcion"
                 rows="3"
                 placeholder="Qué hace este rol, a quién está dirigido..."
-                class="w-full rounded-base border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-heading placeholder:text-gray-400 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                class="w-full rounded-base border border-gray-300 bg-white px-3 py-2 text-sm text-heading placeholder:text-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               ></textarea>
             </div>
             <label class="inline-flex items-center gap-2 text-sm text-heading cursor-pointer dark:text-white">
               <input
                 v-model="nuevoRol.is_active"
                 type="checkbox"
-                class="w-4 h-4 rounded border-gray-300 text-brand-700 focus:ring-brand-500 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                class="w-4 h-4 rounded border-gray-300 text-brand-700 focus:ring-primary-500 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
               >
               Rol activo
             </label>
@@ -1234,7 +1234,7 @@ onMounted(async () => {
                 id="rol-editar-nombre"
                 v-model="editarRol.nombre"
                 type="text"
-                class="w-full rounded-base border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-heading focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                class="w-full rounded-base border border-gray-300 bg-white px-3 py-2 text-sm text-heading focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
             </div>
             <div>
@@ -1243,14 +1243,14 @@ onMounted(async () => {
                 id="rol-editar-descripcion"
                 v-model="editarRol.descripcion"
                 rows="3"
-                class="w-full rounded-base border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-heading focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                class="w-full rounded-base border border-gray-300 bg-white px-3 py-2 text-sm text-heading focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               ></textarea>
             </div>
             <label class="inline-flex items-center gap-2 text-sm text-heading cursor-pointer dark:text-white">
               <input
                 v-model="editarRol.is_active"
                 type="checkbox"
-                class="w-4 h-4 rounded border-gray-300 text-brand-700 focus:ring-brand-500 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                class="w-4 h-4 rounded border-gray-300 text-brand-700 focus:ring-primary-500 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
               >
               Rol activo
             </label>

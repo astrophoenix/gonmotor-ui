@@ -316,7 +316,7 @@ onUnmounted(() => {
           aria-autocomplete="list"
           :aria-expanded="String(panelVisible)"
           :aria-activedescendant="indiceActivo >= 0 ? `gs-opt-${indiceActivo}` : undefined"
-          class="w-full rounded border border-brand-100 bg-brand-50 py-2 pl-8 pr-3 text-sm shadow-xs text-ink transition-colors placeholder:text-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 lg:w-[230px] lg:pr-14 xl:w-[280px] dark:border-brand-700 dark:bg-brand-800 dark:text-white dark:placeholder:text-brand-300"
+          class="w-full rounded border border-brand-100 bg-brand-50 py-2 pl-8 pr-3 text-sm shadow-xs text-ink transition-colors placeholder:text-muted focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 lg:w-[230px] lg:pr-14 xl:w-[280px] dark:border-brand-700 dark:bg-brand-800 dark:text-white dark:placeholder:text-brand-300"
           @focus="abierto = true"
           @keydown="onInputKeydown">
         <kbd v-if="!movilAbierto" class="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 items-center gap-0.5 rounded border border-line bg-white px-1.5 py-0.5 text-[11px] font-medium text-muted lg:flex dark:border-brand-700 dark:bg-brand-900 dark:text-brand-300">

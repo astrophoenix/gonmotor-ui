@@ -350,7 +350,7 @@ onBeforeUnmount(() => {
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label for="modal_identificacion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Identificación</label>
-                <input id="modal_identificacion" autocomplete="off" v-model="form.identificacion" maxlength="13" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', empleadoErrors.identificacion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <input id="modal_identificacion" autocomplete="off" v-model="form.identificacion" maxlength="13" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', empleadoErrors.identificacion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
                 <p v-if="empleadoErrors.identificacion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ empleadoErrors.identificacion }}</p>
               </div>
               <div>
@@ -365,22 +365,22 @@ onBeforeUnmount(() => {
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
               <div>
                 <label for="modal_first_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombres</label>
-                <input id="modal_first_name" autocomplete="off" v-model="form.first_name" required maxlength="150" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', empleadoErrors.first_name ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <input id="modal_first_name" autocomplete="off" v-model="form.first_name" required maxlength="150" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', empleadoErrors.first_name ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
                 <p v-if="empleadoErrors.first_name" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ empleadoErrors.first_name }}</p>
               </div>
               <div>
                 <label for="modal_last_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Apellidos</label>
-                <input id="modal_last_name" autocomplete="off" v-model="form.last_name" required maxlength="150" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', empleadoErrors.last_name ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <input id="modal_last_name" autocomplete="off" v-model="form.last_name" required maxlength="150" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', empleadoErrors.last_name ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
                 <p v-if="empleadoErrors.last_name" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ empleadoErrors.last_name }}</p>
               </div>
               <div>
                 <label for="modal_email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Correo electrónico</label>
-                <input id="modal_email" autocomplete="off" v-model="form.email" type="email" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', empleadoErrors.email ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <input id="modal_email" autocomplete="off" v-model="form.email" type="email" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', empleadoErrors.email ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
                 <p v-if="empleadoErrors.email" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ empleadoErrors.email }}</p>
               </div>
               <div>
                 <label for="modal_telefono" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Teléfono</label>
-                <input id="modal_telefono" autocomplete="off" v-model="form.telefono" maxlength="20" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <input id="modal_telefono" autocomplete="off" v-model="form.telefono" maxlength="20" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', 'bg-white border border-gray-300 dark:border-gray-600']">
               </div>
             </div>
 
@@ -394,13 +394,13 @@ onBeforeUnmount(() => {
             <div v-if="form.tiene_acceso" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label for="modal_rol" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Rol</label>
-                <select id="modal_rol" v-model="form.rol" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                <select id="modal_rol" v-model="form.rol" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
                   <option v-for="item in rolesDisponibles" :key="item.value" :value="item.value">{{ item.label }}</option>
                 </select>
               </div>
               <div>
                 <label for="modal_direccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Dirección</label>
-                <input id="modal_direccion" autocomplete="off" v-model="form.direccion" maxlength="255" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', empleadoErrors.direccion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <input id="modal_direccion" autocomplete="off" v-model="form.direccion" maxlength="255" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', empleadoErrors.direccion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
                 <p v-if="empleadoErrors.direccion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ empleadoErrors.direccion }}</p>
               </div>
             </div>
@@ -471,7 +471,7 @@ onBeforeUnmount(() => {
                         id="modal-talleres-search"
                         v-model="tallerSearch"
                         type="text"
-                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full ps-10 p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                        class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full ps-10 p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
                         placeholder="Buscar taller..."
                         @click.stop
                       />

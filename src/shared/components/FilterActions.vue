@@ -72,7 +72,7 @@ function handleSearch() {
     <button
       type="button"
       :disabled="clearDisabled"
-      class="inline-flex items-center px-3 py-2 text-sm font-medium rounded text-heading bg-neutral-secondary-medium border border-default-medium shadow-xs hover:bg-neutral-secondary focus:ring-4 focus:ring-gray/20 disabled:cursor-not-allowed disabled:opacity-60"
+      class="inline-flex items-center px-3 py-2 text-sm font-medium rounded text-heading bg-white border border-default-medium dark:bg-gray-700 shadow-xs hover:bg-neutral-secondary focus:ring-4 focus:ring-gray/20 disabled:cursor-not-allowed disabled:opacity-60"
       @click="handleClear">
       <RotateCcw class="w-4 h-4 mr-1.5" />
       {{ clearLabel }}

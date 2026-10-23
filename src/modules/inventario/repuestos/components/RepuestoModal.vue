@@ -712,81 +712,81 @@ watch(() => form.codigo, (val) => {
           <div v-show="activeTab === 'general'" class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div class="col-span-1">
               <label for="rep_codigo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Código</label>
-              <input id="rep_codigo" v-model="form.codigo" maxlength="50" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', repuestoErrors.codigo ? 'bg-red-50 border border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']" placeholder="Ej: FR-001">
+              <input id="rep_codigo" v-model="form.codigo" maxlength="50" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', repuestoErrors.codigo ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']" placeholder="Ej: FR-001">
               <p v-if="repuestoErrors.codigo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ repuestoErrors.codigo }}</p>
             </div>
             <div class="col-span-1 md:col-span-3">
               <label for="rep_nombre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre del Repuesto</label>
-              <input id="rep_nombre" v-model="form.nombre" maxlength="150" @blur="recortar('nombre')" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', repuestoErrors.nombre ? 'bg-red-50 border border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']" placeholder="Ej: Filtro de aceite">
+              <input id="rep_nombre" v-model="form.nombre" maxlength="150" @blur="recortar('nombre')" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', repuestoErrors.nombre ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']" placeholder="Ej: Filtro de aceite">
               <p v-if="repuestoErrors.nombre" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ repuestoErrors.nombre }}</p>
             </div>
             <div class="col-span-1">
               <label for="rep_categoria" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Categoría</label>
-              <select id="rep_categoria" v-model="form.categoria" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+              <select id="rep_categoria" v-model="form.categoria" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
                 <option v-for="item in CATEGORIAS" :key="item.value" :value="item.value">{{ item.label }}</option>
               </select>
             </div>
             <div class="col-span-1">
               <label for="rep_marca" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Marca / Fabricante</label>
-              <input id="rep_marca" v-model="form.marca" maxlength="100" @blur="recortar('marca')" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+              <input id="rep_marca" v-model="form.marca" maxlength="100" @blur="recortar('marca')" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
             </div>
             <div class="col-span-1">
               <label for="rep_numero_parte" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Número de Parte</label>
-              <input id="rep_numero_parte" v-model="form.numero_parte" maxlength="100" @blur="recortar('numero_parte')" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+              <input id="rep_numero_parte" v-model="form.numero_parte" maxlength="100" @blur="recortar('numero_parte')" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
             </div>
             <div class="col-span-1">
               <label for="rep_unidad" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Unidad de Medida</label>
-              <select id="rep_unidad" v-model="form.unidad_medida" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+              <select id="rep_unidad" v-model="form.unidad_medida" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
                 <option v-for="item in UNIDADES" :key="item.value" :value="item.value">{{ item.label }}</option>
               </select>
             </div>
             <div class="col-span-1">
               <label for="rep_costo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Costo Referencial (compra)</label>
-              <input id="rep_costo" v-model="form.costo_referencial" type="number" step="0.01" min="0" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', repuestoErrors.costo_referencial ? 'bg-red-50 border border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+              <input id="rep_costo" v-model="form.costo_referencial" type="number" step="0.01" min="0" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', repuestoErrors.costo_referencial ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
               <p v-if="repuestoErrors.costo_referencial" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ repuestoErrors.costo_referencial }}</p>
             </div>
             <div class="col-span-1">
               <label for="rep_precio" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Precio de Venta (sin IVA)</label>
-              <input id="rep_precio" v-model="form.precio_venta" type="number" step="0.01" min="0" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', repuestoErrors.precio_venta ? 'bg-red-50 border border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+              <input id="rep_precio" v-model="form.precio_venta" type="number" step="0.01" min="0" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', repuestoErrors.precio_venta ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
               <p v-if="repuestoErrors.precio_venta" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ repuestoErrors.precio_venta }}</p>
             </div>
             <div class="col-span-1">
               <label for="rep_stock_actual" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">{{ isEditMode ? 'Stock Actual' : 'Stock Inicial' }}</label>
               <!-- Tras el alta, el stock solo cambia con movimientos (ajuste, despacho o compra). -->
-              <input id="rep_stock_actual" v-model="form.stock_actual" type="number" step="0.01" min="0" :disabled="isEditMode" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white disabled:cursor-not-allowed disabled:opacity-70', repuestoErrors.stock_actual ? 'bg-red-50 border border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+              <input id="rep_stock_actual" v-model="form.stock_actual" type="number" step="0.01" min="0" :disabled="isEditMode" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white disabled:cursor-not-allowed disabled:opacity-70', repuestoErrors.stock_actual ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
               <p v-if="isEditMode" class="mt-1 text-xs text-gray-500 dark:text-gray-400">Se cambia con «Kardex y stock» en el listado.</p>
               <p v-if="repuestoErrors.stock_actual" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ repuestoErrors.stock_actual }}</p>
             </div>
             <div class="col-span-1">
               <label for="rep_stock_minimo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Stock Mínimo</label>
-              <input id="rep_stock_minimo" v-model="form.stock_minimo" type="number" step="0.01" min="0" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', repuestoErrors.stock_minimo ? 'bg-red-50 border border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+              <input id="rep_stock_minimo" v-model="form.stock_minimo" type="number" step="0.01" min="0" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', repuestoErrors.stock_minimo ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
               <p v-if="repuestoErrors.stock_minimo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ repuestoErrors.stock_minimo }}</p>
             </div>
             <div class="col-span-1">
               <label for="rep_ubicacion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Ubicación / Estante</label>
-              <input id="rep_ubicacion" v-model="form.ubicacion" maxlength="100" @blur="recortar('ubicacion')" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+              <input id="rep_ubicacion" v-model="form.ubicacion" maxlength="100" @blur="recortar('ubicacion')" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
             </div>
             <div class="col-span-1">
               <label for="rep_proveedor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Proveedor Habitual</label>
-              <input id="rep_proveedor" v-model="form.proveedor" maxlength="150" @blur="recortar('proveedor')" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+              <input id="rep_proveedor" v-model="form.proveedor" maxlength="150" @blur="recortar('proveedor')" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
             </div>
             <div class="col-span-1">
               <label for="rep_iva" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">IVA por defecto</label>
-              <select id="rep_iva" v-model="form.iva_porcentaje_defecto" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+              <select id="rep_iva" v-model="form.iva_porcentaje_defecto" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
                 <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
               </select>
             </div>
             <div class="col-span-1 md:col-span-3">
               <label for="rep_descripcion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Descripción</label>
-              <textarea id="rep_descripcion" v-model="form.descripcion" rows="3" @blur="recortar('descripcion')" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"></textarea>
+              <textarea id="rep_descripcion" v-model="form.descripcion" rows="3" @blur="recortar('descripcion')" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"></textarea>
             </div>
             <div class="col-span-1 md:col-span-2">
               <label for="rep_contifico_producto" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">ID Producto Contífico</label>
-              <input id="rep_contifico_producto" v-model="form.contifico_producto_id" maxlength="100" @blur="recortar('contifico_producto_id')" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+              <input id="rep_contifico_producto" v-model="form.contifico_producto_id" maxlength="100" @blur="recortar('contifico_producto_id')" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
             </div>
             <div class="col-span-1 md:col-span-2">
               <label for="rep_contifico_cuenta" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cuenta Contable Contífico</label>
-              <input id="rep_contifico_cuenta" v-model="form.contifico_cuenta_contable" maxlength="50" @blur="recortar('contifico_cuenta_contable')" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+              <input id="rep_contifico_cuenta" v-model="form.contifico_cuenta_contable" maxlength="50" @blur="recortar('contifico_cuenta_contable')" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
             </div>
           </div>
 
