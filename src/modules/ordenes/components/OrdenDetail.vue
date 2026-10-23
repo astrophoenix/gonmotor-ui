@@ -609,6 +609,7 @@ onMounted(async () => {
       <ModoConsultaChip v-if="orden && soloConsulta('ordenes')" objeto="esta orden" acciones="editarla o cambiar su estado" />
     </template>
     <template #actions>
+      <a v-if="orden && puedeModificar && orden.estado === 'ENTREGADO' && orden.tipo_trabajo !== 'GARANTIA'" :href="`/crud/ordenes/agregar/?garantia_de=${encodeURIComponent(orden.id)}`" class="inline-flex items-center rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm font-medium text-brand-900 dark:bg-gray-800 dark:text-white">Crear OT de garantía</a>
       <a
         v-if="orden && puedeModificar && !ordenCerrada"
         :href="`/crud/ordenes/editar/?id=${encodeURIComponent(orden.id)}`"
@@ -626,6 +627,7 @@ onMounted(async () => {
   </EntityHeader>
 
   <div class="px-4 pt-4 pb-6">
+    <p v-if="orden?.orden_garantia_origen" class="mb-4 rounded-lg border border-brand-200 p-3 text-sm text-brand-900 dark:text-brand-100">Garantía de <a :href="`/crud/ordenes/ver/?id=${encodeURIComponent(orden.orden_garantia_origen)}`" class="underline">{{ orden.orden_garantia_numero || 'la orden original' }}</a>. Sin cobro al cliente; los costos corresponden al taller.</p>
     <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
     <Alert v-if="error" type="error" :message="error" dismissible @dismiss="error = ''" />
 
@@ -977,6 +979,7 @@ onMounted(async () => {
                           </td>
                           <td :data-label="grupo.singular" class="px-3 py-2.5 min-w-0">
                             <p class="text-gray-900 dark:text-white">{{ fila.descripcion || '—' }}</p>
+                            <p v-if="fila.garantia_dias || fila.garantia_km" class="text-xs text-brand-500 dark:text-brand-300">Garantía: <span v-if="fila.garantia_dias">{{ fila.garantia_dias }} días</span><span v-if="fila.garantia_dias && fila.garantia_km"> o </span><span v-if="fila.garantia_km">{{ fila.garantia_km }} km</span> desde la entrega; vence al superar cualquiera.</p>
                             <p v-if="fila.provisto_cliente" class="mt-1 text-sm font-medium text-brand-700 dark:text-brand-200">Provisto por el cliente · precio y costo 0</p>
                             <div v-if="fila.es_subcontratado" class="mt-1 text-sm text-brand-700 dark:text-brand-200">
                               <p>Subcontratado · {{ fila.proveedor_nombre || '—' }}</p>

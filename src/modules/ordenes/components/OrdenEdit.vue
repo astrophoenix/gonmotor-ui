@@ -1,5 +1,6 @@
 <script setup>
-import { computed, nextTick, onMounted, ref } from 'vue';
+import GarantiasVehiculo from './GarantiasVehiculo.vue';
+import { watch, computed, nextTick, onMounted, ref } from 'vue';
 import {
   Wand2, Loader2, Plus, Trash2, Camera, Car,
   HardHat, Wrench, Package, Check, CircleAlert, ArrowLeft, ArrowRight, ListChecks, CheckCircle2,
@@ -186,6 +187,7 @@ function copiarVisita({ visita, preciosCatalogo }) {
       fila.iva_porcentaje = normalizarIva(item.iva_porcentaje_defecto);
       actualizados += 1;
     }
+    normalizarGarantia(fila);
     servicios.value.push(fila);
   });
   visita.repuestos.forEach((linea) => {
@@ -196,6 +198,7 @@ function copiarVisita({ visita, preciosCatalogo }) {
       fila.iva_porcentaje = normalizarIva(item.iva_porcentaje_defecto);
       actualizados += 1;
     }
+    normalizarGarantia(fila);
     repuestos.value.push(fila);
   });
   const total = visita.servicios.length + visita.repuestos.length;
@@ -270,6 +273,7 @@ function limpiarMecanico() {
 const form = ref({
   estado: 'PENDIENTE',
   prioridad: 'MEDIA',
+  orden_garantia_origen: '',
   tipo_trabajo: 'MANTENIMIENTO',
   mecanico_principal: '',
   // Ingreso editable: al crear se propone la fecha y hora actuales.
@@ -285,6 +289,7 @@ const prioridadBadge = computed(() => getPrioridadOrden(form.value.prioridad));
 const TIPOS = TIPOS_TRABAJO_OPCIONES;
 
 function brutoServicio(s) {
+  if (esGarantia.value) return 0;
   return (Number(s.es_subcontratado ? s.cantidad : s.horas_aplicadas) || 0) * (Number(s.precio_unitario) || 0);
 }
 
@@ -293,7 +298,7 @@ function netoServicio(s) {
 }
 
 function brutoRepuesto(r) {
-  if (r.provisto_cliente) return 0;
+  if (r.provisto_cliente || esGarantia.value) return 0;
   return (Number(r.cantidad) || 0) * (Number(r.precio_unitario) || 0);
 }
 
@@ -305,7 +310,7 @@ function netoRepuesto(r) {
 function versionComercial(linea) {
   return JSON.stringify([
     linea.descripcion || '', linea.codigo_repuesto || '',
-    Number(linea.es_subcontratado ? linea.cantidad : (linea.horas_aplicadas ?? linea.cantidad)), Number(linea.precio_unitario),
+    Number(linea.es_subcontratado ? linea.cantidad : (linea.horas_aplicadas ?? linea.cantidad)), Number(linea.precio_unitario), Number(linea.garantia_dias || 0), Number(linea.garantia_km || 0),
     Boolean(linea.es_subcontratado), Boolean(linea.provisto_cliente), linea.proveedor || '',
     Number(linea.descuento), Number(linea.iva_porcentaje),
   ]);
@@ -443,6 +448,13 @@ function loadCatalogo() {
   }).catch(() => { catalogoRepuestos.value = []; });
 }
 
+const ordenesOrigenGarantia = ref([]);
+const esGarantia = computed(() => form.value.tipo_trabajo === 'GARANTIA');
+function normalizarGarantia(fila) {
+  if (esGarantia.value) { fila.precio_unitario = fila.descuento = '0.00'; if ('garantia_dias' in fila) fila.garantia_dias = fila.garantia_km = 0; }
+}
+watch(esGarantia, () => { [...servicios.value, ...repuestos.value].forEach(normalizarGarantia); });
+
 function nuevaFilaServicio() {
   return {
     id: null,
@@ -450,6 +462,7 @@ function nuevaFilaServicio() {
     descripcion: '',
     horas_aplicadas: '1.00',
     cantidad: '1.00',
+    garantia_dias: 0, garantia_km: 0,
     es_subcontratado: false,
     proveedor: '',
     proveedor_nombre: '',
@@ -504,11 +517,16 @@ function agregarRepuestoVacio() {
 }
 
 function seleccionarServicio(item, fila) {
+  fila.costo_unitario = String(item.costo_referencial ?? '0.00');
+  fila.servicio = item.id;
+  fila.servicio_codigo = item.codigo || '';
+  fila.garantia_dias = item.garantia_dias || 0; fila.garantia_km = item.garantia_km || 0;
   fila.descripcion = formatearItem(item.codigo, item.nombre);
   fila.horas_aplicadas = '1.00';
   fila.precio_unitario = String(item.precio_referencial ?? '0.00');
   fila.descuento = '0.00';
   fila.iva_porcentaje = normalizarIva(item.iva_porcentaje_defecto);
+  normalizarGarantia(fila);
   focusInput(`svc-cant-${fila.sufijo}`);
 }
 
@@ -520,6 +538,7 @@ function seleccionarRepuesto(item, fila) {
   fila.descuento = '0.00';
   fila.iva_porcentaje = normalizarIva(item.iva_porcentaje_defecto);
   normalizarRepuestoCliente(fila);
+  normalizarGarantia(fila);
   focusInput(`rpt-cant-${fila.sufijo}`);
 }
 
@@ -534,6 +553,7 @@ function quitarRepuesto(index) {
 }
 
 function normalizarRepuestoCliente(fila) {
+  normalizarGarantia(fila);
   if (fila.provisto_cliente) {
     fila.precio_unitario = fila.costo_unitario = fila.descuento = '0.00';
   }
@@ -595,6 +615,7 @@ function aplicarOrden(data) {
   form.value = {
     estado: data.estado || 'PENDIENTE',
     prioridad: data.prioridad || 'MEDIA',
+    orden_garantia_origen: data.orden_garantia_origen || '',
     tipo_trabajo: normalizarTipoTrabajo(data.tipo_trabajo) || 'MANTENIMIENTO',
     mecanico_principal: data.mecanico_principal || '',
     fecha_ingreso: toDateTimeLocal(data.fecha_ingreso || data.created_at),
@@ -616,12 +637,17 @@ async function guardarDetalles(idOrden) {
   const errores = [];
 
   for (const s of servicios.value) {
+    normalizarGarantia(s);
     s.error = '';
     const payload = {
       es_adicional: Boolean(s.es_adicional),
+      garantia_dias: esGarantia.value ? 0 : Number(s.garantia_dias || 0),
+      garantia_km: esGarantia.value ? 0 : Number(s.garantia_km || 0),
+      ...(s.servicio ? { servicio: s.servicio } : {}),
+      ...(s.servicio_codigo ? { servicio_codigo: s.servicio_codigo } : {}),
       es_subcontratado: Boolean(s.es_subcontratado),
       cantidad: String(s.cantidad ?? '1.00'),
-      ...(s.es_subcontratado ? { costo_unitario: String(s.costo_unitario ?? '0.00') } : {}),
+      ...((s.es_subcontratado || esGarantia.value) ? { costo_unitario: String(s.costo_unitario ?? '0.00') } : {}),
       ...(s.es_subcontratado && (!s.id || (s.proveedor || '') !== s.proveedorOriginal)
         ? { proveedor: s.proveedor || null } : {}),
       descripcion: sanitizeObservaciones(s.descripcion || ''),
@@ -647,6 +673,7 @@ async function guardarDetalles(idOrden) {
   }
 
   for (const r of repuestos.value) {
+    normalizarGarantia(r);
     r.error = '';
     normalizarRepuestoCliente(r);
     const payload = {
@@ -711,6 +738,19 @@ onMounted(async () => {
   loadCatalogo();
   loadEmpleados();
   if (!isEditMode.value) {
+    const origenId = new URLSearchParams(window.location.search).get('garantia_de');
+    if (origenId) {
+      try {
+        const original = await ordenesService.getById(origenId);
+        clienteSeleccionado.value = original.cliente;
+        clienteSearch.value = original.cliente?.nombre || '';
+        vehiculoSeleccionado.value = original.vehiculo;
+        vehiculoSearch.value = original.vehiculo?.placa || '';
+        form.value.kilometraje = original.vehiculo?.kilometraje_actual ?? original.kilometraje ?? '';
+        form.value.tipo_trabajo = 'GARANTIA';
+        form.value.orden_garantia_origen = original.id;
+      } catch (err) { error.value = err.message || 'No se pudo cargar la reparación original.'; }
+    }
     loading.value = false;
     return;
   }
@@ -824,6 +864,7 @@ async function handleSubmit(mensajeExito = 'Orden de trabajo guardada correctame
     vehiculo: vehiculoSeleccionado.value.id,
     estado: form.value.estado,
     prioridad: form.value.prioridad,
+    orden_garantia_origen: esGarantia.value ? form.value.orden_garantia_origen || null : null,
     tipo_trabajo: form.value.tipo_trabajo,
     mecanico_principal: form.value.mecanico_principal || null,
     fecha_ingreso: fechaIngreso.toISOString(),
@@ -1186,6 +1227,9 @@ const grupos = computed(() => [
       />
     </template>
   </EntityHeader>
+  <div class="px-4 pt-4">
+    <GarantiasVehiculo :vehiculo-id="vehiculoSeleccionado?.id || ''" :kilometraje="form.kilometraje" @cargado="ordenesOrigenGarantia = $event.ordenes_origen || []" />
+  </div>
 
   <div class="px-4 pt-4 pb-4">
     <!-- Avisos de cambio de estado: único lugar para mover la orden por su ciclo. -->
@@ -1441,9 +1485,17 @@ const grupos = computed(() => [
           <div class="grid grid-cols-1 gap-4 pt-4 mt-5 border-t border-gray-100 sm:grid-cols-2 xl:grid-cols-5 dark:border-gray-700">
             <div>
               <label for="tipo_trabajo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de trabajo</label>
-              <select id="tipo_trabajo" v-model="form.tipo_trabajo" :class="inputClass('tipo_trabajo')">
+              <select id="tipo_trabajo" v-model="form.tipo_trabajo" :disabled="Boolean(orden?.tipo_trabajo === 'GARANTIA')" :class="inputClass('tipo_trabajo')">
                 <option v-for="tipo in TIPOS" :key="tipo.value" :value="tipo.value">{{ tipo.label }}</option>
               </select>
+              <div v-if="esGarantia" class="mt-3 space-y-2">
+                <label for="orden-garantia-origen" class="block text-sm font-medium text-brand-900 dark:text-white">Orden original entregada</label>
+                <select id="orden-garantia-origen" v-model="form.orden_garantia_origen" :class="inputClass('orden_garantia_origen')">
+                  <option value="">Seleccionar reparación original</option>
+                  <option v-for="o in ordenesOrigenGarantia" :key="o.id" :value="o.id">{{ o.numero_orden }} · {{ o.taller }}</option>
+                </select>
+                <p class="text-xs text-brand-500 dark:text-brand-300">Selecciona primero el vehículo. Esta OT no cobra al cliente; conserva los costos y el despacho de repuestos. Los trabajos cobrables van en otra OT.</p>
+              </div>
             </div>
             <div>
               <label for="prioridad" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Prioridad</label>
@@ -1626,6 +1678,14 @@ const grupos = computed(() => [
                           <label v-if="grupo.key === 'svc' && puede('proveedores', 'ver')" class="mt-2 inline-flex min-h-11 items-center gap-2 text-sm text-brand-700 dark:text-brand-200">
                             <input v-model="fila.es_subcontratado" type="checkbox" class="rounded" @change="cambiarSubcontrato(fila)" /> Trabajo subcontratado
                           </label>
+                          <div v-if="grupo.key === 'svc' && !esGarantia" class="mt-2 grid grid-cols-2 gap-2">
+                            <label v-for="campo in ['garantia_dias', 'garantia_km']" :key="campo" class="text-xs text-brand-500 dark:text-brand-300">{{ campo === 'garantia_dias' ? 'Garantía (días)' : 'Garantía (km)' }}
+                              <input v-model="fila[campo]" type="number" min="0" step="1" :class="inputClass('', 'mt-1')" />
+                            </label>
+                          </div>
+                          <label v-if="grupo.key === 'svc' && esGarantia && !fila.es_subcontratado" class="mt-2 block text-sm font-medium">Costo unitario para el taller, sin IVA
+                            <input v-model="fila.costo_unitario" type="number" min="0" step="0.01" :class="inputClass('', 'mt-1')" />
+                          </label>
                           <div v-if="fila.es_subcontratado" class="mt-2 space-y-2">
                             <label :for="`proveedor-${fila.sufijo}`" class="block text-sm font-medium">Proveedor del subcontrato</label>
                             <ProveedorSubcontratoSelect v-if="puede('proveedores', 'ver')" v-model="fila.proveedor" :nombre="fila.proveedor_nombre" :input-id="`proveedor-${fila.sufijo}`" @seleccionar="item => fila.proveedor_nombre = item?.nombre || ''" />
@@ -1642,10 +1702,10 @@ const grupos = computed(() => [
                           <input :id="`${grupo.key}-cant-${fila.sufijo}`" v-model="fila[campoCantidad(grupo, fila)]" :aria-label="etiquetaCantidad(grupo, fila)" type="number" min="0" :step="fila.es_subcontratado ? '0.01' : grupo.step" :class="inputClass('', '!px-1 !py-2 text-center tabular-nums')">
                         </td>
                         <td class="hidden px-1.5 py-2 xl:table-cell">
-                          <input v-model="fila.precio_unitario" :disabled="fila.provisto_cliente" type="number" min="0" step="0.01" :class="inputClass('', '!px-1 !py-2 text-center tabular-nums')">
+                          <input v-model="fila.precio_unitario" :disabled="fila.provisto_cliente || esGarantia" type="number" min="0" step="0.01" :class="inputClass('', '!px-1 !py-2 text-center tabular-nums')">
                         </td>
                         <td class="hidden px-1.5 py-2 xl:table-cell">
-                          <input v-model="fila.descuento" :disabled="fila.provisto_cliente" type="number" min="0" step="0.01" :class="inputClass('', '!px-1 !py-2 text-center tabular-nums')">
+                          <input v-model="fila.descuento" :disabled="fila.provisto_cliente || esGarantia" type="number" min="0" step="0.01" :class="inputClass('', '!px-1 !py-2 text-center tabular-nums')">
                         </td>
                         <td class="hidden px-1.5 py-2 xl:table-cell">
                           <select v-model="fila.iva_porcentaje" :class="inputClass('', '!py-2 !ps-2 !pe-6')">
@@ -1673,10 +1733,10 @@ const grupos = computed(() => [
                               <input :id="`${grupo.key}-cant-${fila.sufijo}-mobile`" v-model="fila[campoCantidad(grupo, fila)]" :aria-label="etiquetaCantidad(grupo, fila)" type="number" min="0" :step="fila.es_subcontratado ? '0.01' : grupo.step" :class="inputClass('', '!p-1.5 mt-0.5 text-xs text-center tabular-nums')">
                             </label>
                             <label class="text-[11px] text-gray-500 dark:text-gray-400">P. unit.
-                              <input v-model="fila.precio_unitario" :disabled="fila.provisto_cliente" type="number" min="0" step="0.01" :class="inputClass('', '!p-1.5 mt-0.5 text-xs text-center tabular-nums')">
+                              <input v-model="fila.precio_unitario" :disabled="fila.provisto_cliente || esGarantia" type="number" min="0" step="0.01" :class="inputClass('', '!p-1.5 mt-0.5 text-xs text-center tabular-nums')">
                             </label>
                             <label class="text-[11px] text-gray-500 dark:text-gray-400">Desc.
-                              <input v-model="fila.descuento" :disabled="fila.provisto_cliente" type="number" min="0" step="0.01" :class="inputClass('', '!p-1.5 mt-0.5 text-xs text-center tabular-nums')">
+                              <input v-model="fila.descuento" :disabled="fila.provisto_cliente || esGarantia" type="number" min="0" step="0.01" :class="inputClass('', '!p-1.5 mt-0.5 text-xs text-center tabular-nums')">
                             </label>
                             <label class="text-[11px] text-gray-500 dark:text-gray-400">IVA
                               <select v-model="fila.iva_porcentaje" :class="inputClass('', '!p-1.5 mt-0.5 text-xs')">
