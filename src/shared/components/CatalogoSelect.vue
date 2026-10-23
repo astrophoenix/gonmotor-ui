@@ -21,6 +21,7 @@ const abierto = ref(false);
 const sel = ref(0);
 const rootRef = ref(null);
 const estiloDropdown = ref({});
+let blurTimer;
 
 const sugerencias = computed(() => {
   const term = (props.modelValue || '').trim().toLowerCase();
@@ -76,6 +77,7 @@ function quitarListeners() {
 }
 
 function abrir() {
+  clearTimeout(blurTimer);
   sel.value = 0;
   posicionar();
   abierto.value = true;
@@ -94,6 +96,8 @@ function onInput(event) {
     event.target.value = clean;
   }
   emit('update:modelValue', clean);
+  if (!abierto.value) abrir();
+  else clearTimeout(blurTimer);
   sel.value = 0;
 }
 
@@ -129,7 +133,8 @@ function onKeydown(event) {
 }
 
 function onBlur() {
-  setTimeout(() => {
+  clearTimeout(blurTimer);
+  blurTimer = setTimeout(() => {
     cerrar();
   }, 120);
 }
@@ -146,6 +151,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  clearTimeout(blurTimer);
   quitarListeners();
   document.removeEventListener('click', handleOutsideClick);
 });

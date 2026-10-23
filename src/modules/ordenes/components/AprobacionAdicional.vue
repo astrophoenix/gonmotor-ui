@@ -84,7 +84,7 @@ async function guardar() {
         <h2 :id="`aprobacion-${tipo}-${linea.id}`" class="mb-4 pr-10 text-lg font-semibold">Registrar aprobación del cliente</h2>
         <p class="mb-3 break-words text-sm">{{ linea.descripcion }}</p>
         <div class="mb-4 rounded-lg bg-brand-50 p-3 text-sm dark:bg-brand-800">
-          <p>{{ tipo === 'svc' ? 'Horas' : 'Cantidad' }}: {{ formatNumber(linea.horas_aplicadas ?? linea.cantidad) }} × {{ formatCurrency(linea.precio_unitario) }}</p>
+          <p>{{ tipo === 'svc' && !linea.es_subcontratado ? 'Horas' : 'Cantidad' }}: {{ formatNumber(linea.es_subcontratado ? linea.cantidad : (linea.horas_aplicadas ?? linea.cantidad)) }} × {{ formatCurrency(linea.precio_unitario) }}</p>
           <p>Descuento: {{ formatCurrency(linea.descuento) }} · IVA: {{ formatNumber(Number(linea.iva_porcentaje) * 100, 0) }} %</p>
           <p class="mt-1 font-semibold">Adicional con IVA: {{ formatCurrency(Number(linea.subtotal) + Number(linea.monto_iva ?? Number(linea.subtotal) * Number(linea.iva_porcentaje))) }}</p>
         </div>
