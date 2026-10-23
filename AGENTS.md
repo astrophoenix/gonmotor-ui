@@ -88,3 +88,9 @@ Contrato obligatorio:
 - `ProductividadView.vue` reutiliza EntityHeader, EntityTable, TallerSelect, Alert y SinAcceso. Conserva «Buscar» para aplicar filtros del reporte; `createLatestRequest` descarta respuestas obsoletas. Solo consulta tras cargar y comprobar `reportes/ver`.
 - Las filas usan `data-label` y `mobileCards`, con estilos móviles locales al reporte (no depende de `patio-screen`). Las definiciones de cálculo vienen de la API, incluida la advertencia del porcentaje actual aplicado al histórico.
 - `EmpleadoModal.vue` gestiona el porcentaje por empresa con el contrato normal de alta/edición, errores por campo y confirmación de descarte. Requiere API RF-15 y migración `authentication/0022` antes del frontend.
+
+## Garantías (RF-16)
+
+- Reutilizar `modules/ordenes/components/GarantiasVehiculo.vue` para avisar coberturas de un vehículo: props `vehiculoId`, `kilometraje`; emite `cargado` con `garantias` y `ordenes_origen`. Consulta por `ordenesService`/httpClient, debounce de 300 ms y cancelación. Errores inline; nunca interpreta la falta de respuesta como ausencia confirmada de cobertura.
+- `ServicioModal` gestiona los días/km del catálogo con el contrato habitual de errores y descarte; `OrdenEdit` guarda las condiciones por línea y las incluye en la versión comercial de adicionales. Días/km en 0 no deben reponerse automáticamente con el catálogo al editar una línea existente.
+- En una OT de garantía el precio y descuento al cliente son 0 y los costos permanecen editables. Las copias y selecciones de catálogo se normalizan también antes de guardar. La garantía original se elige entre OT entregadas accesibles del mismo vehículo; no se extiende con la nueva reparación.

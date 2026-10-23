@@ -42,6 +42,8 @@ function createEmptyForm() {
     categoria: 'MECANICA',
     tiempo_estimado_minutos: 60,
     tareas_estandar: '',
+    garantia_dias: 0,
+    garantia_km: 0,
     intervalo_km: '',
     intervalo_meses: '',
     precio_referencial: '0.00',
@@ -60,6 +62,7 @@ const camposFicha = computed(() => [
   { etiqueta: 'Precio referencial de mano de obra', valor: formatCurrency(form.precio_referencial) },
   { etiqueta: 'IVA por defecto', valor: IVA_OPCIONES.find((o) => o.value === form.iva_porcentaje_defecto)?.label || '' },
   { etiqueta: 'ID Producto/Servicio Contífico', valor: form.contifico_producto_id },
+  { etiqueta: 'Garantía', valor: `${form.garantia_dias || 0} días / ${form.garantia_km || 0} km (0: sin límite en esa unidad; ambos 0: sin garantía)` },
   { etiqueta: 'Próximo mantenimiento', valor: textoIntervalo(form.intervalo_km, form.intervalo_meses) },
   { etiqueta: 'Tareas estándar incluidas', valor: form.tareas_estandar, ancho: 'completo' },
   { etiqueta: 'Descripción', valor: form.descripcion, ancho: 'completo' },
@@ -79,6 +82,8 @@ function getComparableState() {
     categoria: form.categoria,
     tiempo_estimado_minutos: form.tiempo_estimado_minutos,
     tareas_estandar: form.tareas_estandar,
+    garantia_dias: form.garantia_dias,
+    garantia_km: form.garantia_km,
     intervalo_km: form.intervalo_km,
     intervalo_meses: form.intervalo_meses,
     precio_referencial: form.precio_referencial,
@@ -142,6 +147,10 @@ function validate() {
     }
   }
 
+  for (const campo of ['garantia_dias', 'garantia_km']) {
+    if (!Number.isInteger(Number(form[campo])) || Number(form[campo]) < 0) errors[campo] = 'Ingresa un entero mayor o igual a 0.';
+  }
+
   const precio = Number(form.precio_referencial);
   if (Number.isNaN(precio) || precio < 0) {
     errors.precio_referencial = 'Debe ser un número mayor o igual a 0.';
@@ -173,6 +182,8 @@ function buildPayload() {
     categoria: form.categoria,
     tiempo_estimado_minutos: Number(form.tiempo_estimado_minutos ?? 60),
     tareas_estandar: form.tareas_estandar || '',
+    garantia_dias: Number(form.garantia_dias || 0),
+    garantia_km: Number(form.garantia_km || 0),
     intervalo_km: form.intervalo_km === '' || form.intervalo_km === null ? null : Number(form.intervalo_km),
     intervalo_meses: form.intervalo_meses === '' || form.intervalo_meses === null ? null : Number(form.intervalo_meses),
     precio_referencial: String(form.precio_referencial ?? '0.00'),
@@ -323,6 +334,15 @@ watch(() => form.codigo, (val) => {
             <div class="col-span-2">
               <label for="ser_contifico" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">ID Producto/Servicio Contífico</label>
               <input id="ser_contifico" v-model="form.contifico_producto_id" maxlength="100" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+            </div>
+            <div class="col-span-1 md:col-span-4">
+              <p class="font-medium text-brand-900 dark:text-white">Garantía por defecto</p>
+              <p class="text-xs text-brand-500 dark:text-brand-300">Opcional. Ambos en 0: sin garantía. Con ambos límites, vence al superar cualquiera. Cambiar el catálogo no modifica trabajos ya registrados.</p>
+            </div>
+            <div v-for="campo in ['garantia_dias', 'garantia_km']" :key="campo" class="col-span-2">
+              <label :for="`ser_${campo}`" class="mb-2 block text-sm font-medium text-brand-900 dark:text-white">{{ campo === 'garantia_dias' ? 'Garantía (días)' : 'Garantía (km)' }}</label>
+              <input :id="`ser_${campo}`" v-model="form[campo]" type="number" min="0" step="1" class="block w-full rounded-lg border border-brand-300 bg-brand-50 p-2.5 text-base text-brand-900 dark:bg-gray-700 dark:text-white">
+              <p v-if="servicioErrors[campo]" class="text-sm text-red-600 dark:text-red-400">{{ servicioErrors[campo] }}</p>
             </div>
             <div class="col-span-1 md:col-span-4">
               <p class="text-sm font-medium text-gray-900 dark:text-white">Próximo mantenimiento sugerido</p>

@@ -1,4 +1,5 @@
 <script setup>
+import GarantiasVehiculo from '../../ordenes/components/GarantiasVehiculo.vue';
 import { computed, onMounted, reactive, ref, watch, nextTick } from "vue";
 import { IconClipboardSearch, IconReportSearch } from "@tabler/icons-vue";
 
@@ -1847,6 +1848,9 @@ onMounted(async () => {
         :on-submit="submit"/>
     </template>
   </EntityHeader>
+  <div class="px-4 pt-4">
+    <GarantiasVehiculo :vehiculo-id="form.vehiculo?.id || ''" :kilometraje="form.kilometraje_ingreso" />
+  </div>
   <!-- FlowSteps temporalmente desactivado.
   <div class="relative mx-auto max-w-6xl p-4 rounded-lg">
     <FlowSteps :steps="pasosFlujo" />

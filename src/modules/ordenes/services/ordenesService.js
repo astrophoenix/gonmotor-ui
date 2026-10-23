@@ -7,6 +7,11 @@ function buildUrl(id) {
 }
 
 export const ordenesService = {
+  garantiasVehiculo(vehiculo, kilometraje, signal) {
+    const q = new URLSearchParams({ vehiculo });
+    if (kilometraje !== null && kilometraje !== undefined && kilometraje !== '') q.set('kilometraje', kilometraje);
+    return request(`${ENDPOINT}garantias-vehiculo/?${q}`, { signal });
+  },
   aprobarAdicional(tipo, id, payload) {
     const endpoint = tipo === 'svc' ? 'ot-servicios' : 'ot-repuestos';
     return request(`/api/ordenes/${endpoint}/${encodeURIComponent(id)}/aprobar/`, {
