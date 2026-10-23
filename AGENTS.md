@@ -28,6 +28,7 @@ Convenciones y estándares del proyecto. El backend Django vive en `../gonmotor-
 - Estados: `src/shared/components/Alert.vue` (props `type`, `title`, `message`, `dismissible`; emite `dismiss`). Toasts: `src/shared/composables/useToast.js`.
 - Estado de una entidad: un `Estado<Entidad>Badge.vue` por módulo (`EstadoRecepcionBadge`, `EstadoInspeccionBadge`, `EstadoCotizacionBadge`, `EstadoOrdenBadge`), alimentado por `constants/estados<Entidad>.js`. No recrear badges de estado ad-hoc dentro de un componente. Para Activo/Inactivo de entidades simples (clientes, proveedores, talleres…) usar `src/shared/components/EstadoActivoBadge.vue` (prop `activo`; `femenino` para «Activa/Inactiva»).
 - Historial de cambios de un documento: `HistorialCambios.vue` (props `endpoint` = `.../<id>/historial/`, `version` para recargar) va al final del `aside` del `*Detail.vue`, solo si `tieneAccion('historial_<recurso>')` de `usePermisos()`. Un guardado que hace varias peticiones (cabecera + líneas) va dentro de `enOperacion(async () => …)` de `httpClient.js` para que el historial lo agrupe.
+- Indicadores del inicio: `modules/dashboard/components/KpiCard.vue` (tarjeta compacta: icono + título, cifra, línea de estado con punto `estado` = `neutro|ok|aviso|alerta`, `detalle` como tooltip e `ilustracion` inclinada en la esquina inferior derecha; con `href`, toda la tarjeta enlaza). Las ilustraciones son iconos lucide provisionales hasta tener los SVG propios.
 - Guardado: `FormSaveActions.vue` (props `isLoading`, `isEditMode`, `cancelHref`, `onSubmit`, `disabled`).
 - Confirmaciones de borrado: `ConfirmModal.vue` (no volver a crear modales de eliminar).
 - Importación masiva desde Excel: `ImportWizardModal.vue` (asistente Prepara → Sube → Revisa → Listo; nada se guarda hasta confirmar en «Revisa»). Cada módulo pasa `config` (textos, columnas, reglas, cómo pintar una fila) y `servicio` (`descargarPlantilla`, `validar`, `importar`, `descargarErrores`); el backend debe aceptar `?validar=1` con el contrato de `gonmotor-api` («Importación masiva»). Ejemplo: `modules/clientes/constants/importacionClientes.js`.
@@ -78,6 +79,7 @@ Contrato obligatorio:
 - Cerrar el modal solo por acciones explícitas del usuario: botón X, botón Cancelar (con confirmación si hay datos sin guardar), o tras guardado exitoso.
 - En el `submit` del modal: `catch` → `errorMessage` dentro del modal + mapeo de errores; éxito → `emit('created' | 'updated', data)`; el padre cierra el modal, muestra alerta de success y recarga el listado preservando contexto.
 - Formularios muy grandes (recepción, inspección, vehículo) usan modal a ancho completo para no sacrificar legibilidad.
+- Cabecera: siempre `ModalCabecera.vue` (props `icono`, `titulo`, `subtitulo`; emite `cerrar`; slot `#titulo` para badges junto al título). Rejilla de plano y tres piezas en línea azul (llave inglesa, engranaje, bujía), sin rojo; las piezas solo aparecen si el modal es ancho y el subtítulo se oculta en móvil. No volver a escribir cabeceras de modal a mano.
 
 ## Uso móvil en el patio (RF-09)
 

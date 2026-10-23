@@ -1,6 +1,7 @@
 <script setup>
+import ModalCabecera from '@/shared/components/ModalCabecera.vue';
 import { ref, watch } from 'vue';
-import { Loader2, X } from 'lucide-vue-next';
+import { Loader2 } from 'lucide-vue-next';
 
 /**
  * Pide un motivo obligatorio antes de una acción (anular un movimiento,
@@ -55,16 +56,10 @@ async function enviar() {
 <template>
   <div v-if="modelValue" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4">
     <div class="relative w-full max-w-md my-auto bg-white rounded-lg shadow-xl dark:bg-gray-800">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ titulo }}</h3>
-        <button
-          type="button"
-          class="inline-flex items-center justify-center w-8 h-8 text-gray-400 rounded-lg hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200"
-          aria-label="Cerrar"
-          @click="cerrar">
-          <X class="w-5 h-5" />
-        </button>
-      </div>
+      <ModalCabecera
+        :titulo="titulo"
+        @cerrar="cerrar"
+      />
       <div class="px-6 py-4 space-y-3">
         <p v-if="descripcion" class="text-sm text-gray-600 dark:text-gray-300">{{ descripcion }}</p>
         <div>

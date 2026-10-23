@@ -182,7 +182,6 @@ async function refrescar() {
             :valor="kpis.vehiculos_en_taller ?? 0"
             subtitulo="Recepciones sin salida registrada"
             :icono="Car"
-            tono="brand"
             href="/crud/recepciones/"
             texto-accion="Ver recepciones"
           />
@@ -191,7 +190,6 @@ async function refrescar() {
             titulo="Facturación del mes"
             :subtitulo="subtituloFacturacion"
             :icono="CircleDollarSign"
-            tono="emerald"
             href="/crud/ordenes/"
             texto-accion="Ver órdenes"
           >
@@ -217,7 +215,6 @@ async function refrescar() {
             :valor="kpis.citas_hoy ?? 0"
             :subtitulo="subtituloCitas"
             :icono="CalendarDays"
-            tono="primary"
             href="/crud/citas/"
             texto-accion="Ver citas"
           />
@@ -227,7 +224,6 @@ async function refrescar() {
             :valor="kpis.cotizaciones_pendientes ?? 0"
             :subtitulo="subtituloCotizaciones"
             :icono="FileText"
-            tono="amber"
             href="/crud/cotizaciones/"
             texto-accion="Ver cotizaciones"
           />
@@ -237,7 +233,6 @@ async function refrescar() {
             :valor="kpis.alertas_stock_bajo ?? 0"
             :subtitulo="subtituloStock"
             :icono="AlertTriangle"
-            tono="accent"
             href="/crud/repuestos/"
             texto-accion="Ver repuestos"
           />

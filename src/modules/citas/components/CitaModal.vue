@@ -1,4 +1,5 @@
 <script setup>
+import ModalCabecera from '@/shared/components/ModalCabecera.vue';
 import { computed, nextTick, ref, watch } from 'vue';
 import {
   X, Save, CalendarPlus, CalendarClock, UserRound, Car, Clock, Wrench, Hammer, ScanLine,
@@ -801,42 +802,22 @@ function inputClass(campo) {
   <div v-if="modelValue" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-brand-950/70 p-2 sm:p-4">
     <div class="relative flex flex-col w-full max-w-6xl max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)] my-auto rounded-xl bg-white shadow-xl dark:bg-gray-800">
       <!-- Cabecera -->
-      <div class="flex items-start justify-between gap-4 border-b border-gray-200 px-4 py-4 sm:px-6 dark:border-gray-700">
-        <div class="flex items-center min-w-0 gap-3">
-          <span class="inline-flex items-center justify-center w-10 h-10 shrink-0 rounded-lg bg-brand-50 text-brand-700 dark:bg-brand-500/20 dark:text-brand-200">
-            <CalendarClock v-if="isEditMode" class="w-5 h-5" />
-            <CalendarPlus v-else class="w-5 h-5" />
+      <ModalCabecera
+        :icono="isEditMode ? CalendarClock : CalendarPlus"
+        :titulo="soloLectura ? 'Detalle de la cita' : (isEditMode ? 'Editar cita' : 'Nueva cita')"
+        :subtitulo="isEditMode && form.cliente ? `${form.cliente.nombre}${form.vehiculo ? ' · ' + formatPlaca(form.vehiculo.placa) : ''}` : 'Agenda el ingreso de un vehículo y reserva su espacio en el taller.'"
+        @cerrar="close"
+      >
+        <template #titulo>
+          <span
+            v-if="isEditMode && !isLoading"
+            class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-0.5 text-xs font-medium tracking-normal text-gray-700 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+          >
+            <span class="w-2 h-2 rounded-full" :style="{ backgroundColor: colorEstado(estadoOriginal) }"></span>
+            {{ ESTADOS.find((e) => e.value === estadoOriginal)?.label }}
           </span>
-          <div class="min-w-0">
-            <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-              <h3 class="text-lg font-semibold leading-tight text-gray-900 dark:text-white">
-                {{ soloLectura ? 'Detalle de la cita' : (isEditMode ? 'Editar cita' : 'Nueva cita') }}
-              </h3>
-              <span
-                v-if="isEditMode && !isLoading"
-                class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
-              >
-                <span class="w-2 h-2 rounded-full" :style="{ backgroundColor: colorEstado(estadoOriginal) }"></span>
-                {{ ESTADOS.find((e) => e.value === estadoOriginal)?.label }}
-              </span>
-            </div>
-            <p class="mt-0.5 text-sm text-gray-500 truncate dark:text-gray-400">
-              <template v-if="isEditMode && form.cliente">
-                {{ form.cliente.nombre }}<template v-if="form.vehiculo"> · {{ formatPlaca(form.vehiculo.placa) }}</template>
-              </template>
-              <template v-else>Agenda el ingreso de un vehículo y reserva su espacio en el taller.</template>
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          class="inline-flex items-center justify-center w-8 h-8 shrink-0 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200"
-          aria-label="Cerrar"
-          @click="close"
-        >
-          <X class="w-5 h-5" />
-        </button>
-      </div>
+        </template>
+      </ModalCabecera>
 
       <!-- Cuerpo con scroll propio: cabecera y botones siempre visibles -->
       <div class="flex-1 overflow-y-auto px-4 py-5 sm:px-6 bg-gray-50/60 dark:bg-gray-900/30">
