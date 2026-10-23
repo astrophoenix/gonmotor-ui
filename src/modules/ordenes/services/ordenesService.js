@@ -21,6 +21,16 @@ export const ordenesService = {
     return request(buildUrl(id));
   },
 
+  /**
+   * Captura rápida: dueño actual en la empresa, odómetro y últimas visitas del
+   * vehículo con sus líneas. `excluir`: la OT que se está editando.
+   */
+  datosVehiculo(vehiculoId, { excluir } = {}) {
+    const params = new URLSearchParams({ vehiculo: vehiculoId });
+    if (excluir) params.set('excluir', excluir);
+    return request(`${ENDPOINT}datos-vehiculo/?${params.toString()}`);
+  },
+
   update(id, payload) {
     return request(buildUrl(id), {
       method: 'PATCH',

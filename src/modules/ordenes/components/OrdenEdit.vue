@@ -22,6 +22,7 @@ import PhotoUploadGrid from '../../../shared/components/PhotoUploadGrid.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import { saldoDeEntregaRechazada, transicionEntregaCredito } from '../../pagos/constants/pagos';
 import EstadoOrdenBadge from './EstadoOrdenBadge.vue';
+import VisitasAnteriores from './VisitasAnteriores.vue';
 import ClienteSearchSelect from '../../../shared/components/ClienteSearchSelect.vue';
 import VehiculoSearchSelect from '../../../shared/components/VehiculoSearchSelect.vue';
 import EmpleadoSearchSelect from '../../../shared/components/EmpleadoSearchSelect.vue';
@@ -121,8 +122,11 @@ function inputClass(campo, extra = '') {
 function seleccionarCliente(clienteObj) {
   clienteSeleccionado.value = clienteObj || null;
   formErrors.value.cliente = '';
+  // Si el vehículo ya elegido es de este cliente, se conserva.
+  if (vehiculoSeleccionado.value && vehiculoSeleccionado.value.cliente_id === clienteObj?.id) return;
   vehiculoSeleccionado.value = null;
   vehiculoSearch.value = '';
+  visitasAnteriores.value = [];
 }
 
 function limpiarCliente() {
@@ -140,6 +144,62 @@ function seleccionarVehiculo(vehiculoObj) {
     form.value.kilometraje = vehiculoObj.kilometraje_actual;
     formErrors.value.kilometraje = '';
   }
+  if (vehiculoObj?.id) cargarDatosVehiculo(vehiculoObj.id, { completarCliente: !clienteSeleccionado.value });
+}
+
+// ---- Captura rápida: dueño, odómetro y visitas anteriores del vehículo ----
+const visitasAnteriores = ref([]);
+const avisoCopia = ref('');
+
+async function cargarDatosVehiculo(vehiculoId, { completarCliente = false } = {}) {
+  try {
+    const datos = await ordenesService.datosVehiculo(vehiculoId, { excluir: ordenId.value || undefined });
+    if (vehiculoSeleccionado.value?.id !== vehiculoId) return;
+    visitasAnteriores.value = datos.visitas || [];
+    // Buscando por placa, el dueño actual (en esta empresa) llena el cliente.
+    if (completarCliente && datos.cliente && !clienteSeleccionado.value) {
+      clienteSeleccionado.value = datos.cliente;
+      clienteSearch.value = datos.cliente.nombre;
+      formErrors.value.cliente = '';
+    }
+  } catch {
+    visitasAnteriores.value = [];
+  }
+}
+
+/**
+ * Agrega como filas nuevas los servicios y repuestos de una visita anterior.
+ * Por defecto con sus precios de entonces; con `preciosCatalogo`, las líneas
+ * que coinciden por código con el catálogo toman el precio y el IVA actuales.
+ */
+function copiarVisita({ visita, preciosCatalogo }) {
+  const servicioPorCodigo = new Map(catalogoServicios.value.map((item) => [item.codigo, item]));
+  const repuestoPorCodigo = new Map(catalogoRepuestos.value.map((item) => [item.codigo, item]));
+  let actualizados = 0;
+  visita.servicios.forEach((linea) => {
+    const fila = { ...nuevaFilaServicio(), ...mapearServicio({ ...linea, id: null, completado: false }) };
+    const item = preciosCatalogo && linea.servicio_codigo ? servicioPorCodigo.get(linea.servicio_codigo) : null;
+    if (item) {
+      fila.precio_unitario = String(item.precio_referencial ?? fila.precio_unitario);
+      fila.iva_porcentaje = normalizarIva(item.iva_porcentaje_defecto);
+      actualizados += 1;
+    }
+    servicios.value.push(fila);
+  });
+  visita.repuestos.forEach((linea) => {
+    const fila = { ...nuevaFilaRepuesto(), ...mapearRepuesto({ ...linea, id: null }) };
+    const item = preciosCatalogo && linea.codigo_repuesto ? repuestoPorCodigo.get(linea.codigo_repuesto) : null;
+    if (item) {
+      fila.precio_unitario = String(item.precio_venta ?? fila.precio_unitario);
+      fila.iva_porcentaje = normalizarIva(item.iva_porcentaje_defecto);
+      actualizados += 1;
+    }
+    repuestos.value.push(fila);
+  });
+  const total = visita.servicios.length + visita.repuestos.length;
+  avisoCopia.value = `Se agregaron ${total} ${total === 1 ? 'línea' : 'líneas'} de la orden ${visita.numero_orden}`
+    + (preciosCatalogo ? ` (${actualizados} con precio actual del catálogo)` : '')
+    + '. Revísalas y guarda la orden.';
 }
 
 function onClientCreated(clienteObj) {
@@ -153,6 +213,7 @@ function limpiarVehiculo() {
   vehiculoSeleccionado.value = null;
   vehiculoSearch.value = '';
   formErrors.value.vehiculo = '';
+  visitasAnteriores.value = [];
 }
 
 function formatPlaca(placa) {
@@ -599,6 +660,8 @@ onMounted(async () => {
   try {
     const data = await ordenesService.getById(ordenId.value);
     aplicarOrden(data);
+    // Visitas anteriores del mismo vehículo para copiar trabajos (sin la propia).
+    if (data.vehiculo?.id) cargarDatosVehiculo(data.vehiculo.id);
     await cargarRelacionesOrden(ordenId.value);
   } catch (err) {
     error.value = err.message || 'Error al cargar la orden de trabajo.';
@@ -1259,8 +1322,8 @@ const grupos = computed(() => [
                   id="vehiculo"
                   v-model="vehiculoSearch"
                   :cliente-id="clienteSeleccionado?.id || null"
-                  :disabled="!clienteSeleccionado"
-                  :placeholder="clienteSeleccionado ? 'Buscar por placa...' : 'Selecciona un cliente primero'"
+                  :disabled="isEditMode && !clienteSeleccionado"
+                  :placeholder="clienteSeleccionado || !isEditMode ? 'Buscar por placa...' : 'Selecciona un cliente primero'"
                   :error="Boolean(formErrors.vehiculo)"
                   :error-message="formErrors.vehiculo"
                   @select="seleccionarVehiculo"
@@ -1396,6 +1459,11 @@ const grupos = computed(() => [
           <div class="p-4 sm:p-5 space-y-4 bg-gray-50/60 dark:bg-gray-900/30">
             <!-- 1. Trabajo -->
             <div v-show="activeTab === 'trabajo'" class="space-y-4">
+              <!-- Captura rápida: copiar los trabajos de una visita anterior -->
+              <template v-if="!ordenCerrada">
+                <VisitasAnteriores :visitas="visitasAnteriores" @copiar="copiarVisita" />
+                <Alert v-if="avisoCopia" type="success" :message="avisoCopia" dismissible @dismiss="avisoCopia = ''" />
+              </template>
               <!-- Lo que diagnosticó la inspección: referencia para el mecánico -->
               <section v-if="inspeccion?.diagnostico_tecnico || inspeccion?.recomendaciones" class="border border-gray-200 rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700">
                 <button
