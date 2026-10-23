@@ -1,13 +1,14 @@
 <script setup>
 import DespachoRepuestoModal from './DespachoRepuestoModal.vue';
 import GarantiasVehiculo from './GarantiasVehiculo.vue';
-import { watch, computed, nextTick, onMounted, ref } from 'vue';
+import { watch, computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import {
   Wand2, Loader2, Plus, Trash2, Camera, Car,
   HardHat, Wrench, Package, Check, CircleAlert, ArrowLeft, ArrowRight, ListChecks, CheckCircle2,
   CircleStop, IdCardIcon, TagIcon, Shapes, PaintBucket, Phone, Mail, UserRound, Building2,
   CalendarClock, ReceiptText, FileText, Stethoscope, Hourglass, CheckCheck, RotateCcw, Ban, X,
-  NotebookPen, Gauge, LoaderCircle, ShieldCheck,
+  NotebookPen, Gauge, LoaderCircle, ShieldCheck, EllipsisVertical, Handshake, Warehouse, PackageCheck,
+  PackageMinus, ChevronDown,
 } from 'lucide-vue-next';
 import { IconClockPlay, IconClockCheck, IconPlayerPause, IconPlayerPlay } from '@tabler/icons-vue';
 import { enOperacion, request } from '../../../shared/services/httpClient';
@@ -565,6 +566,42 @@ function cambiarSubcontrato(fila) {
 }
 function campoCantidad(grupo, fila) { return fila.es_subcontratado ? 'cantidad' : grupo.campo; }
 function etiquetaCantidad(grupo, fila) { return fila.es_subcontratado ? 'Cant.' : grupo.columna; }
+
+// Cada línea muestra sus datos secundarios como etiquetas; garantía, costos y
+// subcontrato se editan en un panel desplegable, y las opciones van en el menú «⋮».
+// Es estado solo de la vista: no viaja en el guardado ni marca cambios.
+const lineasAbiertas = ref(new Set());
+const menuLinea = ref(null);
+const claveLinea = (grupo, fila) => `${grupo.key}-${fila.sufijo}`;
+const lineaAbierta = (grupo, fila) => lineasAbiertas.value.has(claveLinea(grupo, fila));
+function alternarLinea(grupo, fila, abrir) {
+  const abiertas = new Set(lineasAbiertas.value);
+  const clave = claveLinea(grupo, fila);
+  if (abrir ?? !abiertas.has(clave)) abiertas.add(clave);
+  else abiertas.delete(clave);
+  lineasAbiertas.value = abiertas;
+}
+function alternarMenuLinea(grupo, fila) {
+  const clave = claveLinea(grupo, fila);
+  menuLinea.value = menuLinea.value === clave ? null : clave;
+}
+function cerrarMenuLinea() { menuLinea.value = null; }
+function alternarSubcontrato(grupo, fila) {
+  cambiarSubcontrato(fila);
+  if (fila.es_subcontratado) alternarLinea(grupo, fila, true);
+}
+function textoGarantia(fila) {
+  const dias = Number(fila.garantia_dias) || 0;
+  const km = Number(fila.garantia_km) || 0;
+  if (!dias && !km) return 'Sin garantía';
+  const partes = [];
+  if (dias) partes.push(`${dias} ${dias === 1 ? 'día' : 'días'}`);
+  if (km) partes.push(`${km.toLocaleString('es-EC')} km`);
+  return `Garantía ${partes.join(' · ')}`;
+}
+const repuestosPorDespachar = computed(() => repuestos.value.filter((r) => !r.provisto_cliente && Number(r.cantidad_pendiente_despacho) > 0).length);
+onMounted(() => document.addEventListener('click', cerrarMenuLinea));
+onBeforeUnmount(() => document.removeEventListener('click', cerrarMenuLinea));
 
 function mapearServicio(s) {
   return {
@@ -1636,35 +1673,40 @@ const grupos = computed(() => [
                 </div>
               </section>
 
-              <section v-for="grupo in grupos" :key="grupo.key" :class="SECCION">
-                <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <section v-for="grupo in grupos" :key="grupo.key" class="overflow-visible bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+                <div class="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 sm:px-5">
                   <h4 :class="TITULO_SECCION">
                     <component :is="grupo.icon" class="w-4 h-4" />
                     {{ grupo.titulo }}
                     <span class="px-1.5 text-xs font-medium normal-case tracking-normal rounded bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 tabular-nums">{{ grupo.filas.length }}</span>
                   </h4>
-                  <div class="flex items-center gap-3">
-                    <span v-if="grupo.key === 'svc' && grupo.filas.length" class="text-xs text-gray-500 dark:text-gray-400">
-                      <span class="font-semibold text-gray-900 dark:text-white tabular-nums">{{ serviciosHechos }}/{{ grupo.filas.length }}</span> hechos
+                  <span v-if="grupo.key === 'svc' && grupo.filas.length" class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <span class="hidden w-24 h-1.5 overflow-hidden rounded-full bg-gray-100 sm:block dark:bg-gray-700" aria-hidden="true">
+                      <span class="block h-full rounded-full bg-green-500 transition-all" :style="{ width: `${(serviciosHechos / grupo.filas.length) * 100}%` }"></span>
                     </span>
-                    <button type="button" :class="BOTON_AGREGAR" :title="`Añadir ${grupo.entidad}`" @click="grupo.agregar">
-                      <Plus class="w-4 h-4" />
-                      Agregar
-                    </button>
-                  </div>
+                    <span><span class="font-semibold text-gray-900 dark:text-white tabular-nums">{{ serviciosHechos }}/{{ grupo.filas.length }}</span> hechos</span>
+                  </span>
+                  <span v-if="grupo.key === 'rpt' && puedeDespachar && repuestosPorDespachar" class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                    <Warehouse class="w-3.5 h-3.5" />
+                    <span class="font-semibold text-amber-700 dark:text-amber-400 tabular-nums">{{ repuestosPorDespachar }}</span> por despachar
+                  </span>
+                  <button type="button" class="ms-auto" :class="BOTON_AGREGAR" :title="`Añadir ${grupo.entidad}`" @click="grupo.agregar">
+                    <Plus class="w-4 h-4" />
+                    Agregar
+                  </button>
                 </div>
-                <div class="border border-gray-200 rounded-lg dark:border-gray-700">
+                <div class="border-t border-gray-200 dark:border-gray-700">
                   <table class="mobile-work-edit w-full text-sm xl:table-fixed">
-                    <thead class="text-xs text-gray-500 uppercase bg-gray-50 dark:bg-gray-700/50 dark:text-gray-400">
+                    <thead class="text-[11px] tracking-wide text-gray-500 uppercase bg-gray-50 border-b border-gray-200 dark:bg-gray-700/50 dark:text-gray-400 dark:border-gray-700">
                       <tr>
-                        <th v-if="grupo.key === 'svc'" class="px-1 py-2 font-medium text-center w-14">Hecho</th>
+                        <th v-if="grupo.key === 'svc'" class="py-2 ps-3 font-medium text-center w-12"><span class="sr-only">Hecho</span></th>
                         <th class="w-full px-3 py-2 font-medium text-left xl:w-auto">{{ grupo.singular }}</th>
-                        <th class="hidden px-2 py-2 font-medium text-center xl:table-cell w-20">{{ grupo.key === 'svc' ? 'Horas / Cant.' : grupo.columna }}</th>
-                        <th class="hidden px-2 py-2 font-medium text-center xl:table-cell w-24">P. unitario</th>
-                        <th class="hidden px-2 py-2 font-medium text-center xl:table-cell w-20">Desc.</th>
-                        <th class="hidden px-2 py-2 font-medium text-center xl:table-cell w-20">IVA</th>
+                        <th class="hidden px-2 py-2 font-medium text-right xl:table-cell w-20">{{ grupo.columna }}</th>
+                        <th class="hidden px-2 py-2 font-medium text-right xl:table-cell w-24">P. unit.</th>
+                        <th class="hidden px-2 py-2 font-medium text-right xl:table-cell w-20">Desc.</th>
+                        <th class="hidden px-2 py-2 font-medium text-left xl:table-cell w-20">IVA</th>
                         <th class="px-2 py-2 font-medium text-right w-24">Neto</th>
-                        <th class="px-2 py-2 w-10"><span class="sr-only">Quitar</span></th>
+                        <th class="px-2 py-2 w-12"><span class="sr-only">Opciones</span></th>
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
@@ -1675,14 +1717,14 @@ const grupos = computed(() => [
                       <tr
                         class="align-top"
                         :class="fila.completado ? 'bg-green-50/60 dark:bg-green-900/10' : ''">
-                        <td v-if="grupo.key === 'svc'" data-label="Hecho" class="px-2 py-2 text-center">
+                        <td v-if="grupo.key === 'svc'" data-label="Hecho" class="py-2 ps-3 text-center">
                           <input
                             v-model="fila.completado"
                             type="checkbox"
                             :aria-label="`Marcar «${fila.descripcion || 'servicio'}» como hecho`"
                             :disabled="(estadoActual === 'PENDIENTE' && isEditMode) || (pendienteAprobacion(fila) && !fila.completado)"
                             :title="estadoActual === 'PENDIENTE' && isEditMode ? 'Inicia el trabajo para marcar servicios como hechos' : 'Marcar como hecho'"
-                            class="w-5 h-5 mt-2.5 rounded border-gray-300 text-green-600 focus:ring-green-300 dark:bg-gray-700 dark:border-gray-600 disabled:opacity-50">
+                            class="w-5 h-5 mt-2.5 rounded-full border-gray-300 text-green-600 focus:ring-green-300 dark:bg-gray-700 dark:border-gray-600 disabled:opacity-50">
                         </td>
                         <td :data-label="grupo.singular" class="px-2 py-2 min-w-0">
                           <CatalogoSelect
@@ -1693,71 +1735,119 @@ const grupos = computed(() => [
                             :mostrar-stock="grupo.key === 'rpt'"
                             :mensaje-sin-resultados="`Sin coincidencias. Puedes escribir un ${grupo.entidad} libre.`"
                             @select="(item) => grupo.seleccionar(item, fila)"/>
-                          <label v-if="!fila.id" class="mt-2 inline-flex min-h-11 items-center gap-2 text-sm text-brand-700 dark:text-brand-200">
-                            <input v-model="fila.es_adicional" type="checkbox" class="rounded" /> Adicional pendiente de aprobación
-                          </label>
-                          <label v-if="grupo.key === 'rpt'" class="mt-2 inline-flex min-h-11 items-center gap-2 text-sm text-brand-700 dark:text-brand-200">
-                            <input v-model="fila.provisto_cliente" type="checkbox" :disabled="Boolean(fila.cantidad_despachada)" class="rounded" @change="normalizarRepuestoCliente(fila)" /> Provisto por el cliente
-                          </label>
-                          <p v-if="grupo.key === 'rpt' && fila.cantidad_despachada" class="text-xs text-brand-500 dark:text-brand-300">Devuelve lo despachado antes de cambiar el origen del repuesto.</p>
-                          <p v-if="fila.provisto_cliente" class="text-xs text-brand-500 dark:text-brand-300">Precio y costo 0; no mueve stock.</p>
-                          <label v-if="grupo.key === 'svc' && puede('proveedores', 'ver')" class="mt-2 inline-flex min-h-11 items-center gap-2 text-sm text-brand-700 dark:text-brand-200">
-                            <input v-model="fila.es_subcontratado" type="checkbox" class="rounded" @change="cambiarSubcontrato(fila)" /> Trabajo subcontratado
-                          </label>
-                          <div v-if="grupo.key === 'svc' && !esGarantia" class="mt-2 grid grid-cols-2 gap-2">
-                            <label v-for="campo in ['garantia_dias', 'garantia_km']" :key="campo" class="text-xs text-brand-500 dark:text-brand-300">{{ campo === 'garantia_dias' ? 'Garantía (días)' : 'Garantía (km)' }}
-                              <input v-model="fila[campo]" type="number" min="0" step="1" :class="inputClass('', 'mt-1')" />
-                            </label>
+                          <!-- Datos secundarios de la línea como etiquetas; las de garantía, costo y subcontrato abren su panel. -->
+                          <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
+                            <button v-if="fila.es_subcontratado" type="button" class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset bg-violet-50 text-violet-700 ring-violet-200 hover:ring-violet-400 dark:bg-violet-500/10 dark:text-violet-300 dark:ring-violet-500/30" :aria-expanded="lineaAbierta(grupo, fila)" @click="alternarLinea(grupo, fila)">
+                              <Handshake class="w-3 h-3" />Subcontratado · {{ fila.proveedor_nombre || 'elige el proveedor' }}
+                            </button>
+                            <span v-if="!fila.id && fila.es_adicional" class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/30">
+                              <Hourglass class="w-3 h-3" />Adicional por aprobar
+                            </span>
+                            <button v-if="grupo.key === 'svc' && !esGarantia" type="button" class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset bg-gray-50 text-gray-600 ring-gray-200 dark:bg-gray-700/60 dark:text-gray-300 dark:ring-gray-600 hover:ring-primary-300" :aria-expanded="lineaAbierta(grupo, fila)" @click="alternarLinea(grupo, fila)">
+                              <ShieldCheck class="w-3 h-3" />{{ textoGarantia(fila) }}
+                            </button>
+                            <button v-if="grupo.key === 'svc' && esGarantia && !fila.es_subcontratado" type="button" class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset bg-gray-50 text-gray-600 ring-gray-200 dark:bg-gray-700/60 dark:text-gray-300 dark:ring-gray-600 hover:ring-primary-300" :aria-expanded="lineaAbierta(grupo, fila)" @click="alternarLinea(grupo, fila)">
+                              <ReceiptText class="w-3 h-3" />Costo del taller $ {{ formatNumber(fila.costo_unitario) }}
+                            </button>
+                            <span v-if="fila.provisto_cliente" class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset bg-primary-50 text-primary-700 ring-primary-200 dark:bg-primary-500/10 dark:text-primary-200 dark:ring-primary-500/30" title="Precio y costo 0; no mueve stock.">
+                              <UserRound class="w-3 h-3" />Provisto por el cliente
+                            </span>
+                            <template v-if="grupo.key === 'rpt' && puedeDespachar && !fila.provisto_cliente && fila.guardada?.repuesto">
+                              <span
+                                class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset"
+                                :class="Number(fila.cantidad_pendiente_despacho) > 0 ? 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/30' : 'bg-green-50 text-green-700 ring-green-200 dark:bg-green-500/10 dark:text-green-400 dark:ring-green-500/30'"
+                                :title="`Despachado del almacén ${fila.cantidad_despachada || 0} de ${fila.guardada.cantidad} registrados`">
+                                <component :is="Number(fila.cantidad_pendiente_despacho) > 0 ? Warehouse : PackageCheck" class="w-3 h-3" />
+                                Almacén {{ Number(fila.cantidad_despachada) || 0 }} de {{ Number(fila.guardada.cantidad) || 0 }}
+                              </span>
+                              <button v-if="Number(fila.cantidad_pendiente_despacho) > 0 && estadoActual !== 'CANCELADO'" type="button" :disabled="saving || repuestoSinGuardar(fila) || pendienteAprobacion(fila) || fila.aprobado === false" class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-semibold text-primary-700 hover:bg-primary-50 disabled:opacity-50 disabled:cursor-not-allowed dark:text-primary-200 dark:hover:bg-gray-700" @click="abrirDespacho(fila, 'despachar')">
+                                <PackageMinus class="w-3.5 h-3.5" />Despachar
+                              </button>
+                              <button v-if="Number(fila.cantidad_despachada) > 0" type="button" :disabled="saving" class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 disabled:opacity-50 dark:text-gray-300 dark:hover:bg-gray-700" @click="abrirDespacho(fila, 'devolver')">
+                                <RotateCcw class="w-3.5 h-3.5" />Devolver
+                              </button>
+                            </template>
                           </div>
-                          <label v-if="grupo.key === 'svc' && esGarantia && !fila.es_subcontratado" class="mt-2 block text-sm font-medium">Costo unitario para el taller, sin IVA
-                            <input v-model="fila.costo_unitario" type="number" min="0" step="0.01" :class="inputClass('', 'mt-1')" />
-                          </label>
-                          <div v-if="fila.es_subcontratado" class="mt-2 space-y-2">
-                            <label :for="`proveedor-${fila.sufijo}`" class="block text-sm font-medium">Proveedor del subcontrato</label>
-                            <ProveedorSubcontratoSelect v-if="puede('proveedores', 'ver')" v-model="fila.proveedor" :nombre="fila.proveedor_nombre" :input-id="`proveedor-${fila.sufijo}`" @seleccionar="item => fila.proveedor_nombre = item?.nombre || ''" />
-                            <p v-else class="text-sm">{{ fila.proveedor_nombre || 'Proveedor registrado' }}</p>
-                            <label class="block text-sm font-medium">Costo unitario sin IVA
-                              <input v-model="fila.costo_unitario" type="number" min="0" step="0.01" :class="inputClass('', 'mt-1')" />
-                            </label>
-                            <p class="text-xs text-brand-500 dark:text-brand-300">Costo del trabajo externo; no genera pagos ni cuentas por pagar.</p>
-                          </div>
-                          <div v-if="grupo.key === 'rpt' && puedeDespachar && !fila.provisto_cliente" class="mt-3 space-y-2">
-                            <p v-if="fila.guardada?.repuesto" class="text-xs text-brand-500 dark:text-brand-300">Almacén: despachado {{ fila.cantidad_despachada || 0 }} de {{ fila.guardada.cantidad }} registrados.</p>
-                            <p v-if="!fila.id && fila.codigo_repuesto" class="text-xs text-brand-500 dark:text-brand-300">Guarda la orden antes de despachar esta línea.</p>
-                            <div v-if="fila.guardada?.repuesto" class="flex flex-wrap gap-2">
-                              <button v-if="Number(fila.cantidad_pendiente_despacho) > 0 && estadoActual !== 'CANCELADO'" type="button" :disabled="saving || repuestoSinGuardar(fila) || pendienteAprobacion(fila) || fila.aprobado === false" class="min-h-11 rounded-lg bg-brand-900 px-3 py-2 text-xs font-medium text-white disabled:opacity-50 dark:bg-brand-700" @click="abrirDespacho(fila, 'despachar')">Despachar</button>
-                              <button v-if="Number(fila.cantidad_despachada) > 0" type="button" :disabled="saving" class="min-h-11 rounded-lg border border-brand-300 px-3 py-2 text-xs font-medium text-brand-900 dark:text-brand-100" @click="abrirDespacho(fila, 'devolver')">Devolver</button>
+                          <p v-if="grupo.key === 'rpt' && puedeDespachar && !fila.provisto_cliente && !fila.id && fila.codigo_repuesto" class="mt-1 text-xs text-gray-500 dark:text-gray-400">Guarda la orden antes de despachar esta línea.</p>
+                          <p v-if="grupo.key === 'rpt' && puedeDespachar && !fila.provisto_cliente && fila.id && fila.guardada?.repuesto && repuestoSinGuardar(fila)" class="mt-1 text-xs text-gray-500 dark:text-gray-400">Guarda los cambios de esta línea antes de despachar. Puedes devolver cantidades ya registradas.</p>
+                          <!-- Panel de garantía, costo del taller y subcontrato. -->
+                          <div v-if="grupo.key === 'svc' && lineaAbierta(grupo, fila)" class="p-3 mt-2 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-700/40 dark:border-gray-600">
+                            <div class="flex flex-wrap gap-3">
+                              <div v-if="fila.es_subcontratado" class="basis-full">
+                                <label :for="`proveedor-${fila.sufijo}`" class="block mb-1 text-xs font-medium text-gray-700 dark:text-gray-200">Proveedor del subcontrato</label>
+                                <ProveedorSubcontratoSelect v-if="puede('proveedores', 'ver')" v-model="fila.proveedor" :nombre="fila.proveedor_nombre" :input-id="`proveedor-${fila.sufijo}`" @seleccionar="item => fila.proveedor_nombre = item?.nombre || ''" />
+                                <p v-else class="text-sm">{{ fila.proveedor_nombre || 'Proveedor registrado' }}</p>
+                              </div>
+                              <label v-if="fila.es_subcontratado || esGarantia" class="block w-44 text-xs font-medium text-gray-700 whitespace-nowrap dark:text-gray-200">{{ fila.es_subcontratado ? 'Costo unit. sin IVA' : 'Costo del taller, sin IVA' }}
+                                <input v-model="fila.costo_unitario" type="number" min="0" step="0.01" :class="inputClass('', 'mt-1 !py-2')" />
+                              </label>
+                              <template v-if="!esGarantia">
+                                <label class="block w-28 text-xs font-medium text-gray-700 whitespace-nowrap dark:text-gray-200">Garantía (días)
+                                  <input v-model="fila.garantia_dias" type="number" min="0" step="1" :class="inputClass('', 'mt-1 !py-2')" />
+                                </label>
+                                <label class="block w-28 text-xs font-medium text-gray-700 whitespace-nowrap dark:text-gray-200">Garantía (km)
+                                  <input v-model="fila.garantia_km" type="number" min="0" step="1" :class="inputClass('', 'mt-1 !py-2')" />
+                                </label>
+                              </template>
                             </div>
-                            <p v-if="fila.id && repuestoSinGuardar(fila)" class="text-xs text-brand-500 dark:text-brand-300">Guarda los cambios de esta línea antes de despachar. Puedes devolver cantidades ya registradas.</p>
+                            <p v-if="fila.es_subcontratado" class="mt-2 text-xs text-gray-500 dark:text-gray-400">Costo del trabajo externo; no genera pagos ni cuentas por pagar.</p>
                           </div>
                           <p v-if="fila.error" class="mt-2 text-sm text-red-600 dark:text-red-400">{{ fila.error }}</p>
                           <AprobacionAdicional :linea="fila" :tipo="grupo.key" :pendiente="pendienteAprobacion(fila)" />
                         </td>
                         <td class="hidden px-1.5 py-2 xl:table-cell">
-                          <input :id="`${grupo.key}-cant-${fila.sufijo}`" v-model="fila[campoCantidad(grupo, fila)]" :aria-label="etiquetaCantidad(grupo, fila)" type="number" min="0" :step="fila.es_subcontratado ? '0.01' : grupo.step" :class="inputClass('', '!px-1 !py-2 text-center tabular-nums')">
+                          <input :id="`${grupo.key}-cant-${fila.sufijo}`" v-model="fila[campoCantidad(grupo, fila)]" :aria-label="etiquetaCantidad(grupo, fila)" :title="etiquetaCantidad(grupo, fila)" type="number" min="0" :step="fila.es_subcontratado ? '0.01' : grupo.step" :class="inputClass('', '!px-2 !py-2 text-right tabular-nums')">
                         </td>
                         <td class="hidden px-1.5 py-2 xl:table-cell">
-                          <input v-model="fila.precio_unitario" :disabled="fila.provisto_cliente || esGarantia" type="number" min="0" step="0.01" :class="inputClass('', '!px-1 !py-2 text-center tabular-nums')">
+                          <input v-model="fila.precio_unitario" :disabled="fila.provisto_cliente || esGarantia" aria-label="Precio unitario" type="number" min="0" step="0.01" :class="inputClass('', '!px-2 !py-2 text-right tabular-nums')">
                         </td>
                         <td class="hidden px-1.5 py-2 xl:table-cell">
-                          <input v-model="fila.descuento" :disabled="fila.provisto_cliente || esGarantia" type="number" min="0" step="0.01" :class="inputClass('', '!px-1 !py-2 text-center tabular-nums')">
+                          <input v-model="fila.descuento" :disabled="fila.provisto_cliente || esGarantia" aria-label="Descuento" type="number" min="0" step="0.01" :class="inputClass('', '!px-2 !py-2 text-right tabular-nums')">
                         </td>
                         <td class="hidden px-1.5 py-2 xl:table-cell">
-                          <select v-model="fila.iva_porcentaje" :class="inputClass('', '!py-2 !ps-2 !pe-6')">
+                          <select v-model="fila.iva_porcentaje" aria-label="IVA" :class="inputClass('', '!py-2 !ps-2 !pe-6')">
                             <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
                           </select>
                         </td>
-                        <td data-label="Neto" class="px-2 py-2 pt-4 font-medium text-right text-gray-900 tabular-nums whitespace-nowrap dark:text-white">$ {{ formatNumber(grupo.neto(fila)) }}</td>
-                        <td data-label="Quitar" class="px-2 py-2 text-center">
+                        <td data-label="Neto" class="px-2 py-2 pt-4 font-semibold text-right text-gray-900 tabular-nums whitespace-nowrap dark:text-white" :class="fila.provisto_cliente ? '!text-gray-400' : ''">$ {{ formatNumber(grupo.neto(fila)) }}</td>
+                        <td data-label="Opciones" class="relative px-2 py-2 text-center">
                           <button
                             type="button"
-                            :disabled="Boolean(fila.cantidad_despachada)"
-                            :title="fila.cantidad_despachada ? 'Despachado del almacén: devuélvelo antes de quitarlo' : `Quitar ${grupo.entidad}`"
-                            :aria-label="`Quitar ${grupo.entidad}`"
-                            class="inline-flex items-center p-2 mt-0.5 text-gray-400 rounded-lg hover:bg-red-50 hover:text-red-600 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-red-400"
-                            @click="grupo.quitar(index)">
-                            <Trash2 class="w-4 h-4" />
+                            :aria-label="`Opciones del ${grupo.entidad}`"
+                            :aria-expanded="menuLinea === claveLinea(grupo, fila)"
+                            class="inline-flex items-center p-2 mt-0.5 text-gray-400 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-white"
+                            :class="menuLinea === claveLinea(grupo, fila) ? 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-white' : ''"
+                            @click.stop="alternarMenuLinea(grupo, fila)">
+                            <EllipsisVertical class="w-4 h-4" />
                           </button>
+                          <div
+                            v-if="menuLinea === claveLinea(grupo, fila)"
+                            class="absolute z-20 py-1.5 text-sm text-left bg-white border border-gray-200 shadow-lg end-2 top-11 w-64 rounded-xl dark:bg-gray-800 dark:border-gray-600"
+                            @click.stop>
+                            <label v-if="!fila.id" class="flex items-center gap-2.5 px-3 py-2 text-gray-700 cursor-pointer hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700">
+                              <input v-model="fila.es_adicional" type="checkbox" class="rounded" /> Adicional pendiente de aprobación
+                            </label>
+                            <label v-if="grupo.key === 'svc' && puede('proveedores', 'ver')" class="flex items-center gap-2.5 px-3 py-2 text-gray-700 cursor-pointer hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700">
+                              <input v-model="fila.es_subcontratado" type="checkbox" class="rounded" @change="alternarSubcontrato(grupo, fila)" /> Trabajo subcontratado
+                            </label>
+                            <button v-if="grupo.key === 'svc'" type="button" class="flex items-center w-full gap-2.5 px-3 py-2 text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700" @click="alternarLinea(grupo, fila); cerrarMenuLinea()">
+                              <ChevronDown class="w-4 h-4 text-gray-400 transition-transform" :class="lineaAbierta(grupo, fila) ? 'rotate-180' : ''" />
+                              {{ lineaAbierta(grupo, fila) ? 'Ocultar garantía y costos' : 'Garantía y costos' }}
+                            </button>
+                            <label v-if="grupo.key === 'rpt'" class="flex items-center gap-2.5 px-3 py-2 text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700" :class="fila.cantidad_despachada ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'" :title="fila.cantidad_despachada ? 'Devuelve lo despachado antes de cambiar el origen del repuesto.' : 'Precio y costo 0; no mueve stock.'">
+                              <input v-model="fila.provisto_cliente" type="checkbox" :disabled="Boolean(fila.cantidad_despachada)" class="rounded" @change="normalizarRepuestoCliente(fila)" /> Provisto por el cliente
+                            </label>
+                            <div class="my-1.5 border-t border-gray-100 dark:border-gray-700"></div>
+                            <button
+                              type="button"
+                              :disabled="Boolean(fila.cantidad_despachada)"
+                              :title="fila.cantidad_despachada ? 'Despachado del almacén: devuélvelo antes de quitarlo' : `Quitar ${grupo.entidad}`"
+                              class="flex items-center w-full gap-2.5 px-3 py-2 text-red-600 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent dark:text-red-400 dark:hover:bg-gray-700"
+                              @click="cerrarMenuLinea(); grupo.quitar(index)">
+                              <Trash2 class="w-4 h-4" />
+                              Quitar {{ grupo.entidad }}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                       <!-- En pantallas angostas, cantidad, precio, descuento e IVA van en su propia fila. -->
@@ -1783,11 +1873,19 @@ const grupos = computed(() => [
                       </tr>
                       </template>
                     </tbody>
-                    <tfoot v-if="grupo.filas.length" class="border-t border-gray-200 dark:border-gray-700">
+                    <tfoot class="border-t border-gray-200 dark:border-gray-700">
                       <tr>
-                        <td :colspan="grupo.key === 'svc' ? 8 : 7" class="px-3 py-2 text-xs text-right text-gray-500 dark:text-gray-400">
-                          Subtotal {{ grupo.titulo.toLowerCase() }}:
-                          <span class="ms-1 text-sm font-semibold text-gray-900 tabular-nums dark:text-white">$ {{ formatNumber(grupo.subtotal) }}</span>
+                        <td :colspan="grupo.key === 'svc' ? 8 : 7" class="px-3 py-2.5 sm:px-5">
+                          <div class="flex flex-wrap items-center gap-3">
+                            <button type="button" class="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-primary-700 dark:hover:text-primary-200" @click="grupo.agregar">
+                              <Plus class="w-4 h-4" />Añadir {{ grupo.entidad }} del catálogo
+                            </button>
+                            <span v-if="grupo.filas.length" class="text-xs text-gray-500 ms-auto dark:text-gray-400">
+                              <template v-if="grupo.key === 'svc' && horasManoObra">Horas <span class="font-semibold text-gray-800 tabular-nums me-3 dark:text-gray-100">{{ formatNumber(horasManoObra) }}</span></template>
+                              Subtotal
+                              <span class="text-sm font-semibold text-gray-900 ms-1 tabular-nums dark:text-white">$ {{ formatNumber(grupo.subtotal) }}</span>
+                            </span>
+                          </div>
                         </td>
                       </tr>
                     </tfoot>
