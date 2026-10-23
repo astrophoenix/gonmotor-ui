@@ -40,8 +40,8 @@ const props = defineProps({
 });
 
 const COLORES = {
-  primary: 'bg-primary-500 border-primary-500 hover:bg-primary-600 focus:ring-primary-300',
-  brand: 'bg-brand-900 border-brand-900 hover:bg-brand-700 focus:ring-brand-300',
+  primary: 'bg-primary-700 border-primary-700 hover:bg-primary-800 focus:ring-primary-300 dark:bg-primary-600 dark:border-primary-600 dark:hover:bg-primary-500',
+  brand: 'bg-primary-700 border-primary-700 hover:bg-primary-800 focus:ring-primary-300 dark:bg-primary-600 dark:border-primary-600 dark:hover:bg-primary-500',
   info: 'bg-info border-info hover:bg-blue-700 focus:ring-blue-300',
   success: 'bg-success border-success hover:bg-green-700 focus:ring-green-300',
   warning: 'bg-warning border-warning hover:bg-amber-700 focus:ring-amber-300',
@@ -73,7 +73,7 @@ function handleSubmit() {
       type="button"
       :disabled="isLoading || disabled"
       @click="handleSubmit"
-      class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded border focus:ring-4 disabled:opacity-50 disabled:cursor-not-allowed"
+      class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-base border focus:ring-4 disabled:opacity-50 disabled:cursor-not-allowed"
       :class="colorClass">
       <component :is="icon" class="w-5 h-5 text-white" />
       {{ isLoading ? 'Guardando...' : text }}

@@ -182,7 +182,7 @@ async function guardarAjuste() {
             <button type="button" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600" :disabled="guardando" @click="ajustando = false">
               Cancelar
             </button>
-            <button type="submit" :disabled="guardando" class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded bg-brand-900 hover:bg-brand-800 disabled:opacity-50">
+            <button type="submit" :disabled="guardando" class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded bg-primary-700 hover:bg-primary-800 disabled:opacity-50">
               <Loader2 v-if="guardando" class="w-4 h-4 animate-spin" />
               Guardar ajuste
             </button>

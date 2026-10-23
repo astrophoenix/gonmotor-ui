@@ -148,7 +148,7 @@ onMounted(() => fetchProgramadas(1));
         <button
           v-if="puedeModificar"
           type="button"
-          class="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium text-white rounded bg-brand-900 hover:bg-brand-800 focus:ring-4 focus:ring-brand-medium shrink-0"
+          class="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium text-white rounded bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 shrink-0"
           @click="showMantenimiento = true"
         >
           <CalendarPlus class="w-4 h-4" />

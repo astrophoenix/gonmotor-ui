@@ -110,7 +110,7 @@ async function enviar() {
         <button
           type="button"
           :disabled="enviando"
-          class="inline-flex items-center gap-1.5 text-white bg-brand-900 rounded hover:bg-brand-800 focus:ring-4 focus:ring-brand-medium shadow-xs font-medium text-sm px-4 py-2.5 disabled:opacity-50"
+          class="inline-flex items-center gap-1.5 text-white bg-primary-700 rounded hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 shadow-xs font-medium text-sm px-4 py-2.5 disabled:opacity-50"
           @click="enviar"
         >
           <Loader2 v-if="enviando" class="w-5 h-5 animate-spin" />

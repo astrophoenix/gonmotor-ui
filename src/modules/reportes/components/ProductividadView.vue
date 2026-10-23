@@ -78,7 +78,7 @@ onBeforeUnmount(() => latest.cancel());
             <span class="mb-2 block text-sm font-medium text-brand-900 dark:text-white">Taller</span>
             <TallerSelect v-model="filtros.taller_id" variante="campo" :permitir-todos="puedeTodos" :placeholder="auth.tallerNombre || 'Talleres de mi alcance'" />
           </div>
-          <button type="submit" :disabled="cargando" class="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-900 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50 dark:bg-brand-700">
+          <button type="submit" :disabled="cargando" class="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary-700 hover:bg-primary-800 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50 dark:bg-primary-600">
             <Search class="h-4 w-4" />{{ cargando ? 'Consultando…' : 'Buscar' }}
           </button>
         </div>

@@ -37,7 +37,7 @@ watch(() => [props.orden.id, ...ids.value].join(','), cargar, { immediate: true 
   <section class="space-y-4 rounded-lg border border-brand-200 bg-white p-4 shadow-xs dark:border-brand-700 dark:bg-brand-900 sm:p-5">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <h3 class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200"><ReceiptText class="h-4 w-4" />Cotizaciones <span class="text-xs">({{ ids.length }})</span></h3>
-      <button v-if="puedeIncorporar" type="button" :disabled="!estadoAdmite" :title="estadoAdmite ? 'Seleccionar cotizaciones aceptadas' : 'El estado de la OT no permite incorporaciones'" class="inline-flex items-center gap-2 rounded bg-brand-900 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 focus:ring-4 focus:ring-brand-500/30 disabled:cursor-not-allowed disabled:opacity-50" @click="mostrarSelector = true">
+      <button v-if="puedeIncorporar" type="button" :disabled="!estadoAdmite" :title="estadoAdmite ? 'Seleccionar cotizaciones aceptadas' : 'El estado de la OT no permite incorporaciones'" class="inline-flex items-center gap-2 rounded bg-primary-700 px-3 py-2 text-sm font-medium text-white hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 disabled:cursor-not-allowed disabled:opacity-50" @click="mostrarSelector = true">
         <Plus class="h-4 w-4" />Agregar cotizaciones
       </button>
     </div>

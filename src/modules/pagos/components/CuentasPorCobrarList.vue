@@ -335,7 +335,7 @@ onMounted(async () => {
                 <div v-if="puedeCobrar" class="flex items-center gap-2">
                   <button
                     type="button"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white rounded-lg bg-brand-900 hover:bg-brand-800 focus:ring-4 focus:ring-brand-200"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white rounded-lg bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300"
                     @click="cuentaPago = item">
                     <Banknote class="w-4 h-4" />
                     Cobrar

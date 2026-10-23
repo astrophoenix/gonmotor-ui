@@ -151,7 +151,7 @@ async function guardar(quitar = false) {
         <button
           type="submit"
           :disabled="guardando"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white rounded-lg bg-brand-900 hover:bg-brand-800 disabled:opacity-60">
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white rounded-lg bg-primary-700 hover:bg-primary-800 disabled:opacity-60">
           <Loader2 v-if="guardando" class="w-4 h-4 animate-spin" />
           Guardar
         </button>

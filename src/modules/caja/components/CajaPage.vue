@@ -31,7 +31,7 @@ const puedeOperar = computed(() => puede('facturacion'));
 const SECCION = 'p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700';
 const TITULO_SECCION = 'flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200';
 const BOTON = 'inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg shadow-xs hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 disabled:opacity-60 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700';
-const BOTON_PRIMARIO = 'inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg bg-brand-900 hover:bg-brand-800 focus:ring-4 focus:ring-brand-200 disabled:opacity-60';
+const BOTON_PRIMARIO = 'inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 disabled:opacity-60';
 
 // Con «Todos los talleres» hay que elegir de qué taller es la caja.
 const tallerElegido = ref(null);

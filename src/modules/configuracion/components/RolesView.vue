@@ -527,7 +527,7 @@ onMounted(async () => {
       <button
         v-if="puedeModificarRoles"
         type="button"
-        class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-base bg-brand-900 text-white hover:bg-brand-700 focus:ring-4 focus:ring-brand-200 dark:bg-brand-600 dark:hover:bg-brand-500 dark:focus:ring-brand-800"
+        class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-base bg-primary-700 text-white hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-500 dark:focus:ring-primary-800"
         @click="abrirNuevoRol"
       >
         <Plus class="w-4 h-4" />
@@ -1079,7 +1079,7 @@ onMounted(async () => {
                 </button>
                 <button
                   type="button"
-                  class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-base bg-brand-900 text-white hover:bg-brand-700 disabled:opacity-50 dark:bg-brand-600 dark:hover:bg-brand-500"
+                  class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-base bg-primary-700 text-white hover:bg-primary-800 disabled:opacity-50 dark:bg-primary-600 dark:hover:bg-primary-500"
                   :disabled="guardando"
                   @click="guardar"
                 >
@@ -1186,7 +1186,7 @@ onMounted(async () => {
           </button>
           <button
             type="button"
-            class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-base bg-brand-900 text-white hover:bg-brand-700 disabled:opacity-50 dark:bg-brand-600 dark:hover:bg-brand-500"
+            class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-base bg-primary-700 text-white hover:bg-primary-800 disabled:opacity-50 dark:bg-primary-600 dark:hover:bg-primary-500"
             :disabled="guardandoNuevoRol || !nuevoRol.nombre.trim()"
             @click="crearRol"
           >
@@ -1266,7 +1266,7 @@ onMounted(async () => {
           </button>
           <button
             type="button"
-            class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-base bg-brand-900 text-white hover:bg-brand-700 disabled:opacity-50 dark:bg-brand-600 dark:hover:bg-brand-500"
+            class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-base bg-primary-700 text-white hover:bg-primary-800 disabled:opacity-50 dark:bg-primary-600 dark:hover:bg-primary-500"
             :disabled="guardandoEditarRol || !editarRol.nombre.trim()"
             @click="guardarEditarRol"
           >

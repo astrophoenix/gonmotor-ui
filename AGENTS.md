@@ -45,10 +45,13 @@ Convenciones y estándares del proyecto. El backend Django vive en `../gonmotor-
 
 ## Paleta visual
 - Tokens canónicos en `@theme` de `src/style.css`; espejo en JS (`BRAND`) en `src/shared/config/branding.js` para canvas/SVG (ECharts, FullCalendar). Al cambiar la paleta hay que actualizar AMBOS.
-- `brand-*` = navy corporativo (`900 #111C2E`, `700 #1B2A44`, `500 #3A4F6E`, `300 #94A6BF`…). `accent-*` = **Rojo Gonmotor**, el único rojo de marca: `accent-500 #C8102E` sobre fondos claros y `accent-400 #FF4D63` (su versión «coral») solo sobre navy/oscuro: sidebar, panel del login, modo oscuro (`text-accent-500 dark:text-accent-400`). Nunca coral sobre blanco (contraste 3,2:1) ni `accent-500` sobre navy (2,9:1). Los tokens `brand-red`/`brand-coral` ya no existen. `primary-*`/`primary-blue-*` (Flowbite legacy) están remapeados a navy.
-- Semánticos: `info #2563EB` (azul, se mantiene en badges de estado y Alert info), `success #16A34A`, `warning #D97706`, `danger #DC2626`.
-- Regla de uso: botones primarios = navy (`brand-900`); el Rojo Gonmotor (`accent-*`) solo para logo, indicador activo del sidebar y detalles; `danger`/`red-*` de Tailwind se reservan para errores y acciones destructivas.
-- La migración de paleta está aplicada, pero los módulos todavía mezclan `gray-*` con la marca. Código nuevo debe usar `brand-*`/`accent-*`.
+- `brand-*` = **navy profundo** de estructura (`900 #0F2140`, `800 #172C52`, `700 #1F3A68`, `500 #445F8C`…): sidebar, panel del login, títulos y textos de marca. No es el color de los botones.
+- `primary-*` (y su alias `primary-blue-*`) = **azul de acción** (`700 #244A8F`, `800 #1E3C73` hover, `300 #8FB0E6` anillo de foco, `50 #EFF4FC` fondos suaves). Es el único color de botón primario: `bg-primary-700 hover:bg-primary-800 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-500`. Los tokens de Flowbite (`bg-brand`, `focus:ring-brand`, `text-fg-brand`) apuntan a esta misma escala.
+- `gray-*` está remapeado a **neutros fríos** (`50 #F5F7FA` … `200 #DFE5ED` bordes, `500 #6B778C` texto secundario, `900 #141C2C`); los tokens neutros de Flowbite (`bg-neutral-*`, `border-default`, `text-heading`, `text-body`) derivan de ellos.
+- `accent-*` = **Rojo Gonmotor**, el único rojo de marca: `accent-500 #C8102E` sobre fondos claros y `accent-400 #FF4D63` solo sobre navy/oscuro (sidebar, panel del login, modo oscuro: `text-accent-500 dark:text-accent-400`). Nunca coral sobre blanco ni `accent-500` sobre navy. **Nunca en botones de crear o guardar**: solo logo, indicador activo del sidebar, asterisco de obligatorio y detalles de marca.
+- Semánticos: `info #2563EB`, `success #16A34A`, `warning #D97706`, `danger #DC2626` (`danger`/`red-*` solo para errores y acciones destructivas).
+- **Radios** (`style.css`): `rounded` y `rounded-base` = 8 px (botones y campos), `rounded-lg` = 10 px, `rounded-xl` = 12 px (tarjetas). `rounded-full` solo para avatares, puntos y chips, nunca para botones de texto.
+- Botón secundario: blanco con borde neutro (`bg-white border border-gray-300 text-gray-900 hover:bg-gray-100`); navegación entre pasos «Siguiente: …» con borde `primary`; ambos con el mismo radio que el primario.
 
 ## Mejora de texto con IA (REUTILIZABLE)
 

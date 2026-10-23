@@ -374,7 +374,7 @@ onMounted(async () => {
             <button
               v-if="puedeModificarVehiculos"
               type="button"
-              class="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-900 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-300 dark:bg-brand-500 dark:hover:bg-brand-300 dark:hover:text-brand-900 dark:focus:ring-brand-800"
+              class="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary-700 px-3 py-2 text-sm font-medium text-white hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:bg-brand-500 dark:hover:bg-brand-300 dark:hover:text-brand-900 dark:focus:ring-primary-800"
               @click="showVehicleModal = true"
             >
               <Plus class="h-4 w-4" aria-hidden="true" />

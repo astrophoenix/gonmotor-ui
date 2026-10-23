@@ -173,7 +173,7 @@ async function confirmarAnulacion() {
       <button
         v-if="puedePagar"
         type="button"
-        :class="[BOTON, 'text-white bg-brand-900 hover:bg-brand-800 focus:ring-brand-200 dark:focus:ring-brand-700']"
+        :class="[BOTON, 'text-white bg-primary-700 hover:bg-primary-800 focus:ring-primary-300 dark:focus:ring-primary-800']"
         @click="modalTipo = 'PAGO'">
         <Banknote class="w-4 h-4" />
         Registrar pago

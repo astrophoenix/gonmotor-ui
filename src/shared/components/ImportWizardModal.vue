@@ -46,7 +46,7 @@ const PASOS = [
   { titulo: 'Listo', detalle: 'Resultado' },
 ];
 const FILAS_POR_TANDA = 50;
-const BTN_PRIMARIO = 'inline-flex items-center justify-center gap-2 h-10 px-4 text-sm font-medium text-white rounded-lg bg-brand-900 hover:bg-brand-800 focus:outline-none focus:ring-4 focus:ring-brand-200 disabled:opacity-40 disabled:cursor-not-allowed dark:bg-brand-700 dark:hover:bg-brand-600 dark:focus:ring-brand-800';
+const BTN_PRIMARIO = 'inline-flex items-center justify-center gap-2 h-10 px-4 text-sm font-medium text-white rounded-lg bg-primary-700 hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 disabled:opacity-40 disabled:cursor-not-allowed dark:bg-primary-600 dark:hover:bg-primary-500 dark:focus:ring-primary-800';
 const BTN_SECUNDARIO = 'inline-flex items-center justify-center gap-2 h-10 px-4 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700';
 
 const paso = ref(1);

@@ -904,7 +904,7 @@ function inputClass(campo) {
                   <button
                     type="button"
                     :disabled="isCreatingClient"
-                    class="inline-flex items-center mt-3 px-3 py-1.5 text-sm font-medium text-white rounded bg-brand-900 hover:bg-brand-700 dark:bg-brand-600 dark:hover:bg-brand-500 disabled:opacity-50"
+                    class="inline-flex items-center mt-3 px-3 py-1.5 text-sm font-medium text-white rounded bg-primary-700 hover:bg-primary-800 dark:bg-primary-600 dark:hover:bg-primary-500 disabled:opacity-50"
                     @click="createClient"
                   >
                     <Loader2 v-if="isCreatingClient" class="w-4 h-4 mr-1.5 animate-spin" />
@@ -961,7 +961,7 @@ function inputClass(campo) {
                   <button
                     type="button"
                     :disabled="isCreatingVehicle"
-                    class="inline-flex items-center mt-3 px-3 py-1.5 text-sm font-medium text-white rounded bg-brand-900 hover:bg-brand-700 dark:bg-brand-600 dark:hover:bg-brand-500 disabled:opacity-50"
+                    class="inline-flex items-center mt-3 px-3 py-1.5 text-sm font-medium text-white rounded bg-primary-700 hover:bg-primary-800 dark:bg-primary-600 dark:hover:bg-primary-500 disabled:opacity-50"
                     @click="createVehicle"
                   >
                     <Loader2 v-if="isCreatingVehicle" class="w-4 h-4 mr-1.5 animate-spin" />
@@ -1433,7 +1433,7 @@ function inputClass(campo) {
           <button
             type="button"
             :disabled="isSaving || isLoading"
-            class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded bg-brand-900 hover:bg-brand-700 focus:ring-4 focus:ring-brand-300 dark:bg-brand-600 dark:hover:bg-brand-500 dark:focus:ring-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-500 dark:focus:ring-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
             @click="submit"
           >
             <Save v-if="!isSaving" class="w-5 h-5 mr-1.5 -ml-1 text-white" />
