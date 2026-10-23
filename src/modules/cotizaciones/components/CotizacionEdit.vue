@@ -1545,24 +1545,23 @@ onMounted(async () => {
                           </td>
                         </tr>
                       </tbody>
-                      <tfoot v-if="tab.filas.length" class="bg-gray-50 dark:bg-gray-700/50">
+                      <tfoot v-if="esEditable || tab.filas.length" class="border-t border-gray-200 dark:border-gray-700">
                         <tr>
-                          <th scope="row" colspan="6" class="px-3 py-2.5 text-xs font-medium text-right uppercase text-gray-500 dark:text-gray-400">Subtotal {{ tab.label.toLowerCase() }}</th>
-                          <td class="px-3 py-2.5 font-bold text-right tabular-nums text-gray-900 dark:text-white">$ {{ formatMoney(tab.subtotal) }}</td>
-                          <td v-if="esEditable"></td>
+                          <td :colspan="esEditable ? 8 : 7" class="px-3 py-2.5">
+                            <div class="flex flex-wrap items-center gap-3">
+                              <button v-if="esEditable" type="button" class="inline-flex items-center gap-2 px-2 -mx-2 text-sm font-medium rounded-lg min-h-11 sm:min-h-8 text-primary-700 hover:bg-primary-50 focus:ring-4 focus:ring-primary-200 dark:text-primary-200 dark:hover:bg-gray-700 dark:focus:ring-primary-800" @click="tab.agregar">
+                                <Plus class="w-4 h-4" />Añadir {{ tab.singular.toLowerCase() }} del catálogo
+                              </button>
+                              <span v-if="tab.filas.length" class="text-xs text-gray-500 ms-auto dark:text-gray-400">
+                                Subtotal {{ tab.label.toLowerCase() }}
+                                <span class="text-sm font-semibold text-gray-900 ms-1 tabular-nums dark:text-white">$ {{ formatMoney(tab.subtotal) }}</span>
+                              </span>
+                            </div>
+                          </td>
                         </tr>
                       </tfoot>
                     </table>
                   </div>
-                  <button
-                    v-if="esEditable"
-                    type="button"
-                    :title="`Añadir ${tab.singular.toLowerCase()}`"
-                    class="add-row-btn flex items-center justify-center w-full gap-2 px-4 py-2.5 mt-3 text-sm font-medium border-2 border-dashed rounded-lg text-brand-700 border-brand-200 hover:bg-brand-50 hover:border-brand-500 focus:ring-4 focus:ring-brand-200 dark:text-brand-200 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-brand-700"
-                    @click="tab.agregar">
-                    <Plus class="w-4 h-4" />
-                    Añadir {{ tab.singular.toLowerCase() }}
-                  </button>
                 </div>
               </div>
             </div>
