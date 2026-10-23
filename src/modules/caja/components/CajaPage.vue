@@ -340,7 +340,7 @@ onMounted(async () => {
                     <th class="px-4 py-2 font-medium text-right">Neto</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                <tbody class="text-gray-700 divide-y divide-gray-100 dark:text-gray-300 dark:divide-gray-700">
                   <tr v-for="fila in resumen.por_forma" :key="fila.forma_pago">
                     <td class="px-4 py-2 text-gray-900 dark:text-white">{{ fila.forma_pago_display }}</td>
                     <td class="px-4 py-2 text-right tabular-nums">{{ formatCurrency(fila.pagos) }}</td>
@@ -412,7 +412,7 @@ onMounted(async () => {
                   <th class="px-4 py-2 font-medium text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+              <tbody class="text-gray-700 divide-y divide-gray-100 dark:text-gray-300 dark:divide-gray-700">
                 <tr v-for="item in sesiones" :key="item.id">
                   <td class="px-4 py-2 text-gray-900 whitespace-nowrap dark:text-white">
                     {{ formatDateTime(item.fecha_apertura) }}

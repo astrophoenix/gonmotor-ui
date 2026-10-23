@@ -246,7 +246,7 @@ onMounted(async () => {
             </h3>
             <p v-if="!datos.actual.cobrado.por_forma.length" class="text-sm text-gray-500 dark:text-gray-400">Sin cobros en el periodo.</p>
             <table v-else class="w-full text-sm">
-              <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+              <tbody class="text-gray-700 divide-y divide-gray-100 dark:text-gray-300 dark:divide-gray-700">
                 <tr v-for="fila in datos.actual.cobrado.por_forma" :key="fila.forma_pago">
                   <td class="py-2 text-gray-700 dark:text-gray-300">
                     {{ fila.forma_pago_display }}
@@ -267,7 +267,7 @@ onMounted(async () => {
             </h3>
             <p v-if="!datos.actual.gastos.por_categoria.length" class="text-sm text-gray-500 dark:text-gray-400">Sin gastos registrados en el periodo.</p>
             <table v-else class="w-full text-sm">
-              <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+              <tbody class="text-gray-700 divide-y divide-gray-100 dark:text-gray-300 dark:divide-gray-700">
                 <tr v-for="fila in datos.actual.gastos.por_categoria" :key="fila.categoria">
                   <td class="py-2 text-gray-700 dark:text-gray-300">{{ fila.categoria_display }}</td>
                   <td class="py-2 font-semibold text-right text-gray-900 tabular-nums dark:text-white">{{ formatCurrency(fila.total) }}</td>

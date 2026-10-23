@@ -128,7 +128,7 @@ onMounted(async () => {
                   <th class="w-10 px-2 py-2"><span class="sr-only">Recibo</span></th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+              <tbody class="text-gray-700 divide-y divide-gray-100 dark:text-gray-300 dark:divide-gray-700">
                 <tr v-for="pago in pagos" :key="pago.id" :class="pago.anulado ? 'opacity-60' : ''">
                   <td class="px-4 py-2 text-gray-700 whitespace-nowrap dark:text-gray-300" :title="formatDateTime(pago.fecha)">{{ formatDateOnly(pago.fecha) }}</td>
                   <td class="px-4 py-2 whitespace-nowrap">

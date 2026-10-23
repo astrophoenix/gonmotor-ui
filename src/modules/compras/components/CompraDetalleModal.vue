@@ -190,7 +190,7 @@ async function confirmarAnulacion() {
                   <th class="px-3 py-2 font-medium text-right">Subtotal</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+              <tbody class="text-gray-700 divide-y divide-gray-100 dark:text-gray-300 dark:divide-gray-700">
                 <tr v-for="linea in compra.detalles" :key="linea.id">
                   <td class="px-3 py-2 text-gray-900 dark:text-white"><span class="font-mono">{{ linea.repuesto_codigo }}</span> · {{ linea.repuesto_nombre }}</td>
                   <td class="px-3 py-2 text-right tabular-nums">{{ linea.cantidad }}</td>
