@@ -476,6 +476,7 @@ onMounted(async () => {
         </div>
       </div>
       <EntityTable
+        mobile-cards
         :columns="['Nº Recepción', 'Vehículo', 'Cliente', 'Tipo', 'Fecha ingreso', 'Fecha salida', 'Estado', 'Relaciones', 'Acciones']"
         :items="recepciones"
         :loading="loading"
@@ -486,13 +487,13 @@ onMounted(async () => {
       >
     <template #row="{ item, index }">
       <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
-        <td class="px-4 py-3 whitespace-nowrap">
+        <td data-label="Nº Recepción" class="px-4 py-3 whitespace-nowrap">
           <a :href="`/crud/recepciones/ver/?id=${encodeURIComponent(item.id)}`"
             class="font-semibold text-primary-600 hover:text-accent-500 dark:hover:text-accent-400 dark:text-primary-400">
             {{ numeroDisplay(item) }}
           </a>
         </td>
-        <td class="px-4 py-3 align-top max-w-40">
+        <td data-label="Vehículo" class="px-4 py-3 align-top max-w-40">
           <span class="flex items-center gap-1.5">
             <a v-if="vehiculoUrl(item)" :href="vehiculoUrl(item)" class="font-semibold text-gray-900 hover:text-primary-600 dark:text-white dark:hover:text-primary-400">
               {{ item.vehiculo?.placa || '-' }}</a>
@@ -512,7 +513,7 @@ onMounted(async () => {
             </span>
           </div>
         </td>
-        <td class="px-4 py-3 align-top max-w-44">
+        <td data-label="Cliente" class="px-4 py-3 align-top max-w-44">
           <a v-if="clienteUrl(item)" :href="clienteUrl(item)" :title="item.cliente?.nombre" class="block truncate font-medium text-gray-800 hover:text-primary-600 dark:text-white dark:hover:text-primary-400">
             {{ item.cliente?.nombre || '-' }}</a>
           <span v-else :title="item.cliente?.nombre" class="block truncate font-medium text-gray-800 dark:text-white">{{ item.cliente?.nombre || '-' }}</span>
@@ -527,10 +528,10 @@ onMounted(async () => {
             </span>
           </div>
         </td>
-        <td class="px-4 py-3 whitespace-nowrap align-top">
+        <td data-label="Tipo" class="px-4 py-3 whitespace-nowrap align-top">
           <TipoTrabajoBadge :tipo="item.tipo_recepcion" :size=" 'sm' " />
         </td>
-        <td class="px-4 py-3 text-gray-800 whitespace-nowrap align-top dark:text-white">
+        <td data-label="Fecha ingreso" class="px-4 py-3 text-gray-800 whitespace-nowrap align-top dark:text-white">
           <div class="flex flex-col gap-1" :title="getFechaIngreso(item).completo">
             <span class="font-medium text-gray-900 dark:text-white">{{ getFechaIngreso(item).fecha }}</span>
             <span class="text-xs text-gray-500 dark:text-gray-400">
@@ -546,20 +547,20 @@ onMounted(async () => {
             {{ item.ingreso_en_grua ? 'Ingresó en grúa' : 'Sin grúa' }}
           </span>
         </td>
-        <td class="px-4 py-3 text-gray-800 whitespace-nowrap align-top dark:text-white">
+        <td data-label="Fecha salida" class="px-4 py-3 text-gray-800 whitespace-nowrap align-top dark:text-white">
           <div v-if="getFechaSalida(item)" class="flex flex-col gap-1" :title="getFechaSalida(item).completo">
             <span class="font-medium text-gray-900 dark:text-white">{{ getFechaSalida(item).fecha }}</span>
             <span class="text-xs text-gray-500 dark:text-gray-400">{{ getFechaSalida(item).hora }}</span>
           </div>
           <span v-else class="text-xs text-gray-400 dark:text-gray-500">Sin salida</span>
         </td>
-        <td class="px-4 py-3 whitespace-nowrap">
+        <td data-label="Estado" class="px-4 py-3 whitespace-nowrap">
           <EstadoRecepcionBadge :estado="item.estado" :estado-display="item.estado_display" />
         </td>
-        <td class="px-4 py-3 whitespace-nowrap align-top">
+        <td data-label="Relaciones" class="px-4 py-3 whitespace-nowrap align-top">
           <RelacionesFlujo :pasos="relacionesDeRecepcion(item)" />
         </td>
-        <td class="px-4 py-3 whitespace-nowrap align-top">
+        <td data-label="Acciones" class="px-4 py-3 whitespace-nowrap align-top">
           <div class="flex items-center gap-2">
             <EntityRowActions entity="recepción" :show-view="!editable(item)" :view-href="`/crud/recepciones/ver/?id=${encodeURIComponent(item.id)}`" :show-edit="editable(item)" :show-delete="editable(item)" :delete-disabled="isDeleting" @edit="handleEditar(item.id)" @delete="openDeleteModal(item)" />
             <EntityActionsMenu>

@@ -617,7 +617,7 @@ onMounted(async () => {
         <div class="bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
           <!-- Pasos (pestañas) -->
           <nav aria-label="Secciones de la inspección" class="border-b border-gray-200 dark:border-gray-700">
-            <ol class="grid grid-cols-4" role="tablist">
+            <ol class="grid grid-cols-2 sm:grid-cols-4" role="tablist">
               <li v-for="(paso, index) in PASOS" :key="paso.key">
                 <button
                   type="button"
@@ -746,7 +746,7 @@ onMounted(async () => {
                   {{ testigosActivos.length ? plural(testigosActivos.length, 'encendido', 'encendidos') : 'Ninguno encendido' }}
                 </span>
               </div>
-              <div class="grid grid-cols-5 gap-2 lg:grid-cols-10 lg:gap-3">
+              <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 lg:grid-cols-10 lg:gap-3">
                 <div v-for="testigo in TESTIGOS" :key="testigo.key" :class="testigoCardClass(testigo)" :title="testigo.label">
                   <MdiIcon :path="testigo.path" :class="testigoIconClass(testigo)" />
                   <span class="sr-only sm:not-sr-only sm:mt-2 text-xs font-medium text-center text-gray-700 dark:text-gray-300">{{ testigo.label }}</span>
@@ -807,7 +807,7 @@ onMounted(async () => {
                   </span>
                 </div>
                 <div class="relative overflow-x-auto border border-gray-200 rounded-lg dark:border-gray-700">
-                  <table class="w-full text-sm text-left">
+                  <table class="mobile-records w-full text-sm text-left">
                     <thead class="text-xs text-gray-500 uppercase bg-gray-50 dark:bg-gray-700/50 dark:text-gray-400">
                       <tr>
                         <th scope="col" class="px-4 py-2.5 font-medium">{{ grupo.singular }}</th>
@@ -821,15 +821,15 @@ onMounted(async () => {
                         <td colspan="4" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">{{ grupo.vacio }}</td>
                       </tr>
                       <tr v-for="(fila, index) in grupo.filas" :key="fila.id || index" class="bg-white dark:bg-gray-800">
-                        <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ fila.descripcion || '—' }}</td>
-                        <td class="px-4 py-3 text-right tabular-nums text-gray-900 dark:text-white">{{ grupo.valor(fila) }}</td>
-                        <td class="px-4 py-3">
+                        <td :data-label="grupo.singular" class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ fila.descripcion || '—' }}</td>
+                        <td :data-label="grupo.columna" class="px-4 py-3 text-right tabular-nums text-gray-900 dark:text-white">{{ grupo.valor(fila) }}</td>
+                        <td data-label="Prioridad" class="px-4 py-3">
                           <span v-if="fila.prioridad" :class="[CONTADOR, PRIORIDAD_BADGE[fila.prioridad] || CONTADOR_NEUTRO]">
                             {{ PRIORIDADES[fila.prioridad] || fila.prioridad }}
                           </span>
                           <span v-else class="text-gray-400">—</span>
                         </td>
-                        <td class="px-4 py-3 text-center">
+                        <td data-label="Opcional" class="px-4 py-3 text-center">
                           <span
                             class="inline-flex items-center justify-center w-5 h-5 rounded"
                             :class="fila.es_sugerido ? 'bg-brand-900 text-white dark:bg-brand-300 dark:text-brand-900' : 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'"

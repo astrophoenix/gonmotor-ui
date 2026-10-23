@@ -486,6 +486,7 @@ onMounted(async () => {
         </div>
       </div>
       <EntityTable
+        mobile-cards
         :columns="['Nº Orden', 'Vehículo', 'Cliente', 'Tipo', 'Estado', 'Fecha', 'Relaciones', 'Acciones']"
         :items="ordenes"
         :loading="loading"
@@ -496,13 +497,13 @@ onMounted(async () => {
       >
     <template #row="{ item, index }">
       <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
-        <td class="px-4 py-3 whitespace-nowrap">
+        <td data-label="Nº Orden" class="px-4 py-3 whitespace-nowrap">
           <a :href="`/crud/ordenes/ver/?id=${encodeURIComponent(item.id)}`"
             class="font-semibold text-primary-600 hover:text-accent-500 dark:hover:text-accent-400 dark:text-primary-400">
             {{ item.numero_orden || referenciaCorta(item.id) }}
           </a>
         </td>
-        <td class="px-4 py-3 whitespace-nowrap align-top">
+        <td data-label="Vehículo" class="px-4 py-3 whitespace-nowrap align-top">
           <a v-if="vehiculoUrl(item)" :href="vehiculoUrl(item)" class="font-medium text-gray-800 hover:text-primary-600 dark:text-white dark:hover:text-primary-400">
             {{ item.vehiculo?.placa || '-' }}
           </a>
@@ -521,7 +522,7 @@ onMounted(async () => {
             </span>
           </div>
         </td>
-        <td class="px-4 py-3 whitespace-nowrap align-top">
+        <td data-label="Cliente" class="px-4 py-3 whitespace-nowrap align-top">
           <a v-if="clienteUrl(item)" :href="clienteUrl(item)" class="font-medium text-gray-800 hover:text-primary-600 dark:text-white dark:hover:text-primary-400">
             {{ item.cliente?.nombre || '-' }}
           </a>
@@ -537,10 +538,10 @@ onMounted(async () => {
             </span>
           </div>
         </td>
-        <td class="px-4 py-3 whitespace-nowrap">
+        <td data-label="Tipo" class="px-4 py-3 whitespace-nowrap">
           <TipoTrabajoBadge :tipo="item.tipo_trabajo" size="sm" />
         </td>
-        <td class="px-4 py-3 whitespace-nowrap align-top">
+        <td data-label="Estado" class="px-4 py-3 whitespace-nowrap align-top">
           <EstadoOrdenBadge :estado="item.estado" :estado-display="item.estado_display" size="sm" />
           <span
             class="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300"
@@ -556,7 +557,7 @@ onMounted(async () => {
             :estado-display="item.estado_pago_display"
             size="sm" />
         </td>
-        <td class="px-4 py-3 text-gray-800 whitespace-nowrap align-top dark:text-white">
+        <td data-label="Fecha" class="px-4 py-3 text-gray-800 whitespace-nowrap align-top dark:text-white">
           <div class="flex flex-col gap-1" :title="getFechaOrden(item).completo">
             <span class="font-medium text-gray-900 dark:text-white">{{ getFechaOrden(item).fecha }}</span>
             <span class="text-xs text-gray-500 dark:text-gray-400">
@@ -565,10 +566,10 @@ onMounted(async () => {
             </span>
           </div>
         </td>
-        <td class="px-4 py-3 whitespace-nowrap align-top">
+        <td data-label="Relaciones" class="px-4 py-3 whitespace-nowrap align-top">
           <RelacionesFlujo :pasos="relacionesDeOrden(item)" />
         </td>
-        <td class="px-4 py-3 whitespace-nowrap">
+        <td data-label="Acciones" class="px-4 py-3 whitespace-nowrap">
           <div class="flex items-center gap-2">
             <EntityRowActions entity="orden" :show-view="!editable(item)" :view-href="`/crud/ordenes/ver/?id=${encodeURIComponent(item.id)}`" :show-edit="editable(item)" :show-delete="puedeModificar && item.estado === 'PENDIENTE'" :delete-disabled="isDeleting" @edit="handleEditar(item.id)" @delete="openDeleteModal(item)" />
             <EntityActionsMenu>

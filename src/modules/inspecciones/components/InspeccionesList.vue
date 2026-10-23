@@ -540,6 +540,7 @@ onUnmounted(() => {
         </div>
       </div>
       <EntityTable
+        mobile-cards
         :columns="[
           { key: 'numero', label: 'Nº Inspección', thClass: 'w-48 whitespace-nowrap' },
           { key: 'vehiculo', label: 'Vehículo', thClass: 'w-42' },
@@ -558,7 +559,7 @@ onUnmounted(() => {
       >
     <template #row="{ item, index }">
       <tr class="transition-colors hover:bg-brand-50/60 dark:hover:bg-gray-700/40">
-        <td class="px-4 py-3 whitespace-nowrap">
+        <td data-label="Nº Inspección" class="px-4 py-3 whitespace-nowrap">
           <a
             :href="`/crud/inspecciones/ver/?id=${encodeURIComponent(item.id)}`"
             class="font-semibold text-primary-600 hover:text-accent-500 dark:hover:text-accent-400 dark:text-primary-400"
@@ -566,7 +567,7 @@ onUnmounted(() => {
             {{ numeroDisplay(item) }}
           </a>
         </td>
-        <td class="px-4 py-3 whitespace-nowrap align-top">
+        <td data-label="Vehículo" class="px-4 py-3 whitespace-nowrap align-top">
           <a
             v-if="vehiculoUrl(item)"
             :href="vehiculoUrl(item)"
@@ -587,7 +588,7 @@ onUnmounted(() => {
             </span>
           </div>
         </td>
-        <td class="px-4 py-3 whitespace-nowrap align-top">
+        <td data-label="Cliente" class="px-4 py-3 whitespace-nowrap align-top">
           <a
             v-if="clienteUrl(item)"
             :href="clienteUrl(item)"
@@ -605,10 +606,10 @@ onUnmounted(() => {
             </span>
           </div>
         </td>
-        <td class="px-4 py-3 whitespace-nowrap align-top">
+        <td data-label="Tipo" class="px-4 py-3 whitespace-nowrap align-top">
           <TipoTrabajoBadge :tipo="item.tipo_inspeccion" :size=" 'sm' " />
         </td>
-        <td class="px-4 py-3 whitespace-nowrap align-top">
+        <td data-label="Fechas" class="px-4 py-3 whitespace-nowrap align-top">
           <div class="flex flex-col gap-1.5">
             <div class="flex flex-col gap-0.5" :title="fechaDisplay(item.fecha_inspeccion)?.completo || ''">
               <span class="flex items-center gap-1.5 text-xs font-medium text-gray-400 dark:text-gray-500">
@@ -636,13 +637,13 @@ onUnmounted(() => {
             </div>
           </div>
         </td>
-        <td class="px-4 py-3 whitespace-nowrap align-top">
+        <td data-label="Estado" class="px-4 py-3 whitespace-nowrap align-top">
           <EstadoInspeccionBadge :estado="item.estado" :estado-display="item.estado_display" />
         </td>
-        <td class="px-4 py-3 whitespace-nowrap align-top">
+        <td data-label="Relaciones" class="px-4 py-3 whitespace-nowrap align-top">
           <RelacionesFlujo :pasos="relacionesDeInspeccion(item)" />
         </td>
-        <td class="px-4 py-3 whitespace-nowrap align-top">
+        <td data-label="Acciones" class="px-4 py-3 whitespace-nowrap align-top">
           <div class="flex items-center gap-2">
             <EntityRowActions entity="inspección" :show-view="!editable(item)" :view-href="`/crud/inspecciones/ver/?id=${encodeURIComponent(item.id)}`" :show-edit="editable(item)" :show-delete="eliminable(item)" :delete-disabled="isDeleting" @edit="handleEditar(item)" @delete="openDeleteModal(item)" />
             <button type="button" title="Más acciones" aria-label="Más acciones de la inspección" :aria-expanded="accionesAbierta === item.id" class="inline-flex items-center p-2 rounded-lg text-slate-500 hover:bg-brand-100 hover:text-brand-900 hover:ring-1 hover:ring-inset hover:ring-brand-200 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white dark:hover:ring-gray-500 aria-expanded:bg-brand-100 aria-expanded:text-brand-900 aria-expanded:ring-1 aria-expanded:ring-inset aria-expanded:ring-brand-200 dark:aria-expanded:bg-gray-600 dark:aria-expanded:text-white dark:aria-expanded:ring-gray-500" @click.stop="toggleAcciones(item, $event)">

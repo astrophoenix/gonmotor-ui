@@ -200,7 +200,7 @@ defineExpose({ guardarFotos });
       <div
         v-for="(foto, index) in items"
         :key="foto.id || foto.preview || index"
-        class="grid grid-cols-[88px_1fr] items-stretch gap-4 sm:grid-cols-[112px_1fr]"
+        class="grid grid-cols-[88px_minmax(0,1fr)] items-stretch gap-4 sm:grid-cols-[112px_minmax(0,1fr)]"
       >
         <ImageField
           :image-url="foto.preview || foto.url || ''"
@@ -224,7 +224,7 @@ defineExpose({ guardarFotos });
 
       <div
         v-if="items.length < max && !disabled"
-        class="grid grid-cols-[88px_1fr] items-stretch gap-4 sm:grid-cols-[112px_1fr]"
+        class="grid grid-cols-[88px_minmax(0,1fr)] items-stretch gap-4 sm:grid-cols-[112px_minmax(0,1fr)]"
       >
         <ImageField
           ref="addField"

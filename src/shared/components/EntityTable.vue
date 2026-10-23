@@ -2,6 +2,8 @@
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
 
 const props = defineProps({
+  // Opt-in: cada celda de la fila aporta data-label para la vista móvil.
+  mobileCards: { type: Boolean, default: false },
   columns: {
     type: Array,
     required: true,
@@ -73,9 +75,9 @@ const colspan = Math.max(props.emptyColspan, props.columns.length);
   <div>
     <div class="flex flex-col">
       <div class="overflow-x-auto">
-        <div class="inline-block min-w-full align-middle">
+        <div :class="mobileCards ? 'block w-full align-middle sm:inline-block sm:min-w-full' : 'inline-block min-w-full align-middle'">
           <div :class="wrapperClass">
-            <table class="min-w-full table-fixed">
+            <table class="min-w-full table-fixed" :class="{ 'mobile-records': mobileCards }">
               <thead class="bg-brand-50 dark:bg-gray-900/60">
                 <tr>
                   <th

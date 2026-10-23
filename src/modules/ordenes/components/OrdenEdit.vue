@@ -462,7 +462,8 @@ function formatearItem(codigo, nombre) {
 
 function focusInput(id) {
   requestAnimationFrame(() => {
-    const el = document.getElementById(id);
+    const principal = document.getElementById(id);
+    const el = principal?.getClientRects().length ? principal : document.getElementById(`${id}-mobile`);
     if (el) el.focus();
   });
 }
@@ -1518,7 +1519,7 @@ const grupos = computed(() => [
                   </div>
                 </div>
                 <div class="border border-gray-200 rounded-lg dark:border-gray-700">
-                  <table class="w-full text-sm xl:table-fixed">
+                  <table class="mobile-work-edit w-full text-sm xl:table-fixed">
                     <thead class="text-xs text-gray-500 uppercase bg-gray-50 dark:bg-gray-700/50 dark:text-gray-400">
                       <tr>
                         <th v-if="grupo.key === 'svc'" class="px-1 py-2 font-medium text-center w-14">Hecho</th>
@@ -1539,7 +1540,7 @@ const grupos = computed(() => [
                       <tr
                         class="align-top"
                         :class="fila.completado ? 'bg-green-50/60 dark:bg-green-900/10' : ''">
-                        <td v-if="grupo.key === 'svc'" class="px-2 py-2 text-center">
+                        <td v-if="grupo.key === 'svc'" data-label="Hecho" class="px-2 py-2 text-center">
                           <input
                             v-model="fila.completado"
                             type="checkbox"
@@ -1548,7 +1549,7 @@ const grupos = computed(() => [
                             :title="estadoActual === 'PENDIENTE' && isEditMode ? 'Inicia el trabajo para marcar servicios como hechos' : 'Marcar como hecho'"
                             class="w-5 h-5 mt-2.5 rounded border-gray-300 text-green-600 focus:ring-green-300 dark:bg-gray-700 dark:border-gray-600 disabled:opacity-50">
                         </td>
-                        <td class="px-2 py-2 min-w-0">
+                        <td :data-label="grupo.singular" class="px-2 py-2 min-w-0">
                           <CatalogoSelect
                             :input-id="`${grupo.key}-desc-${fila.sufijo}`"
                             v-model="fila.descripcion"
@@ -1572,8 +1573,8 @@ const grupos = computed(() => [
                             <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
                           </select>
                         </td>
-                        <td class="px-2 py-2 pt-4 font-medium text-right text-gray-900 tabular-nums whitespace-nowrap dark:text-white">$ {{ formatNumber(grupo.neto(fila)) }}</td>
-                        <td class="px-2 py-2 text-center">
+                        <td data-label="Neto" class="px-2 py-2 pt-4 font-medium text-right text-gray-900 tabular-nums whitespace-nowrap dark:text-white">$ {{ formatNumber(grupo.neto(fila)) }}</td>
+                        <td data-label="Quitar" class="px-2 py-2 text-center">
                           <button
                             type="button"
                             :disabled="Boolean(fila.cantidad_despachada)"
@@ -1588,9 +1589,9 @@ const grupos = computed(() => [
                       <!-- En pantallas angostas, cantidad, precio, descuento e IVA van en su propia fila. -->
                       <tr class="xl:hidden !border-t-0" :class="fila.completado ? 'bg-green-50/60 dark:bg-green-900/10' : ''">
                         <td :colspan="grupo.key === 'svc' ? 4 : 3" class="px-2 pb-3">
-                          <div class="grid grid-cols-4 gap-2">
+                          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                             <label class="text-[11px] text-gray-500 dark:text-gray-400">{{ grupo.columna }}
-                              <input v-model="fila[grupo.campo]" type="number" min="0" :step="grupo.step" :class="inputClass('', '!p-1.5 mt-0.5 text-xs text-center tabular-nums')">
+                              <input :id="`${grupo.key}-cant-${fila.sufijo}-mobile`" v-model="fila[grupo.campo]" type="number" min="0" :step="grupo.step" :class="inputClass('', '!p-1.5 mt-0.5 text-xs text-center tabular-nums')">
                             </label>
                             <label class="text-[11px] text-gray-500 dark:text-gray-400">P. unit.
                               <input v-model="fila.precio_unitario" type="number" min="0" step="0.01" :class="inputClass('', '!p-1.5 mt-0.5 text-xs text-center tabular-nums')">

@@ -560,7 +560,8 @@ function formatearItem(codigo, nombre) {
 
 function focusInput(id) {
   requestAnimationFrame(() => {
-    const el = document.getElementById(id);
+    const principal = document.getElementById(id);
+    const el = principal?.getClientRects().length ? principal : document.getElementById(`${id}-mobile`);
     if (el) el.focus();
   });
 }
@@ -1442,7 +1443,7 @@ onMounted(async () => {
           <form v-else novalidate @submit.prevent="submit">
             <!-- Pasos -->
             <nav ref="pasosRef" aria-label="Pasos de la inspección" class="scroll-mt-20 border-b border-gray-200 dark:border-gray-700">
-              <ol class="grid grid-cols-4">
+              <ol class="grid grid-cols-2 sm:grid-cols-4">
                 <li v-for="(paso, index) in PASOS" :key="paso.key">
                   <button
                     type="button"
@@ -1752,6 +1753,7 @@ onMounted(async () => {
                             <!-- En móvil, cantidad, prioridad y opcional bajan bajo la descripción. -->
                             <div class="flex flex-wrap items-center gap-2 mt-2 sm:hidden">
                               <input
+                                :id="`${grupo.key === 'svc' ? 'svc-horas' : 'rpt-cant'}-${fila.sufijo}-mobile`"
                                 v-model="fila[grupo.campo]"
                                 :disabled="diagnosticoBloqueado"
                                 type="number"

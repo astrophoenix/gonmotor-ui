@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./patio-mobile.css";
 @import "flowbite/src/themes/default";
 @plugin "flowbite/plugin";
 

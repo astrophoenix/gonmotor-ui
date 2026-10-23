@@ -681,7 +681,7 @@ async function confirmarFirma() {
         <div class="bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
           <!-- Pasos (pestañas) -->
           <nav aria-label="Secciones de la recepción" class="border-b border-gray-200 dark:border-gray-700">
-            <ol class="grid grid-cols-4" role="tablist">
+            <ol class="grid grid-cols-2 sm:grid-cols-4" role="tablist">
               <li v-for="(paso, index) in PASOS" :key="paso.key">
                 <button
                   type="button"
@@ -925,7 +925,7 @@ async function confirmarFirma() {
                     {{ testigosActivos.length ? `${testigosActivos.length} encendido${testigosActivos.length === 1 ? '' : 's'}` : 'Ninguno encendido' }}
                   </span>
                 </div>
-                <div class="grid grid-cols-5 gap-2 lg:grid-cols-10 lg:gap-3">
+                <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 lg:grid-cols-10 lg:gap-3">
                   <div v-for="testigo in TESTIGOS" :key="testigo.key" :class="testigoCardClass(testigo)" :title="testigo.label">
                     <MdiIcon :path="testigo.path" :class="testigoIconClass(testigo)" />
                     <span class="sr-only sm:not-sr-only sm:mt-2 text-xs font-medium text-center text-gray-700 dark:text-gray-300">{{ testigo.label }}</span>
