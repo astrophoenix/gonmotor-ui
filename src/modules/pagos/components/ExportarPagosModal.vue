@@ -21,7 +21,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'exportado']);
 
 const ETIQUETA = 'block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300';
-const CAMPO = 'block w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white';
+const CAMPO = 'block w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white';
 
 function isoLocal(fecha) {
   const mes = String(fecha.getMonth() + 1).padStart(2, '0');
@@ -118,7 +118,7 @@ async function exportar() {
             type="checkbox"
             true-value=""
             false-value="false"
-            class="w-4 h-4 text-brand-700 border-gray-300 rounded focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600">
+            class="w-4 h-4 text-brand-700 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600">
           Incluir movimientos anulados
         </label>
       </div>

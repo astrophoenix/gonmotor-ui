@@ -366,7 +366,7 @@ onMounted(async () => {
               v-model="clienteSearch"
               autocomplete="off"
               placeholder="Buscar cliente por nombre o identificación..."
-              class="block w-full p-2.5 text-sm rounded-lg bg-gray-50 border border-gray-300 dark:bg-gray-700 dark:text-white"
+              class="block w-full p-2.5 text-sm rounded-lg bg-white border border-gray-300 dark:bg-gray-700 dark:text-white"
               @focus="showClienteDropdown = true"
               @blur="async () => { await wait(150); showClienteDropdown = false; }"
             />
@@ -384,46 +384,46 @@ onMounted(async () => {
           </div>
           <div class="col-span-1">
             <label for="placa" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Placa</label>
-            <input id="placa" v-model="form.placa" required maxlength="10" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.placa ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+            <input id="placa" v-model="form.placa" required maxlength="10" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.placa ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
             <p v-if="vehicleErrors.placa" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.placa }}</p>
           </div>
           <div class="col-span-1">
             <label for="vin" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">VIN / Chasis</label>
-            <input id="vin" v-model="form.vin" maxlength="17" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.vin ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+            <input id="vin" v-model="form.vin" maxlength="17" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.vin ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
             <p v-if="vehicleErrors.vin" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.vin }}</p>
           </div>
           <div class="col-span-1">
             <label for="numero_motor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Número de Motor</label>
-            <input id="numero_motor" v-model="form.numero_motor" maxlength="50" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+            <input id="numero_motor" v-model="form.numero_motor" maxlength="50" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
           </div>
           <div class="col-span-1">
             <label for="marca" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Marca</label>
-            <input id="marca" v-model="form.marca" required maxlength="50" @blur="form.marca = recortarEspacios(form.marca)" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.marca ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+            <input id="marca" v-model="form.marca" required maxlength="50" @blur="form.marca = recortarEspacios(form.marca)" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.marca ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
             <p v-if="vehicleErrors.marca" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.marca }}</p>
           </div>
           <div class="col-span-1">
             <label for="modelo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Modelo</label>
-            <input id="modelo" v-model="form.modelo" required maxlength="50" @blur="form.modelo = recortarEspacios(form.modelo)" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.modelo ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+            <input id="modelo" v-model="form.modelo" required maxlength="50" @blur="form.modelo = recortarEspacios(form.modelo)" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.modelo ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
             <p v-if="vehicleErrors.modelo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.modelo }}</p>
           </div>
           <div class="col-span-1">
             <label for="anio" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Año de Fabricación</label>
-            <input id="anio" v-model="form.anio" type="number" min="1900" :max="new Date().getFullYear() + 1" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.anio ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+            <input id="anio" v-model="form.anio" type="number" min="1900" :max="new Date().getFullYear() + 1" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.anio ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
             <p v-if="vehicleErrors.anio" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.anio }}</p>
           </div>
           <div class="col-span-1">
             <label for="color" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Color</label>
-            <input id="color" v-model="form.color" maxlength="30" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+            <input id="color" v-model="form.color" maxlength="30" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
           </div>
           <div class="col-span-1">
             <label for="tipo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo</label>
-            <select id="tipo" v-model="form.tipo" :disabled="isLoadingChoices" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+            <select id="tipo" v-model="form.tipo" :disabled="isLoadingChoices" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
               <option v-for="item in tipos" :key="item.value" :value="item.value">{{ item.label }}</option>
             </select>
           </div>
           <div class="col-span-1">
             <label for="transmision" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Transmisión</label>
-            <select id="transmision" v-model="form.transmision" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+            <select id="transmision" v-model="form.transmision" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
               <option value="M">Manual / Mecánica</option>
               <option value="A">Automática</option>
               <option value="C">CVT</option>
@@ -431,7 +431,7 @@ onMounted(async () => {
           </div>
           <div class="col-span-1">
             <label for="combustible" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Combustible</label>
-            <select id="combustible" v-model="form.combustible" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+            <select id="combustible" v-model="form.combustible" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
               <option value="GAS">Gasolina</option>
               <option value="DIE">Diésel</option>
               <option value="HIB">Híbrido</option>
@@ -440,13 +440,13 @@ onMounted(async () => {
           </div>
           <div class="col-span-1">
             <label for="pais_origen" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">País de Origen</label>
-            <select id="pais_origen" v-model="form.pais_origen" :disabled="isLoadingChoices" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+            <select id="pais_origen" v-model="form.pais_origen" :disabled="isLoadingChoices" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
               <option v-for="item in paises" :key="item.code" :value="item.code">{{ item.name }}</option>
             </select>
           </div>
           <div class="col-span-1">
             <label for="kilometraje_actual" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kilometraje Actual</label>
-            <input id="kilometraje_actual" v-model="form.kilometraje_actual" type="number" min="0" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.kilometraje_actual ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+            <input id="kilometraje_actual" v-model="form.kilometraje_actual" type="number" min="0" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', vehicleErrors.kilometraje_actual ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
             <p v-if="vehicleErrors.kilometraje_actual" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehicleErrors.kilometraje_actual }}</p>
           </div>
           <div class="col-span-1">
@@ -461,7 +461,7 @@ onMounted(async () => {
           </div>
           <div class="col-span-1 md:col-span-2">
             <label for="observaciones" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Observaciones</label>
-            <textarea id="observaciones" v-model="form.observaciones" rows="4" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"></textarea>
+            <textarea id="observaciones" v-model="form.observaciones" rows="4" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"></textarea>
           </div>
           <div class="col-span-1 md:col-span-3">
             <FormSaveActions

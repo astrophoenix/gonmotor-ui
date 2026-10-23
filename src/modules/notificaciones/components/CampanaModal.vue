@@ -133,8 +133,8 @@ function insertarPlaceholder(texto) {
   form.mensaje = `${form.mensaje}${form.mensaje.endsWith(' ') || !form.mensaje ? '' : ' '}${texto}`;
 }
 
-const INPUT = 'block w-full px-3 py-2 bg-white border border-gray-300 text-sm rounded focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white';
-const INPUT_ERROR = 'block w-full px-3 py-2 bg-white border border-red-500 text-sm rounded focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white';
+const INPUT = 'block w-full p-2.5 bg-white border border-gray-300 text-sm rounded focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white';
+const INPUT_ERROR = 'block w-full p-2.5 bg-white border border-red-500 text-sm rounded focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white';
 const ETIQUETA = 'block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300';
 const BOTON_MEJORAR = 'inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-brand-700 text-brand-700 hover:bg-brand-50 dark:border-brand-300 dark:text-brand-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed';
 </script>

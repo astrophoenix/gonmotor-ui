@@ -23,7 +23,7 @@ const token = params.get('token');
 const correo = params.get('email') || '';
 const enlaceInvalido = ref(!uid || !token);
 
-const CAMPO_NORMAL = 'border-brand-200 focus:border-brand-900 focus:ring-brand-focus-ring dark:border-brand-600 dark:focus:border-brand-300';
+const CAMPO_NORMAL = 'border-brand-200 focus:border-primary-700 focus:ring-brand-focus-ring dark:border-brand-600 dark:focus:border-primary-300';
 const CAMPO_ERROR = 'border-accent-500 focus:border-accent-500 focus:ring-accent-500/15';
 const CAMPO_OK = 'border-success focus:border-success focus:ring-success/15';
 
@@ -98,7 +98,7 @@ onMounted(() => document.getElementById('reset-password')?.focus());
       </p>
       <a
         href="/authentication/sign-in/"
-        class="mt-7 inline-flex h-14 w-full items-center justify-center gap-3 rounded-[10px] bg-accent-500 px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(200,16,46,0.7)] transition-colors hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-500/40"
+        class="mt-7 inline-flex h-14 w-full items-center justify-center gap-3 rounded-lg bg-primary-700 px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(36,74,143,0.55)] transition-colors hover:bg-primary-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-200"
       >
         <KeyRound class="h-5 w-5" aria-hidden="true" />
         Entrar al taller
@@ -117,7 +117,7 @@ onMounted(() => document.getElementById('reset-password')?.focus());
       </p>
       <a
         href="/authentication/forgot-password/"
-        class="mt-7 inline-flex h-14 w-full items-center justify-center gap-3 rounded-[10px] bg-accent-500 px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(200,16,46,0.7)] transition-colors hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-500/40"
+        class="mt-7 inline-flex h-14 w-full items-center justify-center gap-3 rounded-lg bg-primary-700 px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(36,74,143,0.55)] transition-colors hover:bg-primary-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-200"
       >
         Pedir un enlace nuevo
         <ArrowRight class="h-5 w-5" aria-hidden="true" />
@@ -155,7 +155,7 @@ onMounted(() => document.getElementById('reset-password')?.focus());
             :placeholder="`Mínimo ${PASSWORD_MIN_LENGTH} caracteres`"
             aria-describedby="reset-requisitos"
             required
-            class="block h-[54px] w-full rounded-[10px] border-[1.5px] bg-white pe-12 ps-12 text-[15.5px] text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:ring-4 dark:bg-brand-950 dark:text-brand-50 dark:placeholder:text-brand-300"
+            class="block h-[54px] w-full rounded-lg border-[1.5px] bg-white pe-12 ps-12 text-[15.5px] text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:ring-4 dark:bg-brand-950 dark:text-brand-50 dark:placeholder:text-brand-300"
             :class="CAMPO_NORMAL"
           >
           <button
@@ -216,7 +216,7 @@ onMounted(() => document.getElementById('reset-password')?.focus());
             :aria-invalid="Boolean(confirmError)"
             :aria-describedby="confirmError ? 'reset-confirm-error' : undefined"
             required
-            class="block h-[54px] w-full rounded-[10px] border-[1.5px] bg-white pe-12 ps-12 text-[15.5px] text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:ring-4 dark:bg-brand-950 dark:text-brand-50 dark:placeholder:text-brand-300"
+            class="block h-[54px] w-full rounded-lg border-[1.5px] bg-white pe-12 ps-12 text-[15.5px] text-brand-900 outline-none transition-colors placeholder:text-brand-400 focus:ring-4 dark:bg-brand-950 dark:text-brand-50 dark:placeholder:text-brand-300"
             :class="confirmError ? CAMPO_ERROR : coinciden ? CAMPO_OK : CAMPO_NORMAL"
             @blur="confirmTouched = true"
           >
@@ -239,7 +239,7 @@ onMounted(() => document.getElementById('reset-password')?.focus());
         <button
           type="submit"
           :disabled="isLoading || !isFormValid"
-          class="mt-6 inline-flex h-14 w-full items-center justify-center gap-3 rounded-[10px] bg-accent-500 px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(200,16,46,0.7)] transition-colors hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-500/40 disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none"
+          class="mt-6 inline-flex h-14 w-full items-center justify-center gap-3 rounded-lg bg-primary-700 px-5 text-[17px] font-bold text-white shadow-[0_6px_14px_-8px_rgba(36,74,143,0.55)] transition-colors hover:bg-primary-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-200 disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none"
         >
           <template v-if="isLoading">
             <Loader2 class="h-5 w-5 animate-spin" aria-hidden="true" />

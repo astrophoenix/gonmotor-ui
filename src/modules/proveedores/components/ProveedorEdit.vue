@@ -267,35 +267,35 @@ onMounted(async () => {
       <form v-else class="grid grid-cols-6 gap-6" novalidate @submit.prevent="submit">
         <div class="col-span-6 sm:col-span-3">
           <label for="tipo_identificacion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de identificación</label>
-          <select id="tipo_identificacion" v-model="form.tipo_identificacion" required class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"><option value="C">Cédula</option><option value="R">RUC</option><option value="P">Pasaporte</option></select>
+          <select id="tipo_identificacion" v-model="form.tipo_identificacion" required class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"><option value="C">Cédula</option><option value="R">RUC</option><option value="P">Pasaporte</option></select>
         </div>
         <div class="col-span-6 sm:col-span-3">
           <label for="identificacion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Identificación</label>
-          <input id="identificacion" v-model="form.identificacion" required maxlength="20" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', proveedorErrors.identificacion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+          <input id="identificacion" v-model="form.identificacion" required maxlength="20" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', proveedorErrors.identificacion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
           <p v-if="proveedorErrors.identificacion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ proveedorErrors.identificacion }}</p>
         </div>
         <div class="col-span-6 sm:col-span-3">
           <label for="nombre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre o razón social</label>
-          <input id="nombre" v-model="form.nombre" @blur="form.nombre = recortarEspacios(form.nombre)" required maxlength="200" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', proveedorErrors.nombre ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+          <input id="nombre" v-model="form.nombre" @blur="form.nombre = recortarEspacios(form.nombre)" required maxlength="200" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', proveedorErrors.nombre ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
           <p v-if="proveedorErrors.nombre" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ proveedorErrors.nombre }}</p>
         </div>
         <div class="col-span-6 sm:col-span-3">
           <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Correo electrónico</label>
-          <input id="email" v-model="form.email" type="email" required :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', proveedorErrors.email ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+          <input id="email" v-model="form.email" type="email" required :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', proveedorErrors.email ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
           <p v-if="proveedorErrors.email" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ proveedorErrors.email }}</p>
         </div>
         <div class="col-span-6 sm:col-span-3">
           <label for="telefono" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Teléfono</label>
-          <input id="telefono" v-model="form.telefono" maxlength="15" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', proveedorErrors.telefono ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+          <input id="telefono" v-model="form.telefono" maxlength="15" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', proveedorErrors.telefono ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
           <p v-if="proveedorErrors.telefono" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ proveedorErrors.telefono }}</p>
         </div>
         <div class="col-span-6 sm:col-span-3">
           <label for="contacto" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Persona de contacto</label>
-          <input id="contacto" v-model="form.contacto" @blur="form.contacto = recortarEspacios(form.contacto)" maxlength="100" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+          <input id="contacto" v-model="form.contacto" @blur="form.contacto = recortarEspacios(form.contacto)" maxlength="100" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white dark:border-gray-600">
         </div>
         <div class="col-span-6 sm:col-span-3">
           <label for="direccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Dirección</label>
-          <textarea id="direccion" v-model="form.direccion" rows="1" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', proveedorErrors.direccion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
+          <textarea id="direccion" v-model="form.direccion" rows="1" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', proveedorErrors.direccion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']"></textarea>
           <p v-if="proveedorErrors.direccion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ proveedorErrors.direccion }}</p>
         </div>
 

@@ -430,7 +430,7 @@ onMounted(async () => {
                 type="text"
                 autocomplete="off"
                 placeholder="dd/mm/aaaa"
-                class="block w-full ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs placeholder:text-body dark:bg-gray-800" />
+                class="block w-full ps-9 pe-3 py-2 bg-white border border-default-medium dark:bg-gray-700 text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs placeholder:text-body dark:bg-gray-800" />
             </div>
           </div>
 
@@ -449,7 +449,7 @@ onMounted(async () => {
                 type="text"
                 autocomplete="off"
                 placeholder="dd/mm/aaaa"
-                class="block w-full ps-9 pe-3 py-2 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs placeholder:text-body dark:bg-gray-800" />
+                class="block w-full ps-9 pe-3 py-2 bg-white border border-default-medium dark:bg-gray-700 text-heading text-sm rounded focus:ring-brand focus:border-brand shadow-xs placeholder:text-body dark:bg-gray-800" />
             </div>
           </div>
 

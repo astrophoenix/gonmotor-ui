@@ -158,7 +158,7 @@ async function crearInspeccion(recepcion) {
                   v-else-if="item.puede_crear_inspeccion"
                   type="button"
                   :disabled="creandoInspeccion === item.id"
-                  class="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-white rounded bg-brand-500 hover:bg-brand-600 focus:ring-4 focus:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  class="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-white rounded bg-brand-500 hover:bg-brand-600 focus:ring-4 focus:ring-primary-500/20 disabled:cursor-not-allowed disabled:opacity-60"
                   :title="`Crear inspección para ${item.numero_recepcion}`"
                   @click="crearInspeccion(item)"
                 >

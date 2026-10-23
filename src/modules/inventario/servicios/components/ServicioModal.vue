@@ -294,39 +294,39 @@ watch(() => form.codigo, (val) => {
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div class="col-span-1">
               <label for="ser_codigo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Código</label>
-              <input id="ser_codigo" v-model="form.codigo" maxlength="50" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', servicioErrors.codigo ? 'bg-red-50 border border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']" placeholder="Ej: MO-001">
+              <input id="ser_codigo" v-model="form.codigo" maxlength="50" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', servicioErrors.codigo ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']" placeholder="Ej: MO-001">
               <p v-if="servicioErrors.codigo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ servicioErrors.codigo }}</p>
             </div>
             <div class="col-span-1 md:col-span-3">
               <label for="ser_nombre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre del Servicio</label>
-              <input id="ser_nombre" v-model="form.nombre" maxlength="150" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', servicioErrors.nombre ? 'bg-red-50 border border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']" placeholder="Ej: Cambio de aceite y filtro">
+              <input id="ser_nombre" v-model="form.nombre" maxlength="150" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', servicioErrors.nombre ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']" placeholder="Ej: Cambio de aceite y filtro">
               <p v-if="servicioErrors.nombre" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ servicioErrors.nombre }}</p>
             </div>
             <div class="col-span-1">
               <label for="ser_categoria" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Categoría</label>
-              <select id="ser_categoria" v-model="form.categoria" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+              <select id="ser_categoria" v-model="form.categoria" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
                 <option v-for="item in CATEGORIAS" :key="item.value" :value="item.value">{{ item.label }}</option>
               </select>
             </div>
             <div class="col-span-1">
               <label for="ser_tiempo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tiempo Estimado (minutos)</label>
-              <input id="ser_tiempo" v-model="form.tiempo_estimado_minutos" type="number" min="0" step="5" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', servicioErrors.tiempo_estimado_minutos ? 'bg-red-50 border border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+              <input id="ser_tiempo" v-model="form.tiempo_estimado_minutos" type="number" min="0" step="5" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', servicioErrors.tiempo_estimado_minutos ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
               <p v-if="servicioErrors.tiempo_estimado_minutos" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ servicioErrors.tiempo_estimado_minutos }}</p>
             </div>
             <div class="col-span-2">
               <label for="ser_precio" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Precio Referencial de Mano de Obra</label>
-              <input id="ser_precio" v-model="form.precio_referencial" type="number" step="0.01" min="0" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', servicioErrors.precio_referencial ? 'bg-red-50 border border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+              <input id="ser_precio" v-model="form.precio_referencial" type="number" step="0.01" min="0" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', servicioErrors.precio_referencial ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
               <p v-if="servicioErrors.precio_referencial" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ servicioErrors.precio_referencial }}</p>
             </div>
             <div class="col-span-1">
               <label for="ser_iva" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">IVA por defecto</label>
-              <select id="ser_iva" v-model="form.iva_porcentaje_defecto" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+              <select id="ser_iva" v-model="form.iva_porcentaje_defecto" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
                 <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
               </select>
             </div>
             <div class="col-span-2">
               <label for="ser_contifico" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">ID Producto/Servicio Contífico</label>
-              <input id="ser_contifico" v-model="form.contifico_producto_id" maxlength="100" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+              <input id="ser_contifico" v-model="form.contifico_producto_id" maxlength="100" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
             </div>
             <div class="col-span-1 md:col-span-4">
               <p class="font-medium text-brand-900 dark:text-white">Garantía por defecto</p>
@@ -343,21 +343,21 @@ watch(() => form.codigo, (val) => {
             </div>
             <div class="col-span-2">
               <label for="ser_intervalo_km" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Repetir cada (km)</label>
-              <input id="ser_intervalo_km" v-model="form.intervalo_km" type="number" step="1" min="1" placeholder="Ej.: 5000" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', servicioErrors.intervalo_km ? 'bg-red-50 border border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+              <input id="ser_intervalo_km" v-model="form.intervalo_km" type="number" step="1" min="1" placeholder="Ej.: 5000" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', servicioErrors.intervalo_km ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
               <p v-if="servicioErrors.intervalo_km" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ servicioErrors.intervalo_km }}</p>
             </div>
             <div class="col-span-2">
               <label for="ser_intervalo_meses" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Repetir cada (meses)</label>
-              <input id="ser_intervalo_meses" v-model="form.intervalo_meses" type="number" step="1" min="1" placeholder="Ej.: 6" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', servicioErrors.intervalo_meses ? 'bg-red-50 border border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+              <input id="ser_intervalo_meses" v-model="form.intervalo_meses" type="number" step="1" min="1" placeholder="Ej.: 6" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', servicioErrors.intervalo_meses ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
               <p v-if="servicioErrors.intervalo_meses" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ servicioErrors.intervalo_meses }}</p>
             </div>
             <div class="col-span-1 md:col-span-4">
               <label for="ser_tareas" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tareas Estándar Incluidas</label>
-              <textarea id="ser_tareas" v-model="form.tareas_estandar" rows="3" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white" placeholder="Ej: Drenar aceite, reemplazar filtro, verificar niveles y fugas..."></textarea>
+              <textarea id="ser_tareas" v-model="form.tareas_estandar" rows="3" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white" placeholder="Ej: Drenar aceite, reemplazar filtro, verificar niveles y fugas..."></textarea>
             </div>
             <div class="col-span-1 md:col-span-4">
               <label for="ser_descripcion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Descripción</label>
-              <textarea id="ser_descripcion" v-model="form.descripcion" rows="3" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"></textarea>
+              <textarea id="ser_descripcion" v-model="form.descripcion" rows="3" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"></textarea>
             </div>
           </div>
         </template>

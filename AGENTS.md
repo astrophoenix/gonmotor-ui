@@ -51,7 +51,9 @@ Convenciones y estándares del proyecto. El backend Django vive en `../gonmotor-
 - `gray-*` está remapeado a **neutros fríos** (`50 #F5F7FA` … `200 #DFE5ED` bordes, `500 #6B778C` texto secundario, `900 #141C2C`); los tokens neutros de Flowbite (`bg-neutral-*`, `border-default`, `text-heading`, `text-body`) derivan de ellos.
 - `accent-*` = **Rojo Gonmotor**, el único rojo de marca: `accent-500 #C8102E` sobre fondos claros y `accent-400 #FF4D63` solo sobre navy/oscuro (sidebar, panel del login, modo oscuro: `text-accent-500 dark:text-accent-400`). Nunca coral sobre blanco ni `accent-500` sobre navy. **Nunca en botones de crear o guardar**: solo logo, indicador activo del sidebar, asterisco de obligatorio y detalles de marca.
 - Semánticos: `info #2563EB`, `success #16A34A`, `warning #D97706`, `danger #DC2626` (`danger`/`red-*` solo para errores y acciones destructivas).
-- **Radios** (`style.css`): `rounded` y `rounded-base` = 8 px (botones y campos), `rounded-lg` = 10 px, `rounded-xl` = 12 px (tarjetas). `rounded-full` solo para avatares, puntos y chips, nunca para botones de texto.
+- **Radios** (`style.css`): `rounded`, `rounded-md`, `rounded-lg` y `rounded-base` = 8 px (botones, campos y tarjetas), `rounded-xl` = 12 px (tarjetas destacadas y modales). `rounded-full` solo para avatares, puntos y chips, nunca para botones de texto.
+- **Campos** (input, select, textarea, buscadores `*SearchSelect`/`CatalogoSelect`): fondo `bg-white dark:bg-gray-700`, borde `border-gray-300` (o `border-default-medium`), `p-2.5 text-sm`, foco `focus:ring-primary-*`/`focus:border-primary-500`. Error: `bg-red-50 border-red-500`. Sin rellenos grises.
+- Pantallas de acceso (login, recuperar, restablecer): mismo azul de acción y radio 8 px que la app; el rojo queda para errores y detalles de marca.
 - Botón secundario: blanco con borde neutro (`bg-white border border-gray-300 text-gray-900 hover:bg-gray-100`); navegación entre pasos «Siguiente: …» con borde `primary`; ambos con el mismo radio que el primario.
 
 ## Mejora de texto con IA (REUTILIZABLE)

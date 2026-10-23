@@ -424,31 +424,31 @@ onMounted(async () => {
       <form v-else class="grid grid-cols-6 gap-6" novalidate @submit.prevent="submit">
         <div class="col-span-6 sm:col-span-3">
           <label for="tipo_identificacion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo de identificación</label>
-          <select id="tipo_identificacion" v-model="form.tipo_identificacion" required class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"><option value="C">Cédula</option><option value="R">RUC</option><option value="P">Pasaporte</option></select>
+          <select id="tipo_identificacion" v-model="form.tipo_identificacion" required class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"><option value="C">Cédula</option><option value="R">RUC</option><option value="P">Pasaporte</option></select>
         </div>
         <div class="col-span-6 sm:col-span-3">
           <label for="identificacion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Identificación</label>
-          <input id="identificacion" v-model="form.identificacion" required maxlength="13" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.identificacion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+          <input id="identificacion" v-model="form.identificacion" required maxlength="13" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.identificacion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
           <p v-if="clientErrors.identificacion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.identificacion }}</p>
         </div>
         <div class="col-span-6 sm:col-span-3">
           <label for="nombre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre o razón social</label>
-          <input id="nombre" v-model="form.nombre" @blur="form.nombre = recortarEspacios(form.nombre)" required maxlength="200" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.nombre ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+          <input id="nombre" v-model="form.nombre" @blur="form.nombre = recortarEspacios(form.nombre)" required maxlength="200" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.nombre ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
           <p v-if="clientErrors.nombre" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.nombre }}</p>
         </div>
         <div class="col-span-6 sm:col-span-3">
           <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Correo electrónico</label>
-          <input id="email" v-model="form.email" type="email" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.email ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+          <input id="email" v-model="form.email" type="email" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.email ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
           <p v-if="clientErrors.email" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.email }}</p>
         </div>
         <div class="col-span-6 sm:col-span-3">
           <label for="telefono" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Teléfono</label>
-          <input id="telefono" v-model="form.telefono" maxlength="15" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.telefono ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+          <input id="telefono" v-model="form.telefono" maxlength="15" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.telefono ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
           <p v-if="clientErrors.telefono" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.telefono }}</p>
         </div>
         <div class="col-span-6 sm:col-span-3">
           <label for="direccion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Dirección</label>
-          <textarea id="direccion" v-model="form.direccion" rows="1" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.direccion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']"></textarea>
+          <textarea id="direccion" v-model="form.direccion" rows="1" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', clientErrors.direccion ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']"></textarea>
           <p v-if="clientErrors.direccion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.direccion }}</p>
         </div>
 
@@ -474,33 +474,33 @@ onMounted(async () => {
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div class="col-span-1">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Placa</label>
-                <input v-model="vehiculo.placa" maxlength="10" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].placa) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <input v-model="vehiculo.placa" maxlength="10" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].placa) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
                 <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].placa" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehiculoErrors[getVehicleKey(vehiculo)].placa }}</p>
               </div>
               <div class="col-span-1">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Marca</label>
-                <input v-model="vehiculo.marca" maxlength="50" @blur="vehiculo.marca = recortarEspacios(vehiculo.marca)" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <input v-model="vehiculo.marca" maxlength="50" @blur="vehiculo.marca = recortarEspacios(vehiculo.marca)" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
                 <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].marca" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehiculoErrors[getVehicleKey(vehiculo)].marca }}</p>
               </div>
               <div class="col-span-1">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Modelo</label>
-                <input v-model="vehiculo.modelo" maxlength="50" @blur="vehiculo.modelo = recortarEspacios(vehiculo.modelo)" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <input v-model="vehiculo.modelo" maxlength="50" @blur="vehiculo.modelo = recortarEspacios(vehiculo.modelo)" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
                 <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].modelo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehiculoErrors[getVehicleKey(vehiculo)].modelo }}</p>
               </div>
               <div class="col-span-1">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Año</label>
-                <input v-model="vehiculo.anio" type="number" min="1900" :max="new Date().getFullYear() + 1" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].anio) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <input v-model="vehiculo.anio" type="number" min="1900" :max="new Date().getFullYear() + 1" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].anio) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
                 <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].anio" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehiculoErrors[getVehicleKey(vehiculo)].anio }}</p>
               </div>
               <div class="col-span-1">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tipo</label>
-                <select v-model="vehiculo.tipo" :disabled="isLoadingChoices" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                <select v-model="vehiculo.tipo" :disabled="isLoadingChoices" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
                   <option v-for="item in tipos" :key="item.value" :value="item.value">{{ item.label }}</option>
                 </select>
               </div>
               <div class="col-span-1">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Transmisión</label>
-                <select v-model="vehiculo.transmision" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                <select v-model="vehiculo.transmision" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
                   <option value="M">Manual / Mecánica</option>
                   <option value="A">Automática</option>
                   <option value="C">CVT</option>
@@ -508,7 +508,7 @@ onMounted(async () => {
               </div>
               <div class="col-span-1">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Combustible</label>
-                <select v-model="vehiculo.combustible" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                <select v-model="vehiculo.combustible" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
                   <option value="GAS">Gasolina</option>
                   <option value="DIE">Diésel</option>
                   <option value="HIB">Híbrido</option>
@@ -517,26 +517,26 @@ onMounted(async () => {
               </div>
               <div class="col-span-1">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Color</label>
-                <input v-model="vehiculo.color" maxlength="30" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                <input v-model="vehiculo.color" maxlength="30" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
               </div>
               <div class="col-span-1">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">VIN / Chasis</label>
-                <input v-model="vehiculo.vin" maxlength="17" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].vin) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <input v-model="vehiculo.vin" maxlength="17" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].vin) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
                 <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].vin" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehiculoErrors[getVehicleKey(vehiculo)].vin }}</p>
               </div>
               <div class="col-span-1">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Motor</label>
-                <input v-model="vehiculo.numero_motor" maxlength="50" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                <input v-model="vehiculo.numero_motor" maxlength="50" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
               </div>
               <div class="col-span-1">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">País de Origen</label>
-                <select v-model="vehiculo.pais_origen" :disabled="isLoadingChoices" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                <select v-model="vehiculo.pais_origen" :disabled="isLoadingChoices" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
                   <option v-for="item in paises" :key="item.code" :value="item.code">{{ item.name }}</option>
                 </select>
               </div>
               <div class="col-span-1">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kilometraje</label>
-                <input v-model="vehiculo.kilometraje_actual" type="number" min="0" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+                <input v-model="vehiculo.kilometraje_actual" type="number" min="0" :class="['block w-full p-2.5 text-sm rounded-lg focus:ring-4 focus:ring-primary-300 dark:bg-gray-700 dark:text-white', (vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual) ? 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 dark:bg-gray-700 dark:text-red-500 dark:placeholder-red-500 dark:border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
                 <p v-if="vehiculoErrors[getVehicleKey(vehiculo)] && vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ vehiculoErrors[getVehicleKey(vehiculo)].kilometraje_actual }}</p>
               </div>
               <div class="col-span-1 md:col-span-1">
@@ -550,7 +550,7 @@ onMounted(async () => {
               </div>
               <div class="col-span-1 md:col-span-3">
                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Observaciones</label>
-                <textarea v-model="vehiculo.observaciones" rows="8" class="block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"></textarea>
+                <textarea v-model="vehiculo.observaciones" rows="8" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"></textarea>
               </div>
             </div>
           </div>

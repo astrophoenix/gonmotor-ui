@@ -290,7 +290,7 @@ async function submitPassword() {
                   type="text"
                   :maxlength="FIELD_MAX.first_name"
                   required
-                  class="shadow-sm block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                  class="shadow-sm block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
               </div>
 
               <div class="col-span-6 sm:col-span-3">
@@ -304,7 +304,7 @@ async function submitPassword() {
                   type="text"
                   :maxlength="FIELD_MAX.last_name"
                   required
-                  class="shadow-sm block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                  class="shadow-sm block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
               </div>
 
               <div class="col-span-6 sm:col-span-3">
@@ -316,7 +316,7 @@ async function submitPassword() {
                   type="email"
                   :maxlength="FIELD_MAX.email"
                   required
-                  class="shadow-sm block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                  class="shadow-sm block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
               </div>
 
               <div class="col-span-6 sm:col-span-3">
@@ -328,7 +328,7 @@ async function submitPassword() {
                   type="text"
                   :maxlength="FIELD_MAX.username"
                   required
-                  class="shadow-sm block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                  class="shadow-sm block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
               </div>
 
               <div class="col-span-6 sm:col-span-3">
@@ -339,7 +339,7 @@ async function submitPassword() {
                   @input="onSanitizedInput($event, 'telefono', formattedTelefono)"
                   type="tel"
                   :maxlength="FIELD_MAX.telefono"
-                  class="shadow-sm block w-full p-2.5 text-sm bg-gray-50 rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
+                  class="shadow-sm block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
               </div>
             </div>
           </div>
@@ -382,7 +382,7 @@ async function submitPassword() {
                   id="current-password"
                   v-model="passwordForm.old_password"
                   :maxlength="FIELD_MAX.password"
-                  class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 pr-10 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  class="shadow-sm bg-white border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 pr-10 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                   placeholder="••••••••"
                   required
                 >
@@ -412,7 +412,7 @@ async function submitPassword() {
                   id="password"
                   v-model="passwordForm.new_password"
                   :maxlength="FIELD_MAX.password"
-                  class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 pr-10 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  class="shadow-sm bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 pr-10 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                   placeholder="••••••••"
                   required
                 >
@@ -439,7 +439,7 @@ async function submitPassword() {
                   id="confirm-password"
                   v-model="passwordForm.confirm_password"
                   :maxlength="FIELD_MAX.password"
-                  class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 pr-10 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  class="shadow-sm bg-white border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 pr-10 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                   placeholder="••••••••"
                   required
                 >

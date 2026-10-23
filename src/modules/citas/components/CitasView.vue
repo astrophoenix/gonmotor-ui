@@ -720,7 +720,7 @@ onUnmounted(() => {
           <button
             type="button"
             :disabled="isConverting"
-            class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded-lg bg-primary-700 hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
             @click="confirmarConvertir"
           >
             {{ isConverting ? 'Convirtiendo...' : 'Convertir' }}

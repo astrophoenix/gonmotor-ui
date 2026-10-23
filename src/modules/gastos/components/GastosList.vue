@@ -196,7 +196,7 @@ onMounted(async () => {
               <select
                 id="filtro-categoria"
                 v-model="categoria"
-                class="block w-full px-3 py-2 bg-white border border-gray-300 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                class="block w-full px-3 py-2 bg-white border border-gray-300 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
                 <option value="">Todas las categorías</option>
                 <option v-for="cat in CATEGORIAS_GASTO" :key="cat.value" :value="cat.value">{{ cat.label }}</option>
@@ -222,7 +222,7 @@ onMounted(async () => {
                   id="filtro-fecha-desde"
                   v-model="fechaDesde"
                   type="date"
-                  class="block w-full pl-9 pr-3 py-2 bg-white border border-gray-300 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  class="block w-full pl-9 pr-3 py-2 bg-white border border-gray-300 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 />
               </div>
             </div>
@@ -235,7 +235,7 @@ onMounted(async () => {
                   id="filtro-fecha-hasta"
                   v-model="fechaHasta"
                   type="date"
-                  class="block w-full pl-9 pr-3 py-2 bg-white border border-gray-300 text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  class="block w-full pl-9 pr-3 py-2 bg-white border border-gray-300 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 />
               </div>
             </div>

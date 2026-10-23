@@ -56,7 +56,7 @@ const ETIQUETA = 'text-xs font-medium text-gray-500 dark:text-gray-400';
 const VALOR = 'mt-0.5 text-sm font-semibold text-gray-900 dark:text-white';
 const ENLACE = 'hover:text-accent-500 dark:hover:text-accent-400';
 const BOTON_PRIMARIO = 'inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded shadow-xs bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 disabled:opacity-50 disabled:cursor-not-allowed';
-const BOTON_SECUNDARIO = 'inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800';
+const BOTON_SECUNDARIO = 'inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-primary-500/20 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800';
 
 const cotizacionId = computed(() => new URLSearchParams(window.location.search).get('id'));
 

@@ -167,7 +167,7 @@ onMounted(async () => {
         v-if="vehicle && puedeModificarVehiculos"
         type="button"
         title="Editar vehículo"
-        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-primary-500/20 dark:bg-gray-800"
         @click="abrirEditar">
         <FilePen class="w-5 h-5 -ms-1 text-primary-blue-500 dark:text-primary-blue-100" aria-hidden="true" />
         Editar

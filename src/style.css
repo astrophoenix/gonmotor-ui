@@ -126,12 +126,14 @@
     --color-fg-brand-subtle: #2C5BAE;
     --color-fg-brand-strong: #1E3C73;
 
-    /* ===== Radios: uno solo para botones y campos (8 px); tarjetas 10-12 px.
-       Flowbite trae 8/12/16 px y por eso unos botones salían cuadrados y otros
-       como píldora. ===== */
+    /* ===== Radios: uno solo (8 px) para botones, campos y tarjetas con
+       rounded, rounded-md, rounded-lg o rounded-base; 12 px (rounded-xl) solo
+       para tarjetas destacadas y modales. Flowbite trae 6/8/10/12/16 px y por
+       eso unos botones salían cuadrados y otros como píldora. ===== */
     --radius: 8px;
+    --radius-md: 8px;
     --radius-base: 8px;
-    --radius-lg: 10px;
+    --radius-lg: 8px;
     --radius-xl: 12px;
 
     --font-brand: 'Manrope', 'Arial', sans-serif;

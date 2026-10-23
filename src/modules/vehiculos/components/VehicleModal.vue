@@ -87,7 +87,7 @@ const imagenFile = ref(null);
 const clienteSearch = ref('');
 
 const BASE_INPUT = 'block w-full p-2.5 text-sm rounded shadow-xs focus:outline-none focus:ring-2 dark:bg-gray-700 dark:placeholder-gray-400';
-const INPUT_OK = 'bg-gray-50 border border-gray-300 text-gray-900 focus:ring-brand-200 focus:border-brand-500 dark:border-gray-600 dark:text-white dark:focus:ring-brand-500/40 dark:focus:border-brand-300';
+const INPUT_OK = 'bg-white border border-gray-300 text-gray-900 focus:ring-primary-200 focus:border-primary-500 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500/40 dark:focus:border-primary-300';
 const INPUT_ERROR = 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 focus:ring-red-200 focus:border-red-500 dark:text-red-400 dark:border-red-500 dark:placeholder-red-400';
 
 // Clases de un input/select según tenga o no error de validación.

@@ -337,7 +337,7 @@ onUnmounted(() => {
             spellcheck="false"
             placeholder="Buscar taller…"
             aria-label="Buscar taller"
-            class="w-full rounded border border-brand-100 bg-brand-50 py-1.5 pl-8 pr-3 text-sm text-ink transition-colors placeholder:text-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 dark:border-brand-700 dark:bg-brand-800 dark:text-white dark:placeholder:text-brand-300"
+            class="w-full rounded border border-brand-100 bg-brand-50 py-1.5 pl-8 pr-3 text-sm text-ink transition-colors placeholder:text-muted focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-brand-700 dark:bg-brand-800 dark:text-white dark:placeholder:text-brand-300"
             @keydown="onTeclado"
           >
         </div>

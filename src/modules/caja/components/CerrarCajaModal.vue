@@ -104,7 +104,7 @@ async function confirmar() {
               class="block w-full p-2.5 ps-7 text-sm rounded shadow-xs tabular-nums focus:outline-none focus:ring-2 dark:bg-gray-700"
               :class="errores.efectivo_contado
                 ? 'bg-red-50 border border-red-500 text-red-900 focus:ring-red-200 dark:text-red-400'
-                : 'bg-gray-50 border border-gray-300 text-gray-900 focus:ring-brand-200 focus:border-brand-500 dark:border-gray-600 dark:text-white'">
+                : 'bg-white border border-gray-300 text-gray-900 focus:ring-primary-200 focus:border-primary-500 dark:border-gray-600 dark:text-white'">
           </div>
           <p v-if="errores.efectivo_contado" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ errores.efectivo_contado }}</p>
           <p
@@ -128,7 +128,7 @@ async function confirmar() {
             class="block w-full p-2.5 text-sm rounded shadow-xs focus:outline-none focus:ring-2 dark:bg-gray-700"
             :class="errores.observacion
               ? 'bg-red-50 border border-red-500 text-red-900 focus:ring-red-200 dark:text-red-400'
-              : 'bg-gray-50 border border-gray-300 text-gray-900 focus:ring-brand-200 focus:border-brand-500 dark:border-gray-600 dark:text-white'">
+              : 'bg-white border border-gray-300 text-gray-900 focus:ring-primary-200 focus:border-primary-500 dark:border-gray-600 dark:text-white'">
           <p v-if="errores.observacion" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ errores.observacion }}</p>
         </div>
         <p class="text-xs text-gray-500 dark:text-gray-400">Una caja cerrada ya no admite pagos ni movimientos; solo un administrador puede reabrirla.</p>

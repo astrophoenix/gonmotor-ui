@@ -162,7 +162,7 @@ onMounted(async () => {
               type="search"
               maxlength="100"
               placeholder="Frenos, aceite, código DTC, N.º de documento…"
-              class="block w-full rounded border border-gray-300 bg-white py-2 ps-9 pe-3 text-sm text-gray-900 shadow-xs placeholder:text-gray-400 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+              class="block w-full rounded border border-gray-300 bg-white py-2 ps-9 pe-3 text-sm text-gray-900 shadow-xs placeholder:text-gray-400 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
               @input="buscarConPausa"
             >
           </div>
@@ -172,7 +172,7 @@ onMounted(async () => {
           <select
             id="historial-taller"
             v-model="filtros.taller"
-            class="block w-full rounded border border-gray-300 bg-white py-2 text-sm text-gray-900 shadow-xs focus:border-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+            class="block w-full rounded border border-gray-300 bg-white py-2 text-sm text-gray-900 shadow-xs focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
             @change="fetchHistorial(1)"
           >
             <option value="">Todos</option>
@@ -185,7 +185,7 @@ onMounted(async () => {
             id="historial-desde"
             v-model="filtros.desde"
             type="date"
-            class="block w-full rounded border border-gray-300 bg-white py-2 text-sm text-gray-900 shadow-xs focus:border-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+            class="block w-full rounded border border-gray-300 bg-white py-2 text-sm text-gray-900 shadow-xs focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
             @change="fetchHistorial(1)"
           >
         </div>
@@ -195,7 +195,7 @@ onMounted(async () => {
             id="historial-hasta"
             v-model="filtros.hasta"
             type="date"
-            class="block w-full rounded border border-gray-300 bg-white py-2 text-sm text-gray-900 shadow-xs focus:border-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+            class="block w-full rounded border border-gray-300 bg-white py-2 text-sm text-gray-900 shadow-xs focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
             @change="fetchHistorial(1)"
           >
         </div>
@@ -253,7 +253,7 @@ onMounted(async () => {
         <p class="text-sm text-gray-600 dark:text-gray-300">Este vehículo aún no tiene visitas en tu empresa.</p>
         <a
           href="/crud/recepciones/agregar/"
-          class="inline-flex items-center gap-1.5 rounded bg-brand-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-800"
+          class="inline-flex items-center gap-1.5 rounded-lg bg-primary-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-800"
         >
           <ClipboardList class="h-4 w-4" aria-hidden="true" />
           Nueva recepción

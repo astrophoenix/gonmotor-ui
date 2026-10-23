@@ -42,7 +42,7 @@ function handleClick() {
     :aria-label="title"
     :aria-busy="isExportingPdf"
     :disabled="disabled || isExportingPdf"
-    class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
+    class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-primary-500/20 dark:bg-gray-800"
     @click="handleClick"
   >
     <Loader2 v-if="isExportingPdf" class="w-4 h-4 animate-spin" />

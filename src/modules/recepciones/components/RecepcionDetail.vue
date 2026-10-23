@@ -580,7 +580,7 @@ async function confirmarFirma() {
       <button
         v-if="puedeEditar"
         type="button"
-        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 dark:bg-gray-800"
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-primary-500/20 dark:bg-gray-800"
         @click="goTo(`/crud/recepciones/editar/?id=${recepcion.id}`)">
         <FilePen class="w-5 h-5 -ms-1 text-brand-700 dark:text-brand-200" aria-hidden="true" />
         Editar
@@ -1016,7 +1016,7 @@ async function confirmarFirma() {
                       v-if="foto.url"
                       type="button"
                       :title="`Ampliar ${foto.label}`"
-                      class="group relative block w-full overflow-hidden rounded-lg aspect-square bg-gray-100 cursor-zoom-in focus:outline-none focus:ring-4 focus:ring-brand-200 dark:bg-gray-700 dark:focus:ring-brand-700"
+                      class="group relative block w-full overflow-hidden rounded-lg aspect-square bg-gray-100 cursor-zoom-in focus:outline-none focus:ring-4 focus:ring-primary-200 dark:bg-gray-700 dark:focus:ring-brand-700"
                       @click="abrirFoto(foto.url)"
                     >
                       <img :src="foto.miniatura" :alt="foto.label" loading="lazy" class="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105" />
@@ -1321,7 +1321,7 @@ async function confirmarFirma() {
           <input
             v-model="aceptacionCliente"
             type="checkbox"
-            class="w-4 h-4 mt-0.5 text-brand-900 bg-gray-100 border-gray-300 rounded focus:ring-brand-500 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 dark:ring-offset-gray-800"
+            class="w-4 h-4 mt-0.5 text-brand-900 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 dark:ring-offset-gray-800"
           />
           <span class="text-sm text-gray-900 dark:text-white">
             El cliente acepta las condiciones de recepción y el estado reportado del vehículo.

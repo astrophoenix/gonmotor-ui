@@ -365,7 +365,7 @@ watch(errorMessage, (valor) => {
               {{ citasDelDia.length }} cita{{ citasDelDia.length === 1 ? '' : 's' }} el día seleccionado
             </span>
             <select id="select_periodo" name="select_periodo" v-model="vista"
-              class="px-6 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+              class="px-6 bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block dark:bg-gray-700 dark:border-gray-600 dark:text-white">
               <option value="dayGridMonth">Mes</option>
               <option value="timeGridWeek">Semana</option>
               <option value="timeGridDay">Día</option>
@@ -385,7 +385,7 @@ watch(errorMessage, (valor) => {
             id="cal-fecha"
             v-model="fechaSeleccionada"
             type="date"
-            class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            class="w-full bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           />
           <p class="mt-2 text-sm font-medium text-gray-900 capitalize dark:text-white">
             {{ fechaLegible }}

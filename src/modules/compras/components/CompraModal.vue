@@ -23,7 +23,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'created']);
 
 const INPUT = 'block w-full p-2.5 text-sm rounded border shadow-xs focus:outline-none focus:ring-2 dark:bg-gray-700 dark:text-white';
-const OK = 'bg-gray-50 border-gray-300 focus:ring-brand-200 focus:border-brand-500 dark:border-gray-600';
+const OK = 'bg-white border-gray-300 focus:ring-primary-200 focus:border-primary-500 dark:border-gray-600';
 const MAL = 'bg-red-50 border-red-500 focus:ring-red-200';
 const ETIQUETA = 'block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300';
 
@@ -201,7 +201,7 @@ async function guardar() {
         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div class="relative md:col-span-2">
             <label for="compra-proveedor" :class="ETIQUETA">Proveedor <span class="text-accent-500 dark:text-accent-400">*</span></label>
-            <div v-if="form.proveedor" class="flex items-center justify-between gap-2 p-2.5 text-sm border rounded bg-gray-50 border-gray-300 dark:bg-gray-700 dark:border-gray-600">
+            <div v-if="form.proveedor" class="flex items-center justify-between gap-2 p-2.5 text-sm border rounded bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-600">
               <span class="truncate text-gray-900 dark:text-white">
                 {{ form.proveedor.nombre }}
                 <span class="text-xs text-gray-500 dark:text-gray-400">· {{ form.proveedor.identificacion }}</span>

@@ -50,7 +50,7 @@ const TIPOS_IDENTIFICACION = [
 const largoIdentificacion = computed(() => (TIPOS_IDENTIFICACION.find((t) => t.value === form.tipo_identificacion) || {}).largo);
 
 const BASE_INPUT = 'block w-full p-2.5 text-sm rounded shadow-xs focus:outline-none focus:ring-2 dark:bg-gray-700 dark:placeholder-gray-400';
-const INPUT_OK = 'bg-gray-50 border border-gray-300 text-gray-900 focus:ring-brand-200 focus:border-brand-500 dark:border-gray-600 dark:text-white dark:focus:ring-brand-500/40 dark:focus:border-brand-300';
+const INPUT_OK = 'bg-white border border-gray-300 text-gray-900 focus:ring-primary-200 focus:border-primary-500 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500/40 dark:focus:border-primary-300';
 const INPUT_ERROR = 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 focus:ring-red-200 focus:border-red-500 dark:text-red-400 dark:border-red-500 dark:placeholder-red-400';
 
 // Clases de un input/select del cliente según tenga o no error de validación.
@@ -518,7 +518,7 @@ watch(vehiculos, (list) => {
                       role="radio"
                       :aria-checked="form.tipo_identificacion === tipo.value"
                       :class="[
-                        'px-3 py-1.5 text-sm font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-brand-300',
+                        'px-3 py-1.5 text-sm font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-300',
                         form.tipo_identificacion === tipo.value
                           ? 'bg-white text-brand-900 shadow-xs dark:bg-gray-800 dark:text-white'
                           : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white',
@@ -578,7 +578,7 @@ watch(vehiculos, (list) => {
                   <p v-if="clientErrors.direccion" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ clientErrors.direccion }}</p>
                 </div>
                 <label class="flex items-start gap-2 text-sm text-gray-900 dark:text-white">
-                  <input v-model="form.acepta_promociones" type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-300 text-brand-700 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600">
+                  <input v-model="form.acepta_promociones" type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-300 text-brand-700 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600">
                   <span>
                     Acepta mensajes promocionales
                     <span class="block text-xs text-gray-500 dark:text-gray-400">Solo los clientes con esta casilla reciben las campañas masivas.</span>

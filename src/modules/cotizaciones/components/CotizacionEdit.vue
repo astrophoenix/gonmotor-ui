@@ -1084,9 +1084,9 @@ async function submit({ silencioso = false } = {}) {
 // Mismos estilos de tarjeta que recepción e inspección (línea gráfica del flujo).
 const SECCION = 'p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700';
 const TITULO_SECCION = 'flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200';
-const INPUT = 'block w-full px-2.5 py-2 text-sm bg-gray-50 border border-gray-300 text-gray-900 rounded shadow-xs focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-brand-500/40 dark:focus:border-brand-300 disabled:cursor-not-allowed disabled:opacity-70';
+const INPUT = 'block w-full px-2.5 py-2 text-sm bg-white border border-gray-300 text-gray-900 rounded shadow-xs focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500/40 dark:focus:border-primary-300 disabled:cursor-not-allowed disabled:opacity-70';
 const BOTON_PRIMARIO = 'inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded shadow-xs bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 disabled:opacity-50 disabled:cursor-not-allowed';
-const BOTON_SECUNDARIO = 'inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800';
+const BOTON_SECUNDARIO = 'inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-xs focus:ring-4 text-heading bg-white border border-default-medium hover:bg-neutral-secondary-medium focus:ring-primary-500/20 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800';
 
 const ICONOS_METODO = { PRESENCIAL: UserCheck, EMAIL: Mail, WHATSAPP: IconBrandWhatsapp, TELEFONO: Phone };
 
@@ -1529,7 +1529,7 @@ onMounted(async () => {
                           <td class="px-2 py-2 text-center">
                             <label class="inline-flex items-center mt-1.5" :class="esEditable ? 'cursor-pointer' : 'cursor-default'" :title="fila.es_opcional ? 'El cliente puede postergarlo' : 'Necesario'">
                               <input v-model="fila.es_opcional" type="checkbox" class="sr-only peer" :disabled="!esEditable" :aria-label="`${tab.singular} opcional`" />
-                              <span class="relative w-9 h-5 bg-gray-200 rounded-full peer-focus:ring-4 peer-focus:ring-brand-200 dark:peer-focus:ring-brand-700 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-900 dark:peer-checked:bg-brand-500"></span>
+                              <span class="relative w-9 h-5 bg-gray-200 rounded-full peer-focus:ring-4 peer-focus:ring-primary-200 dark:peer-focus:ring-brand-700 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-900 dark:peer-checked:bg-brand-500"></span>
                             </label>
                           </td>
                           <td class="px-3 py-2 pt-4 font-semibold text-right tabular-nums text-gray-900 dark:text-white">$ {{ formatMoney(tab.neto(fila)) }}</td>
@@ -1746,7 +1746,7 @@ onMounted(async () => {
           type="button"
           :disabled="modal.procesando"
           class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg focus:ring-4 disabled:opacity-50 disabled:cursor-not-allowed"
-          :class="modal.tipo === 'RECHAZAR' ? 'bg-red-600 hover:bg-red-700 focus:ring-red-300 dark:focus:ring-red-800' : 'bg-brand-900 hover:bg-brand-700 focus:ring-brand-500/30'"
+          :class="modal.tipo === 'RECHAZAR' ? 'bg-red-600 hover:bg-red-700 focus:ring-red-300 dark:focus:ring-red-800' : 'bg-primary-700 hover:bg-primary-800 focus:ring-primary-200 dark:focus:ring-primary-800'"
           @click="confirmarModal"
         >
           <Loader2 v-if="modal.procesando" class="w-4 h-4 animate-spin" />

@@ -75,7 +75,7 @@ async function enviar() {
             class="block w-full p-2.5 text-sm rounded shadow-xs focus:outline-none focus:ring-2 dark:bg-gray-700 dark:placeholder-gray-400"
             :class="error
               ? 'bg-red-50 border border-red-500 text-red-900 focus:ring-red-200 focus:border-red-500 dark:text-red-400 dark:border-red-500'
-              : 'bg-gray-50 border border-gray-300 text-gray-900 focus:ring-brand-200 focus:border-brand-500 dark:border-gray-600 dark:text-white'"
+              : 'bg-white border border-gray-300 text-gray-900 focus:ring-primary-200 focus:border-primary-500 dark:border-gray-600 dark:text-white'"
             @keydown.enter.prevent="enviar">
           <p v-if="error" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ error }}</p>
         </div>
@@ -92,7 +92,7 @@ async function enviar() {
           type="button"
           :disabled="guardando"
           class="inline-flex items-center gap-1.5 text-white rounded focus:ring-4 font-medium text-sm px-4 py-2.5 disabled:opacity-50"
-          :class="peligro ? 'bg-red-600 hover:bg-red-700 focus:ring-red-300' : 'bg-brand-900 hover:bg-brand-800 focus:ring-brand-200'"
+          :class="peligro ? 'bg-red-600 hover:bg-red-700 focus:ring-red-300' : 'bg-primary-700 hover:bg-primary-800 focus:ring-primary-200 dark:focus:ring-primary-800'"
           @click="enviar">
           <Loader2 v-if="guardando" class="w-5 h-5 animate-spin" />
           {{ textoConfirmar }}
