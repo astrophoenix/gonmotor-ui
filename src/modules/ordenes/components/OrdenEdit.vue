@@ -470,6 +470,8 @@ function mapearRepuesto(r) {
     precio_unitario: String(r.precio_unitario ?? '0.00'),
     descuento: String(r.descuento ?? '0.00'),
     iva_porcentaje: normalizarIva(r.iva_porcentaje),
+    // Lo ya despachado del almacén: la línea no se quita hasta devolverlo.
+    cantidad_despachada: Number(r.cantidad_despachada) || 0,
   };
 }
 
@@ -1506,9 +1508,10 @@ const grupos = computed(() => [
                         <td class="px-2 py-2 text-center">
                           <button
                             type="button"
-                            :title="`Quitar ${grupo.entidad}`"
+                            :disabled="Boolean(fila.cantidad_despachada)"
+                            :title="fila.cantidad_despachada ? 'Despachado del almacén: devuélvelo desde la ficha de la orden para quitarlo' : `Quitar ${grupo.entidad}`"
                             :aria-label="`Quitar ${grupo.entidad}`"
-                            class="inline-flex items-center p-2 mt-0.5 text-gray-400 rounded-lg hover:bg-red-50 hover:text-red-600 dark:hover:bg-gray-700 dark:hover:text-red-400"
+                            class="inline-flex items-center p-2 mt-0.5 text-gray-400 rounded-lg hover:bg-red-50 hover:text-red-600 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-red-400"
                             @click="grupo.quitar(index)">
                             <Trash2 class="w-4 h-4" />
                           </button>

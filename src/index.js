@@ -27,6 +27,7 @@ import { mountReportesRentabilidad } from './modules/reportes';
 import { mountGastos } from './modules/gastos';
 import { mountCuentasPorCobrar } from './modules/pagos';
 import { mountCaja } from './modules/caja';
+import { mountCompras } from './modules/compras';
 import { mountDashboard } from './modules/dashboard';
 import { iniciarPermisosGlobal } from './shared/composables/usePermisos';
 import Topbar from './shared/components/Topbar.vue';
@@ -318,6 +319,12 @@ const cajaApp = document.getElementById('caja-app');
 
 if (cajaApp) {
     mountCaja(cajaApp, pinia);
+}
+
+const comprasApp = document.getElementById('compras-app');
+
+if (comprasApp) {
+    mountCompras(comprasApp, pinia);
 }
 
 iniciarPermisosGlobal();

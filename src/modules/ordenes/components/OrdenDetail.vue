@@ -59,6 +59,7 @@ import { relacionesDeOrden } from '../../../shared/utils/relacionesFlujo';
 import { referenciaCorta } from '../../../shared/utils/format';
 import NotificarRetiroModal from '../../notificaciones/components/NotificarRetiroModal.vue';
 import OrdenPagos from '../../pagos/components/OrdenPagos.vue';
+import DespachoRepuestoModal from './DespachoRepuestoModal.vue';
 import { saldoDeEntregaRechazada, transicionEntregaCredito } from '../../pagos/constants/pagos';
 
 const orden = ref(null);
@@ -201,6 +202,29 @@ const serviciosHechos = computed(() => servicios.value.filter((s) => s.completad
 
 const { puede, tieneAccion, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
 const puedeModificar = computed(() => puede('ordenes'));
+// Despachar mueve inventario: exige modificar la orden y el inventario.
+const puedeDespachar = computed(() => puede('ordenes') && puede('inventario'));
+const despacho = ref(null);
+const mostrarDespacho = computed({
+  get: () => Boolean(despacho.value),
+  set: (valor) => { if (!valor) despacho.value = null; },
+});
+
+function abrirDespacho(linea, modo) {
+  despacho.value = { linea, modo };
+}
+
+async function onDespachoHecho(linea) {
+  const modo = despacho.value?.modo;
+  try {
+    orden.value = await ordenesService.getById(ordenId.value);
+    successMessage.value = modo === 'devolver'
+      ? `«${linea.descripcion}» devuelto al almacén.`
+      : `«${linea.descripcion}» despachado del almacén.`;
+  } catch (err) {
+    error.value = err.message || 'El movimiento se registró, pero no se pudo actualizar la OT. Recarga la ficha.';
+  }
+}
 // El aviso de retiro depende del permiso de notificaciones, no del de órdenes.
 const puedeAvisarRetiro = computed(() => puede('notificaciones', 'modificar'));
 const showRetiroModal = ref(false);
@@ -922,6 +946,7 @@ onMounted(async () => {
                           <th class="hidden w-24 px-2 py-2 font-medium text-right md:table-cell">Desc.</th>
                           <th class="hidden w-16 px-2 py-2 font-medium text-right md:table-cell">IVA</th>
                           <th class="w-24 px-3 py-2 font-medium text-right">Neto</th>
+                          <th v-if="grupo.key === 'rpt'" class="px-3 py-2 font-medium text-left">Almacén</th>
                         </tr>
                       </thead>
                       <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
@@ -950,11 +975,40 @@ onMounted(async () => {
                           <td class="hidden px-2 py-2.5 text-right text-gray-700 tabular-nums md:table-cell dark:text-gray-300">{{ Number(fila.descuento) ? `$ ${formatNumber(fila.descuento)}` : '—' }}</td>
                           <td class="hidden px-2 py-2.5 text-right text-gray-700 tabular-nums md:table-cell dark:text-gray-300">{{ ivaLabel(fila.iva_porcentaje) }}</td>
                           <td class="px-3 py-2.5 font-medium text-right text-gray-900 tabular-nums whitespace-nowrap dark:text-white">$ {{ formatNumber(fila.subtotal) }}</td>
+                          <td v-if="grupo.key === 'rpt'" class="px-3 py-2.5 whitespace-nowrap">
+                            <span v-if="!fila.repuesto" class="text-xs text-gray-400 dark:text-gray-500" title="Línea sin repuesto del catálogo: no mueve inventario">No mueve stock</span>
+                            <div v-else class="flex flex-wrap items-center gap-1.5">
+                              <span
+                                class="px-2 py-0.5 text-xs font-medium rounded-full tabular-nums"
+                                :class="Number(fila.cantidad_pendiente_despacho)
+                                  ? (Number(fila.cantidad_despachada) ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200')
+                                  : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200'"
+                                :title="fila.despachado_por_nombre ? `Último despacho: ${fila.despachado_por_nombre} · ${formatDate(fila.fecha_despacho)}` : ''">
+                                {{ Number(fila.cantidad_pendiente_despacho) ? `Despachado ${formatCantidad(fila.cantidad_despachada)}/${formatCantidad(fila.cantidad)}` : 'Despachado' }}
+                              </span>
+                              <template v-if="puedeDespachar">
+                                <button
+                                  v-if="Number(fila.cantidad_pendiente_despacho) && estado !== 'CANCELADO'"
+                                  type="button"
+                                  class="px-2 py-0.5 text-xs font-medium text-white rounded bg-brand-900 hover:bg-brand-800"
+                                  @click="abrirDespacho(fila, 'despachar')">
+                                  Despachar
+                                </button>
+                                <button
+                                  v-if="Number(fila.cantidad_despachada)"
+                                  type="button"
+                                  class="px-2 py-0.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700"
+                                  @click="abrirDespacho(fila, 'devolver')">
+                                  Devolver
+                                </button>
+                              </template>
+                            </div>
+                          </td>
                         </tr>
                       </tbody>
                       <tfoot class="border-t border-gray-200 dark:border-gray-700">
                         <tr>
-                          <td colspan="7" class="px-3 py-2 text-xs text-right text-gray-500 dark:text-gray-400">
+                          <td colspan="8" class="px-3 py-2 text-xs text-right text-gray-500 dark:text-gray-400">
                             Subtotal {{ grupo.titulo.toLowerCase() }}:
                             <span class="ms-1 text-sm font-semibold text-gray-900 tabular-nums dark:text-white">$ {{ formatNumber(grupo.subtotal) }}</span>
                           </td>
@@ -1208,5 +1262,12 @@ onMounted(async () => {
   />
 
   <NotificarRetiroModal v-model="showRetiroModal" :orden="orden" @enviado="onRetiroEnviado" />
+
+  <DespachoRepuestoModal
+    v-model="mostrarDespacho"
+    :linea="despacho?.linea"
+    :modo="despacho?.modo || 'despachar'"
+    :puede-stock-negativo="tieneAccion('stock_negativo')"
+    @hecho="onDespachoHecho" />
   </template>
 </template>

@@ -35,6 +35,25 @@ export const repuestosService = {
     return request(buildUrl(id));
   },
 
+  /** Kardex del repuesto (movimientos de stock, más recientes primero). */
+  movimientos(id, { page = 1 } = {}) {
+    return request(`${buildUrl(id)}movimientos/?page=${page}`);
+  },
+
+  /** Ajuste por conteo físico. `payload`: { stock_contado, motivo } */
+  ajustarStock(id, payload) {
+    return request(`${buildUrl(id)}ajustar-stock/`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  /** Cuántos repuestos activos están en o bajo su stock mínimo. */
+  async contarStockBajo() {
+    const data = await request(`${ENDPOINT}?stock_bajo=true&estado=activo&page=1`);
+    return data?.count ?? 0;
+  },
+
   opciones({ search = '' } = {}) {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
