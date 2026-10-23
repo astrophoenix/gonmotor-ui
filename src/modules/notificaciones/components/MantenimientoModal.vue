@@ -1,6 +1,7 @@
 <script setup>
+import ModalCabecera from '@/shared/components/ModalCabecera.vue';
 import { computed, reactive, ref, watch } from 'vue';
-import { CalendarClock, Save, X } from 'lucide-vue-next';
+import { CalendarClock, Save } from 'lucide-vue-next';
 import Alert from '../../../shared/components/Alert.vue';
 import VehiculoSearchSelect from '../../../shared/components/VehiculoSearchSelect.vue';
 import { formatDateOnly, toIsoFromLocalInput } from '../../../shared/utils/datetime';
@@ -121,20 +122,11 @@ const ETIQUETA = 'block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-
 <template>
   <div v-if="modelValue" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4">
     <div class="relative w-full max-w-2xl rounded-lg bg-white shadow-xl dark:bg-gray-800 my-auto">
-      <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-        <h3 class="inline-flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-          <CalendarClock class="w-5 h-5" />
-          Programar próximo mantenimiento
-        </h3>
-        <button
-          type="button"
-          class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200"
-          aria-label="Cerrar"
-          @click="cerrar"
-        >
-          <X class="w-5 h-5" />
-        </button>
-      </div>
+      <ModalCabecera
+        :icono="CalendarClock"
+        :titulo="'Programar próximo mantenimiento'"
+        @cerrar="cerrar"
+      />
 
       <div class="px-6 py-4">
         <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />

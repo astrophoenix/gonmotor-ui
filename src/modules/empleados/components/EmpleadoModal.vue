@@ -1,6 +1,7 @@
 <script setup>
+import ModalCabecera from '@/shared/components/ModalCabecera.vue';
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
-import { X, Building2, MessageSquare, MapPin, Phone, ChevronDown, Search, Save, UserPlus, UserPen } from 'lucide-vue-next';
+import { Building2, MessageSquare, MapPin, Phone, ChevronDown, Search, Save, UserPlus, UserPen } from 'lucide-vue-next';
 import { empleadosService } from '../services/empleadosService';
 import { request } from '../../../shared/services/httpClient';
 import Alert from '../../../shared/components/Alert.vue';
@@ -318,21 +319,11 @@ onBeforeUnmount(() => {
 <template>
   <div v-if="modelValue" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4">
     <div class="relative block w-full max-w-2xl rounded-lg bg-white shadow-xl dark:bg-gray-800 my-auto">
-      <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-          <UserPlus v-if="!isEditMode" class="w-5 h-5 inline-block me-2" />
-          <UserPen v-if="isEditMode" class="w-5 h-5 inline-block me-2" />
-          {{ isEditMode ? 'Editar empleado' : 'Nuevo empleado' }}
-        </h3>
-        <button
-          type="button"
-          class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200"
-          aria-label="Cerrar"
-          @click="close"
-        >
-          <X class="w-5 h-5" />
-        </button>
-      </div>
+      <ModalCabecera
+        :icono="isEditMode ? UserPen : UserPlus"
+        :titulo="isEditMode ? 'Editar empleado' : 'Nuevo empleado'"
+        @cerrar="close"
+      />
 
       <div class="px-6 py-4">
         <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />

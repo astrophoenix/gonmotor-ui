@@ -1,6 +1,7 @@
 <script setup>
+import ModalCabecera from '@/shared/components/ModalCabecera.vue';
 import { computed, nextTick, reactive, ref, watch } from 'vue';
-import { Car, X, Save, UserRound, IdCard, Gauge, BellRing, Camera, NotebookPen, Wand2, Loader2, CarFront } from 'lucide-vue-next';
+import { Car, Save, UserRound, IdCard, Gauge, BellRing, Camera, NotebookPen, Wand2, Loader2, CarFront } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
 import {
   formatPlaca,
@@ -407,29 +408,12 @@ watch(() => form.observaciones, (val) => {
   <div v-if="modelValue" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-brand-950/70 p-2 sm:p-4">
     <div class="relative flex flex-col w-full max-w-6xl max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)] my-auto rounded-xl bg-white shadow-xl dark:bg-gray-800">
       <!-- Cabecera -->
-      <div class="flex items-start justify-between gap-4 border-b border-gray-200 px-4 py-4 sm:px-6 dark:border-gray-700">
-        <div class="flex items-center gap-3">
-          <span class="inline-flex items-center justify-center w-10 h-10 shrink-0 rounded-lg bg-brand-50 text-brand-700 dark:bg-brand-500/20 dark:text-brand-200">
-            <Car class="w-5 h-5" />
-          </span>
-          <div>
-            <h3 class="text-lg font-semibold leading-tight text-gray-900 dark:text-white">
-              {{ isEditMode ? 'Editar vehículo' : 'Nuevo vehículo' }}
-            </h3>
-            <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-              {{ isEditMode ? 'Actualiza los datos del vehículo y su próximo mantenimiento.' : 'Registra los datos del vehículo y, si quieres, su próximo mantenimiento.' }}
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200"
-          aria-label="Cerrar"
-          @click="close"
-        >
-          <X class="w-5 h-5" />
-        </button>
-      </div>
+      <ModalCabecera
+        :icono="Car"
+        :titulo="isEditMode ? 'Editar vehículo' : 'Nuevo vehículo'"
+        :subtitulo="isEditMode ? 'Actualiza los datos del vehículo y su próximo mantenimiento.' : 'Registra los datos del vehículo y, si quieres, su próximo mantenimiento.'"
+        @cerrar="close"
+      />
 
       <!-- Cuerpo con scroll propio: cabecera y botones siempre visibles -->
       <div class="flex-1 overflow-y-auto px-4 py-5 sm:px-6 bg-gray-50/60 dark:bg-gray-900/30">

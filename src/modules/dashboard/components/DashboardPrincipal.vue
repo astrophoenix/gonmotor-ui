@@ -1,12 +1,17 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import {
-  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
   CalendarDays,
   Car,
   CircleDollarSign,
+  Coins,
+  Cog,
   FileText,
   LayoutDashboard,
+  Package,
+  Wrench,
 } from 'lucide-vue-next';
 import Alert from '../../../shared/components/Alert.vue';
 import { formatCurrency, formatNumber } from '../../../shared/utils/format';
@@ -208,45 +213,37 @@ async function refrescar() {
             v-if="ve('vehiculos_en_taller')"
             titulo="Vehículos en taller"
             :valor="kpis.vehiculos_en_taller ?? 0"
-            :subtitulo="`Recepciones sin salida registrada · ${vehiculosDemorados} con más de ${diasAlertaTaller} días`"
+            :subtitulo="`${vehiculosDemorados} con +${diasAlertaTaller} días`"
+            :detalle="`Recepciones sin salida registrada · ${vehiculosDemorados} con más de ${diasAlertaTaller} días`"
+            :estado="vehiculosDemorados > 0 ? 'aviso' : 'ok'"
             :icono="Car"
-            tono="brand"
             href="/crud/recepciones/"
             texto-accion="Ver recepciones"
-          >
-            <template #subtitulo>
-              Recepciones sin salida registrada ·
-              <span
-                :class="vehiculosDemorados > 0
-                  ? 'font-semibold text-accent-600 dark:text-accent-400'
-                  : ''"
-              >
-                {{ vehiculosDemorados }} con más de {{ diasAlertaTaller }} días
-              </span>
-            </template>
-          </KpiCard>
+          />
 
           <KpiCard
             v-if="ve('facturacion')"
-            titulo="Facturación del mes"
-            :subtitulo="subtituloFacturacion"
+            titulo="Facturación"
+            :subtitulo="`${kpis.ordenes_periodo ?? 0} ${kpis.ordenes_periodo === 1 ? 'orden' : 'órdenes'}`"
+            :detalle="subtituloFacturacion"
             :icono="CircleDollarSign"
-            tono="emerald"
+            :ilustracion="Coins"
             href="/crud/ordenes/"
             texto-accion="Ver órdenes"
           >
             <template #valor>
-              <span class="inline-flex items-baseline flex-wrap gap-2">
+              <span class="inline-flex items-center flex-wrap gap-2">
                 <span>{{ valorFacturacion }}</span>
                 <span
                   v-if="variacionFacturacion !== null && variacionFacturacion !== undefined"
-                  class="text-xs font-semibold px-1.5 py-0.5 rounded-full"
+                  class="inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded-full tracking-normal"
                   :class="variacionFacturacion >= 0
-                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
-                    : 'bg-accent-100 text-accent-600 dark:bg-accent-600/20 dark:text-accent-400'"
+                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                    : 'bg-accent-50 text-accent-600 dark:bg-accent-600/20 dark:text-accent-400'"
                   :title="`Facturación del mes anterior: ${formatCurrency(kpis.facturacion_mes_anterior ?? 0)}`"
                 >
-                  {{ variacionFacturacion >= 0 ? '+' : '' }}{{ variacionFacturacion }}%
+                  <component :is="variacionFacturacion >= 0 ? ArrowUp : ArrowDown" class="w-3 h-3" aria-hidden="true" />
+                  {{ Math.abs(variacionFacturacion) }} %
                 </span>
               </span>
             </template>
@@ -254,33 +251,42 @@ async function refrescar() {
 
           <KpiCard
             v-if="ve('citas')"
-            titulo="Pipeline de citas"
+            titulo="Citas de hoy"
             :valor="kpis.citas_hoy ?? 0"
-            :subtitulo="subtituloCitas"
+            :subtitulo="kpis.tasa_conversion_cita_pct === null || kpis.tasa_conversion_cita_pct === undefined
+              ? 'Sin citas en el periodo'
+              : `${kpis.citas_convertidas_periodo ?? 0}/${kpis.citas_periodo ?? 0} convertidas`"
+            :detalle="subtituloCitas"
+            :estado="(kpis.citas_pendientes_hoy ?? 0) > 0 ? 'aviso' : 'ok'"
             :icono="CalendarDays"
-            tono="primary"
             href="/crud/citas/"
             texto-accion="Ver citas"
           />
 
           <KpiCard
             v-if="ve('cotizaciones_por_aprobar')"
-            titulo="Cotizaciones por aprobar"
+            titulo="Por aprobar"
             :valor="kpis.cotizaciones_pendientes ?? 0"
-            :subtitulo="subtituloCotizaciones"
+            :subtitulo="formatCurrency(kpis.monto_cotizaciones_pendientes ?? 0)"
+            :detalle="`Cotizaciones por aprobar · ${subtituloCotizaciones}`"
+            :estado="(kpis.cotizaciones_pendientes ?? 0) > 0 ? 'aviso' : 'neutro'"
             :icono="FileText"
-            tono="amber"
+            :ilustracion="Wrench"
             href="/crud/cotizaciones/"
             texto-accion="Ver cotizaciones"
           />
 
           <KpiCard
             v-if="ve('inventario')"
-            titulo="Alertas de inventario"
+            titulo="Inventario"
             :valor="kpis.alertas_stock_bajo ?? 0"
-            :subtitulo="subtituloStock"
-            :icono="AlertTriangle"
-            tono="accent"
+            :subtitulo="(kpis.repuestos_agotados ?? 0) > 0
+              ? `${kpis.repuestos_agotados} agotados`
+              : ((kpis.alertas_stock_bajo ?? 0) > 0 ? 'Bajo el stock mínimo' : 'Sin alertas')"
+            :detalle="subtituloStock"
+            :estado="(kpis.repuestos_agotados ?? 0) > 0 ? 'alerta' : ((kpis.alertas_stock_bajo ?? 0) > 0 ? 'aviso' : 'ok')"
+            :icono="Package"
+            :ilustracion="Cog"
             href="/crud/repuestos/"
             texto-accion="Ver repuestos"
           />
