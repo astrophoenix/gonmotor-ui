@@ -10,9 +10,9 @@ const THEME_KEY = 'color-theme';
  */
 export const esTemaOscuro = ref(false);
 
-/** Criterio heredado del botón anterior: oscuro salvo "light" explícito. */
+/** Claro por defecto: oscuro solo si el usuario lo eligió. */
 function preferenciaInicial() {
-  return localStorage.getItem(THEME_KEY) !== 'light';
+  return localStorage.getItem(THEME_KEY) === 'dark';
 }
 
 /**
