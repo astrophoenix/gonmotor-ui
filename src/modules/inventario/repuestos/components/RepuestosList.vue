@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { Package, Search, Filter, Upload } from 'lucide-vue-next';
+import { History, Package, Search, Filter, TriangleAlert, Upload } from 'lucide-vue-next';
 import { useRepuestos } from '../composables/useRepuestos';
 import ConfirmModal from '../../../../shared/components/ConfirmModal.vue';
 import Alert from '../../../../shared/components/Alert.vue';
@@ -11,6 +11,8 @@ import EntityTable from '../../../../shared/components/EntityTable.vue';
 import EntityRowActions from '../../../../shared/components/EntityRowActions.vue';
 import Pagination from '../../../../shared/components/Pagination.vue';
 import RepuestoModal from './RepuestoModal.vue';
+import RepuestoKardexModal from './RepuestoKardexModal.vue';
+import { repuestosService } from '../services/repuestosService';
 import { formatCurrency } from '../../../../shared/utils/format';
 import { vSanitizeSearch } from '../../../../shared/directives/sanitizeSearch';
 import { useFiltrosReactivos } from '../../../../shared/composables/useFiltrosReactivos';
@@ -153,6 +155,35 @@ function onSaved(message) {
   repuestoModalId.value = null;
   showAlert('success', '', message);
   loadRepuestos(currentPage.value);
+  cargarStockBajo();
+}
+
+// Aviso de reposición: repuestos activos en o bajo su stock mínimo.
+const totalStockBajo = ref(0);
+
+async function cargarStockBajo() {
+  try {
+    totalStockBajo.value = await repuestosService.contarStockBajo();
+  } catch {
+    totalStockBajo.value = 0;
+  }
+}
+
+function verStockBajo() {
+  draftFilters.value = { ...draftFilters.value, stockBajo: true };
+}
+
+// Kardex y ajuste de stock.
+const repuestoKardex = ref(null);
+const mostrarKardex = computed({
+  get: () => Boolean(repuestoKardex.value),
+  set: (valor) => { if (!valor) repuestoKardex.value = null; },
+});
+
+function onStockAjustado(actualizado) {
+  showAlert('success', '', `Stock de ${actualizado.codigo} ajustado a ${actualizado.stock_actual}.`);
+  loadRepuestos(currentPage.value);
+  cargarStockBajo();
 }
 
 function onCreated() { onSaved('Repuesto creado correctamente.'); }
@@ -192,7 +223,10 @@ function handleExcelError(message) {
 
 onMounted(async () => {
   await cargarPermisos().catch(() => {});
-  if (!sinAcceso('inventario')) loadRepuestos();
+  if (!sinAcceso('inventario')) {
+    loadRepuestos();
+    cargarStockBajo();
+  }
 });
 </script>
 
@@ -223,6 +257,17 @@ onMounted(async () => {
     />
   </div>
   <div class="px-4 pb-4 sm:px-6 lg:px-8 mt-4">
+    <button
+      v-if="totalStockBajo && !appliedFilters.stockBajo"
+      type="button"
+      class="flex items-center w-full gap-2 px-4 py-3 mb-4 text-sm text-left border rounded-lg bg-amber-50 border-amber-200 text-amber-900 hover:bg-amber-100 dark:bg-amber-900/20 dark:border-amber-700/60 dark:text-amber-100"
+      @click="verStockBajo">
+      <TriangleAlert class="w-5 h-5 shrink-0" />
+      <span>
+        <span class="font-semibold">{{ totalStockBajo }} {{ totalStockBajo === 1 ? 'repuesto está' : 'repuestos están' }} en o bajo su stock mínimo.</span>
+        Ver cuáles reponer.
+      </span>
+    </button>
     <!-- PANEL DE FILTROS -->
     <div class="bg-neutral-primary-soft shadow-xs rounded-base border border-default mb-4">
       <div class="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between border-b border-default-medium">
@@ -334,6 +379,14 @@ onMounted(async () => {
         <td class="px-4 py-3 text-heading whitespace-nowrap">{{ formatCurrency(item.precio_venta) }}</td>
         <td class="px-4 py-3 whitespace-nowrap">
           <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="inline-flex items-center justify-center w-8 h-8 text-gray-500 rounded-lg hover:bg-gray-100 hover:text-brand-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+              :title="puedeModificar ? 'Kardex y ajuste de stock' : 'Kardex del repuesto'"
+              :aria-label="puedeModificar ? 'Kardex y ajuste de stock' : 'Kardex del repuesto'"
+              @click="repuestoKardex = item">
+              <History class="w-4 h-4" />
+            </button>
             <EntityRowActions entity="repuesto" :show-view="!puedeModificar" :show-edit="puedeModificar" :show-delete="puedeModificar" @view="openEditModal(item.id)" :delete-disabled="isDeleting" @edit="openEditModal(item.id)" @delete="openDeleteModal(item)" />
           </div>
         </td>
@@ -371,6 +424,13 @@ onMounted(async () => {
     @created="onCreated"
     @updated="onUpdated"
     @reactivated="onReactivated"
+  />
+
+  <RepuestoKardexModal
+    v-model="mostrarKardex"
+    :repuesto="repuestoKardex"
+    :puede-ajustar="puedeModificar"
+    @ajustado="onStockAjustado"
   />
 
   <ImportWizardModal

@@ -513,7 +513,8 @@ function buildPayload() {
     costo_referencial: String(form.costo_referencial ?? '0.00'),
     precio_venta: String(form.precio_venta ?? '0.00'),
     iva_porcentaje_defecto: normalizarIva(form.iva_porcentaje_defecto),
-    stock_actual: String(form.stock_actual ?? '0.00'),
+    // Solo al crear: después el stock cambia con movimientos del kardex.
+    ...(isEditMode.value ? {} : { stock_actual: String(form.stock_actual ?? '0.00') }),
     stock_minimo: String(form.stock_minimo ?? '0.00'),
     ubicacion: recortarEspacios(form.ubicacion),
     proveedor: recortarEspacios(form.proveedor),
@@ -760,8 +761,10 @@ watch(() => form.codigo, (val) => {
               <p v-if="repuestoErrors.precio_venta" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ repuestoErrors.precio_venta }}</p>
             </div>
             <div class="col-span-1">
-              <label for="rep_stock_actual" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Stock Actual</label>
-              <input id="rep_stock_actual" v-model="form.stock_actual" type="number" step="0.01" min="0" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', repuestoErrors.stock_actual ? 'bg-red-50 border border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+              <label for="rep_stock_actual" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">{{ isEditMode ? 'Stock Actual' : 'Stock Inicial' }}</label>
+              <!-- Tras el alta, el stock solo cambia con movimientos (ajuste, despacho o compra). -->
+              <input id="rep_stock_actual" v-model="form.stock_actual" type="number" step="0.01" min="0" :disabled="isEditMode" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white disabled:cursor-not-allowed disabled:opacity-70', repuestoErrors.stock_actual ? 'bg-red-50 border border-red-500' : 'bg-gray-50 border border-gray-300 dark:border-gray-600']">
+              <p v-if="isEditMode" class="mt-1 text-xs text-gray-500 dark:text-gray-400">Se cambia con «Kardex y stock» en el listado.</p>
               <p v-if="repuestoErrors.stock_actual" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ repuestoErrors.stock_actual }}</p>
             </div>
             <div class="col-span-1">

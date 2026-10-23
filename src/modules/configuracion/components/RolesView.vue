@@ -98,7 +98,7 @@ const GRUPOS_RECURSOS = [
   { id: 'clientes', titulo: 'Clientes y agenda', icono: Contact, tono: 'sky', recursos: ['clientes', 'vehiculos', 'notificaciones'] },
   { id: 'flujo', titulo: 'Flujo del taller', icono: Wrench, tono: 'violet', recursos: ['citas', 'recepciones', 'inspecciones', 'cotizaciones', 'ordenes'] },
   { id: 'inventario', titulo: 'Inventario y compras', icono: Package, tono: 'amber', recursos: ['inventario', 'proveedores'] },
-  { id: 'finanzas', titulo: 'Finanzas', icono: Wallet, tono: 'emerald', recursos: ['facturacion', 'gastos', 'reportes'] },
+  { id: 'finanzas', titulo: 'Finanzas', icono: Wallet, tono: 'emerald', recursos: ['facturacion', 'compras', 'gastos', 'reportes'] },
 ];
 
 const NIVELES_PERMISO = [

@@ -123,6 +123,22 @@ export const ordenesService = {
     });
   },
 
+  /** Saca del almacén la cantidad (por defecto, lo pendiente). `payload`: { cantidad?, autorizar_stock_negativo? } */
+  despacharRepuesto(id, payload = {}) {
+    return request(`/api/ordenes/ot-repuestos/${encodeURIComponent(id)}/despachar/`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  /** Devuelve al almacén (por defecto, todo lo despachado). `payload`: { cantidad?, motivo? } */
+  devolverRepuesto(id, payload = {}) {
+    return request(`/api/ordenes/ot-repuestos/${encodeURIComponent(id)}/devolver/`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
   deleteRepuesto(id) {
     return request(`/api/ordenes/ot-repuestos/${encodeURIComponent(id)}/`, {
       method: 'DELETE',
