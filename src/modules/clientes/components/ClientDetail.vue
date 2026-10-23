@@ -21,6 +21,7 @@ import {
 import { usePermisos } from '../../../shared/composables/usePermisos';
 import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
 import SinAcceso from '../../../shared/components/SinAcceso.vue';
+import ClienteCuenta from '../../pagos/components/ClienteCuenta.vue';
 
 const { puede, soloConsulta, sinAcceso, cargarPermisos } = usePermisos();
 const puedeModificarClientes = computed(() => puede('clientes', 'modificar'));
@@ -344,6 +345,9 @@ onMounted(async () => {
           </div>
         </dl>
       </section>
+
+      <!-- Deuda e historial de pagos (recurso facturacion) -->
+      <ClienteCuenta v-if="puede('facturacion', 'ver')" :cliente-id="client.id" />
 
       <!-- Vehículos del cliente -->
       <section ref="seccionVehiculos" class="shadow-sm rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">

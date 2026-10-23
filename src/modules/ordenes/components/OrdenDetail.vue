@@ -58,6 +58,8 @@ import OrdenCotizaciones from './OrdenCotizaciones.vue';
 import { relacionesDeOrden } from '../../../shared/utils/relacionesFlujo';
 import { referenciaCorta } from '../../../shared/utils/format';
 import NotificarRetiroModal from '../../notificaciones/components/NotificarRetiroModal.vue';
+import OrdenPagos from '../../pagos/components/OrdenPagos.vue';
+import { saldoDeEntregaRechazada, transicionEntregaCredito } from '../../pagos/constants/pagos';
 
 const orden = ref(null);
 const loading = ref(true);
@@ -327,13 +329,20 @@ const mostrarTransicion = computed({
 
 function solicitarTransicion(clave) {
   if (saving.value) return;
-  transicion.value = { clave, ...TRANSICIONES[clave] };
+  // Con saldo pendiente, la entrega se confirma como entrega a crédito.
+  const saldo = Number(orden.value?.saldo) || 0;
+  transicion.value = clave === 'entregar' && saldo > 0
+    ? { clave, ...transicionEntregaCredito(saldo) }
+    : { clave, ...TRANSICIONES[clave] };
 }
 
+// Saldo con el que el backend rechazó una entrega (datos desactualizados).
+let saldoRechazado = null;
+
 /** Cambia solo el estado (PATCH) y recarga la orden para reflejar lo que guardó el backend. */
-async function cambiarEstado(nuevoEstado, mensajeExito, motivo = null) {
+async function cambiarEstado(nuevoEstado, mensajeExito, motivo = null, extra = {}) {
   if (!orden.value || saving.value) return false;
-  const payload = { estado: nuevoEstado };
+  const payload = { estado: nuevoEstado, ...extra };
   if (motivo !== null) payload.motivo_espera = motivo;
   // Igual que la edición: conserva la fecha comprometida; si no hay, la entrega es ahora.
   if (nuevoEstado === 'ENTREGADO') payload.fecha_entrega = orden.value.fecha_entrega || new Date().toISOString();
@@ -348,9 +357,12 @@ async function cambiarEstado(nuevoEstado, mensajeExito, motivo = null) {
     successMessage.value = mensajeExito;
     guardado = true;
   } catch (err) {
-    error.value = err.data?.motivo_espera
-      ? [].concat(err.data.motivo_espera)[0]
-      : err.message || 'No se pudo cambiar el estado de la orden de trabajo.';
+    saldoRechazado = saldoDeEntregaRechazada(err);
+    if (saldoRechazado === null) {
+      error.value = err.data?.motivo_espera
+        ? [].concat(err.data.motivo_espera)[0]
+        : err.message || 'No se pudo cambiar el estado de la orden de trabajo.';
+    }
   } finally {
     saving.value = false;
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -361,8 +373,9 @@ async function cambiarEstado(nuevoEstado, mensajeExito, motivo = null) {
 async function confirmarTransicion() {
   const t = transicion.value;
   if (!t) return;
-  await cambiarEstado(t.estado, t.exito);
-  transicion.value = null;
+  await cambiarEstado(t.estado, t.exito, null, t.credito ? { entrega_a_credito: true } : {});
+  transicion.value = saldoRechazado !== null ? { clave: 'entregar', ...transicionEntregaCredito(saldoRechazado) } : null;
+  saldoRechazado = null;
 }
 
 function abrirEspera() {
@@ -482,6 +495,16 @@ function descargarPdf() {
 
 function mostrarErrorPdf(message) {
   error.value = message || 'No se pudo generar el PDF.';
+}
+
+async function onCambioPago(mensaje) {
+  error.value = '';
+  try {
+    orden.value = await ordenesService.getById(ordenId.value);
+    successMessage.value = mensaje;
+  } catch (err) {
+    error.value = err.message || 'El movimiento se registró, pero no se pudo actualizar la OT. Recarga la ficha.';
+  }
 }
 
 async function cotizacionesIncorporadas() {
@@ -1130,6 +1153,12 @@ onMounted(async () => {
               <span class="text-xl font-bold text-gray-900 tabular-nums dark:text-white">$ {{ formatNumber(orden.total) }}</span>
             </div>
           </section>
+
+          <OrdenPagos
+            :orden="orden"
+            :puede-ver="puede('facturacion', 'ver')"
+            :puede-modificar="puede('facturacion')"
+            @cambio="onCambioPago" />
 
           <!-- Relaciones del flujo -->
           <section :class="SECCION">
