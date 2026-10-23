@@ -23,7 +23,7 @@ import { mountServicios } from './modules/inventario/servicios';
 import { mountProfileEdit } from './modules/auth';
 import { mountEmpresaConfig, mountTalleresConfig, mountRoles } from './modules/configuracion';
 import { mountNotificaciones } from './modules/notificaciones';
-import { mountReportesRentabilidad } from './modules/reportes';
+import { mountReportesRentabilidad, mountResumenNegocio } from './modules/reportes';
 import { mountGastos } from './modules/gastos';
 import { mountCuentasPorCobrar } from './modules/pagos';
 import { mountCaja } from './modules/caja';
@@ -301,6 +301,12 @@ const reportesRentabilidadApp = document.getElementById('reportes-rentabilidad-a
 
 if (reportesRentabilidadApp) {
     mountReportesRentabilidad(reportesRentabilidadApp, pinia);
+}
+
+const reportesResumenApp = document.getElementById('reportes-resumen-app');
+
+if (reportesResumenApp) {
+    mountResumenNegocio(reportesResumenApp, pinia);
 }
 
 const gastosApp = document.getElementById('gastos-app');

@@ -18,3 +18,12 @@ export async function fetchRentabilidadTaller(params = {}) {
 export async function fetchRentabilidadEmpresa(params = {}) {
   return request(`/api/reportes/rentabilidad-empresa/${buildQuery(params)}`);
 }
+
+/** Resumen del dueño (RF-07). Params: fecha_desde, fecha_hasta, taller_id. */
+export async function fetchResumenNegocio(params = {}) {
+  return request(`/api/reportes/resumen/${buildQuery(params)}`);
+}
+
+export async function descargarResumenPdf(params = {}) {
+  return request(`/api/reportes/resumen/exportar-pdf/${buildQuery(params)}`, { responseType: 'blob' });
+}
