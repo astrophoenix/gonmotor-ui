@@ -43,6 +43,7 @@ import { IconClockPlay, IconClockCheck, IconPlayerPause, IconPlayerPlay } from '
 import { API_BASE_URL } from '../../../shared/config/env';
 import { ordenesService } from '../services/ordenesService';
 import { getEstadoOrden, getPrioridadOrden } from '../constants/estadosOrden';
+import AprobacionAdicional from './AprobacionAdicional.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
@@ -281,7 +282,16 @@ const avisoEstado = computed(() => {
   }
 });
 
-const puedeCompletar = computed(() => estado.value === 'EN_PROCESO' && avancePorcentaje.value === 100);
+const adicionalesPendientes = computed(() => [...servicios.value, ...repuestos.value].filter(l => !l.aprobado && l.es_adicional).length);
+async function adicionalAprobado() {
+  try {
+    orden.value = await ordenesService.getById(ordenId.value);
+    successMessage.value = 'Aprobación registrada. Se actualizaron el total y el saldo.';
+  } catch (err) {
+    error.value = 'La aprobación se registró, pero no se pudo recargar la orden. Recarga la ficha.';
+  }
+}
+const puedeCompletar = computed(() => estado.value === 'EN_PROCESO' && avancePorcentaje.value === 100 && !adicionalesPendientes.value);
 
 const MOTIVOS_ESPERA = ['Esperando repuestos', 'Aprobación del cliente', 'Trabajo adicional'];
 const pidiendoEspera = ref(false);
@@ -629,6 +639,7 @@ onMounted(async () => {
     </div>
 
     <template v-else>
+      <Alert v-if="adicionalesPendientes" type="info" class="mb-4" message="Hay adicionales pendientes de aprobación: no suman al total ni al saldo. Apruébalos o retíralos antes de completar la orden." />
       <!-- Aviso del estado: dice en qué punto está el trabajo y permite moverla por su ciclo -->
       <div
         v-if="aviso"
@@ -966,6 +977,7 @@ onMounted(async () => {
                           </td>
                           <td :data-label="grupo.singular" class="px-3 py-2.5 min-w-0">
                             <p class="text-gray-900 dark:text-white">{{ fila.descripcion || '—' }}</p>
+                            <AprobacionAdicional :linea="fila" :tipo="grupo.key" :pendiente="fila.es_adicional && !fila.aprobado" :puede-aprobar="puedeModificar && ['PENDIENTE', 'EN_PROCESO', 'EN_ESPERA'].includes(estado)" @aprobada="adicionalAprobado" />
                             <!-- En pantallas angostas, cantidad y precio van bajo la descripción -->
                             <p class="mt-0.5 text-xs text-gray-500 tabular-nums sm:hidden dark:text-gray-400">
                               {{ grupo.cantidad(fila) }} × $ {{ formatNumber(fila.precio_unitario) }} · IVA {{ ivaLabel(fila.iva_porcentaje) }}
@@ -987,7 +999,7 @@ onMounted(async () => {
                                 :title="fila.despachado_por_nombre ? `Último despacho: ${fila.despachado_por_nombre} · ${formatDate(fila.fecha_despacho)}` : ''">
                                 {{ Number(fila.cantidad_pendiente_despacho) ? `Despachado ${formatCantidad(fila.cantidad_despachada)}/${formatCantidad(fila.cantidad)}` : 'Despachado' }}
                               </span>
-                              <template v-if="puedeDespachar">
+                              <template v-if="puedeDespachar && fila.aprobado !== false">
                                 <button
                                   v-if="Number(fila.cantidad_pendiente_despacho) && estado !== 'CANCELADO'"
                                   type="button"
