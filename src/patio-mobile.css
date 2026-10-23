@@ -97,4 +97,22 @@
   .patio-screen .mobile-work-edit tr.align-top {
     border-top: 2px solid var(--color-brand-200);
   }
+
+  /* Neto y el menú ⋮ de la línea comparten fila. */
+  .patio-screen .mobile-work-edit td[data-label="Neto"]:not(.hidden) {
+    display: inline-block;
+    width: calc(100% - 60px);
+    vertical-align: middle;
+  }
+
+  .patio-screen .mobile-work-edit td[data-label="Opciones"]:not(.hidden) {
+    display: inline-block;
+    width: 60px;
+    text-align: right;
+    vertical-align: middle;
+  }
+
+  .patio-screen .mobile-work-edit td[data-label="Opciones"]::before {
+    content: none;
+  }
 }
