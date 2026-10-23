@@ -75,3 +75,10 @@ Contrato obligatorio:
 - Cerrar el modal solo por acciones explícitas del usuario: botón X, botón Cancelar (con confirmación si hay datos sin guardar), o tras guardado exitoso.
 - En el `submit` del modal: `catch` → `errorMessage` dentro del modal + mapeo de errores; éxito → `emit('created' | 'updated', data)`; el padre cierra el modal, muestra alerta de success y recarga el listado preservando contexto.
 - Formularios muy grandes (recepción, inspección, vehículo) usan modal a ancho completo para no sacrificar legibilidad.
+
+## Uso móvil en el patio (RF-09)
+
+- Los montajes de Recepciones, Inspecciones y Órdenes añaden `patio-screen` al placeholder. `src/patio-mobile.css` adapta solo esas islas por debajo de 640 px: campos de 16 px, botones de al menos 44 px, cabeceras apiladas y tablas en bloques con etiquetas.
+- `EntityTable` acepta `mobileCards` (opt-in). Cada `td` del slot `#row` debe llevar `data-label` con el nombre de su columna. Las fichas usan `mobile-records`; la edición de líneas de OT usa `mobile-work-edit`. Se conservan los encabezados para tecnologías de asistencia y las columnas ocultas por breakpoint.
+- Los campos de cantidad/horas duplicados para móvil llevan un ID terminado en `-mobile`; al seleccionar catálogo, `focusInput` enfoca la variante visible. No enfocar un input oculto.
+- Al modificar estas pantallas, revisar listado, alta, edición y ficha a 390 px, todas las pestañas, claro/oscuro y escritorio. Incluir descripciones largas, líneas de servicio/repuesto y selección de fotos; comprobar también scroll interno de tablas (no basta medir el ancho del documento).

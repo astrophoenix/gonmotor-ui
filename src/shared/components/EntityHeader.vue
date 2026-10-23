@@ -92,7 +92,7 @@ const mostrarSeparador = computed(() => mostrarNumero.value && !!slots.badges);
       </ol>
     </nav>
 
-    <div class="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+    <div class="entity-header-content flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
       <div class="flex flex-1 min-w-0 items-start gap-3">
         <component
           :is="icono"
@@ -114,7 +114,7 @@ const mostrarSeparador = computed(() => mostrarNumero.value && !!slots.badges);
         </div>
       </div>
 
-      <div class="flex flex-wrap items-center gap-2 ml-auto">
+      <div class="entity-header-actions flex flex-wrap items-center gap-2 ml-auto">
         <slot name="actions" />
       </div>
     </div>

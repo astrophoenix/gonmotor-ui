@@ -1,0 +1,100 @@
+/* RF-09: opt-in on the three workshop islands; desktop tables stay intact. */
+@media (width < 640px) {
+  .patio-screen {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .patio-screen :where(.grid, .flex) > * {
+    min-width: 0;
+  }
+
+  /* 16 px prevents automatic zoom when focusing fields on iOS. */
+  .patio-screen :where(input:not([type='checkbox']):not([type='radio']):not([type='range']), select, textarea) {
+    min-width: 0;
+    max-width: 100%;
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .patio-screen :where(button, a[href]) {
+    min-height: 44px;
+  }
+
+  .patio-screen button {
+    min-width: 44px;
+    white-space: normal;
+  }
+
+  .patio-screen :where(input[type='checkbox'], input[type='radio']) {
+    width: 24px;
+    height: 24px;
+  }
+
+  .patio-screen .entity-header-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .patio-screen .entity-header-actions {
+    margin-left: 0;
+  }
+
+  /* A record occupies the available width; labels replace the column header.
+     Cells hidden by the original breakpoint classes remain hidden. */
+  .patio-screen :where(.mobile-records, .mobile-work-edit) {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    table-layout: auto;
+  }
+
+  .patio-screen :where(.mobile-records, .mobile-work-edit) > thead {
+    /* Keep column headers available to assistive technology. */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .patio-screen :where(.mobile-records, .mobile-work-edit) > :where(tbody, tfoot),
+  .patio-screen :where(.mobile-records, .mobile-work-edit) > :where(tbody, tfoot) > tr {
+    display: block;
+    width: 100%;
+  }
+
+  .patio-screen :where(.mobile-records, .mobile-work-edit) td:not(.hidden) {
+    display: block;
+    width: 100%;
+    max-width: none;
+    padding: 8px 12px;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .patio-screen :where(.mobile-records, .mobile-work-edit) td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-brand-500);
+  }
+
+  .dark .patio-screen :where(.mobile-records, .mobile-work-edit) td[data-label]::before {
+    color: var(--color-brand-300);
+  }
+
+  .patio-screen .mobile-records tbody > tr + tr {
+    border-top: 2px solid var(--color-brand-200);
+  }
+
+  .patio-screen :where(.mobile-records, .mobile-work-edit) td :where(div, p) {
+    white-space: normal;
+  }
+
+  .patio-screen .mobile-work-edit tr.align-top {
+    border-top: 2px solid var(--color-brand-200);
+  }
+}

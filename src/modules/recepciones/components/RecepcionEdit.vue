@@ -1995,7 +1995,7 @@ onMounted(async () => {
             @submit.prevent="submit">
             <!-- Pasos -->
             <nav ref="pasosRef" aria-label="Pasos de la recepción" class="scroll-mt-20 border-b border-gray-200 dark:border-gray-700">
-              <ol class="grid grid-cols-4">
+              <ol class="grid grid-cols-2 sm:grid-cols-4">
                 <li v-for="(paso, index) in PASOS" :key="paso.key">
                   <button
                     type="button"

@@ -936,7 +936,7 @@ onMounted(async () => {
                     {{ grupo.vacio }}
                   </div>
                   <div v-else class="overflow-hidden border border-gray-200 rounded-lg dark:border-gray-700">
-                    <table class="w-full text-sm">
+                    <table class="mobile-records w-full text-sm">
                       <thead class="text-xs text-gray-500 uppercase bg-gray-50 dark:bg-gray-700/50 dark:text-gray-400">
                         <tr>
                           <th v-if="grupo.key === 'svc'" class="w-12 px-2 py-2 font-medium text-center">Hecho</th>
@@ -954,7 +954,7 @@ onMounted(async () => {
                           v-for="fila in grupo.filas"
                           :key="fila.id"
                           :class="fila.completado ? 'bg-green-50/60 dark:bg-green-900/10' : ''">
-                          <td v-if="grupo.key === 'svc'" class="px-2 py-2.5 text-center">
+                          <td data-label="Hecho" v-if="grupo.key === 'svc'" class="px-2 py-2.5 text-center">
                             <span
                               class="inline-flex items-center justify-center w-5 h-5 rounded-full"
                               :class="fila.completado ? 'bg-green-600 text-white dark:bg-green-500' : 'border-2 border-dashed border-gray-300 dark:border-gray-500'"
@@ -963,19 +963,19 @@ onMounted(async () => {
                               <span class="sr-only">{{ fila.completado ? 'Hecho' : 'Pendiente' }}</span>
                             </span>
                           </td>
-                          <td class="px-3 py-2.5 min-w-0">
+                          <td :data-label="grupo.singular" class="px-3 py-2.5 min-w-0">
                             <p class="text-gray-900 dark:text-white">{{ fila.descripcion || '—' }}</p>
                             <!-- En pantallas angostas, cantidad y precio van bajo la descripción -->
                             <p class="mt-0.5 text-xs text-gray-500 tabular-nums sm:hidden dark:text-gray-400">
                               {{ grupo.cantidad(fila) }} × $ {{ formatNumber(fila.precio_unitario) }} · IVA {{ ivaLabel(fila.iva_porcentaje) }}
                             </p>
                           </td>
-                          <td class="hidden px-2 py-2.5 text-right text-gray-700 tabular-nums sm:table-cell dark:text-gray-300">{{ grupo.cantidad(fila) }}</td>
-                          <td class="hidden px-2 py-2.5 text-right text-gray-700 tabular-nums sm:table-cell dark:text-gray-300">$ {{ formatNumber(fila.precio_unitario) }}</td>
-                          <td class="hidden px-2 py-2.5 text-right text-gray-700 tabular-nums md:table-cell dark:text-gray-300">{{ Number(fila.descuento) ? `$ ${formatNumber(fila.descuento)}` : '—' }}</td>
-                          <td class="hidden px-2 py-2.5 text-right text-gray-700 tabular-nums md:table-cell dark:text-gray-300">{{ ivaLabel(fila.iva_porcentaje) }}</td>
-                          <td class="px-3 py-2.5 font-medium text-right text-gray-900 tabular-nums whitespace-nowrap dark:text-white">$ {{ formatNumber(fila.subtotal) }}</td>
-                          <td v-if="grupo.key === 'rpt'" class="px-3 py-2.5 whitespace-nowrap">
+                          <td :data-label="grupo.columna" class="hidden px-2 py-2.5 text-right text-gray-700 tabular-nums sm:table-cell dark:text-gray-300">{{ grupo.cantidad(fila) }}</td>
+                          <td data-label="P. unitario" class="hidden px-2 py-2.5 text-right text-gray-700 tabular-nums sm:table-cell dark:text-gray-300">$ {{ formatNumber(fila.precio_unitario) }}</td>
+                          <td data-label="Descuento" class="hidden px-2 py-2.5 text-right text-gray-700 tabular-nums md:table-cell dark:text-gray-300">{{ Number(fila.descuento) ? `$ ${formatNumber(fila.descuento)}` : '—' }}</td>
+                          <td data-label="IVA" class="hidden px-2 py-2.5 text-right text-gray-700 tabular-nums md:table-cell dark:text-gray-300">{{ ivaLabel(fila.iva_porcentaje) }}</td>
+                          <td data-label="Neto" class="px-3 py-2.5 font-medium text-right text-gray-900 tabular-nums whitespace-nowrap dark:text-white">$ {{ formatNumber(fila.subtotal) }}</td>
+                          <td data-label="Almacén" v-if="grupo.key === 'rpt'" class="px-3 py-2.5 whitespace-nowrap">
                             <span v-if="!fila.repuesto" class="text-xs text-gray-400 dark:text-gray-500" title="Línea sin repuesto del catálogo: no mueve inventario">No mueve stock</span>
                             <div v-else class="flex flex-wrap items-center gap-1.5">
                               <span
