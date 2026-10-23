@@ -301,7 +301,7 @@ onMounted(async () => {
     ]"
   >
     <template #actions>
-      <button v-if="puedeModificar && puede('ordenes')" type="button" class="inline-flex items-center gap-2 rounded bg-brand-900 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 focus:ring-4 focus:ring-brand-500/30" @click="mostrarSelectorOrden = true"><Receipt class="h-4 w-4" />Generar OT desde cotizaciones</button>
+      <button v-if="puedeModificar && puede('ordenes')" type="button" class="inline-flex items-center gap-2 rounded bg-primary-700 px-3 py-2 text-sm font-medium text-white hover:bg-primary-800 focus:ring-4 focus:ring-primary-300" @click="mostrarSelectorOrden = true"><Receipt class="h-4 w-4" />Generar OT desde cotizaciones</button>
     </template>
     <template #title-aside>
       <ModoConsultaChip v-if="soloConsulta('cotizaciones')" objeto="las cotizaciones" />

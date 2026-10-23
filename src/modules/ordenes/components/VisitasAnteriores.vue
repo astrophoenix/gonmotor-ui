@@ -68,7 +68,7 @@ function etiqueta(v) {
       <div v-if="visita && totalLineas" class="flex flex-col gap-2 sm:items-end shrink-0">
         <button
           type="button"
-          class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg bg-brand-900 hover:bg-brand-800 focus:ring-4 focus:ring-brand-200"
+          class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300"
           @click="emit('copiar', { visita, preciosCatalogo })">
           <CopyPlus class="w-4 h-4" />
           Copiar trabajos ({{ totalLineas }})

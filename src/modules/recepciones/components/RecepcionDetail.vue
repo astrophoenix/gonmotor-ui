@@ -562,7 +562,7 @@ async function confirmarFirma() {
       <button
         v-if="recepcion && noAceptada && puedeModificar"
         type="button"
-        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded shadow-xs bg-brand-900 hover:bg-brand-700 focus:ring-4 focus:ring-brand-500/30"
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded shadow-xs bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300"
         @click="abrirModalFirmar">
         <Signature class="w-5 h-5 -ms-1" aria-hidden="true" />
         Firmar aceptación
@@ -571,7 +571,7 @@ async function confirmarFirma() {
         v-if="recepcion && !tieneInspeccion && recepcion.estado === 'ACEPTADA' && puedeCrearInspeccion"
         type="button"
         :disabled="creandoInspeccion"
-        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded shadow-xs bg-brand-900 hover:bg-brand-700 focus:ring-4 focus:ring-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white rounded shadow-xs bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 disabled:opacity-50 disabled:cursor-not-allowed"
         @click="showModalCrearInspeccion = true">
         <Loader2 v-if="creandoInspeccion" class="w-4 h-4 animate-spin" aria-hidden="true" />
         <FileCog v-else class="w-5 h-5 -ms-1" aria-hidden="true" />
@@ -1120,7 +1120,7 @@ async function confirmarFirma() {
                       <button
                         v-if="puedeModificar"
                         type="button"
-                        class="inline-flex items-center gap-2 mt-3 px-3 py-2 text-sm font-medium text-white rounded-lg bg-brand-900 hover:bg-brand-700 focus:ring-4 focus:ring-brand-500/30"
+                        class="inline-flex items-center gap-2 mt-3 px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300"
                         @click="abrirModalFirmar">
                         <Signature class="w-4 h-4" />
                         El cliente cambió de opinión: firmar aceptación
@@ -1157,7 +1157,7 @@ async function confirmarFirma() {
             <span class="hidden text-xs text-gray-500 sm:block dark:text-gray-400">Sección {{ activeTabIndex + 1 }} de {{ PASOS.length }}</span>
             <button
               type="button"
-              class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-brand-900 bg-white border border-brand-900 rounded-lg hover:bg-brand-50 focus:ring-4 focus:ring-brand-200 dark:bg-gray-800 dark:text-brand-200 dark:border-brand-300 dark:hover:bg-gray-700 dark:focus:ring-brand-700"
+              class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 bg-white border border-primary-700 rounded-lg hover:bg-primary-50 focus:ring-4 focus:ring-primary-200 dark:bg-gray-800 dark:text-primary-200 dark:border-primary-300 dark:hover:bg-gray-700 dark:focus:ring-primary-800"
               :class="activeTabIndex >= PASOS.length - 1 ? 'invisible' : ''"
               @click="goToTab(1)">
               {{ PASOS[activeTabIndex + 1]?.label || 'Siguiente' }}
@@ -1342,7 +1342,7 @@ async function confirmarFirma() {
         <button
           type="button"
           :disabled="firmando || !firmaClienteData || !aceptacionCliente"
-          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg bg-brand-900 hover:bg-brand-700 focus:ring-4 focus:ring-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="confirmarFirma">
           <Loader2 v-if="firmando" class="w-4 h-4 animate-spin" />
           <Signature v-else class="w-4 h-4" />

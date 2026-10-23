@@ -125,7 +125,7 @@ const TARJETA = 'p-6 bg-white rounded-lg border border-gray-200 shadow-sm dark:b
 const TITULO = 'flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white mb-4';
 const INPUT = 'block w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-gray-50 text-gray-900 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white';
 const ETIQUETA = 'block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300';
-const BOTON_PRIMARIO = 'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded bg-brand-900 hover:bg-brand-800 focus:ring-4 focus:ring-brand-medium disabled:opacity-50 disabled:cursor-wait';
+const BOTON_PRIMARIO = 'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 disabled:opacity-50 disabled:cursor-wait';
 
 onMounted(init);
 </script>

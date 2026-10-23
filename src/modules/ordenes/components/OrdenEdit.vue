@@ -117,7 +117,7 @@ const INPUT_OK = 'bg-gray-50 border border-gray-300 text-gray-900 focus:ring-bra
 const INPUT_ERROR = 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 focus:ring-red-200 focus:border-red-500 dark:text-red-400 dark:border-red-500 dark:placeholder-red-400';
 const BOTON_MEJORAR = 'inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-brand-700 text-brand-700 hover:bg-brand-50 dark:border-brand-300 dark:text-brand-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed';
 const BOTON_ESTADO = 'inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg shadow-xs shrink-0 hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 disabled:opacity-60 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700';
-const BOTON_AGREGAR = 'inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-brand-900 bg-white border border-brand-900 rounded-lg hover:bg-brand-50 focus:ring-4 focus:ring-brand-200 dark:bg-gray-800 dark:text-brand-200 dark:border-brand-300 dark:hover:bg-gray-700 dark:focus:ring-brand-700';
+const BOTON_AGREGAR = 'inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-primary-700 bg-white border border-primary-700 rounded-lg hover:bg-primary-50 focus:ring-4 focus:ring-primary-200 dark:bg-gray-800 dark:text-primary-200 dark:border-primary-300 dark:hover:bg-gray-700 dark:focus:ring-primary-800';
 
 function inputClass(campo, extra = '') {
   return [BASE_INPUT, campo && formErrors.value[campo] ? INPUT_ERROR : INPUT_OK, extra];
@@ -1870,7 +1870,7 @@ const grupos = computed(() => [
             <button
               v-if="activeTabIndex < PASOS.length - 1"
               type="button"
-              class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-brand-900 bg-white border border-brand-900 rounded-lg hover:bg-brand-50 focus:ring-4 focus:ring-brand-200 dark:bg-gray-800 dark:text-brand-200 dark:border-brand-300 dark:hover:bg-gray-700 dark:focus:ring-brand-700"
+              class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 bg-white border border-primary-700 rounded-lg hover:bg-primary-50 focus:ring-4 focus:ring-primary-200 dark:bg-gray-800 dark:text-primary-200 dark:border-primary-300 dark:hover:bg-gray-700 dark:focus:ring-primary-800"
               @click="irAPaso(PASOS[activeTabIndex + 1].key)">
               Siguiente: {{ PASOS[activeTabIndex + 1].label }}
               <ArrowRight class="w-4 h-4" />

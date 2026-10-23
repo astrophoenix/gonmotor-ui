@@ -217,7 +217,7 @@ async function confirmarAnulacion() {
               <button
                 v-if="puedeModificar && vigente && saldo > 0 && !pagando"
                 type="button"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white rounded-lg bg-brand-900 hover:bg-brand-800"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white rounded-lg bg-primary-700 hover:bg-primary-800"
                 @click="abrirPago">
                 <Banknote class="w-4 h-4" />
                 Registrar pago
@@ -242,7 +242,7 @@ async function confirmarAnulacion() {
                 <p v-if="erroresPago.referencia" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ erroresPago.referencia }}</p>
               </div>
               <div class="flex items-end gap-2">
-                <button type="submit" :disabled="guardando" class="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium text-white rounded bg-brand-900 hover:bg-brand-800 disabled:opacity-50">
+                <button type="submit" :disabled="guardando" class="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium text-white rounded bg-primary-700 hover:bg-primary-800 disabled:opacity-50">
                   <Loader2 v-if="guardando" class="w-4 h-4 animate-spin" />
                   Guardar
                 </button>

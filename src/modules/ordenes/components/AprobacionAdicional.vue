@@ -74,7 +74,7 @@ async function guardar() {
       {{ { WHATSAPP: 'WhatsApp', LLAMADA: 'Llamada', PRESENCIAL: 'Presencial', EMAIL: 'Correo', OTRO: 'Otro' }[linea.medio_aprobacion] }}
       · {{ formatDateTime(linea.fecha_aprobacion) }} · {{ linea.aprobado_por_nombre || 'Usuario no disponible' }}
     </p>
-    <button v-if="pendiente && puedeAprobar && linea.id" type="button" class="px-3 py-2 text-sm font-medium text-white rounded-lg bg-brand-900 hover:bg-brand-700 dark:bg-brand-700 dark:hover:bg-brand-500" @click="abrir">Registrar aprobación</button>
+    <button v-if="pendiente && puedeAprobar && linea.id" type="button" class="px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-700 hover:bg-primary-800 dark:bg-primary-600 dark:hover:bg-primary-500" @click="abrir">Registrar aprobación</button>
   </div>
 
   <Teleport to="body">
@@ -104,7 +104,7 @@ async function guardar() {
           <p class="text-sm text-brand-500 dark:text-brand-300">Confirma que el cliente aprobó esta propuesta. El importe se sumará al total y al saldo de la orden.</p>
           <div class="flex flex-wrap justify-end gap-2">
             <button type="button" :disabled="guardando" class="min-h-11 rounded-lg border border-brand-300 px-3 py-2 text-sm" @click="cerrar">Cancelar</button>
-            <button type="submit" :disabled="guardando" class="min-h-11 rounded-lg bg-brand-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-brand-700">{{ guardando ? 'Guardando…' : 'Confirmar aprobación' }}</button>
+            <button type="submit" :disabled="guardando" class="min-h-11 rounded-lg bg-primary-700 hover:bg-primary-800 px-3 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-primary-600">{{ guardando ? 'Guardando…' : 'Confirmar aprobación' }}</button>
           </div>
         </form>
       </section>

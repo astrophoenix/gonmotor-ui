@@ -9,20 +9,33 @@
  *   1. `src/style.css`  → tokens `--color-*` (uso general en Tailwind)
  *   2. `src/shared/config/branding.js` → estos hex (uso en JS)
  *
- * Valores actuales: paleta de marca (navy + rojo automotriz).
+ * Valores actuales: navy profundo de estructura, azul de acción, neutros fríos
+ * y el Rojo Gonmotor.
  */
 export const BRAND = {
-  brand50: '#F3F6FA',
-  brand100: '#E3E9F1',
-  brand200: '#C5D0DF',
-  brand300: '#94A6BF',
-  brand400: '#5E7391',
-  brand500: '#3A4F6E',
-  brand600: '#26395A',
-  brand700: '#1B2A44',
-  brand800: '#162238',
-  brand900: '#111C2E',
-  brand950: '#0B1220',
+  // Navy profundo: estructura (sidebar, panel del login, títulos).
+  brand50: '#F2F5FA',
+  brand100: '#E2E9F4',
+  brand200: '#C5D2E6',
+  brand300: '#97ABCB',
+  brand400: '#6680A8',
+  brand500: '#445F8C',
+  brand600: '#2F4A78',
+  brand700: '#1F3A68',
+  brand800: '#172C52',
+  brand900: '#0F2140',
+  brand950: '#0A1628',
+
+  // Azul de acción (primary-*): botones primarios, enlaces, foco y series de gráficos.
+  primary50: '#EFF4FC',
+  primary100: '#DDE7F8',
+  primary200: '#BCD0F1',
+  primary300: '#8FB0E6',
+  primary400: '#6290D8',
+  primary500: '#3D72C8',
+  primary600: '#2C5BAE',
+  primary700: '#244A8F',
+  primary800: '#1E3C73',
 
   // Rojo Gonmotor: un solo rojo de marca. `accent500` sobre fondos claros;
   // `accent400` es su versión para fondos navy/oscuros (el #C8102E no se lee
@@ -34,17 +47,14 @@ export const BRAND = {
   accent600: '#B30D25',
   accent700: '#8F0A1E',
 
-  // Neutros (alias de slate)
-  ink: '#1E293B',
-  inkSoft: '#475569',
-  line: '#CBD5E1',
-  surface: '#F8FAFC',
-  muted: '#8493A8',
+  // Neutros fríos (gray-* de style.css)
+  ink: '#222C3F',
+  inkSoft: '#4D5970',
+  line: '#C5CFDC',
+  surface: '#F5F7FA',
+  muted: '#97A3B6',
 
-  navy: '#111C2E',
-
-  // Legacy Flowbite (azul) — remapeado a navy en la migración
-  primary500: '#3A4F6E',
+  navy: '#0F2140',
 
   // Semánticos
   info: '#2563EB',

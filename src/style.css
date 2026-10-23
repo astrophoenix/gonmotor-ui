@@ -30,42 +30,42 @@
 }
 
 @theme {
-    /* ===== Alias legacy: primary-* = navy (reemplaza el azul Flowbite) ===== */
-    --color-primary-50: #F3F6FA;
-    --color-primary-100: #E3E9F1;
-    --color-primary-200: #D2DBE7;
-    --color-primary-300: #A9BAD2;
-    --color-primary-400: #94A6BF;
-    --color-primary-500: #3A4F6E;
-    --color-primary-600: #1B2A44;
-    --color-primary-700: #162238;
-    --color-primary-800: #111C2E;
-    --color-primary-900: #0D1523;
+    /* ===== Acción: azul (botones primarios, enlaces, foco) =====
+       primary-* y primary-blue-* (alias legacy de Flowbite) son la misma escala. */
+    --color-primary-50: #EFF4FC;
+    --color-primary-100: #DDE7F8;
+    --color-primary-200: #BCD0F1;
+    --color-primary-300: #8FB0E6;
+    --color-primary-400: #6290D8;
+    --color-primary-500: #3D72C8;
+    --color-primary-600: #2C5BAE;
+    --color-primary-700: #244A8F;
+    --color-primary-800: #1E3C73;
+    --color-primary-900: #172F5A;
 
-    /* Alias primary-blue-* apunta a la misma escala navy */
-    --color-primary-blue-50: #F3F6FA;
-    --color-primary-blue-100: #E3E9F1;
-    --color-primary-blue-200: #D2DBE7;
-    --color-primary-blue-300: #A9BAD2;
-    --color-primary-blue-400: #94A6BF;
-    --color-primary-blue-500: #3A4F6E;
-    --color-primary-blue-600: #1B2A44;
-    --color-primary-blue-700: #162238;
-    --color-primary-blue-800: #111C2E;
-    --color-primary-blue-900: #0D1523;
+    --color-primary-blue-50: #EFF4FC;
+    --color-primary-blue-100: #DDE7F8;
+    --color-primary-blue-200: #BCD0F1;
+    --color-primary-blue-300: #8FB0E6;
+    --color-primary-blue-400: #6290D8;
+    --color-primary-blue-500: #3D72C8;
+    --color-primary-blue-600: #2C5BAE;
+    --color-primary-blue-700: #244A8F;
+    --color-primary-blue-800: #1E3C73;
+    --color-primary-blue-900: #172F5A;
 
-    /* ===== Marca: navy ===== */
-    --color-brand-50: #F3F6FA;
-    --color-brand-100: #E3E9F1;
-    --color-brand-200: #C5D0DF;
-    --color-brand-300: #94A6BF;
-    --color-brand-400: #5E7391;
-    --color-brand-500: #3A4F6E;
-    --color-brand-600: #26395A;
-    --color-brand-700: #1B2A44;
-    --color-brand-800: #162238;
-    --color-brand-900: #111C2E;
-    --color-brand-950: #0B1220;
+    /* ===== Marca: navy profundo (estructura: sidebar, panel del login, títulos) ===== */
+    --color-brand-50: #F2F5FA;
+    --color-brand-100: #E2E9F4;
+    --color-brand-200: #C5D2E6;
+    --color-brand-300: #97ABCB;
+    --color-brand-400: #6680A8;
+    --color-brand-500: #445F8C;
+    --color-brand-600: #2F4A78;
+    --color-brand-700: #1F3A68;
+    --color-brand-800: #172C52;
+    --color-brand-900: #0F2140;
+    --color-brand-950: #0A1628;
 
     /* ===== Rojo Gonmotor (único rojo de marca) =====
        accent-500 sobre fondos claros (logo, detalles, botón del login);
@@ -78,6 +78,20 @@
     --color-accent-500: #C8102E;
     --color-accent-600: #B30D25;
     --color-accent-700: #8F0A1E;
+
+    /* ===== Neutros fríos: reemplazan los gray-* de Tailwind (y los tokens de Flowbite
+       que derivan de ellos) para que todas las pantallas compartan la misma gama. ===== */
+    --color-gray-50: #F5F7FA;
+    --color-gray-100: #EDF1F6;
+    --color-gray-200: #DFE5ED;
+    --color-gray-300: #C5CFDC;
+    --color-gray-400: #97A3B6;
+    --color-gray-500: #6B778C;
+    --color-gray-600: #4D5970;
+    --color-gray-700: #344055;
+    --color-gray-800: #222C3F;
+    --color-gray-900: #141C2C;
+    --color-gray-950: #0B1220;
 
     /* ===== Neutros (alias) ===== */
     --color-ink: var(--color-slate-800);
@@ -93,7 +107,7 @@
     --color-danger: #DC2626;
 
     /* ===== Login: tokens del rediseño ===== */
-    --color-brand-navy: #111C2E;
+    --color-brand-navy: #0F2140;
     --color-brand-ink: #1E293B;
     --color-brand-ink-soft: #475569;
     --color-brand-line: #CBD5E1;
@@ -102,15 +116,23 @@
     --color-brand-subtitle: #B6C2D4;
     --color-brand-focus-ring: rgba(30, 41, 59, 0.12);
 
-    /* ===== Flowbite: tokens semánticos de marca → navy ===== */
-    --color-brand: #1B2A44;
-    --color-brand-soft: #E3E9F1;
-    --color-brand-softer: #F3F6FA;
-    --color-brand-medium: #162238;
-    --color-brand-strong: #1B2A44;
-    --color-fg-brand: #3A4F6E;
-    --color-fg-brand-subtle: #3A4F6E;
-    --color-fg-brand-strong: #1B2A44;
+    /* ===== Flowbite: tokens semánticos de marca → azul de acción ===== */
+    --color-brand: #244A8F;
+    --color-brand-soft: #DDE7F8;
+    --color-brand-softer: #EFF4FC;
+    --color-brand-medium: #1E3C73;
+    --color-brand-strong: #1E3C73;
+    --color-fg-brand: #244A8F;
+    --color-fg-brand-subtle: #2C5BAE;
+    --color-fg-brand-strong: #1E3C73;
+
+    /* ===== Radios: uno solo para botones y campos (8 px); tarjetas 10-12 px.
+       Flowbite trae 8/12/16 px y por eso unos botones salían cuadrados y otros
+       como píldora. ===== */
+    --radius: 8px;
+    --radius-base: 8px;
+    --radius-lg: 10px;
+    --radius-xl: 12px;
 
     --font-brand: 'Manrope', 'Arial', sans-serif;
     
@@ -119,17 +141,17 @@
     --font-mono: 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace';
 }
 
-/* Flowbite redefine estos tokens de marca en `.dark` con azul; los forzamos a
-   navy para que la marca mande también en modo oscuro. */
+/* Flowbite redefine estos tokens de marca en `.dark`; los fijamos al azul de
+   acción en su versión clara, legible sobre fondos oscuros. */
 .dark {
-  --color-brand: #94A6BF;
-  --color-brand-soft: #1B2A44;
-  --color-brand-softer: #162238;
-  --color-brand-medium: #162238;
-  --color-brand-strong: #94A6BF;
-  --color-fg-brand: #94A6BF;
-  --color-fg-brand-subtle: #94A6BF;
-  --color-fg-brand-strong: #94A6BF;
+  --color-brand: #8FB0E6;
+  --color-brand-soft: #1F3A68;
+  --color-brand-softer: #172C52;
+  --color-brand-medium: #BCD0F1;
+  --color-brand-strong: #BCD0F1;
+  --color-fg-brand: #8FB0E6;
+  --color-fg-brand-subtle: #8FB0E6;
+  --color-fg-brand-strong: #BCD0F1;
 }
 
 /* ===== Sidebar (drawer en móvil / colapsable en desktop) ===== */
@@ -140,14 +162,14 @@
    dónde estás (barra lateral e icono activo). */
 #sidebar {
   --sb-bg: var(--color-brand-navy);
-  --sb-hover: var(--color-brand-700);
-  --sb-active: #24364F;
-  --sb-line: rgb(255 255 255 / 0.08);
-  --sb-text: #D3DCE8;
-  --sb-icon: #9FB0C6;
-  --sb-muted: #8A9AB0;
-  --sb-sub-text: #B9C6D6;
-  --sb-flyout: var(--color-brand-700);
+  --sb-hover: var(--color-brand-800);
+  --sb-active: #1B3459;
+  --sb-line: rgb(255 255 255 / 0.07);
+  --sb-text: #D5DEEC;
+  --sb-icon: #9DB0CC;
+  --sb-muted: #8396B5;
+  --sb-sub-text: #BCC9DB;
+  --sb-flyout: var(--color-brand-800);
 }
 .sidebar-panel {
   background-color: var(--sb-bg);

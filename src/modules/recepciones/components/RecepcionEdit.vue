@@ -2705,7 +2705,7 @@ onMounted(async () => {
               <button
                 v-if="activeTabIndex < PASOS.length - 1"
                 type="button"
-                class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-brand-900 bg-white border border-brand-900 rounded-lg hover:bg-brand-50 focus:ring-4 focus:ring-brand-200 dark:bg-gray-800 dark:text-brand-200 dark:border-brand-300 dark:hover:bg-gray-700 dark:focus:ring-brand-700"
+                class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 bg-white border border-primary-700 rounded-lg hover:bg-primary-50 focus:ring-4 focus:ring-primary-200 dark:bg-gray-800 dark:text-primary-200 dark:border-primary-300 dark:hover:bg-gray-700 dark:focus:ring-primary-800"
                 @click="goToTab(1)">
                 Siguiente: {{ PASOS[activeTabIndex + 1].label }}
                 <ArrowRight class="w-4 h-4" />

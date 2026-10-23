@@ -143,7 +143,7 @@ async function exportExcel() {
     <button
       v-if="showAdd"
       type="button"
-      class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-white rounded-lg shadow-xs bg-brand-900 hover:bg-brand-700 focus:ring-4 focus:ring-brand-200 disabled:opacity-50 dark:bg-brand-600 dark:hover:bg-brand-500 dark:focus:ring-brand-800"
+      class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-white rounded-lg shadow-xs bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 disabled:opacity-50 dark:bg-primary-600 dark:hover:bg-primary-500 dark:focus:ring-primary-800"
       @click="goToAdd"
     >
       <Plus class="w-4 h-4 -ml-0.5" />

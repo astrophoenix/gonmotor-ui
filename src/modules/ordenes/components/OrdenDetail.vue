@@ -1013,7 +1013,7 @@ onMounted(async () => {
                                 <button
                                   v-if="Number(fila.cantidad_pendiente_despacho) && estado !== 'CANCELADO'"
                                   type="button"
-                                  class="px-2 py-0.5 text-xs font-medium text-white rounded bg-brand-900 hover:bg-brand-800"
+                                  class="px-2 py-0.5 text-xs font-medium text-white rounded bg-primary-700 hover:bg-primary-800"
                                   @click="abrirDespacho(fila, 'despachar')">
                                   Despachar
                                 </button>
@@ -1139,7 +1139,7 @@ onMounted(async () => {
               <span class="hidden text-xs text-gray-500 sm:block dark:text-gray-400">Sección {{ activeTabIndex + 1 }} de {{ PASOS.length }}</span>
               <button
                 type="button"
-                class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-brand-900 bg-white border border-brand-900 rounded-lg hover:bg-brand-50 focus:ring-4 focus:ring-brand-200 dark:bg-gray-800 dark:text-brand-200 dark:border-brand-300 dark:hover:bg-gray-700 dark:focus:ring-brand-700"
+                class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 bg-white border border-primary-700 rounded-lg hover:bg-primary-50 focus:ring-4 focus:ring-primary-200 dark:bg-gray-800 dark:text-primary-200 dark:border-primary-300 dark:hover:bg-gray-700 dark:focus:ring-primary-800"
                 :class="activeTabIndex >= PASOS.length - 1 ? 'invisible' : ''"
                 @click="irAPaso(PASOS[activeTabIndex + 1].key)">
                 {{ PASOS[activeTabIndex + 1]?.label || 'Siguiente' }}

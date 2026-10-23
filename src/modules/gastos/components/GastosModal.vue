@@ -358,7 +358,7 @@ watch(() => props.modelValue, (val) => {
         <button
           type="button"
           :disabled="isSaving || isLoading"
-          class="inline-flex items-center text-white bg-brand-900 rounded hover:bg-brand-800 focus:ring-4 focus:ring-brand-medium shadow-xs font-medium text-sm px-4 py-2.5 disabled:opacity-50"
+          class="inline-flex items-center text-white bg-primary-700 rounded hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 shadow-xs font-medium text-sm px-4 py-2.5 disabled:opacity-50"
           @click="submit"
         >
           <Save v-if="!isSaving" class="w-5 h-5 mr-1.5 -ml-1 text-white" />

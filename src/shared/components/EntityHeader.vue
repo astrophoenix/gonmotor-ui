@@ -97,7 +97,7 @@ const mostrarSeparador = computed(() => mostrarNumero.value && !!slots.badges);
         <component
           :is="icono"
           v-if="icono"
-          class="w-5 h-5 shrink-0 mt-1.5 text-primary-blue-500 dark:text-primary-blue-100"
+          class="w-5 h-5 shrink-0 mt-1.5 text-gray-700 dark:text-gray-100"
           :title="pista"
           aria-hidden="true" />
 
