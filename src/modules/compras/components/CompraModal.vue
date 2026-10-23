@@ -264,6 +264,7 @@ async function guardar() {
             <select id="compra-forma" v-model="form.forma_pago" :class="[INPUT, OK]">
               <option v-for="f in FORMAS_PAGO" :key="f.value" :value="f.value">{{ f.label }}</option>
             </select>
+            <p v-if="form.forma_pago === 'EFECTIVO'" class="mt-2 text-xs text-brand-500 dark:text-brand-300">Se registra una salida de la caja abierta del taller. Debe haber efectivo suficiente.</p>
           </div>
         </div>
 

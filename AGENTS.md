@@ -94,3 +94,9 @@ Contrato obligatorio:
 - Reutilizar `modules/ordenes/components/GarantiasVehiculo.vue` para avisar coberturas de un vehículo: props `vehiculoId`, `kilometraje`; emite `cargado` con `garantias` y `ordenes_origen`. Consulta por `ordenesService`/httpClient, debounce de 300 ms y cancelación. Errores inline; nunca interpreta la falta de respuesta como ausencia confirmada de cobertura.
 - `ServicioModal` gestiona los días/km del catálogo con el contrato habitual de errores y descarte; `OrdenEdit` guarda las condiciones por línea y las incluye en la versión comercial de adicionales. Días/km en 0 no deben reponerse automáticamente con el catálogo al editar una línea existente.
 - En una OT de garantía el precio y descuento al cliente son 0 y los costos permanecen editables. Las copias y selecciones de catálogo se normalizan también antes de guardar. La garantía original se elige entre OT entregadas accesibles del mismo vehículo; no se extiende con la nueva reparación.
+
+## Despacho desde edición y caja vinculada
+
+- `OrdenEdit.vue` reutiliza `DespachoRepuestoModal`; no crea un flujo paralelo de inventario. Mantener la copia `guardada` por repuesto: el modal opera con datos persistidos, no con borradores. No recargar toda la OT al despachar/devolver: actualizar solo almacén/aprobación para no perder cambios de cabecera u otras líneas. Despachar exige línea guardada y aprobada; devolver permite corregir cantidades antes de guardar. Convertir cantidades de almacén a Number al aplicar respuestas.
+- Egresos de compras: el campo `anulable_desde_caja=false` oculta la acción de anular en Caja; la operación se realiza desde Compras, donde se revierte también el pago. Mostrar la aclaración de caja abierta/efectivo suficiente en compras de contado en efectivo.
+- Excel del resumen usa httpClient y las utilidades de descarga, con filtros activos y errores inline. Mantiene el PDF existente.

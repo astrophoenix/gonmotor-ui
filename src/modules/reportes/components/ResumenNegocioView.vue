@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import {
-  ArrowDownRight, ArrowUpRight, ClipboardList, Gauge, Loader2, Minus, Receipt, Wallet,
+  FileSpreadsheet, ArrowDownRight, ArrowUpRight, ClipboardList, Gauge, Loader2, Minus, Receipt, Wallet,
 } from 'lucide-vue-next';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
@@ -11,7 +11,8 @@ import TallerSelect from '../../../shared/components/TallerSelect.vue';
 import { usePermisos } from '../../../shared/composables/usePermisos';
 import { formatCurrency } from '../../../shared/utils/format';
 import { useAuthStore } from '../../auth/stores/authStore';
-import { descargarResumenPdf, fetchResumenNegocio } from '../services/reportesService';
+import { descargarResumenExcel, descargarResumenPdf, fetchResumenNegocio } from '../services/reportesService';
+import { descargarBlob, filenameDesdeContentDisposition } from '@/shared/utils/download';
 import FacturadoCobradoChart from './FacturadoCobradoChart.vue';
 
 /**
@@ -106,6 +107,18 @@ function tendencia(tarjeta) {
   };
 }
 
+const exportandoExcel = ref(false);
+async function exportarExcel() {
+  if (exportandoExcel.value) return;
+  exportandoExcel.value = true;
+  error.value = '';
+  try {
+    const { blob, contentDisposition } = await descargarResumenExcel({ ...parametros.value });
+    descargarBlob(blob, filenameDesdeContentDisposition(contentDisposition, 'resumen_negocio.xlsx'));
+  } catch (err) { error.value = err.message || 'No se pudo exportar el resumen a Excel.'; }
+  finally { exportandoExcel.value = false; }
+}
+
 async function consultar() {
   if (fechaDesde.value && fechaHasta.value && fechaDesde.value > fechaHasta.value) {
     error.value = 'La fecha inicial no puede ser posterior a la final.';
@@ -146,6 +159,11 @@ onMounted(async () => {
       :breadcrumb="[{ label: 'Inicio', href: '/' }, { label: 'Reportes' }, { label: 'Resumen del negocio' }]"
     >
       <template #actions>
+        <button type="button" :disabled="exportandoExcel" title="Exportar el resumen en Excel" class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm font-medium text-brand-900 disabled:opacity-50 dark:bg-gray-800 dark:text-white" @click="exportarExcel">
+          <Loader2 v-if="exportandoExcel" class="h-5 w-5 animate-spin" />
+          <FileSpreadsheet v-else class="h-5 w-5" />
+          {{ exportandoExcel ? 'Generando…' : 'Excel' }}
+        </button>
         <PdfExportButton
           :descargador="() => descargarResumenPdf(parametros)"
           title="Exportar el resumen en PDF"
