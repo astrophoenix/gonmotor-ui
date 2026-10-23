@@ -1,8 +1,9 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import {
-  ArrowDownToLine, ArrowUpFromLine, Ban, Banknote, Loader2, Lock, LockOpen, RotateCcw, Vault,
+  ArrowDownToLine, ArrowUpFromLine, Ban, Banknote, Loader2, Lock, LockOpen, RotateCcw,
 } from 'lucide-vue-next';
+import { IconCashRegister } from '@tabler/icons-vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
@@ -212,7 +213,7 @@ onMounted(async () => {
     <EntityHeader
       mode="list"
       entity="Caja"
-      :icon="Vault"
+      :icon="IconCashRegister"
       :breadcrumb="[{ label: 'Inicio', href: '/' }, { label: 'Caja' }]"
     >
       <template #title-aside>
