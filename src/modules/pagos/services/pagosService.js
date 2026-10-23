@@ -49,6 +49,30 @@ export const pagosService = {
     return request(`${ENDPOINT}export-excel/?${params.toString()}`, { responseType: 'blob' });
   },
 
+  /** PDF del recibo de un movimiento: `{ blob, contentDisposition }`. */
+  descargarRecibo(id) {
+    return request(`${ENDPOINT}${encodeURIComponent(id)}/recibo/`, { responseType: 'blob' });
+  },
+
+  /** Confirmación del movimiento al cliente. `payload`: { canal: 'whatsapp' | 'correo' } */
+  enviarRecibo(id, payload) {
+    return request(`${ENDPOINT}${encodeURIComponent(id)}/enviar-recibo/`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  /**
+   * Factura o nota de venta emitida fuera del sistema; número vacío la quita.
+   * `payload`: { tipo_comprobante, numero_factura, fecha_factura }. Devuelve la orden.
+   */
+  registrarComprobante(ordenId, payload) {
+    return request(`/api/ordenes/ordenes-trabajo/${encodeURIComponent(ordenId)}/factura/`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
   anular(id, motivo) {
     return request(`${ENDPOINT}${encodeURIComponent(id)}/anular/`, {
       method: 'POST',

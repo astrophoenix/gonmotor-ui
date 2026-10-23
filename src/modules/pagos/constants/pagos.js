@@ -25,6 +25,15 @@ export const ESTADOS_PAGO = {
   SIN_COBRO: { icon: CircleSlash, label: 'Sin cobro', color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' },
 };
 
+/** Comprobante externo de la orden (apps/ordenes/models.py → TipoComprobante). */
+export const TIPOS_COMPROBANTE = [
+  { value: 'FACTURA', label: 'Factura' },
+  { value: 'NOTA_VENTA', label: 'Nota de venta' },
+];
+
+/** Formato SRI del número de comprobante (misma regla del backend). */
+export const PATRON_COMPROBANTE = /^\d{3}-\d{3}-\d{9}$/;
+
 /** Estados ofrecidos en el filtro del listado de órdenes. */
 export const ESTADOS_PAGO_FILTRABLE = ['PENDIENTE', 'PARCIAL', 'PAGADO', 'SIN_COBRO'];
 
