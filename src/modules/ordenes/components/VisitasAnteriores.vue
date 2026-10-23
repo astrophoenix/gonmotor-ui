@@ -55,11 +55,11 @@ function etiqueta(v) {
         <ul v-if="visita" class="mt-2 space-y-0.5 text-xs text-gray-600 dark:text-gray-300">
           <li v-for="(s, i) in visita.servicios" :key="`s${i}`" class="flex items-center gap-1.5">
             <Wrench class="w-3.5 h-3.5 shrink-0 text-gray-400" />
-            <span class="truncate">{{ s.descripcion }}</span>
+            <span class="truncate">{{ s.descripcion }}{{ s.es_subcontratado ? ' · Subcontratado' : '' }}</span>
           </li>
           <li v-for="(r, i) in visita.repuestos" :key="`r${i}`" class="flex items-center gap-1.5">
             <Package class="w-3.5 h-3.5 shrink-0 text-gray-400" />
-            <span class="truncate">{{ r.descripcion }} × {{ Number(r.cantidad) }}</span>
+            <span class="truncate">{{ r.descripcion }} × {{ Number(r.cantidad) }}{{ r.provisto_cliente ? ' · Provisto por el cliente' : '' }}</span>
           </li>
           <li v-if="!totalLineas" class="text-gray-500">Sin trabajos registrados.</li>
         </ul>

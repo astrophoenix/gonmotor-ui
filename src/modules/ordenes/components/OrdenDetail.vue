@@ -447,7 +447,7 @@ function irAPaso(key) {
 }
 
 const totalItems = computed(() => servicios.value.length + repuestos.value.length);
-const horasManoObra = computed(() => servicios.value.reduce((acc, s) => acc + (Number(s.horas_aplicadas) || 0), 0));
+const horasManoObra = computed(() => servicios.value.filter(s => !s.es_subcontratado).reduce((acc, s) => acc + (Number(s.horas_aplicadas) || 0), 0));
 const tieneNotas = computed(() => Boolean((orden.value?.observaciones || '').trim()));
 
 const estadoPasos = computed(() => ({
@@ -476,7 +476,7 @@ const grupos = computed(() => [
     icon: Wrench,
     filas: servicios.value,
     columna: 'Horas',
-    cantidad: (fila) => `${formatCantidad(fila.horas_aplicadas)} h`,
+    cantidad: (fila) => fila.es_subcontratado ? `${formatCantidad(fila.cantidad)} u.` : `${formatCantidad(fila.horas_aplicadas)} h`,
     vacio: 'No hay servicios de mano de obra registrados.',
     subtotal: orden.value?.subtotal_servicios,
   },
@@ -953,7 +953,7 @@ onMounted(async () => {
                         <tr>
                           <th v-if="grupo.key === 'svc'" class="w-12 px-2 py-2 font-medium text-center">Hecho</th>
                           <th class="px-3 py-2 font-medium text-left">{{ grupo.singular }}</th>
-                          <th class="hidden w-20 px-2 py-2 font-medium text-right sm:table-cell">{{ grupo.columna }}</th>
+                          <th class="hidden w-20 px-2 py-2 font-medium text-right sm:table-cell">{{ grupo.key === 'svc' ? 'Horas / Cant.' : grupo.columna }}</th>
                           <th class="hidden w-28 px-2 py-2 font-medium text-right sm:table-cell">P. unitario</th>
                           <th class="hidden w-24 px-2 py-2 font-medium text-right md:table-cell">Desc.</th>
                           <th class="hidden w-16 px-2 py-2 font-medium text-right md:table-cell">IVA</th>
@@ -977,6 +977,11 @@ onMounted(async () => {
                           </td>
                           <td :data-label="grupo.singular" class="px-3 py-2.5 min-w-0">
                             <p class="text-gray-900 dark:text-white">{{ fila.descripcion || '—' }}</p>
+                            <p v-if="fila.provisto_cliente" class="mt-1 text-sm font-medium text-brand-700 dark:text-brand-200">Provisto por el cliente · precio y costo 0</p>
+                            <div v-if="fila.es_subcontratado" class="mt-1 text-sm text-brand-700 dark:text-brand-200">
+                              <p>Subcontratado · {{ fila.proveedor_nombre || '—' }}</p>
+                              <p>Costo unitario sin IVA: $ {{ formatNumber(fila.costo_unitario) }} · Costo total: $ {{ formatNumber(fila.costo_total) }}</p>
+                            </div>
                             <AprobacionAdicional :linea="fila" :tipo="grupo.key" :pendiente="fila.es_adicional && !fila.aprobado" :puede-aprobar="puedeModificar && ['PENDIENTE', 'EN_PROCESO', 'EN_ESPERA'].includes(estado)" @aprobada="adicionalAprobado" />
                             <!-- En pantallas angostas, cantidad y precio van bajo la descripción -->
                             <p class="mt-0.5 text-xs text-gray-500 tabular-nums sm:hidden dark:text-gray-400">
@@ -989,7 +994,8 @@ onMounted(async () => {
                           <td data-label="IVA" class="hidden px-2 py-2.5 text-right text-gray-700 tabular-nums md:table-cell dark:text-gray-300">{{ ivaLabel(fila.iva_porcentaje) }}</td>
                           <td data-label="Neto" class="px-3 py-2.5 font-medium text-right text-gray-900 tabular-nums whitespace-nowrap dark:text-white">$ {{ formatNumber(fila.subtotal) }}</td>
                           <td data-label="Almacén" v-if="grupo.key === 'rpt'" class="px-3 py-2.5 whitespace-nowrap">
-                            <span v-if="!fila.repuesto" class="text-xs text-gray-400 dark:text-gray-500" title="Línea sin repuesto del catálogo: no mueve inventario">No mueve stock</span>
+                            <span v-if="fila.provisto_cliente" class="text-xs text-brand-500 dark:text-brand-300">Provisto por el cliente · no mueve stock</span>
+                            <span v-else-if="!fila.repuesto" class="text-xs text-gray-400 dark:text-gray-500" title="Línea sin repuesto del catálogo: no mueve inventario">No mueve stock</span>
                             <div v-else class="flex flex-wrap items-center gap-1.5">
                               <span
                                 class="px-2 py-0.5 text-xs font-medium rounded-full tabular-nums"
