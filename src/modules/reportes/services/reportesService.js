@@ -31,3 +31,7 @@ export async function descargarResumenPdf(params = {}) {
 export async function fetchProductividad(params = {}, options = {}) {
   return request(`/api/reportes/productividad/${buildQuery(params)}`, options);
 }
+
+export async function descargarResumenExcel(params = {}) {
+  return request(`/api/reportes/resumen/export-excel/${buildQuery(params)}`, { responseType: 'blob' });
+}

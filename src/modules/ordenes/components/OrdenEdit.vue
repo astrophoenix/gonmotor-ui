@@ -1,4 +1,5 @@
 <script setup>
+import DespachoRepuestoModal from './DespachoRepuestoModal.vue';
 import GarantiasVehiculo from './GarantiasVehiculo.vue';
 import { watch, computed, nextTick, onMounted, ref } from 'vue';
 import {
@@ -585,6 +586,7 @@ function mapearServicio(s) {
 function mapearRepuesto(r) {
   return {
     ...r,
+    guardada: r.id ? { ...r } : null,
     id: r.id ?? null,
     sufijo: Date.now() + Math.random(),
     codigo_repuesto: r.codigo_repuesto || '',
@@ -596,6 +598,28 @@ function mapearRepuesto(r) {
     // Lo ya despachado del almacén: la línea no se quita hasta devolverlo.
     cantidad_despachada: Number(r.cantidad_despachada) || 0,
   };
+}
+
+const puedeDespachar = computed(() => puede('ordenes') && puede('inventario'));
+const despacho = ref(null);
+const mostrarDespacho = computed({ get: () => Boolean(despacho.value), set: (v) => { if (!v) despacho.value = null; } });
+function repuestoSinGuardar(fila) { return !fila.guardada || versionComercial(fila) !== versionComercial(fila.guardada); }
+function abrirDespacho(fila, modo) {
+  if (saving.value || !fila.id || !puedeDespachar.value || (modo === 'despachar' && repuestoSinGuardar(fila))) return;
+  despacho.value = { fila, modo, linea: { ...fila.guardada } };
+}
+function actualizarAlmacen(fila, guardada) {
+  fila.guardada = { ...guardada };
+  for (const campo of ['repuesto', 'cantidad_despachada', 'cantidad_pendiente_despacho', 'fecha_despacho', 'despachado_por_nombre', 'aprobado', 'version_aprobacion', 'medio_aprobacion', 'fecha_aprobacion', 'aprobado_por', 'aprobado_por_nombre']) {
+    if (campo in guardada) fila[campo] = ['cantidad_despachada', 'cantidad_pendiente_despacho'].includes(campo) ? (Number(guardada[campo]) || 0) : guardada[campo];
+  }
+  fila.versionAprobada = versionComercial(guardada);
+}
+function onDespachoHecho(linea) {
+  const actual = despacho.value;
+  if (!actual?.fila) return;
+  actualizarAlmacen(actual.fila, linea);
+  successMessage.value = actual.modo === 'devolver' ? 'Repuesto devuelto al almacén.' : 'Repuesto despachado del almacén.';
 }
 
 function aplicarOrden(data) {
@@ -688,10 +712,12 @@ async function guardarDetalles(idOrden) {
     };
     try {
       if (r.id) {
-        await ordenesService.updateRepuesto(r.id, payload);
+        const guardada = await ordenesService.updateRepuesto(r.id, payload);
+        actualizarAlmacen(r, guardada);
       } else {
         const creado = await ordenesService.createRepuesto({ ...payload, orden_trabajo: ordenRef });
         r.id = creado && creado.id;
+        if (r.id) actualizarAlmacen(r, creado);
       }
     } catch (err) {
       r.error = err.message || 'No se pudo guardar el repuesto.';
@@ -724,7 +750,7 @@ async function guardarDetalles(idOrden) {
   repuestosEliminados.value = [];
 }
 
-const { puede, cargarPermisos } = usePermisos();
+const { puede, tieneAccion, cargarPermisos } = usePermisos();
 
 onMounted(async () => {
   // Sin permiso de modificar se lleva al usuario a la vista de consulta.
@@ -1695,6 +1721,15 @@ const grupos = computed(() => [
                             </label>
                             <p class="text-xs text-brand-500 dark:text-brand-300">Costo del trabajo externo; no genera pagos ni cuentas por pagar.</p>
                           </div>
+                          <div v-if="grupo.key === 'rpt' && puedeDespachar && !fila.provisto_cliente" class="mt-3 space-y-2">
+                            <p v-if="fila.guardada?.repuesto" class="text-xs text-brand-500 dark:text-brand-300">Almacén: despachado {{ fila.cantidad_despachada || 0 }} de {{ fila.guardada.cantidad }} registrados.</p>
+                            <p v-if="!fila.id && fila.codigo_repuesto" class="text-xs text-brand-500 dark:text-brand-300">Guarda la orden antes de despachar esta línea.</p>
+                            <div v-if="fila.guardada?.repuesto" class="flex flex-wrap gap-2">
+                              <button v-if="Number(fila.cantidad_pendiente_despacho) > 0 && estadoActual !== 'CANCELADO'" type="button" :disabled="saving || repuestoSinGuardar(fila) || pendienteAprobacion(fila) || fila.aprobado === false" class="min-h-11 rounded-lg bg-brand-900 px-3 py-2 text-xs font-medium text-white disabled:opacity-50 dark:bg-brand-700" @click="abrirDespacho(fila, 'despachar')">Despachar</button>
+                              <button v-if="Number(fila.cantidad_despachada) > 0" type="button" :disabled="saving" class="min-h-11 rounded-lg border border-brand-300 px-3 py-2 text-xs font-medium text-brand-900 dark:text-brand-100" @click="abrirDespacho(fila, 'devolver')">Devolver</button>
+                            </div>
+                            <p v-if="fila.id && repuestoSinGuardar(fila)" class="text-xs text-brand-500 dark:text-brand-300">Guarda los cambios de esta línea antes de despachar. Puedes devolver cantidades ya registradas.</p>
+                          </div>
                           <p v-if="fila.error" class="mt-2 text-sm text-red-600 dark:text-red-400">{{ fila.error }}</p>
                           <AprobacionAdicional :linea="fila" :tipo="grupo.key" :pendiente="pendienteAprobacion(fila)" />
                         </td>
@@ -1717,7 +1752,7 @@ const grupos = computed(() => [
                           <button
                             type="button"
                             :disabled="Boolean(fila.cantidad_despachada)"
-                            :title="fila.cantidad_despachada ? 'Despachado del almacén: devuélvelo desde la ficha de la orden para quitarlo' : `Quitar ${grupo.entidad}`"
+                            :title="fila.cantidad_despachada ? 'Despachado del almacén: devuélvelo antes de quitarlo' : `Quitar ${grupo.entidad}`"
                             :aria-label="`Quitar ${grupo.entidad}`"
                             class="inline-flex items-center p-2 mt-0.5 text-gray-400 rounded-lg hover:bg-red-50 hover:text-red-600 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-red-400"
                             @click="grupo.quitar(index)">
@@ -1993,4 +2028,5 @@ const grupos = computed(() => [
     @confirm="confirmarTransicion"
     @cancel="transicion = null"
   />
+  <DespachoRepuestoModal v-model="mostrarDespacho" :linea="despacho?.linea" :modo="despacho?.modo || 'despachar'" :puede-stock-negativo="tieneAccion('stock_negativo')" @hecho="onDespachoHecho" />
 </template>

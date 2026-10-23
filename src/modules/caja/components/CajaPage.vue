@@ -76,12 +76,12 @@ const movimientosDelDia = computed(() => {
     id: m.id,
     fecha: m.fecha,
     titulo: `${m.tipo_display} de efectivo${m.gasto ? ' · gasto' : ''}`,
-    detalle: m.motivo,
+    detalle: `${m.motivo}${m.anulable_desde_caja === false ? ' · Anulación desde Compras' : ''}`,
     monto: m.monto,
     salida: m.tipo === 'EGRESO',
     anulado: m.anulado,
     usuario: m.registrado_por_nombre,
-    anulable: true,
+    anulable: m.anulable_desde_caja !== false,
   }));
   return [...pagos, ...movimientos].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 });

@@ -627,6 +627,7 @@ onMounted(async () => {
   </EntityHeader>
 
   <div class="px-4 pt-4 pb-6">
+    <p v-if="orden?.fecha_anulacion" class="mb-3 text-sm text-brand-500 dark:text-brand-300">Anulada el {{ formatDate(orden.fecha_anulacion) }}</p>
     <p v-if="orden?.orden_garantia_origen" class="mb-4 rounded-lg border border-brand-200 p-3 text-sm text-brand-900 dark:text-brand-100">Garantía de <a :href="`/crud/ordenes/ver/?id=${encodeURIComponent(orden.orden_garantia_origen)}`" class="underline">{{ orden.orden_garantia_numero || 'la orden original' }}</a>. Sin cobro al cliente; los costos corresponden al taller.</p>
     <Alert v-if="successMessage" type="success" :message="successMessage" dismissible @dismiss="successMessage = ''" />
     <Alert v-if="error" type="error" :message="error" dismissible @dismiss="error = ''" />
