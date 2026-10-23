@@ -12,6 +12,7 @@ import { enOperacion, request } from '../../../shared/services/httpClient';
 import { API_BASE_URL } from '../../../shared/config/env';
 import { ordenesService } from '../services/ordenesService';
 import { PRIORIDADES_ORDEN, getEstadoOrden, getPrioridadOrden } from '../constants/estadosOrden';
+import AprobacionAdicional from './AprobacionAdicional.vue';
 import Alert from '../../../shared/components/Alert.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import { usePermisos } from '../../../shared/composables/usePermisos';
@@ -298,26 +299,38 @@ function netoRepuesto(r) {
   return netoLinea(brutoRepuesto(r), r.descuento);
 }
 
+function versionComercial(linea) {
+  return JSON.stringify([
+    linea.descripcion || '', linea.codigo_repuesto || '',
+    Number(linea.horas_aplicadas ?? linea.cantidad), Number(linea.precio_unitario),
+    Number(linea.descuento), Number(linea.iva_porcentaje),
+  ]);
+}
+function pendienteAprobacion(linea) {
+  return Boolean(linea.es_adicional && (!linea.aprobado || (linea.versionAprobada && linea.versionAprobada !== versionComercial(linea))));
+}
+const adicionalesPendientes = computed(() => [...servicios.value, ...repuestos.value].filter(pendienteAprobacion).length);
+
 const subtotalServicios = computed(() =>
-  round2(servicios.value.reduce((acc, s) => acc + netoServicio(s), 0))
+  round2(servicios.value.filter(s => !pendienteAprobacion(s)).reduce((acc, s) => acc + netoServicio(s), 0))
 );
 const subtotalRepuestos = computed(() =>
-  round2(repuestos.value.reduce((acc, r) => acc + netoRepuesto(r), 0))
+  round2(repuestos.value.filter(r => !pendienteAprobacion(r)).reduce((acc, r) => acc + netoRepuesto(r), 0))
 );
 const descuentoTotal = computed(() =>
   round2(
-    [...servicios.value, ...repuestos.value].reduce(
+    [...servicios.value, ...repuestos.value].filter(l => !pendienteAprobacion(l)).reduce(
       (acc, item) => acc + (Number(item.descuento) || 0),
       0
     )
   )
 );
 const lineasFiscales = computed(() => [
-  ...servicios.value.map((s) => {
+  ...servicios.value.filter(s => !pendienteAprobacion(s)).map((s) => {
     const neto = netoServicio(s);
     return { neto, tasa: Number(s.iva_porcentaje) || 0, montoIva: ivaLinea(neto, s.iva_porcentaje) };
   }),
-  ...repuestos.value.map((r) => {
+  ...repuestos.value.filter(r => !pendienteAprobacion(r)).map((r) => {
     const neto = netoRepuesto(r);
     return { neto, tasa: Number(r.iva_porcentaje) || 0, montoIva: ivaLinea(neto, r.iva_porcentaje) };
   }),
@@ -511,6 +524,7 @@ function quitarRepuesto(index) {
 
 function mapearServicio(s) {
   return {
+    ...s,
     id: s.id ?? null,
     sufijo: Date.now() + Math.random(),
     descripcion: s.descripcion || '',
@@ -524,6 +538,7 @@ function mapearServicio(s) {
 
 function mapearRepuesto(r) {
   return {
+    ...r,
     id: r.id ?? null,
     sufijo: Date.now() + Math.random(),
     codigo_repuesto: r.codigo_repuesto || '',
@@ -540,8 +555,8 @@ function mapearRepuesto(r) {
 function aplicarOrden(data) {
   orden.value = data;
   cargarSucursal(data.sucursal);
-  servicios.value = (data.servicios || []).map(mapearServicio);
-  repuestos.value = (data.repuestos || []).map(mapearRepuesto);
+  servicios.value = (data.servicios || []).map(s => { const fila = mapearServicio(s); fila.versionAprobada = versionComercial(fila); return fila; });
+  repuestos.value = (data.repuestos || []).map(r => { const fila = mapearRepuesto(r); fila.versionAprobada = versionComercial(fila); return fila; });
   fotosOt.value = (data.fotos || []).map((f) => ({
     id: f.id,
     file: null,
@@ -576,6 +591,7 @@ async function guardarDetalles(idOrden) {
 
   for (const s of servicios.value) {
     const payload = {
+      es_adicional: Boolean(s.es_adicional),
       descripcion: sanitizeObservaciones(s.descripcion || ''),
       horas_aplicadas: String(s.horas_aplicadas ?? '1.00'),
       precio_unitario: String(s.precio_unitario ?? '0.00'),
@@ -597,6 +613,7 @@ async function guardarDetalles(idOrden) {
 
   for (const r of repuestos.value) {
     const payload = {
+      es_adicional: Boolean(r.es_adicional),
       codigo_repuesto: sanitizeObservaciones(r.codigo_repuesto || ''),
       descripcion: sanitizeObservaciones(r.descripcion || ''),
       cantidad: String(r.cantidad ?? '1'),
@@ -913,7 +930,7 @@ function irARequisito(req) {
 
 // ---- Cambios de estado: solo desde el aviso superior, guardando antes ----
 const estadoActual = computed(() => orden.value?.estado || form.value.estado);
-const puedeCompletar = computed(() => estadoActual.value === 'EN_PROCESO' && avancePorcentaje.value === 100);
+const puedeCompletar = computed(() => estadoActual.value === 'EN_PROCESO' && avancePorcentaje.value === 100 && !adicionalesPendientes.value);
 const ordenCerrada = computed(() => ['ENTREGADO', 'CANCELADO'].includes(estadoActual.value));
 const puedeAnular = computed(() => isEditMode.value && ['PENDIENTE', 'EN_ESPERA', 'EN_PROCESO'].includes(estadoActual.value));
 
@@ -1268,6 +1285,7 @@ const grupos = computed(() => [
             </a>
           </div>
 
+          <Alert v-if="adicionalesPendientes" type="info" class="mb-4" message="Hay adicionales pendientes de aprobación: no suman al total. Apruébalos desde la ficha o retíralos antes de completar la orden." />
           <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
             <!-- Cliente -->
             <div class="min-w-0">
@@ -1545,7 +1563,7 @@ const grupos = computed(() => [
                             v-model="fila.completado"
                             type="checkbox"
                             :aria-label="`Marcar «${fila.descripcion || 'servicio'}» como hecho`"
-                            :disabled="estadoActual === 'PENDIENTE' && isEditMode"
+                            :disabled="(estadoActual === 'PENDIENTE' && isEditMode) || (pendienteAprobacion(fila) && !fila.completado)"
                             :title="estadoActual === 'PENDIENTE' && isEditMode ? 'Inicia el trabajo para marcar servicios como hechos' : 'Marcar como hecho'"
                             class="w-5 h-5 mt-2.5 rounded border-gray-300 text-green-600 focus:ring-green-300 dark:bg-gray-700 dark:border-gray-600 disabled:opacity-50">
                         </td>
@@ -1558,6 +1576,10 @@ const grupos = computed(() => [
                             :mostrar-stock="grupo.key === 'rpt'"
                             :mensaje-sin-resultados="`Sin coincidencias. Puedes escribir un ${grupo.entidad} libre.`"
                             @select="(item) => grupo.seleccionar(item, fila)"/>
+                          <label v-if="!fila.id" class="mt-2 inline-flex min-h-11 items-center gap-2 text-sm text-brand-700 dark:text-brand-200">
+                            <input v-model="fila.es_adicional" type="checkbox" class="rounded" /> Adicional pendiente de aprobación
+                          </label>
+                          <AprobacionAdicional :linea="fila" :tipo="grupo.key" :pendiente="pendienteAprobacion(fila)" />
                         </td>
                         <td class="hidden px-1.5 py-2 xl:table-cell">
                           <input :id="`${grupo.key}-cant-${fila.sufijo}`" v-model="fila[grupo.campo]" type="number" min="0" :step="grupo.step" :class="inputClass('', '!px-1 !py-2 text-center tabular-nums')">

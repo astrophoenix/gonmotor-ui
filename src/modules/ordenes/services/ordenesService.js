@@ -7,6 +7,12 @@ function buildUrl(id) {
 }
 
 export const ordenesService = {
+  aprobarAdicional(tipo, id, payload) {
+    const endpoint = tipo === 'svc' ? 'ot-servicios' : 'ot-repuestos';
+    return request(`/api/ordenes/${endpoint}/${encodeURIComponent(id)}/aprobar/`, {
+      method: 'POST', body: JSON.stringify(payload),
+    });
+  },
   list({ page = 1, search = '', ordering = '-created_at', filters = {}, signal } = {}) {
     const params = new URLSearchParams({ page: String(page), ordering });
     if (search) params.set('search', search);
