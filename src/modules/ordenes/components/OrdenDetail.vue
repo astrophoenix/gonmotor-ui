@@ -171,9 +171,10 @@ function formatCantidad(value) {
   return Number(value).toLocaleString('es-EC', { maximumFractionDigits: 2 });
 }
 
+// El backend guarda el IVA como fracción (0.1500 = 15 %), igual que en la cotización.
 function ivaLabel(value) {
   if (value == null || value === '') return '—';
-  return `${Number(value).toLocaleString('es-EC', { maximumFractionDigits: 2 })}%`;
+  return `${(Number(value) * 100).toLocaleString('es-EC', { maximumFractionDigits: 2 })}%`;
 }
 
 function plural(n, singular, pluralTexto) {
