@@ -1,3 +1,4 @@
+import ProductividadView from './components/ProductividadView.vue';
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import RentabilidadView from './components/RentabilidadView.vue';
@@ -12,3 +13,7 @@ export function mountResumenNegocio(element, pinia = createPinia()) {
 }
 
 export { RentabilidadView, ResumenNegocioView };
+
+export function mountProductividad(element, pinia = createPinia()) {
+  createApp(ProductividadView).use(pinia).mount(element);
+}

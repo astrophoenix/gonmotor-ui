@@ -27,3 +27,7 @@ export async function fetchResumenNegocio(params = {}) {
 export async function descargarResumenPdf(params = {}) {
   return request(`/api/reportes/resumen/exportar-pdf/${buildQuery(params)}`, { responseType: 'blob' });
 }
+
+export async function fetchProductividad(params = {}, options = {}) {
+  return request(`/api/reportes/productividad/${buildQuery(params)}`, options);
+}

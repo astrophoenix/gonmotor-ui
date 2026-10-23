@@ -39,6 +39,7 @@ const talleres = computed(() => empleado.value?.talleres || []);
 const datosPersonales = computed(() => {
   const user = empleado.value?.user || {};
   return [
+    { label: 'Comisión sobre mano de obra', value: `${empleado.value?.comision_porcentaje ?? '0.00'} %` },
     { label: 'Nombres', value: user.first_name },
     { label: 'Apellidos', value: user.last_name },
     { label: 'Identificación', value: user.identificacion, mono: true },
