@@ -40,6 +40,15 @@ export const pagosService = {
     });
   },
 
+  /** Excel de pagos con los filtros del listado (fecha_desde, fecha_hasta, tipo, forma_pago, anulado, sucursal). */
+  exportarExcel(filtros = {}) {
+    const params = new URLSearchParams();
+    Object.entries(filtros).forEach(([clave, valor]) => {
+      if (valor !== undefined && valor !== null && valor !== '') params.set(clave, valor);
+    });
+    return request(`${ENDPOINT}export-excel/?${params.toString()}`, { responseType: 'blob' });
+  },
+
   anular(id, motivo) {
     return request(`${ENDPOINT}${encodeURIComponent(id)}/anular/`, {
       method: 'POST',

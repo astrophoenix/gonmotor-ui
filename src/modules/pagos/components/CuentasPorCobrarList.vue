@@ -1,7 +1,9 @@
 <script setup>
 import { computed, onMounted, onScopeDispose, ref } from 'vue';
 import { Banknote, BellRing, Building2, Car, Filter, HandCoins, IdCard, Phone, Search } from 'lucide-vue-next';
+import { IconFileTypeXls } from '@tabler/icons-vue';
 import Alert from '../../../shared/components/Alert.vue';
+import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
 import FilterActions from '../../../shared/components/FilterActions.vue';
@@ -17,6 +19,7 @@ import { createLatestRequest, isAbortError } from '../../../shared/utils/search'
 import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
 import { useAuthStore } from '../../auth/stores/authStore';
 import { pagosService } from '../services/pagosService';
+import ExportarPagosModal from './ExportarPagosModal.vue';
 import RecordarSaldoModal from './RecordarSaldoModal.vue';
 import RegistrarPagoModal from './RegistrarPagoModal.vue';
 
@@ -49,6 +52,22 @@ const ordering = ref('fecha_entrega');
 
 const cuentaPago = ref(null);
 const cuentaRecordatorio = ref(null);
+const mostrarExportarPagos = ref(false);
+
+// Los exportes usan los mismos filtros que el listado.
+const filtrosExporte = computed(() => ({
+  search: search.value.trim(),
+  sucursal: tallerId.value,
+  ordering: ordering.value,
+}));
+
+function onPagosExportados(archivo) {
+  alert.value = { type: 'success', message: `Excel generado: ${archivo}` };
+}
+
+function errorExporte(message) {
+  alert.value = { type: 'error', message: message || 'No se pudo generar el Excel.' };
+}
 
 const mostrarPago = computed({
   get: () => Boolean(cuentaPago.value),
@@ -236,8 +255,26 @@ onMounted(async () => {
 
       <!-- Listado -->
       <div class="relative overflow-x-auto bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
-        <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex flex-col gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700 md:flex-row md:items-center md:justify-between">
           <h2 class="text-base font-semibold text-slate-900 dark:text-white">Órdenes entregadas con saldo</h2>
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              title="Exportar a Excel los pagos de un rango de fechas"
+              class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border rounded-lg shadow-xs border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+              @click="mostrarExportarPagos = true">
+              <IconFileTypeXls class="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              Exportar pagos
+            </button>
+            <EntityActionButtons
+              entity="cuentas-por-cobrar"
+              entity-api-path="pagos/cuentas-por-cobrar"
+              :show-add="false"
+              :show-export-pdf="false"
+              :export-params="filtrosExporte"
+              @excel-export-error="errorExporte"
+            />
+          </div>
         </div>
         <EntityTable
           :columns="['Orden', 'Cliente', 'Vehículo', 'Entregada', 'Atraso', 'Saldo', 'Acciones']"
@@ -340,5 +377,9 @@ onMounted(async () => {
 
     <RegistrarPagoModal v-model="mostrarPago" :orden="ordenPago" tipo="PAGO" @registrado="onPagoRegistrado" />
     <RecordarSaldoModal v-model="mostrarRecordatorio" :cuenta="cuentaRecordatorio" @enviado="onRecordatorioEnviado" />
+    <ExportarPagosModal
+      v-model="mostrarExportarPagos"
+      :sucursal="tallerId"
+      @exportado="onPagosExportados" />
   </div>
 </template>
