@@ -82,3 +82,9 @@ Contrato obligatorio:
 - `EntityTable` acepta `mobileCards` (opt-in). Cada `td` del slot `#row` debe llevar `data-label` con el nombre de su columna. Las fichas usan `mobile-records`; la edición de líneas de OT usa `mobile-work-edit`. Se conservan los encabezados para tecnologías de asistencia y las columnas ocultas por breakpoint.
 - Los campos de cantidad/horas duplicados para móvil llevan un ID terminado en `-mobile`; al seleccionar catálogo, `focusInput` enfoca la variante visible. No enfocar un input oculto.
 - Al modificar estas pantallas, revisar listado, alta, edición y ficha a 390 px, todas las pestañas, claro/oscuro y escritorio. Incluir descripciones largas, líneas de servicio/repuesto y selección de fotos; comprobar también scroll interno de tablas (no basta medir el ancho del documento).
+
+## Productividad y comisiones (RF-15)
+
+- `ProductividadView.vue` reutiliza EntityHeader, EntityTable, TallerSelect, Alert y SinAcceso. Conserva «Buscar» para aplicar filtros del reporte; `createLatestRequest` descarta respuestas obsoletas. Solo consulta tras cargar y comprobar `reportes/ver`.
+- Las filas usan `data-label` y `mobileCards`, con estilos móviles locales al reporte (no depende de `patio-screen`). Las definiciones de cálculo vienen de la API, incluida la advertencia del porcentaje actual aplicado al histórico.
+- `EmpleadoModal.vue` gestiona el porcentaje por empresa con el contrato normal de alta/edición, errores por campo y confirmación de descarte. Requiere API RF-15 y migración `authentication/0022` antes del frontend.

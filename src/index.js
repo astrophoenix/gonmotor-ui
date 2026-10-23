@@ -23,7 +23,7 @@ import { mountServicios } from './modules/inventario/servicios';
 import { mountProfileEdit } from './modules/auth';
 import { mountEmpresaConfig, mountTalleresConfig, mountRoles } from './modules/configuracion';
 import { mountNotificaciones } from './modules/notificaciones';
-import { mountReportesRentabilidad, mountResumenNegocio } from './modules/reportes';
+import { mountReportesRentabilidad, mountResumenNegocio, mountProductividad } from './modules/reportes';
 import { mountGastos } from './modules/gastos';
 import { mountCuentasPorCobrar } from './modules/pagos';
 import { mountCaja } from './modules/caja';
@@ -334,3 +334,6 @@ if (comprasApp) {
 }
 
 iniciarPermisosGlobal();
+
+const productividadApp = document.getElementById('reportes-productividad-app');
+if (productividadApp) mountProductividad(productividadApp, pinia);
