@@ -38,6 +38,8 @@ const confirmandoDescarte = ref(false);
 
 const pideReferencia = computed(() => FORMAS_CON_REFERENCIA.includes(form.forma_pago));
 const hayCambios = computed(() => JSON.stringify(form) !== inicial);
+// El backend no registra pagos con la caja del taller cerrada.
+const cajaCerrada = computed(() => /caja .* está cerrada/i.test(errorMessage.value));
 
 function formatNumber(value) {
   return Number(value || 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -138,6 +140,9 @@ async function guardar() {
 
       <form class="px-6 py-4 space-y-4" novalidate @submit.prevent="guardar">
         <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
+        <p v-if="cajaCerrada" class="-mt-2 text-sm">
+          <a href="/crud/caja/" class="font-medium text-brand-700 underline dark:text-brand-200">Ir a Caja para abrirla</a>
+        </p>
 
         <p class="text-sm text-gray-600 dark:text-gray-300">
           Orden <span class="font-mono font-semibold text-gray-900 dark:text-white">{{ orden?.numero_orden }}</span> ·
