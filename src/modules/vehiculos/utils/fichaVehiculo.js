@@ -1,7 +1,7 @@
 // Etiquetas y formatos compartidos por las fichas que muestran vehículos
 // (ficha del vehículo y vehículos dentro de la ficha del cliente).
 
-export const TRANSMISION_LABELS = { M: 'Manual / Mecánica', A: 'Automática', C: 'CVT' };
+export const TRANSMISION_LABELS = { M: 'Manual', A: 'Automática', C: 'CVT' };
 
 export const COMBUSTIBLE_LABELS = {
   GAS: 'Gasolina',

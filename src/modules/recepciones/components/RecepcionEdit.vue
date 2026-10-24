@@ -765,7 +765,7 @@ function onFuelKeydown(event, index) {
 }
 
 const transmisionLabel = computed(() => {
-  const map = { M: "Manual / Mecánica", A: "Automática", C: "CVT" };
+  const map = { M: "Manual", A: "Automática", C: "CVT" };
   const value = form.vehiculo?.transmision || "";
   return map[value] || value || "";
 });

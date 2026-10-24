@@ -4,7 +4,7 @@ import { computed, nextTick, ref, watch } from 'vue';
 import {
   X, Save, CalendarPlus, CalendarClock, UserRound, Car, Clock, Wrench, Hammer, ScanLine,
   SprayCan, ShieldCheck, Ellipsis, Gauge, Lock, Building2, CircleCheck, CircleAlert,
-  TriangleAlert, Wand2, Loader2, CheckCircle2, ClipboardList, Info,
+  TriangleAlert, Wand2, Loader2, CheckCircle2, ClipboardList, Info, IdCard, Phone,
 } from 'lucide-vue-next';
 import { request } from '../../../shared/services/httpClient';
 import { listarTalleresDisponibles } from '../../../shared/services/talleresDisponiblesService';
@@ -598,8 +598,11 @@ const vehiculoResumen = computed(() => {
 
 const clienteResumen = computed(() => {
   const c = form.value.cliente;
-  if (!c) return '';
-  return [c.identificacion, c.telefono].filter(Boolean).join(' · ');
+  if (!c) return [];
+  return [
+    { icono: IdCard, etiqueta: 'Identificación', texto: c.identificacion },
+    { icono: Phone, etiqueta: 'Teléfono', texto: c.telefono },
+  ].filter(({ texto }) => texto);
 });
 
 function resetForm() {
@@ -774,7 +777,7 @@ const camposFicha = computed(() => {
     { etiqueta: 'Estado', valor: recepcionNumero.value ? `${estado} · recepción ${recepcionNumero.value}` : estado },
     { etiqueta: 'Asesor', valor: d.asesor_nombre },
     { etiqueta: 'Motivo', valor: MOTIVOS.find((m) => m.value === d.motivo)?.label || d.motivo_display },
-    { etiqueta: 'Kilometraje aproximado', valor: d.kilometraje_aproximado != null ? `${Number(d.kilometraje_aproximado).toLocaleString('es-EC')} km` : '' },
+    { etiqueta: 'Kilometraje', valor: d.kilometraje_aproximado != null ? `${Number(d.kilometraje_aproximado).toLocaleString('es-EC')} km` : '' },
     { etiqueta: 'Descripción del motivo', valor: d.motivo_descripcion, ancho: 'completo' },
     { etiqueta: 'Notas internas', valor: d.notas_internas, ancho: 'completo' },
   ];
@@ -861,8 +864,15 @@ function inputClass(campo) {
                   @clear="clearCliente"
                   @create="openClientCreate"
                 />
-                <p v-if="clienteResumen && !showClientCreate" class="flex items-center gap-1.5 mt-2 text-xs text-gray-500 dark:text-gray-400">
-                  <UserRound class="w-3.5 h-3.5" /> {{ clienteResumen }}
+                <p v-if="clienteResumen.length && !showClientCreate" class="flex flex-wrap items-center gap-1.5 mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  <template v-for="(dato, index) in clienteResumen" :key="dato.etiqueta">
+                    <span v-if="index" aria-hidden="true">·</span>
+                    <span class="inline-flex items-center gap-1.5">
+                      <component :is="dato.icono" class="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                      <span class="sr-only">{{ dato.etiqueta }}:</span>
+                      {{ dato.texto }}
+                    </span>
+                  </template>
                 </p>
 
                 <div v-if="showClientCreate" class="p-3 mt-3 border rounded-lg border-brand-200 bg-brand-50/60 dark:border-brand-500/40 dark:bg-brand-500/10">
@@ -1292,7 +1302,7 @@ function inputClass(campo) {
                 </TextImprover>
               </div>
               <div>
-                <label for="cita_kilometraje" :class="LABEL">Kilometraje aproximado</label>
+                <label for="cita_kilometraje" :class="LABEL">Kilometraje</label>
                 <div class="relative">
                   <Gauge class="absolute w-4 h-4 text-gray-400 -translate-y-1/2 pointer-events-none left-3 top-1/2" />
                   <input

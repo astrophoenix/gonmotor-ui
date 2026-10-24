@@ -730,7 +730,7 @@ watch(vehiculos, (list) => {
                       <div>
                         <label :for="`modal_cli_veh${index}_transmision`" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Transmisión</label>
                         <select :id="`modal_cli_veh${index}_transmision`" v-model="vehiculo.transmision" :class="vehiculoClass(vehiculo, 'transmision')">
-                          <option value="M">Manual / Mecánica</option>
+                          <option value="M">Manual</option>
                           <option value="A">Automática</option>
                           <option value="C">CVT</option>
                         </select>

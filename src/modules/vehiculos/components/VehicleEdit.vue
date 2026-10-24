@@ -424,7 +424,7 @@ onMounted(async () => {
           <div class="col-span-1">
             <label for="transmision" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Transmisión</label>
             <select id="transmision" v-model="form.transmision" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-              <option value="M">Manual / Mecánica</option>
+              <option value="M">Manual</option>
               <option value="A">Automática</option>
               <option value="C">CVT</option>
             </select>

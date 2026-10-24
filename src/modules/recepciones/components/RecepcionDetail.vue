@@ -367,7 +367,7 @@ function pasoCirculoClass(key) {
 
 // --- Vehículo (aside) ---
 const transmisionLabel = computed(() => {
-  const map = { M: 'Manual / Mecánica', A: 'Automática', C: 'CVT' };
+  const map = { M: 'Manual', A: 'Automática', C: 'CVT' };
   const value = vehiculo.value?.transmision || '';
   return map[value] || value || '';
 });

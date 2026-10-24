@@ -418,7 +418,7 @@ function precargarKilometraje() {
 }
 
 const transmisionLabel = computed(() => {
-  const map = { M: 'Manual / Mecánica', A: 'Automática', C: 'CVT' };
+  const map = { M: 'Manual', A: 'Automática', C: 'CVT' };
   const value = vehiculoInfo.value?.transmision || '';
   return map[value] || value || '';
 });
