@@ -81,7 +81,8 @@ Contrato obligatorio:
 - Cerrar el modal solo por acciones explícitas del usuario: botón X, botón Cancelar (con confirmación si hay datos sin guardar), o tras guardado exitoso.
 - En el `submit` del modal: `catch` → `errorMessage` dentro del modal + mapeo de errores; éxito → `emit('created' | 'updated', data)`; el padre cierra el modal, muestra alerta de success y recarga el listado preservando contexto.
 - Formularios muy grandes (recepción, inspección, vehículo) usan modal a ancho completo para no sacrificar legibilidad.
-- Cabecera: siempre `ModalCabecera.vue` (props `icono`, `titulo`, `subtitulo`; emite `cerrar`; slot `#titulo` para badges junto al título). Rejilla de plano y tres piezas en línea azul (llave inglesa, engranaje, bujía), sin rojo; las piezas solo aparecen si el modal es ancho y el subtítulo se oculta en móvil. No volver a escribir cabeceras de modal a mano.
+- Cabecera: siempre `ModalCabecera.vue` (props `icono`, `titulo`, `subtitulo`; emite `cerrar`; slot `#titulo` para badges junto al título). Rejilla de plano y tres piezas en línea azul (llave inglesa, engranaje, bujía), sin rojo; las piezas solo aparecen si el modal es ancho y el subtítulo se oculta en móvil. No volver a escribir cabeceras de modal a mano. Los formularios largos (clientes, vehículos, repuestos, servicios) usan `compacto` (menor alto); sus fotos van con `aspect="wide"` (2:1) en `ImageField`/`VehicleImageField`.
+- Avisos dentro del modal: **uno a la vez**. Se renderizan con `v-if`/`v-else-if` y un `watch` descarta el anterior cuando aparece uno nuevo (p. ej. «Cambios sin guardar» limpia `errorMessage` y viceversa).
 
 ## Uso móvil en el patio (RF-09)
 

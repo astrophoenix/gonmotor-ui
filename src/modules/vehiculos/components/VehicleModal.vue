@@ -374,6 +374,14 @@ watch(() => props.modelValue, (val) => {
   if (val) open();
 });
 
+// Un solo aviso a la vez: el nuevo descarta al anterior.
+watch(errorMessage, (val) => {
+  if (val) showDiscardWarning.value = false;
+});
+watch(showDiscardWarning, (val) => {
+  if (val) errorMessage.value = '';
+});
+
 watch(() => form.placa, (val) => {
   const clean = formatPlaca(val);
   if (clean !== val) form.placa = clean;
@@ -409,6 +417,7 @@ watch(() => form.observaciones, (val) => {
     <div class="relative flex flex-col w-full max-w-6xl max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)] my-auto rounded-xl bg-white shadow-xl dark:bg-gray-800">
       <!-- Cabecera -->
       <ModalCabecera
+        compacto
         :icono="Car"
         :titulo="isEditMode ? 'Editar vehículo' : 'Nuevo vehículo'"
         :subtitulo="isEditMode ? 'Actualiza los datos del vehículo y su próximo mantenimiento.' : 'Registra los datos del vehículo y, si quieres, su próximo mantenimiento.'"
@@ -417,7 +426,7 @@ watch(() => form.observaciones, (val) => {
 
       <!-- Cuerpo con scroll propio: cabecera y botones siempre visibles -->
       <div class="flex-1 overflow-y-auto px-4 py-5 sm:px-6 bg-gray-50/60 dark:bg-gray-900/30">
-        <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
+        <!-- Un solo aviso a la vez: el más reciente reemplaza al anterior -->
         <Alert
           v-if="showDiscardWarning"
           type="info"
@@ -426,6 +435,7 @@ watch(() => form.observaciones, (val) => {
           dismissible
           @dismiss="showDiscardWarning = false"
         />
+        <Alert v-else-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
 
         <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando vehículo...</div>
         <div v-else class="grid grid-cols-1 gap-5 lg:grid-cols-3">
@@ -445,7 +455,6 @@ watch(() => form.observaciones, (val) => {
                 @select="selectCliente"
                 @clear="clearCliente"
               />
-              <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Opcional. Puedes asignarlo después desde la ficha del vehículo.</p>
             </section>
 
             <!-- Identificación -->
@@ -510,7 +519,7 @@ watch(() => form.observaciones, (val) => {
                 <div>
                   <label for="modal_veh_transmision" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Transmisión</label>
                   <select id="modal_veh_transmision" v-model="form.transmision" :class="inputClass('transmision')">
-                    <option value="M">Manual / Mecánica</option>
+                    <option value="M">Manual</option>
                     <option value="A">Automática</option>
                     <option value="C">CVT</option>
                   </select>
@@ -555,7 +564,7 @@ watch(() => form.observaciones, (val) => {
                     {{ mejorando ? 'Mejorando...' : 'Mejorar texto' }}
                   </button>
                 </div>
-                <textarea id="modal_veh_obs" v-model="form.observaciones" rows="3" placeholder="Golpes, accesorios, detalles a tener en cuenta..." :class="inputClass('observaciones')"></textarea>
+                <textarea id="modal_veh_obs" v-model="form.observaciones" rows="2" placeholder="Golpes, accesorios, detalles a tener en cuenta..." :class="inputClass('observaciones')"></textarea>
                 <p v-if="errorMejora" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ errorMejora }}</p>
                 <div v-if="mejorado && !errorMejora" class="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-emerald-700 dark:text-emerald-400">
                   <p>Texto mejorado. Revisa antes de guardar.</p>
@@ -574,6 +583,7 @@ watch(() => form.observaciones, (val) => {
                 Foto del vehículo
               </h4>
               <VehicleImageField
+                aspect="wide"
                 :image-url="form.imagen"
                 :disabled="isLoadingChoices"
                 @upload="(file) => { imagenFile = file; }"

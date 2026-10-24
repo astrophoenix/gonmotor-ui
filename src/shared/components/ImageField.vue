@@ -117,9 +117,13 @@ const accept = computed(() => {
   return lista.join(',');
 });
 
-const aspectClass = computed(() =>
-  props.aspect === 'landscape' ? 'aspect-[4/3]' : 'aspect-square',
-);
+const ASPECT_CLASSES = {
+  square: 'aspect-square',
+  landscape: 'aspect-[4/3]',
+  // Casilla baja para formularios densos: la imagen completa se ve en el visor.
+  wide: 'aspect-[2/1]',
+};
+const aspectClass = computed(() => ASPECT_CLASSES[props.aspect] || ASPECT_CLASSES.square);
 
 const maxSizeText = computed(() => {
   const bytes = limiteBytes.value;

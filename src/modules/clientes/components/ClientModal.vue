@@ -437,6 +437,14 @@ watch(() => props.modelValue, (val) => {
   if (val) open();
 });
 
+// Un solo aviso a la vez: el nuevo descarta al anterior.
+watch(errorMessage, (val) => {
+  if (val) showDiscardWarning.value = false;
+});
+watch(showDiscardWarning, (val) => {
+  if (val) errorMessage.value = '';
+});
+
 watch(() => form.tipo_identificacion, () => {
   form.identificacion = sanitizeIdentificacion(form.identificacion, form.tipo_identificacion);
 });
@@ -480,6 +488,7 @@ watch(vehiculos, (list) => {
     <div class="relative flex flex-col w-full max-w-5xl max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)] my-auto rounded-xl bg-white shadow-xl dark:bg-gray-800">
       <!-- Cabecera -->
       <ModalCabecera
+        compacto
         :icono="isEditMode ? UserRoundPen : UserRoundPlus"
         :titulo="isEditMode ? 'Editar cliente' : 'Nuevo cliente'"
         :subtitulo="isEditMode ? 'Actualiza los datos del cliente y sus vehículos.' : 'Registra los datos del cliente y, si quieres, sus vehículos.'"
@@ -488,7 +497,7 @@ watch(vehiculos, (list) => {
 
       <!-- Cuerpo con scroll propio: cabecera y botones siempre visibles -->
       <div ref="cuerpo" class="flex-1 overflow-y-auto px-4 py-5 sm:px-6 bg-gray-50/60 dark:bg-gray-900/30">
-        <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
+        <!-- Un solo aviso a la vez: el más reciente reemplaza al anterior -->
         <Alert
           v-if="showDiscardWarning"
           type="info"
@@ -497,6 +506,7 @@ watch(vehiculos, (list) => {
           dismissible
           @dismiss="showDiscardWarning = false"
         />
+        <Alert v-else-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
 
         <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando cliente...</div>
         <div v-else class="space-y-5">
@@ -754,6 +764,7 @@ watch(vehiculos, (list) => {
                       <p v-if="errorVehiculo(vehiculo, 'kilometraje_actual')" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ errorVehiculo(vehiculo, 'kilometraje_actual') }}</p>
                       <div class="mt-4">
                         <VehicleImageField
+                          aspect="wide"
                           :image-url="vehiculo.imagen"
                           :disabled="isLoadingChoices"
                           @upload="(file) => { vehiculo.imagenFile = file; }"

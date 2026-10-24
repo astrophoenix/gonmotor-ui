@@ -22,6 +22,7 @@ import { vSanitizeSearch } from '../../../shared/directives/sanitizeSearch';
 import { useFiltrosReactivos } from '../../../shared/composables/useFiltrosReactivos';
 import { estadoADisplay } from '../../../shared/utils/estadoFlujo';
 import Alert from '../../../shared/components/Alert.vue';
+import { formatPlate } from '../../../shared/utils/formatPlate';
 import EntityHeader from '../../../shared/components/EntityHeader.vue';
 import ConfirmModal from '../../../shared/components/ConfirmModal.vue';
 import EntityTable from '../../../shared/components/EntityTable.vue';
@@ -496,8 +497,8 @@ onMounted(async () => {
         <td data-label="Vehículo" class="px-4 py-3 align-top max-w-40">
           <span class="flex items-center gap-1.5">
             <a v-if="vehiculoUrl(item)" :href="vehiculoUrl(item)" class="font-semibold text-gray-900 hover:text-primary-600 dark:text-white dark:hover:text-primary-400">
-              {{ item.vehiculo?.placa || '-' }}</a>
-            <span v-else class="font-semibold text-gray-900 dark:text-white">{{ item.vehiculo?.placa || '-' }}</span>
+              {{ formatPlate(item.vehiculo?.placa) || '-' }}</a>
+            <span v-else class="font-semibold text-gray-900 dark:text-white">{{ formatPlate(item.vehiculo?.placa) || '-' }}</span>
           </span>
           <div class="mt-1 flex flex-col gap-1 ps-0.5 text-xs text-gray-500 dark:text-gray-400">
             <span class="flex items-center gap-1.5 min-w-0">

@@ -1,7 +1,7 @@
 <script setup>
 import ModalCabecera from '@/shared/components/ModalCabecera.vue';
 import { computed, nextTick, reactive, ref, watch } from 'vue';
-import { Save, Hammer } from 'lucide-vue-next';
+import { Save, Hammer, ClipboardList, Receipt, ShieldCheck, BellRing, NotebookPen } from 'lucide-vue-next';
 import { serviciosService } from '../services/serviciosService';
 import Alert from '../../../../shared/components/Alert.vue';
 import FichaCampos from '../../../../shared/components/FichaCampos.vue';
@@ -91,6 +91,15 @@ function getComparableState() {
     iva_porcentaje_defecto: form.iva_porcentaje_defecto,
     contifico_producto_id: form.contifico_producto_id,
   };
+}
+
+const BASE_INPUT = 'block w-full p-2.5 text-sm rounded shadow-xs focus:outline-none focus:ring-2 dark:bg-gray-700 dark:placeholder-gray-400';
+const INPUT_OK = 'bg-white border border-gray-300 text-gray-900 focus:ring-primary-200 focus:border-primary-500 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500/40 dark:focus:border-primary-300';
+const INPUT_ERROR = 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 focus:ring-red-200 focus:border-red-500 dark:text-red-400 dark:border-red-500 dark:placeholder-red-400';
+
+// Clases de un input/select según tenga o no error de validación.
+function inputClass(campo, extra = '') {
+  return [BASE_INPUT, servicioErrors.value[campo] ? INPUT_ERROR : INPUT_OK, extra];
 }
 
 const hasChanges = computed(() => JSON.stringify(formSnapshot.value) !== JSON.stringify(getComparableState()));
@@ -262,22 +271,34 @@ watch(() => props.modelValue, (val) => {
   if (val) open();
 });
 
+// Un solo aviso a la vez: el nuevo descarta al anterior.
+watch(errorMessage, (val) => {
+  if (val) showDiscardWarning.value = false;
+});
+watch(showDiscardWarning, (val) => {
+  if (val) errorMessage.value = '';
+});
+
 watch(() => form.codigo, (val) => {
   form.codigo = (val || '').trim().toUpperCase();
 });
 </script>
 
 <template>
-  <div v-if="modelValue" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4">
-    <div class="relative block w-full max-w-4xl rounded-lg bg-white shadow-xl dark:bg-gray-800 my-auto">
+  <div v-if="modelValue" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-brand-950/70 p-2 sm:p-4">
+    <div class="relative flex flex-col w-full max-w-5xl max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)] my-auto rounded-xl bg-white shadow-xl dark:bg-gray-800">
+      <!-- Cabecera -->
       <ModalCabecera
+        compacto
         :icono="Hammer"
         :titulo="soloLectura ? 'Detalle del servicio' : (isEditMode ? 'Editar servicio' : 'Nuevo servicio')"
+        :subtitulo="soloLectura ? '' : (isEditMode ? 'Actualiza la mano de obra, su precio y sus condiciones.' : 'Registra la mano de obra, su precio y sus condiciones.')"
         @cerrar="close"
       />
 
-      <div class="px-6 py-4">
-        <Alert v-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
+      <!-- Cuerpo con scroll propio: cabecera y botones siempre visibles -->
+      <div class="flex-1 overflow-y-auto px-4 py-5 sm:px-6 bg-gray-50/60 dark:bg-gray-900/30">
+        <!-- Un solo aviso a la vez: el más reciente reemplaza al anterior -->
         <Alert
           v-if="showDiscardWarning"
           type="info"
@@ -286,114 +307,181 @@ watch(() => form.codigo, (val) => {
           dismissible
           @dismiss="showDiscardWarning = false"
         />
+        <Alert v-else-if="errorMessage" type="error" :message="errorMessage" dismissible @dismiss="errorMessage = ''" />
 
         <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando servicio...</div>
-        <FichaCampos v-else-if="soloLectura" :campos="camposFicha" />
-        <template v-else>
-          <h4 class="mb-4 text-base font-semibold dark:text-white">Mano de Obra / Servicio</h4>
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="col-span-1">
-              <label for="ser_codigo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Código</label>
-              <input id="ser_codigo" v-model="form.codigo" maxlength="50" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', servicioErrors.codigo ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']" placeholder="Ej: MO-001">
-              <p v-if="servicioErrors.codigo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ servicioErrors.codigo }}</p>
-            </div>
-            <div class="col-span-1 md:col-span-3">
-              <label for="ser_nombre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre del Servicio</label>
-              <input id="ser_nombre" v-model="form.nombre" maxlength="150" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', servicioErrors.nombre ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']" placeholder="Ej: Cambio de aceite y filtro">
-              <p v-if="servicioErrors.nombre" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ servicioErrors.nombre }}</p>
-            </div>
-            <div class="col-span-1">
-              <label for="ser_categoria" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Categoría</label>
-              <select id="ser_categoria" v-model="form.categoria" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-                <option v-for="item in CATEGORIAS" :key="item.value" :value="item.value">{{ item.label }}</option>
-              </select>
-            </div>
-            <div class="col-span-1">
-              <label for="ser_tiempo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tiempo Estimado (minutos)</label>
-              <input id="ser_tiempo" v-model="form.tiempo_estimado_minutos" type="number" min="0" step="5" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', servicioErrors.tiempo_estimado_minutos ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
-              <p v-if="servicioErrors.tiempo_estimado_minutos" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ servicioErrors.tiempo_estimado_minutos }}</p>
-            </div>
-            <div class="col-span-2">
-              <label for="ser_precio" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Precio Referencial de Mano de Obra</label>
-              <input id="ser_precio" v-model="form.precio_referencial" type="number" step="0.01" min="0" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', servicioErrors.precio_referencial ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
-              <p v-if="servicioErrors.precio_referencial" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ servicioErrors.precio_referencial }}</p>
-            </div>
-            <div class="col-span-1">
-              <label for="ser_iva" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">IVA por defecto</label>
-              <select id="ser_iva" v-model="form.iva_porcentaje_defecto" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-                <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
-              </select>
-            </div>
-            <div class="col-span-2">
-              <label for="ser_contifico" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">ID Producto/Servicio Contífico</label>
-              <input id="ser_contifico" v-model="form.contifico_producto_id" maxlength="100" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-            </div>
-            <div class="col-span-1 md:col-span-4">
-              <p class="font-medium text-brand-900 dark:text-white">Garantía por defecto</p>
-              <p class="text-xs text-brand-500 dark:text-brand-300">Opcional. Ambos en 0: sin garantía. Con ambos límites, vence al superar cualquiera. Cambiar el catálogo no modifica trabajos ya registrados.</p>
-            </div>
-            <div v-for="campo in ['garantia_dias', 'garantia_km']" :key="campo" class="col-span-2">
-              <label :for="`ser_${campo}`" class="mb-2 block text-sm font-medium text-brand-900 dark:text-white">{{ campo === 'garantia_dias' ? 'Garantía (días)' : 'Garantía (km)' }}</label>
-              <input :id="`ser_${campo}`" v-model="form[campo]" type="number" min="0" step="1" class="block w-full rounded-lg border border-brand-300 bg-brand-50 p-2.5 text-base text-brand-900 dark:bg-gray-700 dark:text-white">
-              <p v-if="servicioErrors[campo]" class="text-sm text-red-600 dark:text-red-400">{{ servicioErrors[campo] }}</p>
-            </div>
-            <div class="col-span-1 md:col-span-4">
-              <p class="text-sm font-medium text-gray-900 dark:text-white">Próximo mantenimiento sugerido</p>
-              <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Al entregar una orden con este servicio se programa el aviso al cliente con este intervalo. Vacío: se usan las preferencias de notificaciones.</p>
-            </div>
-            <div class="col-span-2">
-              <label for="ser_intervalo_km" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Repetir cada (km)</label>
-              <input id="ser_intervalo_km" v-model="form.intervalo_km" type="number" step="1" min="1" placeholder="Ej.: 5000" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', servicioErrors.intervalo_km ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
-              <p v-if="servicioErrors.intervalo_km" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ servicioErrors.intervalo_km }}</p>
-            </div>
-            <div class="col-span-2">
-              <label for="ser_intervalo_meses" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Repetir cada (meses)</label>
-              <input id="ser_intervalo_meses" v-model="form.intervalo_meses" type="number" step="1" min="1" placeholder="Ej.: 6" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', servicioErrors.intervalo_meses ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
-              <p v-if="servicioErrors.intervalo_meses" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ servicioErrors.intervalo_meses }}</p>
-            </div>
-            <div class="col-span-1 md:col-span-4">
-              <label for="ser_tareas" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tareas Estándar Incluidas</label>
-              <textarea id="ser_tareas" v-model="form.tareas_estandar" rows="3" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white" placeholder="Ej: Drenar aceite, reemplazar filtro, verificar niveles y fugas..."></textarea>
-            </div>
-            <div class="col-span-1 md:col-span-4">
-              <label for="ser_descripcion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Descripción</label>
-              <textarea id="ser_descripcion" v-model="form.descripcion" rows="3" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"></textarea>
-            </div>
+        <section v-else-if="soloLectura" class="p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+          <FichaCampos :campos="camposFicha" />
+        </section>
+        <div v-else class="space-y-5">
+          <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <!-- Datos del servicio -->
+            <section class="p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+              <h4 class="flex items-center gap-2 mb-4 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200">
+                <ClipboardList class="w-4 h-4" />
+                Datos del servicio
+              </h4>
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                  <label for="ser_codigo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Código <span class="text-accent-500 dark:text-accent-400">*</span></label>
+                  <input id="ser_codigo" v-model="form.codigo" maxlength="50" placeholder="MO-001" :class="inputClass('codigo', 'font-mono uppercase placeholder:font-sans')">
+                  <p v-if="servicioErrors.codigo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ servicioErrors.codigo }}</p>
+                </div>
+                <div class="sm:col-span-2">
+                  <label for="ser_nombre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre del servicio <span class="text-accent-500 dark:text-accent-400">*</span></label>
+                  <input id="ser_nombre" v-model="form.nombre" maxlength="150" placeholder="Cambio de aceite y filtro" :class="inputClass('nombre')">
+                  <p v-if="servicioErrors.nombre" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ servicioErrors.nombre }}</p>
+                </div>
+                <div class="sm:col-span-2">
+                  <label for="ser_categoria" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Categoría</label>
+                  <select id="ser_categoria" v-model="form.categoria" :class="inputClass('categoria')">
+                    <option v-for="item in CATEGORIAS" :key="item.value" :value="item.value">{{ item.label }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="ser_tiempo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tiempo estimado</label>
+                  <div class="relative">
+                    <input id="ser_tiempo" v-model="form.tiempo_estimado_minutos" type="number" min="0" step="5" :class="inputClass('tiempo_estimado_minutos', 'pe-12 tabular-nums')">
+                    <span class="absolute inset-y-0 end-0 flex items-center pe-3 text-sm text-gray-500 pointer-events-none dark:text-gray-400">min</span>
+                  </div>
+                  <p v-if="servicioErrors.tiempo_estimado_minutos" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ servicioErrors.tiempo_estimado_minutos }}</p>
+                </div>
+              </div>
+            </section>
+
+            <!-- Precio e impuestos -->
+            <section class="p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+              <h4 class="flex items-center gap-2 mb-4 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200">
+                <Receipt class="w-4 h-4" />
+                Precio e impuestos
+              </h4>
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label for="ser_precio" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Precio referencial de mano de obra</label>
+                  <div class="relative">
+                    <span class="absolute inset-y-0 start-0 flex items-center ps-3 text-sm text-gray-500 pointer-events-none dark:text-gray-400">$</span>
+                    <input id="ser_precio" v-model="form.precio_referencial" type="number" step="0.01" min="0" :class="inputClass('precio_referencial', 'ps-7 tabular-nums')">
+                  </div>
+                  <p v-if="servicioErrors.precio_referencial" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ servicioErrors.precio_referencial }}</p>
+                </div>
+                <div>
+                  <label for="ser_iva" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">IVA por defecto</label>
+                  <select id="ser_iva" v-model="form.iva_porcentaje_defecto" :class="inputClass('iva_porcentaje_defecto')">
+                    <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
+                  </select>
+                </div>
+                <div class="sm:col-span-2">
+                  <label for="ser_contifico" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">ID Producto/Servicio Contífico</label>
+                  <input id="ser_contifico" v-model="form.contifico_producto_id" maxlength="100" :class="inputClass('contifico_producto_id')">
+                  <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Opcional. Solo si sincronizas con Contífico.</p>
+                </div>
+              </div>
+            </section>
           </div>
-        </template>
+
+          <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <!-- Garantía -->
+            <section class="p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+              <h4 class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200">
+                <ShieldCheck class="w-4 h-4" />
+                Garantía por defecto
+                <span class="ms-auto px-2 py-0.5 text-xs font-medium normal-case tracking-normal rounded-sm bg-white text-gray-600 border border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600">Opcional</span>
+              </h4>
+              <p class="mt-1 mb-4 text-xs text-gray-500 dark:text-gray-400">Ambos en 0: sin garantía. Con ambos límites, vence al superar cualquiera. Cambiar el catálogo no modifica trabajos ya registrados.</p>
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div v-for="campo in ['garantia_dias', 'garantia_km']" :key="campo">
+                  <label :for="`ser_${campo}`" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">{{ campo === 'garantia_dias' ? 'Duración' : 'Recorrido' }}</label>
+                  <div class="relative">
+                    <input :id="`ser_${campo}`" v-model="form[campo]" type="number" min="0" step="1" :class="inputClass(campo, 'pe-14 tabular-nums')">
+                    <span class="absolute inset-y-0 end-0 flex items-center pe-3 text-sm text-gray-500 pointer-events-none dark:text-gray-400">{{ campo === 'garantia_dias' ? 'días' : 'km' }}</span>
+                  </div>
+                  <p v-if="servicioErrors[campo]" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ servicioErrors[campo] }}</p>
+                </div>
+              </div>
+            </section>
+
+            <!-- Próximo mantenimiento -->
+            <section class="p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+              <h4 class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200">
+                <BellRing class="w-4 h-4" />
+                Próximo mantenimiento
+                <span class="ms-auto px-2 py-0.5 text-xs font-medium normal-case tracking-normal rounded-sm bg-white text-gray-600 border border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600">Opcional</span>
+              </h4>
+              <p class="mt-1 mb-4 text-xs text-gray-500 dark:text-gray-400">Al entregar una orden con este servicio se programa el aviso al cliente con este intervalo. Vacío: se usan las preferencias de notificaciones.</p>
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label for="ser_intervalo_km" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Repetir cada</label>
+                  <div class="relative">
+                    <input id="ser_intervalo_km" v-model="form.intervalo_km" type="number" step="1" min="1" placeholder="5000" :class="inputClass('intervalo_km', 'pe-14 tabular-nums')">
+                    <span class="absolute inset-y-0 end-0 flex items-center pe-3 text-sm text-gray-500 pointer-events-none dark:text-gray-400">km</span>
+                  </div>
+                  <p v-if="servicioErrors.intervalo_km" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ servicioErrors.intervalo_km }}</p>
+                </div>
+                <div>
+                  <label for="ser_intervalo_meses" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">O cada</label>
+                  <div class="relative">
+                    <input id="ser_intervalo_meses" v-model="form.intervalo_meses" type="number" step="1" min="1" placeholder="6" :class="inputClass('intervalo_meses', 'pe-16 tabular-nums')">
+                    <span class="absolute inset-y-0 end-0 flex items-center pe-3 text-sm text-gray-500 pointer-events-none dark:text-gray-400">meses</span>
+                  </div>
+                  <p v-if="servicioErrors.intervalo_meses" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ servicioErrors.intervalo_meses }}</p>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Tareas y descripción -->
+          <section class="p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+            <h4 class="flex items-center gap-2 mb-4 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200">
+              <NotebookPen class="w-4 h-4" />
+              Tareas y descripción
+            </h4>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label for="ser_tareas" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tareas estándar incluidas</label>
+                <textarea id="ser_tareas" v-model="form.tareas_estandar" rows="3" placeholder="Drenar aceite, reemplazar filtro, verificar niveles y fugas..." :class="inputClass('tareas_estandar')"></textarea>
+              </div>
+              <div>
+                <label for="ser_descripcion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Descripción</label>
+                <textarea id="ser_descripcion" v-model="form.descripcion" rows="3" :class="inputClass('descripcion')"></textarea>
+              </div>
+            </div>
+          </section>
+        </div>
       </div>
 
-      <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
-        <button
-          v-if="soloLectura"
-          type="button"
-          class="px-5 py-2.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
-          @click="close"
-        >
-          Cerrar
-        </button>
-        <template v-else>
-        <button
-          type="button"
-          class="px-5 py-2.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-300"
-          @click="close"
-        >
-          Cancelar
-        </button>
-        <button
-          type="button"
-          :disabled="isSaving || isLoading"
-          class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="submit"
-        >
-          <Save v-if="!isSaving" class="w-5 h-5 mr-1.5 -ml-1 text-white" />
-          <svg v-else class="w-5 h-5 mr-1.5 animate-spin" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          {{ isSaving ? 'Guardando...' : (isEditMode ? 'Guardar cambios' : 'Crear servicio') }}
-        </button>
-        </template>
+      <!-- Pie fijo -->
+      <div class="flex flex-col-reverse gap-3 border-t border-gray-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:border-gray-700">
+        <p v-if="!soloLectura" class="hidden text-xs text-gray-500 sm:block dark:text-gray-400"><span class="text-accent-500 dark:text-accent-400">*</span> Campos obligatorios</p>
+        <div class="flex items-center justify-end gap-3 sm:ms-auto">
+          <button
+            v-if="soloLectura"
+            type="button"
+            class="px-5 py-2.5 text-sm font-medium text-gray-900 rounded bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700"
+            @click="close">
+            Cerrar
+          </button>
+          <template v-else>
+            <button
+              type="button"
+              class="px-5 py-2.5 text-sm font-medium text-gray-900 rounded bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700"
+              @click="close">
+              Cancelar
+            </button>
+            <button
+              type="button"
+              :disabled="isSaving || isLoading"
+              class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-500 dark:focus:ring-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              @click="submit"
+            >
+              <Save v-if="!isSaving" class="w-5 h-5 mr-1.5 -ml-1 text-white" />
+              <svg v-else class="w-5 h-5 mr-1.5 animate-spin" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              {{ isSaving ? 'Guardando...' : (isEditMode ? 'Guardar cambios' : 'Crear servicio') }}
+            </button>
+          </template>
+        </div>
       </div>
     </div>
   </div>

@@ -28,6 +28,11 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  // `landscape` (4:3) o `wide` (2:1) para formularios densos.
+  aspect: {
+    type: String,
+    default: 'landscape',
+  },
 });
 
 const emit = defineEmits(['update:imageUrl', 'upload', 'remove']);
@@ -73,7 +78,7 @@ defineExpose({ resetPreview, clear });
     :hint="hint"
     :previewable="previewable"
     :disabled="disabled"
-    aspect="landscape"
+    :aspect="aspect"
     empty-label="Subir imagen"
     @upload="onUpload"
     @remove="onRemove"

@@ -27,6 +27,7 @@ import EstadoOrdenBadge from './EstadoOrdenBadge.vue';
 import EstadoPagoBadge from '../../pagos/components/EstadoPagoBadge.vue';
 import { ESTADOS_PAGO_FILTRABLE, getEstadoPago } from '../../pagos/constants/pagos';
 import { referenciaCorta } from '../../../shared/utils/format';
+import { formatPlate } from '../../../shared/utils/formatPlate';
 import { ordenesService } from '../services/ordenesService';
 import { usePdfExport } from '../../../shared/composables/usePdfExport';
 import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
@@ -505,9 +506,9 @@ onMounted(async () => {
         </td>
         <td data-label="Vehículo" class="px-4 py-3 whitespace-nowrap align-top">
           <a v-if="vehiculoUrl(item)" :href="vehiculoUrl(item)" class="font-medium text-gray-800 hover:text-primary-600 dark:text-white dark:hover:text-primary-400">
-            {{ item.vehiculo?.placa || '-' }}
+            {{ formatPlate(item.vehiculo?.placa) || '-' }}
           </a>
-          <span v-else class="font-medium text-gray-800 dark:text-white">{{ item.vehiculo?.placa || '-' }}</span>
+          <span v-else class="font-medium text-gray-800 dark:text-white">{{ formatPlate(item.vehiculo?.placa) || '-' }}</span>
           <div class="mt-1 flex flex-col gap-1 ps-0.5 text-xs text-gray-500 dark:text-gray-400">
             <span class="flex items-center gap-1.5">
               <Car class="w-3.5 h-3.5 shrink-0" />

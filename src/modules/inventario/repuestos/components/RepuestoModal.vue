@@ -1,7 +1,7 @@
 <script setup>
 import ModalCabecera from '@/shared/components/ModalCabecera.vue';
 import { computed, nextTick, reactive, ref, watch } from 'vue';
-import { Save, Star, FileText, Images, Package } from 'lucide-vue-next';
+import { Save, Star, Images, Package, IdCard, Receipt, Warehouse, NotebookPen, Link2 } from 'lucide-vue-next';
 import { repuestosService } from '../services/repuestosService';
 import Alert from '../../../../shared/components/Alert.vue';
 import ImageField from '../../../../shared/components/ImageField.vue';
@@ -139,7 +139,17 @@ const avisoCantidadImagenes = ref(null);
 const imagenesSnapshot = ref('');
 const addImagenField = ref(null);
 const imagenCardRefs = {};
-const activeTab = ref('general');
+const cuerpo = ref(null);
+const seccionImagenes = ref(null);
+
+const BASE_INPUT = 'block w-full p-2.5 text-sm rounded shadow-xs focus:outline-none focus:ring-2 dark:bg-gray-700 dark:placeholder-gray-400';
+const INPUT_OK = 'bg-white border border-gray-300 text-gray-900 focus:ring-primary-200 focus:border-primary-500 dark:border-gray-600 dark:text-white dark:focus:ring-primary-500/40 dark:focus:border-primary-300';
+const INPUT_ERROR = 'bg-red-50 border border-red-500 text-red-900 placeholder-red-700 focus:ring-red-200 focus:border-red-500 dark:text-red-400 dark:border-red-500 dark:placeholder-red-400';
+
+// Clases de un input/select según tenga o no error de validación.
+function inputClass(campo, extra = '') {
+  return [BASE_INPUT, repuestoErrors.value[campo] ? INPUT_ERROR : INPUT_OK, extra];
+}
 
 function getComparableState() {
   return {
@@ -273,7 +283,6 @@ function resetForm() {
   imagenes.value = [];
   imagenesEliminadas.value = [];
   avisoCantidadImagenes.value = null;
-  activeTab.value = 'general';
 }
 
 async function open() {
@@ -370,15 +379,20 @@ function setImagenCardRef(el, index) {
   imagenCardRefs[index] = el;
 }
 
+// Desplaza solo el cuerpo del modal (scrollIntoView movería también el fondo).
+function desplazarCuerpoA(elemento) {
+  if (!cuerpo.value) return;
+  const top = elemento
+    ? elemento.getBoundingClientRect().top - cuerpo.value.getBoundingClientRect().top - 16
+    : -cuerpo.value.scrollTop;
+  cuerpo.value.scrollBy({ top, behavior: 'smooth' });
+}
+
 async function focusPrimeraImagenConError() {
-  activeTab.value = 'imagenes';
   await nextTick();
   const index = imagenes.value.findIndex((img) => img.error);
   const card = index >= 0 ? imagenCardRefs[index] : null;
-  const target = card || (addImagenField.value && addImagenField.value.$el);
-  if (target && typeof target.scrollIntoView === 'function') {
-    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
+  desplazarCuerpoA(card || seccionImagenes.value);
 }
 
 async function guardarImagenes(repuestoId) {
@@ -555,7 +569,7 @@ async function submit() {
         ? 'Completa correctamente los campos del repuesto.'
         : '';
       if (tieneErroresCampos) {
-        activeTab.value = 'general';
+        desplazarCuerpoA(null);
       } else {
         await focusPrimeraImagenConError();
       }
@@ -617,29 +631,34 @@ watch(() => props.modelValue, (val) => {
   if (val) open();
 });
 
+// Un solo aviso a la vez: el nuevo descarta al anterior.
+watch(bannerGeneral, (val, anterior) => {
+  if (val && (!anterior || val.descripcion !== anterior.descripcion)) showDiscardWarning.value = false;
+});
+watch(showDiscardWarning, (val) => {
+  if (val) errorMessage.value = '';
+});
+
 watch(() => form.codigo, (val) => {
   form.codigo = (val || '').trim().toUpperCase();
 });
 </script>
 
 <template>
-  <div v-if="modelValue" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4">
-    <div class="relative block w-full max-w-5xl rounded-lg bg-white shadow-xl dark:bg-gray-800 my-auto">
+  <div v-if="modelValue" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-brand-950/70 p-2 sm:p-4">
+    <div class="relative flex flex-col w-full max-w-5xl max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)] my-auto rounded-xl bg-white shadow-xl dark:bg-gray-800">
+      <!-- Cabecera -->
       <ModalCabecera
+        compacto
         :icono="Package"
         :titulo="soloLectura ? 'Detalle del repuesto' : (isEditMode ? 'Editar repuesto' : 'Nuevo repuesto')"
+        :subtitulo="soloLectura ? '' : (isEditMode ? 'Actualiza los datos, precios e imágenes del repuesto.' : 'Registra los datos, precios, stock inicial e imágenes del repuesto.')"
         @cerrar="close"
       />
 
-      <div class="px-6 py-4">
-        <Alert
-          v-if="bannerGeneral"
-          type="error"
-          :title="bannerGeneral.titulo"
-          :message="bannerGeneral.descripcion"
-          :dismissible="bannerGeneral.dismissible"
-          @dismiss="errorMessage = ''"
-        />
+      <!-- Cuerpo con scroll propio: cabecera y botones siempre visibles -->
+      <div ref="cuerpo" class="flex-1 overflow-y-auto px-4 py-5 sm:px-6 bg-gray-50/60 dark:bg-gray-900/30">
+        <!-- Un solo aviso a la vez: el más reciente reemplaza al anterior -->
         <Alert
           v-if="showDiscardWarning"
           type="info"
@@ -648,12 +667,25 @@ watch(() => form.codigo, (val) => {
           dismissible
           @dismiss="showDiscardWarning = false"
         />
+        <Alert
+          v-else-if="bannerGeneral"
+          type="error"
+          :title="bannerGeneral.titulo"
+          :message="bannerGeneral.descripcion"
+          :dismissible="bannerGeneral.dismissible"
+          @dismiss="errorMessage = ''"
+        />
 
         <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400">Cargando repuesto...</div>
-        <div v-else-if="soloLectura" class="space-y-6">
-          <FichaCampos :campos="camposFicha" />
-          <div v-if="imagenes.length">
-            <h4 class="mb-3 text-sm font-medium text-gray-500 dark:text-gray-400">Imágenes</h4>
+        <div v-else-if="soloLectura" class="space-y-5">
+          <section class="p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+            <FichaCampos :campos="camposFicha" />
+          </section>
+          <section v-if="imagenes.length" class="p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+            <h4 class="flex items-center gap-2 mb-4 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200">
+              <Images class="w-4 h-4" />
+              Imágenes
+            </h4>
             <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
               <a
                 v-for="(img, index) in imagenes"
@@ -664,7 +696,7 @@ watch(() => form.codigo, (val) => {
                 class="relative block overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
                 :title="`Ver imagen ${index + 1} completa`"
               >
-                <img :src="img.miniatura || img.url" :alt="`Imagen ${index + 1} del repuesto`" loading="lazy" class="aspect-square w-full object-cover" />
+                <img :src="img.miniatura || img.url" :alt="`Imagen ${index + 1} del repuesto`" loading="lazy" class="aspect-[2/1] w-full object-cover" />
                 <span
                   v-if="img.es_principal"
                   class="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-xs font-medium text-gray-700 shadow-xs dark:bg-gray-800/90 dark:text-gray-200"
@@ -674,204 +706,243 @@ watch(() => form.codigo, (val) => {
                 </span>
               </a>
             </div>
+          </section>
+        </div>
+        <div v-else class="space-y-5">
+          <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <!-- Identificación -->
+            <section class="p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+              <h4 class="flex items-center gap-2 mb-4 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200">
+                <IdCard class="w-4 h-4" />
+                Identificación
+              </h4>
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                  <label for="rep_codigo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Código <span class="text-accent-500 dark:text-accent-400">*</span></label>
+                  <input id="rep_codigo" v-model="form.codigo" maxlength="50" placeholder="FR-001" :class="inputClass('codigo', 'font-mono uppercase placeholder:font-sans')">
+                  <p v-if="repuestoErrors.codigo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ repuestoErrors.codigo }}</p>
+                </div>
+                <div class="sm:col-span-2">
+                  <label for="rep_nombre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre del repuesto <span class="text-accent-500 dark:text-accent-400">*</span></label>
+                  <input id="rep_nombre" v-model="form.nombre" maxlength="150" placeholder="Filtro de aceite" :class="inputClass('nombre')" @blur="recortar('nombre')">
+                  <p v-if="repuestoErrors.nombre" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ repuestoErrors.nombre }}</p>
+                </div>
+              </div>
+              <div class="grid grid-cols-1 gap-4 mt-4 sm:grid-cols-2">
+                <div>
+                  <label for="rep_categoria" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Categoría</label>
+                  <select id="rep_categoria" v-model="form.categoria" :class="inputClass('categoria')">
+                    <option v-for="item in CATEGORIAS" :key="item.value" :value="item.value">{{ item.label }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="rep_unidad" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Unidad de medida</label>
+                  <select id="rep_unidad" v-model="form.unidad_medida" :class="inputClass('unidad_medida')">
+                    <option v-for="item in UNIDADES" :key="item.value" :value="item.value">{{ item.label }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="rep_marca" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Marca / Fabricante</label>
+                  <input id="rep_marca" v-model="form.marca" maxlength="100" :class="inputClass('marca')" @blur="recortar('marca')">
+                </div>
+                <div>
+                  <label for="rep_numero_parte" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Número de parte</label>
+                  <input id="rep_numero_parte" v-model="form.numero_parte" maxlength="100" :class="inputClass('numero_parte', 'font-mono')" @blur="recortar('numero_parte')">
+                </div>
+              </div>
+            </section>
+
+            <div class="space-y-5">
+              <!-- Precio e impuestos -->
+              <section class="p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+                <h4 class="flex items-center gap-2 mb-4 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200">
+                  <Receipt class="w-4 h-4" />
+                  Precio e impuestos
+                </h4>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div>
+                    <label for="rep_costo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Costo (compra)</label>
+                    <div class="relative">
+                      <span class="absolute inset-y-0 start-0 flex items-center ps-3 text-sm text-gray-500 pointer-events-none dark:text-gray-400">$</span>
+                      <input id="rep_costo" v-model="form.costo_referencial" type="number" step="0.01" min="0" :class="inputClass('costo_referencial', 'ps-7 tabular-nums')">
+                    </div>
+                    <p v-if="repuestoErrors.costo_referencial" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ repuestoErrors.costo_referencial }}</p>
+                  </div>
+                  <div>
+                    <label for="rep_precio" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Venta (sin IVA)</label>
+                    <div class="relative">
+                      <span class="absolute inset-y-0 start-0 flex items-center ps-3 text-sm text-gray-500 pointer-events-none dark:text-gray-400">$</span>
+                      <input id="rep_precio" v-model="form.precio_venta" type="number" step="0.01" min="0" :class="inputClass('precio_venta', 'ps-7 tabular-nums')">
+                    </div>
+                    <p v-if="repuestoErrors.precio_venta" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ repuestoErrors.precio_venta }}</p>
+                  </div>
+                  <div>
+                    <label for="rep_iva" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">IVA por defecto</label>
+                    <select id="rep_iva" v-model="form.iva_porcentaje_defecto" :class="inputClass('iva_porcentaje_defecto')">
+                      <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
+                    </select>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Stock y almacén -->
+              <section class="p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+                <h4 class="flex items-center gap-2 mb-4 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200">
+                  <Warehouse class="w-4 h-4" />
+                  Stock y almacén
+                </h4>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label for="rep_stock_actual" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">{{ isEditMode ? 'Stock actual' : 'Stock inicial' }}</label>
+                    <!-- Tras el alta, el stock solo cambia con movimientos (ajuste, despacho o compra). -->
+                    <input id="rep_stock_actual" v-model="form.stock_actual" type="number" step="0.01" min="0" :disabled="isEditMode" :class="inputClass('stock_actual', 'tabular-nums disabled:cursor-not-allowed disabled:opacity-70')">
+                    <p v-if="repuestoErrors.stock_actual" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ repuestoErrors.stock_actual }}</p>
+                    <p v-else-if="isEditMode" class="mt-2 text-xs text-gray-500 dark:text-gray-400">Se cambia con «Kardex y stock» en el listado.</p>
+                  </div>
+                  <div>
+                    <label for="rep_stock_minimo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Stock mínimo</label>
+                    <input id="rep_stock_minimo" v-model="form.stock_minimo" type="number" step="0.01" min="0" :class="inputClass('stock_minimo', 'tabular-nums')">
+                    <p v-if="repuestoErrors.stock_minimo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ repuestoErrors.stock_minimo }}</p>
+                  </div>
+                  <div>
+                    <label for="rep_ubicacion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Ubicación / Estante</label>
+                    <input id="rep_ubicacion" v-model="form.ubicacion" maxlength="100" :class="inputClass('ubicacion')" @blur="recortar('ubicacion')">
+                  </div>
+                  <div>
+                    <label for="rep_proveedor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Proveedor habitual</label>
+                    <input id="rep_proveedor" v-model="form.proveedor" maxlength="150" :class="inputClass('proveedor')" @blur="recortar('proveedor')">
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+
+          <!-- Imágenes -->
+          <section ref="seccionImagenes" class="p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+            <h4 class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200">
+              <Images class="w-4 h-4" />
+              Imágenes <span class="text-accent-500 dark:text-accent-400">*</span>
+              <span
+                :class="[
+                  'px-2 py-0.5 text-xs font-semibold normal-case tracking-normal rounded-full tabular-nums',
+                  hayErroresImagenes || avisoCantidadImagenes ? 'bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-400' : 'bg-brand-50 text-brand-700 dark:bg-brand-500/20 dark:text-brand-200',
+                ]"
+              >{{ imagenes.length }}/{{ MAX_IMAGENES }}</span>
+            </h4>
+            <p class="mt-1 mb-4 text-xs text-gray-500 dark:text-gray-400">Sube de {{ MIN_IMAGENES }} a {{ MAX_IMAGENES }} imágenes y marca una como principal.</p>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div
+                v-for="(img, index) in imagenes"
+                :key="img.id || img.preview || index"
+                :ref="(el) => setImagenCardRef(el, index)"
+              >
+                <ImageField
+                  :image-url="img.preview || img.url || ''"
+                  :alt="'Imagen ' + (index + 1)"
+                  perfil="repuesto"
+                  aspect="wide"
+                  :show-hint="false"
+                  :droppable="false"
+                  :error="img.error ? img.error.mensaje : ''"
+                  compact
+                  @remove="quitarImagen(index)"
+                  @upload="reemplazarImagen(index, $event)"
+                >
+                  <template #footer>
+                    <button
+                      type="button"
+                      class="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded border px-2 py-1.5 text-xs font-medium transition"
+                      :class="img.es_principal
+                        ? 'border-brand bg-brand text-white'
+                        : 'border-default bg-neutral-secondary-medium text-heading hover:bg-neutral-tertiary'"
+                      :aria-pressed="img.es_principal"
+                      @click="setPrincipal(index)"
+                    >
+                      <Star class="w-3.5 h-3.5" :fill="img.es_principal ? 'currentColor' : 'none'" />
+                      {{ img.es_principal ? 'Principal' : 'Hacer principal' }}
+                    </button>
+                  </template>
+                </ImageField>
+              </div>
+
+              <div v-if="imagenes.length < MAX_IMAGENES">
+                <ImageField
+                  ref="addImagenField"
+                  empty-label="Agregar imagen"
+                  perfil="repuesto"
+                  aspect="wide"
+                  compact
+                  @upload="agregarImagen"
+                />
+              </div>
+            </div>
+          </section>
+
+          <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <!-- Descripción -->
+            <section class="p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+              <h4 class="flex items-center gap-2 mb-4 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200">
+                <NotebookPen class="w-4 h-4" />
+                <label for="rep_descripcion">Descripción</label>
+              </h4>
+              <textarea id="rep_descripcion" v-model="form.descripcion" rows="4" placeholder="Compatibilidad, especificaciones, detalles a tener en cuenta..." :class="inputClass('descripcion')" @blur="recortar('descripcion')"></textarea>
+            </section>
+
+            <!-- Contífico -->
+            <section class="p-4 sm:p-5 bg-white border border-gray-200 rounded-lg shadow-xs dark:bg-gray-800 dark:border-gray-700">
+              <h4 class="flex items-center gap-2 mb-4 text-sm font-semibold uppercase tracking-wide text-brand-700 dark:text-brand-200">
+                <Link2 class="w-4 h-4" />
+                Contífico
+                <span class="ms-auto px-2 py-0.5 text-xs font-medium normal-case tracking-normal rounded-sm bg-white text-gray-600 border border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600">Opcional</span>
+              </h4>
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label for="rep_contifico_producto" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">ID Producto</label>
+                  <input id="rep_contifico_producto" v-model="form.contifico_producto_id" maxlength="100" :class="inputClass('contifico_producto_id')" @blur="recortar('contifico_producto_id')">
+                </div>
+                <div>
+                  <label for="rep_contifico_cuenta" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cuenta contable</label>
+                  <input id="rep_contifico_cuenta" v-model="form.contifico_cuenta_contable" maxlength="50" :class="inputClass('contifico_cuenta_contable')" @blur="recortar('contifico_cuenta_contable')">
+                </div>
+              </div>
+            </section>
           </div>
         </div>
-        <template v-else>
-          <div class="border-b border-gray-200 dark:border-gray-700">
-            <nav class="flex flex-wrap -mb-px" role="tablist" aria-label="Secciones del repuesto">
-              <button
-                type="button"
-                role="tab"
-                :aria-selected="activeTab === 'general'"
-                class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
-                :class="activeTab === 'general' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-                @click="activeTab = 'general'"
-              >
-                <FileText class="w-5 h-5 text-gray-900 dark:text-white" />
-                Información General
-              </button>
-              <button
-                type="button"
-                role="tab"
-                :aria-selected="activeTab === 'imagenes'"
-                class="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2"
-                :class="activeTab === 'imagenes' ? 'text-primary-600 border-primary-600 dark:text-primary-400 dark:border-primary-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-                @click="activeTab = 'imagenes'"
-              >
-                <Images class="w-4 h-4" />
-                Imágenes
-                <span
-                  class="inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-xs font-semibold rounded-full"
-                  :class="(hayErroresImagenes || avisoCantidadImagenes) && activeTab !== 'imagenes' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'"
-                >{{ imagenes.length }}/{{ MAX_IMAGENES }}</span>
-              </button>
-            </nav>
-          </div>
-
-          <h4 v-show="activeTab === 'general'" class="pt-4 mb-4 text-base font-semibold dark:text-white">Información General</h4>
-          <div v-show="activeTab === 'general'" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="col-span-1">
-              <label for="rep_codigo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Código</label>
-              <input id="rep_codigo" v-model="form.codigo" maxlength="50" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', repuestoErrors.codigo ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']" placeholder="Ej: FR-001">
-              <p v-if="repuestoErrors.codigo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ repuestoErrors.codigo }}</p>
-            </div>
-            <div class="col-span-1 md:col-span-3">
-              <label for="rep_nombre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre del Repuesto</label>
-              <input id="rep_nombre" v-model="form.nombre" maxlength="150" @blur="recortar('nombre')" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', repuestoErrors.nombre ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']" placeholder="Ej: Filtro de aceite">
-              <p v-if="repuestoErrors.nombre" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ repuestoErrors.nombre }}</p>
-            </div>
-            <div class="col-span-1">
-              <label for="rep_categoria" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Categoría</label>
-              <select id="rep_categoria" v-model="form.categoria" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-                <option v-for="item in CATEGORIAS" :key="item.value" :value="item.value">{{ item.label }}</option>
-              </select>
-            </div>
-            <div class="col-span-1">
-              <label for="rep_marca" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Marca / Fabricante</label>
-              <input id="rep_marca" v-model="form.marca" maxlength="100" @blur="recortar('marca')" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-            </div>
-            <div class="col-span-1">
-              <label for="rep_numero_parte" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Número de Parte</label>
-              <input id="rep_numero_parte" v-model="form.numero_parte" maxlength="100" @blur="recortar('numero_parte')" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-            </div>
-            <div class="col-span-1">
-              <label for="rep_unidad" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Unidad de Medida</label>
-              <select id="rep_unidad" v-model="form.unidad_medida" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-                <option v-for="item in UNIDADES" :key="item.value" :value="item.value">{{ item.label }}</option>
-              </select>
-            </div>
-            <div class="col-span-1">
-              <label for="rep_costo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Costo Referencial (compra)</label>
-              <input id="rep_costo" v-model="form.costo_referencial" type="number" step="0.01" min="0" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', repuestoErrors.costo_referencial ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
-              <p v-if="repuestoErrors.costo_referencial" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ repuestoErrors.costo_referencial }}</p>
-            </div>
-            <div class="col-span-1">
-              <label for="rep_precio" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Precio de Venta (sin IVA)</label>
-              <input id="rep_precio" v-model="form.precio_venta" type="number" step="0.01" min="0" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', repuestoErrors.precio_venta ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
-              <p v-if="repuestoErrors.precio_venta" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ repuestoErrors.precio_venta }}</p>
-            </div>
-            <div class="col-span-1">
-              <label for="rep_stock_actual" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">{{ isEditMode ? 'Stock Actual' : 'Stock Inicial' }}</label>
-              <!-- Tras el alta, el stock solo cambia con movimientos (ajuste, despacho o compra). -->
-              <input id="rep_stock_actual" v-model="form.stock_actual" type="number" step="0.01" min="0" :disabled="isEditMode" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white disabled:cursor-not-allowed disabled:opacity-70', repuestoErrors.stock_actual ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
-              <p v-if="isEditMode" class="mt-1 text-xs text-gray-500 dark:text-gray-400">Se cambia con «Kardex y stock» en el listado.</p>
-              <p v-if="repuestoErrors.stock_actual" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ repuestoErrors.stock_actual }}</p>
-            </div>
-            <div class="col-span-1">
-              <label for="rep_stock_minimo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Stock Mínimo</label>
-              <input id="rep_stock_minimo" v-model="form.stock_minimo" type="number" step="0.01" min="0" :class="['block w-full p-2.5 text-sm rounded-lg dark:bg-gray-700 dark:text-white', repuestoErrors.stock_minimo ? 'bg-red-50 border border-red-500' : 'bg-white border border-gray-300 dark:border-gray-600']">
-              <p v-if="repuestoErrors.stock_minimo" class="mt-2 text-sm text-red-600 dark:text-red-500">{{ repuestoErrors.stock_minimo }}</p>
-            </div>
-            <div class="col-span-1">
-              <label for="rep_ubicacion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Ubicación / Estante</label>
-              <input id="rep_ubicacion" v-model="form.ubicacion" maxlength="100" @blur="recortar('ubicacion')" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-            </div>
-            <div class="col-span-1">
-              <label for="rep_proveedor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Proveedor Habitual</label>
-              <input id="rep_proveedor" v-model="form.proveedor" maxlength="150" @blur="recortar('proveedor')" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-            </div>
-            <div class="col-span-1">
-              <label for="rep_iva" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">IVA por defecto</label>
-              <select id="rep_iva" v-model="form.iva_porcentaje_defecto" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-                <option v-for="opcion in IVA_OPCIONES" :key="opcion.value" :value="opcion.value">{{ opcion.label }}</option>
-              </select>
-            </div>
-            <div class="col-span-1 md:col-span-3">
-              <label for="rep_descripcion" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Descripción</label>
-              <textarea id="rep_descripcion" v-model="form.descripcion" rows="3" @blur="recortar('descripcion')" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white"></textarea>
-            </div>
-            <div class="col-span-1 md:col-span-2">
-              <label for="rep_contifico_producto" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">ID Producto Contífico</label>
-              <input id="rep_contifico_producto" v-model="form.contifico_producto_id" maxlength="100" @blur="recortar('contifico_producto_id')" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-            </div>
-            <div class="col-span-1 md:col-span-2">
-              <label for="rep_contifico_cuenta" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Cuenta Contable Contífico</label>
-              <input id="rep_contifico_cuenta" v-model="form.contifico_cuenta_contable" maxlength="50" @blur="recortar('contifico_cuenta_contable')" class="block w-full p-2.5 text-sm bg-white rounded-lg border border-gray-300 dark:bg-gray-700 dark:text-white">
-            </div>
-          </div>
-
-          <h4 v-show="activeTab === 'imagenes'" class="pt-4 mb-2 text-base font-semibold dark:text-white">Imágenes del Repuesto</h4>
-          <p v-show="activeTab === 'imagenes'" class="mb-3 text-sm text-gray-500 dark:text-gray-400">
-            Sube de {{ MIN_IMAGENES }} a {{ MAX_IMAGENES }} imágenes. Marca una como principal.
-          </p>
-          <div v-show="activeTab === 'imagenes'" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div
-              v-for="(img, index) in imagenes"
-              :key="img.id || img.preview || index"
-              :ref="(el) => setImagenCardRef(el, index)"
-            >
-              <ImageField
-                :image-url="img.preview || img.url || ''"
-                :alt="'Imagen ' + (index + 1)"
-                perfil="repuesto"
-                :show-hint="false"
-                :droppable="false"
-                :error="img.error ? img.error.mensaje : ''"
-                compact
-                @remove="quitarImagen(index)"
-                @upload="reemplazarImagen(index, $event)"
-              >
-                <template #footer>
-                  <button
-                    type="button"
-                    class="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded border px-2 py-1.5 text-xs font-medium transition"
-                    :class="img.es_principal
-                      ? 'border-brand bg-brand text-white'
-                      : 'border-default bg-neutral-secondary-medium text-heading hover:bg-neutral-tertiary'"
-                    :aria-pressed="img.es_principal"
-                    @click="setPrincipal(index)"
-                  >
-                    <Star class="w-3.5 h-3.5" :fill="img.es_principal ? 'currentColor' : 'none'" />
-                    {{ img.es_principal ? 'Principal' : 'Hacer principal' }}
-                  </button>
-                </template>
-              </ImageField>
-            </div>
-
-            <div v-if="imagenes.length < MAX_IMAGENES">
-              <ImageField
-                ref="addImagenField"
-                empty-label="Agregar imagen"
-                perfil="repuesto"
-                compact
-                @upload="agregarImagen"
-              />
-            </div>
-          </div>
-        </template>
       </div>
 
-      <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
-        <button
-          v-if="soloLectura"
-          type="button"
-          class="px-5 py-2.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
-          @click="close"
-        >
-          Cerrar
-        </button>
-        <template v-else>
-        <button
-          type="button"
-          class="px-5 py-2.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg dark:bg-gray-700 dark:text-gray-300"
-          @click="close"
-        >
-          Cancelar
-        </button>
-        <button
-          type="button"
-          :disabled="isSaving || isLoading"
-          class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded-lg bg-primary-blue-500 hover:bg-primary-blue-600 focus:ring-4 focus:ring-primary-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="submit"
-        >
-          <Save v-if="!isSaving" class="w-5 h-5 mr-1.5 -ml-1 text-white" />
-          <svg v-else class="w-5 h-5 mr-1.5 animate-spin" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          {{ isSaving ? 'Guardando...' : (isEditMode ? 'Guardar cambios' : 'Crear repuesto') }}
-        </button>
-        </template>
+      <!-- Pie fijo -->
+      <div class="flex flex-col-reverse gap-3 border-t border-gray-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:border-gray-700">
+        <p v-if="!soloLectura" class="hidden text-xs text-gray-500 sm:block dark:text-gray-400"><span class="text-accent-500 dark:text-accent-400">*</span> Campos obligatorios</p>
+        <div class="flex items-center justify-end gap-3 sm:ms-auto">
+          <button
+            v-if="soloLectura"
+            type="button"
+            class="px-5 py-2.5 text-sm font-medium text-gray-900 rounded bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700"
+            @click="close">
+            Cerrar
+          </button>
+          <template v-else>
+            <button
+              type="button"
+              class="px-5 py-2.5 text-sm font-medium text-gray-900 rounded bg-white border border-gray-300 hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700"
+              @click="close">
+              Cancelar
+            </button>
+            <button
+              type="button"
+              :disabled="isSaving || isLoading"
+              class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-500 dark:focus:ring-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              @click="submit"
+            >
+              <Save v-if="!isSaving" class="w-5 h-5 mr-1.5 -ml-1 text-white" />
+              <svg v-else class="w-5 h-5 mr-1.5 animate-spin" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              {{ isSaving ? 'Guardando...' : (isEditMode ? 'Guardar cambios' : 'Crear repuesto') }}
+            </button>
+          </template>
+        </div>
       </div>
     </div>
   </div>

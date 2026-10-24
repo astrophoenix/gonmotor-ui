@@ -10,6 +10,8 @@ defineProps({
   subtitulo: { type: String, default: '' },
   tituloId: { type: String, default: undefined },
   etiquetaCerrar: { type: String, default: 'Cerrar' },
+  // Versión de menor alto para formularios largos: menos relleno, icono y título más pequeños.
+  compacto: { type: Boolean, default: false },
 });
 defineEmits(['cerrar']);
 
@@ -21,7 +23,7 @@ const piezas = [
 </script>
 
 <template>
-  <div class="modal-cabecera @container relative flex shrink-0 rounded-t-[inherit] items-center gap-3 overflow-hidden border-b border-gray-200 bg-white px-4 py-4 sm:gap-4 sm:px-6 sm:py-5 dark:border-gray-700 dark:bg-gray-800">
+  <div :class="['modal-cabecera @container relative flex shrink-0 rounded-t-[inherit] items-center gap-3 overflow-hidden border-b border-gray-200 bg-white px-4 sm:px-6 dark:border-gray-700 dark:bg-gray-800', compacto ? 'py-2.5 sm:py-3' : 'py-4 sm:gap-4 sm:py-5']">
     <div class="modal-cabecera__rejilla pointer-events-none absolute inset-0" aria-hidden="true"></div>
     <svg
       class="modal-cabecera__piezas pointer-events-none absolute right-16 top-0 hidden h-full w-[300px] text-primary-700/25 @3xl:block dark:text-primary-300/20"
@@ -30,20 +32,21 @@ const piezas = [
       aria-hidden="true"
       v-html="piezas"
     ></svg>
-    <span v-if="icono" class="relative inline-flex items-center justify-center w-11 h-11 shrink-0 rounded-xl bg-primary-50 text-primary-700 ring-1 ring-primary-100 sm:w-14 sm:h-14 sm:rounded-2xl dark:bg-primary-500/15 dark:text-primary-200 dark:ring-primary-500/20">
-      <component :is="icono" class="w-5 h-5 sm:w-6 sm:h-6" />
+    <span v-if="icono" :class="['relative inline-flex items-center justify-center shrink-0 rounded-xl bg-primary-50 text-primary-700 ring-1 ring-primary-100 dark:bg-primary-500/15 dark:text-primary-200 dark:ring-primary-500/20', compacto ? 'w-9 h-9 sm:w-10 sm:h-10' : 'w-11 h-11 sm:w-14 sm:h-14 sm:rounded-2xl']">
+      <component :is="icono" :class="compacto ? 'w-5 h-5' : 'w-5 h-5 sm:w-6 sm:h-6'" />
     </span>
     <div class="relative min-w-0 flex-1">
-      <h3 :id="tituloId" class="flex flex-wrap items-center gap-2 text-lg font-semibold leading-tight tracking-tight text-gray-900 sm:text-xl dark:text-white">
+      <h3 :id="tituloId" :class="['flex flex-wrap items-center gap-2 font-semibold leading-tight tracking-tight text-gray-900 dark:text-white', compacto ? 'text-base sm:text-lg' : 'text-lg sm:text-xl']">
         {{ titulo }}
         <slot name="titulo" />
       </h3>
-      <p v-if="subtitulo" class="mt-0.5 hidden text-sm sm:block text-gray-500 dark:text-gray-400">{{ subtitulo }}</p>
+      <p v-if="subtitulo" :class="['mt-0.5 hidden sm:block text-gray-500 dark:text-gray-400', compacto ? 'text-xs' : 'text-sm']">{{ subtitulo }}</p>
       <slot />
     </div>
     <button
       type="button"
-      class="relative inline-flex items-center justify-center w-10 h-10 shrink-0 self-start rounded-xl bg-white/80 text-gray-500 ring-1 ring-gray-200 hover:bg-gray-100 hover:text-gray-700 focus:ring-4 focus:ring-primary-200 dark:bg-white/5 dark:text-gray-300 dark:ring-white/10 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-primary-800"
+      :class="['relative inline-flex items-center justify-center shrink-0 rounded-xl bg-white/80', compacto ? 'w-8 h-8 self-center' : 'w-10 h-10 self-start']"
+      class="text-gray-500 ring-1 ring-gray-200 hover:bg-gray-100 hover:text-gray-700 focus:ring-4 focus:ring-primary-200 dark:bg-white/5 dark:text-gray-300 dark:ring-white/10 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-primary-800"
       :aria-label="etiquetaCerrar"
       @click="$emit('cerrar')"
     >

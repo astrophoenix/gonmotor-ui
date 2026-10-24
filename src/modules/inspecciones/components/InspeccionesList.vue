@@ -31,6 +31,7 @@ import Pagination from '../../../shared/components/Pagination.vue';
 import { ESTADOS_INSPECCION_FILTRABLE } from '../constants/estadosInspeccion';
 import { TIPOS_TRABAJO_OPCIONES } from '../../../shared/config/tiposTrabajo';
 import { referenciaCorta } from '../../../shared/utils/format';
+import { formatPlate } from '../../../shared/utils/formatPlate';
 import { usePdfExport } from '../../../shared/composables/usePdfExport';
 import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
 import SinAcceso from '../../../shared/components/SinAcceso.vue';
@@ -572,8 +573,8 @@ onUnmounted(() => {
             v-if="vehiculoUrl(item)"
             :href="vehiculoUrl(item)"
             class="font-semibold text-gray-900 hover:text-primary-600 dark:text-white dark:hover:text-primary-400"
-          >{{ vehiculoDe(item)?.placa || '-' }}</a>
-          <span v-else class="font-semibold text-gray-900 dark:text-white">{{ vehiculoDe(item)?.placa || '-' }}</span>
+          >{{ formatPlate(vehiculoDe(item)?.placa) || '-' }}</a>
+          <span v-else class="font-semibold text-gray-900 dark:text-white">{{ formatPlate(vehiculoDe(item)?.placa) || '-' }}</span>
           <div class="mt-1 flex flex-col gap-1 ps-0.5 text-xs text-gray-500 dark:text-gray-400">
             <span class="flex items-center gap-1.5 min-w-0">
               <Car class="w-3.5 h-3.5 shrink-0" />

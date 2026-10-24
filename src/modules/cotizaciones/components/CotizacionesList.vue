@@ -27,6 +27,7 @@ import { relacionesDeCotizacion } from '../../../shared/utils/relacionesFlujo';
 import EntityActionButtons from '../../../shared/components/EntityActionButtons.vue';
 import EntityActionsMenu from '../../../shared/components/EntityActionsMenu.vue';
 import { referenciaCorta } from '../../../shared/utils/format';
+import { formatPlate } from '../../../shared/utils/formatPlate';
 import ModoConsultaChip from '../../../shared/components/ModoConsultaChip.vue';
 import SinAcceso from '../../../shared/components/SinAcceso.vue';
 import { usePermisos } from '../../../shared/composables/usePermisos';
@@ -449,8 +450,8 @@ onMounted(async () => {
             v-if="vehiculoUrl(item)"
             :href="vehiculoUrl(item)"
             class="font-medium text-gray-800 hover:text-primary-600 dark:text-white dark:hover:text-primary-400"
-          >{{ item.vehiculo_placa || '-' }}</a>
-          <span v-else class="font-medium text-gray-800 dark:text-white">{{ item.vehiculo_placa || '-' }}</span>
+          >{{ formatPlate(item.vehiculo_placa) || '-' }}</a>
+          <span v-else class="font-medium text-gray-800 dark:text-white">{{ formatPlate(item.vehiculo_placa) || '-' }}</span>
 <div class="mt-1 flex flex-col gap-1 ps-0.5 text-xs text-gray-500 dark:text-gray-400">
               <span class="flex items-center gap-1.5">
                 <Car class="w-3.5 h-3.5 shrink-0" />
